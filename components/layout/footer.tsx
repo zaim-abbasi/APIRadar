@@ -19,7 +19,7 @@ const FooterComponent = () => {
               >
                 <Shield className="h-5 w-5 text-primary" />
               </motion.div>
-              <span className="text-base font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <span className="text-base font-bold text-foreground">
                 API Radar
               </span>
             </Link>
