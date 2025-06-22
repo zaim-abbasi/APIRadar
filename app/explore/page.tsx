@@ -71,7 +71,7 @@ export default function ExplorePage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
         className="mb-8"
       >
         <h1 className="text-3xl md:text-4xl font-bold mb-4">
@@ -86,7 +86,7 @@ export default function ExplorePage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
+        transition={{ duration: 0.3, delay: 0.1, ease: 'easeOut' }}
         className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-6 mb-6"
       >
         <div className="flex flex-col lg:flex-row gap-4">
@@ -131,7 +131,7 @@ export default function ExplorePage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
           className="flex items-center justify-between mt-4 pt-4 border-t border-border/50"
         >
           <div className="text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export default function ExplorePage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
+        transition={{ duration: 0.3, delay: 0.15, ease: 'easeOut' }}
       >
         <Suspense fallback={<div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span className="text-muted-foreground text-sm">Loading results…</span></div>}>
           <LeakTable 

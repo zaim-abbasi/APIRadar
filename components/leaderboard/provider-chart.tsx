@@ -57,9 +57,9 @@ const ProviderChartComponent = ({ data }: ProviderChartProps) => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Chart */}
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut', delay: 0.05 }}
         className="lg:col-span-2"
       >
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
@@ -98,9 +98,9 @@ const ProviderChartComponent = ({ data }: ProviderChartProps) => {
 
       {/* Provider List */}
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut', delay: 0.1 }}
       >
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit">
           <CardHeader>
@@ -121,7 +121,7 @@ const ProviderChartComponent = ({ data }: ProviderChartProps) => {
                   key={provider.provider}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 + 0.3 }}
+                  transition={{ duration: 0.15, ease: 'easeOut', delay: index * 0.03 + 0.15 }}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
                 >
                   <div className="flex items-center gap-3">

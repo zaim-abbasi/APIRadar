@@ -15,7 +15,7 @@ const FooterComponent = () => {
             <Link href="/" className="flex items-center space-x-2">
               <motion.div
                 whileHover={{ rotate: 180 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
               >
                 <Shield className="h-5 w-5 text-primary" />
               </motion.div>

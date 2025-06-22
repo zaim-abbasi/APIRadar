@@ -108,11 +108,9 @@ export function LeakTable({ leaks, isLoading, selectedProvider }: LeakTableProps
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
             transition={{
-              duration: 0.3,
-              delay: index * 0.05,
-              type: "spring",
-              stiffness: 400,
-              damping: 40
+              duration: 0.2,
+              delay: index * 0.03,
+              ease: 'easeOut'
             }}
             whileHover={{ y: -4, scale: 1.02 }}
             className="group"

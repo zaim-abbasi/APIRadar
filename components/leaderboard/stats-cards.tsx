@@ -81,14 +81,12 @@ const StatsCardsComponent = ({ data }: StatsCardsProps) => {
       {stats.map((stat, index) => (
         <motion.div
           key={stat.title}
-          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ 
-            duration: 0.5, 
-            delay: index * 0.1,
-            type: "spring",
-            stiffness: 300,
-            damping: 30
+            duration: 0.2, 
+            delay: index * 0.03,
+            ease: "easeOut"
           }}
           whileHover={{ y: -5, scale: 1.02 }}
           className="group"

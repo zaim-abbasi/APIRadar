@@ -37,7 +37,7 @@ const NavLinks = () => {
               layoutId="navbar-indicator"
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
               initial={false}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             />
           )}
         </Link>
@@ -55,7 +55,7 @@ const MobileNavLinks = ({ onLinkClick }: { onLinkClick: () => void }) => {
           key={item.href}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.1 }}
+          transition={{ delay: index * 0.05, duration: 0.2, ease: 'easeOut' }}
         >
           <Link
             href={item.href}
@@ -100,7 +100,7 @@ const NavbarComponent = () => {
           <Link href="/" className="flex items-center space-x-2" onClick={handleNavClick}>
             <motion.div
               whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="relative"
             >
               <Shield className="h-8 w-8 text-primary" />
@@ -112,7 +112,7 @@ const NavbarComponent = () => {
                     opacity: [0.5, 0.8, 0.5]
                   }}
                   transition={{ 
-                    duration: 2,
+                    duration: 1.5,
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
@@ -141,7 +141,7 @@ const NavbarComponent = () => {
                 key={theme}
                 initial={{ rotate: -90, opacity: 0 }}
                 animate={{ rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
               >
                 {theme === 'dark' ? (
                   <Sun className="h-4 w-4" />
@@ -160,7 +160,7 @@ const NavbarComponent = () => {
             >
               <motion.div
                 animate={{ rotate: isMenuOpen ? 90 : 0 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
               >
                 {isMenuOpen ? (
                   <X className="h-4 w-4" />
@@ -179,7 +179,7 @@ const NavbarComponent = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
               className="md:hidden border-t border-border/40 py-4"
             >
               <div className="space-y-2">

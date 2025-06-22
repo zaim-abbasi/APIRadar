@@ -21,7 +21,7 @@ export function HeroSection() {
             <m.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
               className="mb-6"
             >
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[0.95] tracking-tight">
@@ -29,7 +29,7 @@ export function HeroSection() {
                 <m.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
+                  transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
                   className="mb-2 sm:mb-3 md:mb-4"
                 >
                   <span className="text-foreground">
@@ -44,7 +44,7 @@ export function HeroSection() {
                 <m.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
+                  transition={{ duration: 0.4, delay: 0.15, ease: 'easeOut' }}
                   className="text-muted-foreground/80"
                 >
                   API Keys
@@ -56,13 +56,13 @@ export function HeroSection() {
             <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
               className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8"
             >
               <m.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
+                transition={{ duration: 0.3, delay: 0.25, ease: 'easeOut' }}
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
               >
                 <m.div
@@ -77,7 +77,7 @@ export function HeroSection() {
               <m.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.9 }}
+                transition={{ duration: 0.3, delay: 0.3, ease: 'easeOut' }}
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
               >
                 <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
@@ -87,7 +87,7 @@ export function HeroSection() {
               <m.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 1.0 }}
+                transition={{ duration: 0.3, delay: 0.35, ease: 'easeOut' }}
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
               >
                 <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
@@ -99,7 +99,7 @@ export function HeroSection() {
             <m.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.1 }}
+              transition={{ duration: 0.4, delay: 0.4, ease: 'easeOut' }}
               className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 px-4"
             >
               Real-time intelligence on leaked secrets from public GitHub repositories.{' '}
@@ -111,7 +111,7 @@ export function HeroSection() {
             <m.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.3 }}
+              transition={{ duration: 0.4, delay: 0.45, ease: 'easeOut' }}
               className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8"
             >
               <Button 
