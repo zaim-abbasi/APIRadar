@@ -57,27 +57,27 @@ Temporary code changes that include real API keys for testing purposes, then for
 Build logs, deployment scripts, or CI configuration files that inadvertently expose environment variables containing API keys.`
   },
   {
-    id: 'prevention-strategies',
-    title: 'Prevention Strategies',
+    id: 'best-practices',
+    title: 'Best Practices for API Key Security',
     icon: Shield,
     content: `Protect your API keys with these best practices:
 
-**Environment Variables**
+<strong>Environment Variables</strong>
 • Store all secrets in environment variables, never in code
 • Use .env files for local development (add to .gitignore)
 • Use secure secret management in production
 
-**Code Review Process**
+<strong>Code Review Process</strong>
 • Implement mandatory code reviews before merging
 • Use automated scanning tools in your CI/CD pipeline
 • Train team members to identify potential security issues
 
-**Git Hooks & Tools**
+<strong>Git Hooks & Tools</strong>
 • Set up pre-commit hooks to scan for secrets
 • Use tools like git-secrets, detect-secrets, or truffleHog
 • Configure your IDE to highlight potential secrets
 
-**Access Controls**
+<strong>Access Controls</strong>
 • Rotate API keys regularly
 • Use the principle of least privilege
 • Implement key scoping when available
@@ -89,24 +89,24 @@ Build logs, deployment scripts, or CI configuration files that inadvertently exp
     icon: AlertTriangle,
     content: `If you accidentally expose an API key, act quickly:
 
-Immediate Actions (within minutes):
+<strong>Immediate Actions (within minutes):</strong>
 1. Revoke the key immediately - Disable it in the service provider's dashboard
 2. Generate a new key - Create a replacement with appropriate permissions
 3. Update your applications - Deploy the new key to all environments
 4. Remove the key from git history - Use git filter-branch or BFG Repo-Cleaner
 
-Investigation & Monitoring:
+<strong>Investigation & Monitoring:</strong>
 • Check service logs for any unauthorized usage
 • Monitor billing/usage for unexpected charges
 • Review access logs and audit trails
 • Document the incident for future prevention
 
-Communication:
+<strong>Communication:</strong>
 • Notify your team and security personnel
 • If customer data may be affected, follow disclosure procedures
 • Update your incident response playbook
 
-Long-term Improvements:
+<strong>Long-term Improvements:</strong>
 • Analyze how the leak occurred
 • Implement additional safeguards
 • Provide team training on secure coding practices
@@ -118,23 +118,23 @@ Long-term Improvements:
     icon: Lock,
     content: `Modern approaches to secure secret management:
 
-Cloud Secret Managers:
+<strong>Cloud Secret Managers:</strong>
 • AWS Secrets Manager / Parameter Store
 • Google Cloud Secret Manager
 • Azure Key Vault
 • HashiCorp Vault
 
-Environment-Based Solutions:
+<strong>Environment-Based Solutions:</strong>
 • Docker secrets
 • Kubernetes secrets
 • Platform-specific environment variables (Vercel, Netlify, etc.)
 
-Development Tools:
+<strong>Development Tools:</strong>
 • direnv for local environment management
 • dotenv libraries for application runtime
 • Development-specific secret stores
 
-Best Practices:
+<strong>Best Practices:</strong>
 • Encrypt secrets at rest and in transit
 • Implement proper access controls and auditing
 • Use temporary/scoped credentials when possible
@@ -264,8 +264,11 @@ const LearnPageComponent = () => {
                     <span>{section.title}</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="text-base text-muted-foreground leading-relaxed whitespace-pre-wrap px-2">
-                  {section.content}
+                <AccordionContent className="text-base text-muted-foreground leading-relaxed px-2">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: section.content }}
+                    className="whitespace-pre-wrap"
+                  />
                 </AccordionContent>
               </AccordionItem>
             ))}
