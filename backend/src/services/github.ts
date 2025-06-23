@@ -42,7 +42,7 @@ export class GitHubService {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
           const waitTime = resetTime - Date.now() + 1000; // Add 1 second buffer
           if (waitTime > 0 && waitTime < 3600000) { // Don't wait more than 1 hour
-            logger.warn('github', `🐙 Rate limited. Waiting ${Math.round(waitTime / 1000)} seconds...`);
+            logger.warn('github', `Rate limited. Waiting ${Math.round(waitTime / 1000)} seconds...`);
             await new Promise<void>(resolve => setTimeout(resolve, waitTime));
             return this.client.request(error.config);
           }

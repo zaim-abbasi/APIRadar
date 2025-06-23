@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import { config } from '../config/environment';
 
 export interface TruffleHogResult {
   redactedKey: string;
@@ -16,10 +15,10 @@ export interface ScanResult {
 }
 
 export class TruffleHogService {
-  private readonly truffleHogPath: string;
+  private readonly trufflehogCmd: string;
 
   constructor() {
-    this.truffleHogPath = config.TRUFFLEHOG_PATH;
+    this.trufflehogCmd = 'trufflehog'; // Use the venv's PATH
   }
 
   async scanRepository(repoUrl: string): Promise<ScanResult> {
@@ -36,7 +35,7 @@ export class TruffleHogService {
         '--max-depth=10',
       ];
 
-      const truffleHog = spawn(this.truffleHogPath, args, {
+      const truffleHog = spawn(this.trufflehogCmd, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
 

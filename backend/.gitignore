@@ -37,6 +37,9 @@ Thumbs.db
 repos.json
 src/static/learn.json
 
+# Python virtual environment for TruffleHog
+trufflehog-venv/
+
 # Misc
 *.tsbuildinfo
 next-env.d.ts

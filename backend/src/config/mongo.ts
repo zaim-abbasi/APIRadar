@@ -27,21 +27,20 @@ export async function connectToMongoDB(): Promise<void> {
       bufferCommands: false,
     });
     isConnected = true;
-    log('info', '✅ MongoDB connected');
     mongoose.connection.on('error', (error: Error) => {
-      log('error', `❌ MongoDB connection error: ${error.message}`);
+      log('error', `MongoDB connection error: ${error.message}`);
       isConnected = false;
     });
     mongoose.connection.on('disconnected', () => {
-      log('warn', '⚠️ MongoDB disconnected');
+      log('warn', 'MongoDB disconnected');
       isConnected = false;
     });
     mongoose.connection.on('reconnected', () => {
-      log('info', '✅ MongoDB reconnected');
+      log('info', 'MongoDB reconnected');
       isConnected = true;
     });
   } catch (error) {
-    log('error', `❌ Failed to connect to MongoDB: ${(error instanceof Error ? error.message : String(error))}`);
+    log('error', `Failed to connect to MongoDB: ${(error instanceof Error ? error.message : String(error))}`);
     throw error;
   }
 }
@@ -51,9 +50,9 @@ export async function disconnectFromMongoDB(): Promise<void> {
   try {
     await mongoose.disconnect();
     isConnected = false;
-    log('info', '✅ MongoDB disconnected successfully');
+    log('info', 'MongoDB disconnected successfully');
   } catch (error) {
-    log('error', `❌ Error disconnecting from MongoDB: ${(error instanceof Error ? error.message : String(error))}`);
+    log('error', `Error disconnecting from MongoDB: ${(error instanceof Error ? error.message : String(error))}`);
     throw error;
   }
 }

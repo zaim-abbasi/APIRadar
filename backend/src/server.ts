@@ -25,7 +25,7 @@ const server = fastify({
 
 function checkTrufflehogInstalled(): boolean {
   try {
-    execSync('trufflehog --version', { stdio: 'ignore' });
+    execSync('trufflehog --help', { stdio: 'ignore' });
     return true;
   } catch {
     return false;
@@ -35,7 +35,7 @@ function checkTrufflehogInstalled(): boolean {
 async function start(): Promise<void> {
   try {
     if (!checkTrufflehogInstalled()) {
-      logger.error('init', 'TruffleHog is NOT INSTALLED. Please install trufflehog before starting the server.');
+      logger.error('init', '[FATAL][TRUFFLEHOG] TruffleHog is not installed or venv not activated. Please activate the virtual environment or follow setup instructions in backend/README.md.');
       process.exit(1);
     }
     setLogger(logger.raw);

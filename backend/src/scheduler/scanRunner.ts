@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 
 export function startScanScheduler() {
   cron.schedule(`*/${config.SCAN_INTERVAL_MINUTES} * * * *`, async () => {
-    logger.info('farm', '🚀 Scheduled scan started');
+    logger.info('farm', 'Scheduled scan started');
     try {
       const repos = await githubService.getRecentlyUpdatedRepos(config.MAX_REPOS_PER_SCAN);
       for (const repo of repos) {
@@ -26,7 +26,7 @@ export function startScanScheduler() {
               filePath: result.filePath,
               commitHash: result.commitHash,
             });
-            logger.info('leak', `💧 Leak saved: ${result.redactedKey} in ${repo.repoUrl}`);
+            logger.info('leak', `Leak saved: ${result.redactedKey} in ${repo.repoUrl}`);
           } catch (err: any) {
             if (err.code === 11000) {
               logger.warn('leak', `Duplicate leak skipped: ${result.redactedKey} in ${repo.repoUrl}`);
