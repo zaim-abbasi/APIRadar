@@ -1,6 +1,6 @@
-import axios from 'axios';
-type AxiosInstance = ReturnType<typeof axios.create>;
+import axios, { AxiosInstance } from 'axios';
 import { config } from '../config/environment';
+import { logger } from '../utils/logger';
 
 export interface GitHubRepo {
   repoName: string;
@@ -41,13 +41,13 @@ export class GitHubService {
         if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
           const waitTime = resetTime - Date.now() + 1000; // Add 1 second buffer
-          
           if (waitTime > 0 && waitTime < 3600000) { // Don't wait more than 1 hour
-            console.log(`Rate limited. Waiting ${Math.round(waitTime / 1000)} seconds...`);
+            logger.warn('github', `🐙 Rate limited. Waiting ${Math.round(waitTime / 1000)} seconds...`);
             await new Promise<void>(resolve => setTimeout(resolve, waitTime));
             return this.client.request(error.config);
           }
         }
+        logger.error('github', `GitHub API error: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
       }
     );
@@ -93,7 +93,7 @@ export class GitHubService {
         hasMore: response.data.total_count > page * limit,
       };
     } catch (error) {
-      console.error('Error fetching trending repos:', error);
+      logger.error('github', `Error fetching trending repos: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error(`Failed to fetch trending repositories: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -135,7 +135,7 @@ export class GitHubService {
         limit: core.limit,
       };
     } catch (error) {
-      console.error('Error checking rate limit:', error);
+      logger.error('github', `Error checking rate limit: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }

@@ -3,10 +3,11 @@ import { githubService } from '../services/github';
 import { truffleHogService } from '../services/trufflehog';
 import { Leak } from '../models/Leak';
 import { config } from '../config/environment';
+import { logger } from '../utils/logger';
 
 export function startScanScheduler() {
   cron.schedule(`*/${config.SCAN_INTERVAL_MINUTES} * * * *`, async () => {
-    console.log('Starting scheduled scan...');
+    logger.info('farm', '🚀 Scheduled scan started');
     try {
       const repos = await githubService.getRecentlyUpdatedRepos(config.MAX_REPOS_PER_SCAN);
       for (const repo of repos) {
@@ -25,18 +26,18 @@ export function startScanScheduler() {
               filePath: result.filePath,
               commitHash: result.commitHash,
             });
-            console.log('Saved new leak:', result.redactedKey, repo.repoUrl);
+            logger.info('leak', `💧 Leak saved: ${result.redactedKey} in ${repo.repoUrl}`);
           } catch (err: any) {
             if (err.code === 11000) {
-              console.log('Skipped duplicate leak:', result.redactedKey, repo.repoUrl);
+              logger.warn('leak', `Duplicate leak skipped: ${result.redactedKey} in ${repo.repoUrl}`);
             } else {
-              console.error('Error saving leak:', err);
+              logger.error('leak', `Error saving leak: ${err instanceof Error ? err.message : String(err)}`);
             }
           }
         }
       }
     } catch (error) {
-      console.error('Error in scheduled scan:', error);
+      logger.error('farm', `Error in scheduled scan: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
 } 

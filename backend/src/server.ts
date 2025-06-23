@@ -1,68 +1,75 @@
 import fastify from 'fastify';
 import { config } from './config/environment';
-import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
+import { connectToMongoDB, disconnectFromMongoDB, setLogger } from './config/mongo';
 import { registerPlugins } from './config/plugins';
 import { registerRoutes } from './routes';
 import { startScanScheduler } from './scheduler/scanRunner';
+import { logger } from './utils/logger';
+import { execSync } from 'child_process';
 
 const server = fastify({
-  logger: {
-    level: config.NODE_ENV === 'production' ? 'info' : 'debug',
-    transport: config.NODE_ENV === 'development' ? {
+  logger: config.NODE_ENV === 'development' ? {
+    level: 'debug',
+    transport: {
       target: 'pino-pretty',
       options: {
         colorize: true,
         translateTime: 'HH:MM:ss Z',
         ignore: 'pid,hostname',
       },
-    } : undefined,
+    },
+  } : {
+    level: 'warn',
   },
 });
 
+function checkTrufflehogInstalled(): boolean {
+  try {
+    execSync('trufflehog --version', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function start(): Promise<void> {
   try {
-    // Connect to MongoDB
+    if (!checkTrufflehogInstalled()) {
+      logger.error('init', 'TruffleHog is NOT INSTALLED. Please install trufflehog before starting the server.');
+      process.exit(1);
+    }
+    setLogger(logger.raw);
     await connectToMongoDB();
-    server.log.info('Connected to MongoDB');
+    logger.info('db', 'MongoDB connected');
 
-    // Register plugins
     await registerPlugins(server);
-    server.log.info('Plugins registered');
-
-    // Register routes
     await registerRoutes(server);
-    server.log.info('Routes registered');
-
-    // Start the server
     await server.listen({
       port: config.PORT,
       host: '0.0.0.0',
     });
 
-    server.log.info(`Server listening on port ${config.PORT}`);
+    logger.info('init', `Server started at http://localhost:${config.PORT}`);
 
-    // Start the scan scheduler
     if (config.NODE_ENV !== 'test') {
       startScanScheduler();
-      server.log.info('Scan scheduler started');
+      logger.info('farm', 'Leak farm (scan scheduler) started');
     }
   } catch (error) {
-    server.log.error(error);
+    logger.error('error', `Startup error: ${(error instanceof Error ? error.message : String(error))}`);
     process.exit(1);
   }
 }
 
-// Graceful shutdown
 const gracefulShutdown = async (signal: string): Promise<void> => {
-  server.log.info(`Received ${signal}, shutting down gracefully`);
-  
+  logger.warn('init', `Received ${signal}, shutting down gracefully`);
   try {
     await server.close();
     await disconnectFromMongoDB();
-    server.log.info('Server closed successfully');
+    logger.info('init', 'Server closed successfully');
     process.exit(0);
   } catch (error) {
-    server.log.error('Error during shutdown:', error);
+    logger.error('error', `Error during shutdown: ${(error instanceof Error ? error.message : String(error))}`);
     process.exit(1);
   }
 };
@@ -70,21 +77,19 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
-  server.log.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('error', `Unhandled Rejection at: ${promise}, reason: ${reason}`);
   process.exit(1);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  server.log.error('Uncaught Exception:', error);
+  logger.error('error', `Uncaught Exception: ${error}`);
   process.exit(1);
 });
 
 if (require.main === module) {
   start().catch((error) => {
-    console.error('Failed to start server:', error);
+    logger.error('error', `Failed to start server: ${(error instanceof Error ? error.message : String(error))}`);
     process.exit(1);
   });
 }
