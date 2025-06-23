@@ -12,6 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'API Radar - Real-Time API Security Monitoring',
   description: 'Real-time monitoring of leaked API keys from public repositories. Discover vulnerabilities, learn from mistakes, and secure your code with API Radar.',
   keywords: 'API security, leaked keys, GitHub monitoring, security tools, developer tools, API Radar',
