@@ -130,6 +130,10 @@ export class GitHubGraphQLService {
     const client = this.clients[this.currentTokenIndex];
     this.currentTokenIndex = (this.currentTokenIndex + 1) % this.clients.length;
 
+    if (!client) {
+      throw new Error('No valid Axios client available');
+    }
+
     return requestFn(client);
   }
 
@@ -182,7 +186,9 @@ export class GitHubGraphQLService {
       );
 
       const repos: GraphQLRepoWithMetadata[] = response.data.data.search.nodes.map((repo: GraphQLRepo) => {
-        const [authorName, repoName] = repo.nameWithOwner.split('/');
+        const split = repo.nameWithOwner.split('/');
+        const authorName = split[0] || '';
+        const repoShortName = split[1] || '';
         const repoUrl = `https://github.com/${repo.nameWithOwner}`;
         const authorUrl = `https://github.com/${authorName}`;
 

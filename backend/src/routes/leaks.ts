@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { getLeaksHandler } from '../controllers/leaksController';
+import { getLeakFullKeyHandler } from '../controllers/leakFullKeyController';
 
 export async function leaksRoutes(server: FastifyInstance) {
   server.get('/api/leaks', {
@@ -26,4 +27,7 @@ export async function leaksRoutes(server: FastifyInstance) {
     },
     handler: getLeaksHandler,
   });
+
+  // New route for fetching the full key
+  server.get('/api/leaks/:id/fullkey', getLeakFullKeyHandler);
 } 

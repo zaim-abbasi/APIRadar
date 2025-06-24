@@ -3,8 +3,8 @@ import { config } from './config/environment';
 import { connectToMongoDB, disconnectFromMongoDB, setLogger } from './config/mongo';
 import { registerPlugins } from './config/plugins';
 import { registerRoutes } from './routes';
-import { startScanScheduler } from './scheduler/scanRunner';
 import { logger } from './utils/logger';
+import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
 
 const server = fastify({
   logger: config.NODE_ENV === 'development' ? {
@@ -34,12 +34,12 @@ async function startServer() {
     await registerPlugins(server);
     await registerRoutes(server);
 
+    // Start the GitHub code leak farm service
+    gitHubCodeLeakFarmService.start();
+
     // Start the server
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
     logger.status('Server Running', `http://localhost:${config.PORT}`);
-
-    // Start the scan scheduler
-    await startScanScheduler();
 
     // Graceful shutdown
     process.on('SIGINT', async () => {

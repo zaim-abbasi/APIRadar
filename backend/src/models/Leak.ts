@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ILeak extends Document {
   redactedKey: string;
+  fullKey: string;
   provider: string;
   repoName: string;
   repoUrl: string;
@@ -22,6 +23,13 @@ const LeakSchema = new Schema<ILeak>(
       trim: true,
       maxlength: 100,
     },
+    fullKey: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 200,
+      select: false,
+    },
     provider: {
       type: String,
       required: true,
@@ -29,16 +37,10 @@ const LeakSchema = new Schema<ILeak>(
       lowercase: true,
       enum: [
         'openai',
+        'google-gemini',
         'anthropic',
-        'google-ai',
+        'mistral-ai',
         'cohere',
-        'aws',
-        'stripe',
-        'github',
-        'discord',
-        'twilio',
-        'sendgrid',
-        'other',
       ],
       index: true,
     },
@@ -89,6 +91,7 @@ const LeakSchema = new Schema<ILeak>(
         ret.id = ret._id;
         delete ret._id;
         delete ret.__v;
+        delete ret.fullKey;
         return ret;
       },
     },
