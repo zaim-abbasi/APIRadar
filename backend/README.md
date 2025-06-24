@@ -60,7 +60,6 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWr
 GITHUB_TOKEN=ghp_your_github_token_here
 
 # Scanning Configuration
-SCAN_INTERVAL_MINUTES=30
 MAX_REPOS_PER_SCAN=10
 
 # Rate Limiting Configuration
@@ -96,8 +95,8 @@ The backend will:
 - Validate environment variables
 - Check for TruffleHog installation in the virtual environment (as an executable)
 - Connect to MongoDB
-- Start the Fastify server
-- Initialize the leak scanning scheduler
+- Continuously discover and scan GitHub repos in real-time (no intervals, no cron)
+- Store all scan attempts and valid leaks in MongoDB
 
 ### Production Build
 

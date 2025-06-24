@@ -25,16 +25,13 @@ const envSchema = z.object({
     .refine((token) => token.startsWith('ghp_') || token.startsWith('github_pat_'), {
       message: 'GitHub token must be a valid GitHub personal access token'
     }),
-  TRUFFLEHOG_PATH: z.string().default('trufflehog'),
-  SCAN_INTERVAL_MINUTES: z.string()
-    .transform((val) => {
-      const minutes = Number(val);
-      if (isNaN(minutes) || minutes < 1 || minutes > 1440) {
-        throw new Error('SCAN_INTERVAL_MINUTES must be between 1 and 1440');
-      }
-      return minutes;
-    })
-    .default('30'),
+  GITHUB_TOKENS: z.string().optional().transform((val) => {
+    if (!val) return [];
+    return val.split(',').map(token => token.trim()).filter(token => 
+      token.startsWith('ghp_') || token.startsWith('github_pat_')
+    );
+  }),
+  TRUFFLEHOG_PATH: z.string().optional().default('trufflehog'),
   MAX_REPOS_PER_SCAN: z.string()
     .transform((val) => {
       const repos = Number(val);
@@ -63,6 +60,15 @@ const envSchema = z.object({
       return window;
     })
     .default('900000'),
+  GITHUB_RATE_LIMIT_DELAY: z.string()
+    .transform((val) => {
+      const delay = Number(val);
+      if (isNaN(delay) || delay < 0) {
+        throw new Error('GITHUB_RATE_LIMIT_DELAY must be a non-negative number');
+      }
+      return delay;
+    })
+    .default('1000'),
 });
 
 // Parse and validate environment variables

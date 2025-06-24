@@ -5,7 +5,6 @@ import { registerPlugins } from './config/plugins';
 import { registerRoutes } from './routes';
 import { startScanScheduler } from './scheduler/scanRunner';
 import { logger } from './utils/logger';
-import { execSync } from 'child_process';
 
 const server = fastify({
   logger: config.NODE_ENV === 'development' ? {
@@ -23,75 +22,46 @@ const server = fastify({
   },
 });
 
-function checkTrufflehogInstalled(): boolean {
+async function startServer() {
   try {
-    execSync('trufflehog --help', { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
-}
+    // Set up MongoDB logger
+    setLogger(logger);
 
-async function start(): Promise<void> {
-  try {
-    if (!checkTrufflehogInstalled()) {
-      logger.error('init', '[FATAL][TRUFFLEHOG] TruffleHog is not installed or venv not activated. Please activate the virtual environment or follow setup instructions in backend/README.md.');
-      process.exit(1);
-    }
-    setLogger(logger.raw);
+    // Connect to MongoDB
     await connectToMongoDB();
-    logger.info('db', 'MongoDB connected');
 
+    // Register plugins and routes
     await registerPlugins(server);
     await registerRoutes(server);
-    await server.listen({
-      port: config.PORT,
-      host: '0.0.0.0',
+
+    // Start the server
+    await server.listen({ port: config.PORT, host: '0.0.0.0' });
+    logger.status('Server Running', `http://localhost:${config.PORT}`);
+
+    // Start the scan scheduler
+    await startScanScheduler();
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      logger.status('Shutting Down', 'Gracefully...');
+      await disconnectFromMongoDB();
+      await server.close();
+      process.exit(0);
     });
 
-    logger.info('init', `Server started at http://localhost:${config.PORT}`);
+    process.on('SIGTERM', async () => {
+      logger.status('Shutting Down', 'Gracefully...');
+      await disconnectFromMongoDB();
+      await server.close();
+      process.exit(0);
+    });
 
-    if (config.NODE_ENV !== 'test') {
-      startScanScheduler();
-      logger.info('farm', 'Leak farm (scan scheduler) started');
-    }
   } catch (error) {
-    logger.error('error', `Startup error: ${(error instanceof Error ? error.message : String(error))}`);
+    logger.error('init', `Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
 
-const gracefulShutdown = async (signal: string): Promise<void> => {
-  logger.warn('init', `Received ${signal}, shutting down gracefully`);
-  try {
-    await server.close();
-    await disconnectFromMongoDB();
-    logger.info('init', 'Server closed successfully');
-    process.exit(0);
-  } catch (error) {
-    logger.error('error', `Error during shutdown: ${(error instanceof Error ? error.message : String(error))}`);
-    process.exit(1);
-  }
-};
-
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('error', `Unhandled Rejection at: ${promise}, reason: ${reason}`);
-  process.exit(1);
-});
-
-process.on('uncaughtException', (error) => {
-  logger.error('error', `Uncaught Exception: ${error}`);
-  process.exit(1);
-});
-
-if (require.main === module) {
-  start().catch((error) => {
-    logger.error('error', `Failed to start server: ${(error instanceof Error ? error.message : String(error))}`);
-    process.exit(1);
-  });
-}
+startServer();
 
 export { server };
