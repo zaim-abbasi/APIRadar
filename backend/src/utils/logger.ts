@@ -1,4 +1,6 @@
 import pino from 'pino';
+import fs from 'fs';
+import path from 'path';
 
 const tag = {
   init: '[INIT]',
@@ -10,25 +12,42 @@ const tag = {
   error: '[ERROR]',
   warn: '[WARN]',
   info: '[INFO]',
-  trufflehog: '[TRUFFLEHOG]',
 };
 
 // Get NODE_ENV without importing config to avoid circular dependency
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 
+// Ensure logs directory exists
+const logDir = path.join(process.cwd(), 'logs');
+const logFile = path.join(logDir, 'backend.log');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
+}
+// Clear the log file on every backend start
+fs.writeFileSync(logFile, '');
+
+// Setup pino multistream for console and file
+const streams = [
+  // Pretty console in development
+  ...(NODE_ENV === 'development'
+    ? [{
+        stream: pino.transport({
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'yyyy-mm-dd HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
+        })
+      }]
+    : []),
+  // Always log to file
+  { stream: fs.createWriteStream(logFile, { flags: 'a' }) },
+];
+
 const baseLogger = pino({
   level: NODE_ENV === 'development' ? 'debug' : 'info',
-  ...(NODE_ENV === 'development' && {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'yyyy-mm-dd HH:MM:ss',
-        ignore: 'pid,hostname',
-      },
-    },
-  }),
-});
+}, pino.multistream(streams));
 
 function format(tagLabel: keyof typeof tag, message: string) {
   return `${tag[tagLabel]} ${message}`;

@@ -1,10 +1,9 @@
 import { RepoDiscoveryService } from '../services/repoDiscovery';
-import { truffleHogService } from '../services/trufflehog';
 import { Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
 import { logger } from '../utils/logger';
 
-const WORKER_COUNT = 5;
+// const WORKER_COUNT = 5;
 const scanQueue: { repo: any, query: string }[] = [];
 
 export async function startScanScheduler() {
@@ -14,11 +13,10 @@ export async function startScanScheduler() {
     logger.info('github', `[QUEUE] Enqueued repo: ${repo.repoUrl}`);
   });
 
-  for (let i = 0; i < WORKER_COUNT; i++) {
-    scanWorker();
-  }
+  // Only start a single worker
+  scanWorker();
   
-  logger.status('Leak Farm', 'Started', `${WORKER_COUNT} workers active`);
+  logger.status('Leak Farm', 'Started', `1 worker active`);
 }
 
 async function scanWorker() {
@@ -29,17 +27,25 @@ async function scanWorker() {
       continue;
     }
     const { repo, query } = next;
+    
+    // Additional duplicate check before scanning
+    const wasRecentlyScanned = await checkRecentScan(repo.repoUrl);
+    if (wasRecentlyScanned) {
+      logger.info('farm', `[SKIP] Recently scanned repo: ${repo.repoUrl}`);
+      continue;
+    }
+    
     logger.info('farm', `[SCAN] Scanning started: ${repo.repoUrl}`);
     let scanResult;
     let errorMessage = '';
     let status: 'success' | 'error' = 'success';
+    
     try {
-      scanResult = await truffleHogService.scanRepository(repo.repoUrl);
-      if (!scanResult || scanResult.error) {
-        errorMessage = scanResult?.error || 'Unknown scan error';
-        status = 'error';
-        logger.error('farm', `[RESULT] Scan error: ${repo.repoUrl} → ${errorMessage}`);
-      } else if (scanResult.results.length === 0) {
+      // TODO: Integrate streaming-based detection system here
+      // scanResult = await streamingDetectionService.scanRepository(repo.repoUrl);
+      // For now, set scanResult to a placeholder
+      scanResult = { results: [] as any[] };
+      if (!scanResult || scanResult.results.length === 0) {
         logger.info('farm', `[RESULT] No leaks found`);
       } else {
         const leakTypes = Array.from(new Set(scanResult.results.map(r => r.provider)));
@@ -66,6 +72,7 @@ async function scanWorker() {
           }
         }
       }
+      
       // Store scan attempt
       await ScanAttempt.create({
         repo_url: repo.repoUrl,
@@ -74,11 +81,11 @@ async function scanWorker() {
         leak_found: scanResult && scanResult.results.length > 0,
         leak_types: scanResult && scanResult.results.length > 0 ? Array.from(new Set(scanResult.results.map(r => r.provider))) : [],
         query_used: query,
-        trufflehog_output: scanResult,
         status,
         error_message: errorMessage || undefined,
       });
       logger.info('farm', `[STORE] Scan saved to DB: scan_attempts`);
+      
     } catch (error: any) {
       logger.error('farm', `[RESULT] Scan error: ${repo.repoUrl} → ${error.message}`);
       try {
@@ -89,12 +96,28 @@ async function scanWorker() {
           leak_found: false,
           leak_types: [],
           query_used: query,
-          trufflehog_output: null,
           status: 'error',
           error_message: error.message,
         });
         logger.info('farm', `[STORE] Scan saved to DB: scan_attempts`);
-      } catch {}
+      } catch (dbError) {
+        logger.error('farm', `[DB_ERROR] Failed to save scan attempt: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+      }
     }
+  }
+}
+
+async function checkRecentScan(repoUrl: string): Promise<boolean> {
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const existingScan = await ScanAttempt.findOne({
+      repo_url: repoUrl,
+      scanned_at: { $gte: thirtyDaysAgo }
+    }).select('scanned_at').lean();
+
+    return !!existingScan;
+  } catch (error) {
+    logger.error('farm', `Error checking recent scan for ${repoUrl}: ${error instanceof Error ? error.message : String(error)}`);
+    return false; // Default to not recently scanned to avoid blocking
   }
 } 

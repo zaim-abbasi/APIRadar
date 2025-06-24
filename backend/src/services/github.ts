@@ -152,13 +152,13 @@ export class GitHubService {
 
       const response = await this.makeRequest(client => 
         client.get<{ items: any[]; total_count: number }>('/search/repositories', {
-          params: {
-            q: query,
-            sort: 'stars',
-            order: 'desc',
-            per_page: limit,
-            page,
-          },
+        params: {
+          q: query,
+          sort: 'stars',
+          order: 'desc',
+          per_page: limit,
+          page,
+        },
         })
       );
 

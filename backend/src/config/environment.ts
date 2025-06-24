@@ -31,7 +31,6 @@ const envSchema = z.object({
       token.startsWith('ghp_') || token.startsWith('github_pat_')
     );
   }),
-  TRUFFLEHOG_PATH: z.string().optional().default('trufflehog'),
   MAX_REPOS_PER_SCAN: z.string()
     .transform((val) => {
       const repos = Number(val);

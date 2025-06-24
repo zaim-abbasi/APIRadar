@@ -38,7 +38,6 @@ repos.json
 src/static/learn.json
 
 # Python virtual environment for TruffleHog
-trufflehog-venv/
 
 # Misc
 *.tsbuildinfo
@@ -112,9 +111,6 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# TruffleHog virtual environment
-trufflehog-venv/
 
 # Temporary files
 tmp/
