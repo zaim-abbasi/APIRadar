@@ -5,12 +5,7 @@ import chalk from 'chalk';
 
 function sanitizeLog(str: string): string {
   // Remove non-printable and non-ASCII characters
-  return str.replace(/[^\x20-\x7E]+/g, '');
-}
-
-function getTimestamp() {
-  const now = new Date();
-  return now.toTimeString().slice(0, 8); // HH:mm:ss
+  return str.replace(/[^\x20-\x7E]+/g, '');
 }
 
 const tag = {
@@ -24,7 +19,7 @@ const tag = {
   error: 'ERROR',
   warn: 'WARN',
   info: 'INFO',
-};
+} as const;
 
 const colorMap: Record<string, chalk.Chalk> = {
   INIT: chalk.hex('#a259f7'), // purple
@@ -99,41 +94,41 @@ export const logger = {
   init: (message: string) => {
     const msg = format('init', message);
     // eslint-disable-next-line no-console
-    console.log(colorMap.INIT(msg));
+    (colorMap['INIT'] ?? chalk.white)(msg) && console.log((colorMap['INIT'] ?? chalk.white)(msg));
   },
   scan: (repo: string, filePath: string) => {
     (globalThis as any).__activitySinceStartup = true;
     const msg = format('scan', `repo: ${sanitizeLog(repo)} | file: ${sanitizeLog(filePath)}`);
     // eslint-disable-next-line no-console
-    console.log(colorMap.SCAN(msg));
+    (colorMap['SCAN'] ?? chalk.white)(msg) && console.log((colorMap['SCAN'] ?? chalk.white)(msg));
   },
   leak: (provider: string, repo: string) => {
     (globalThis as any).__activitySinceStartup = true;
     const msg = format('leak', `Provider: ${sanitizeLog(provider)}, Repo: ${sanitizeLog(repo)}`);
     // eslint-disable-next-line no-console
-    console.log(colorMap.LEAK(msg));
+    (colorMap['LEAK'] ?? chalk.white)(msg) && console.log((colorMap['LEAK'] ?? chalk.white)(msg));
   },
   warn: (message: string) => {
     const msg = format('warn', message);
     // eslint-disable-next-line no-console
-    console.log(colorMap.WARN(msg));
+    (colorMap['WARN'] ?? chalk.white)(msg) && console.log((colorMap['WARN'] ?? chalk.white)(msg));
   },
   error: (message: string) => {
     const msg = format('error', message);
     // eslint-disable-next-line no-console
-    console.log(colorMap.ERROR(msg));
+    (colorMap['ERROR'] ?? chalk.white)(msg) && console.log((colorMap['ERROR'] ?? chalk.white)(msg));
   },
   debug: (type: keyof typeof tag, message: string) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env['NODE_ENV'] === 'development') {
       const msg = format(type, message);
       // eslint-disable-next-line no-console
-      console.log(colorMap.INFO(msg));
+      (colorMap['INFO'] ?? chalk.white)(msg) && console.log((colorMap['INFO'] ?? chalk.white)(msg));
     }
   },
   status: (service: string, status: string, details?: string) => {
     const msg = format('init', alignStatus(service, status, details));
     // eslint-disable-next-line no-console
-    console.log(colorMap.INIT(msg));
+    (colorMap['INIT'] ?? chalk.white)(msg) && console.log((colorMap['INIT'] ?? chalk.white)(msg));
   },
   rateLimit: (waitTime: number, resetTime: Date) => {
     if (!(globalThis as any).__lastRateLimitResetTime) (globalThis as any).__lastRateLimitResetTime = 0;
@@ -143,14 +138,14 @@ export const logger = {
     if ((globalThis as any).__lastRateLimitResetTime !== resetTime.getTime()) {
       const msg = format('warn', `GitHub Rate Limit Reached - Pausing scans for ${minutes}m ${seconds}s (resets at ${resetTimeStr} UTC)`);
       // eslint-disable-next-line no-console
-      console.log(colorMap.WARN(msg));
+      (colorMap['WARN'] ?? chalk.white)(msg) && console.log((colorMap['WARN'] ?? chalk.white)(msg));
       (globalThis as any).__lastRateLimitResetTime = resetTime.getTime();
     }
   },
   rateLimitReset: () => {
     const msg = format('init', 'GitHub Rate Limit Reset — Resuming scans...');
     // eslint-disable-next-line no-console
-    console.log(colorMap.INIT(msg));
+    (colorMap['INIT'] ?? chalk.white)(msg) && console.log((colorMap['INIT'] ?? chalk.white)(msg));
   },
   raw: baseLogger,
 }; 

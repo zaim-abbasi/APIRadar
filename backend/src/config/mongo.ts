@@ -15,7 +15,13 @@ function log(level: 'info' | 'warn' | 'error', message: string) {
   if (externalLogger) {
     externalLogger[level](`[DB] ${message}`);
   } else {
-    logger[level]('db', message);
+    if (level === 'info') {
+      logger.init(`[DB] ${message}`);
+    } else if (level === 'warn') {
+      logger.warn(`[DB] ${message}`);
+    } else if (level === 'error') {
+      logger.error(`[DB] ${message}`);
+    }
   }
 }
 

@@ -14,9 +14,7 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
 
   // CORS
   await server.register(cors, {
-    origin: config.NODE_ENV === 'production' 
-      ? ['https://your-frontend-domain.com'] 
-      : true,
+    origin: true, // Allow all origins
     credentials: true,
   });
 
@@ -41,7 +39,7 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
 
   // Global error handler
   server.setErrorHandler(async (error, _request, reply) => {
-    logger.error('error', `❌ Fastify error: ${error.message}`);
+    logger.error(`Fastify error: ${error.message}`);
     // Validation errors
     if (error.validation) {
       return reply.status(400).send({
@@ -73,7 +71,7 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
       // Suppress favicon 404 logs
       return reply.status(204).send();
     }
-    logger.warn('init', `404 Not Found: ${request.method} ${request.url}`);
+    logger.warn(`404 Not Found: ${request.method} ${request.url}`);
     return reply.status(404).send({
       error: 'Not Found',
       message: `Route ${request.method} ${request.url} not found`,

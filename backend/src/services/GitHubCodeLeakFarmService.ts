@@ -8,17 +8,18 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
-// Enhanced regex patterns with boundary checks
+// Enhanced regex patterns with boundary checks and documentation
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
-  openai: /\b(sk-[a-zA-Z0-9]{48})\b/g,
-  'google-gemini': /\b(AIza[0-9A-Za-z\-_]{35})\b/g,
-  anthropic: /\b(sk-ant-api-[a-zA-Z0-9]{32})\b/g,
-  cohere: /\b((?:xcohere-)?[a-zA-Z0-9]{40,60})\b/g,
-  'mistral-ai': /\b(mistral[-_][a-zA-Z0-9]{32,64})\b/gi,
-  'huggingface': /\b(hf_[a-zA-Z0-9]{34})\b/g,
+  openai: /\b(sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})\b/g, // Legacy OpenAI keys
+  'openai-project': /\b(sk-proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})\b/g, // OpenAI project keys
+  'google-gemini': /\b(AIza[0-9A-Za-z\-_]{35})\b/g, // Google API keys (corrected from AIza)
+  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g, // Anthropic keys with version suffix
+  cohere: /\b([a-zA-Z0-9]{40})\b/g, // Cohere keys, fixed 40 characters
+  'mistral-ai': /\b([a-zA-Z0-9]{32})\b/g, // Mistral AI keys, corrected to 32 characters without prefix
+  'huggingface': /\b(hf_[a-zA-Z0-9]{34})\b/g, // Hugging Face tokens
 };
 
-// Contextual search queries
+// Contextual search queries for broader coverage
 const SEARCH_QUERIES: string[] = [
   'filename:.env "OPENAI_API_KEY"',
   'filename:.env "GEMINI_API_KEY"',
@@ -28,23 +29,27 @@ const SEARCH_QUERIES: string[] = [
   'filename:.env "HUGGINGFACE_API_KEY"',
   'path:config "api_key"',
   'extension:json "api_key"',
-  'extension:env "API_KEY"'
+  'extension:env "API_KEY"',
+  'extension:yaml "api_key"',
+  'extension:yml "api_key"',
+  '"api_key="',
+  '"secret_key="'
 ];
 
 // Configuration constants
-const SCAN_ENTROPY_THRESHOLD = process.env['SCAN_ENTROPY_THRESHOLD'] 
-  ? Number(process.env['SCAN_ENTROPY_THRESHOLD']) 
+const SCAN_ENTROPY_THRESHOLD = process.env['SCAN_ENTROPY_THRESHOLD']
+  ? Number(process.env['SCAN_ENTROPY_THRESHOLD'])
   : 3.5; // Default entropy threshold
 
 // Calculate Shannon entropy
 function calculateEntropy(str: string): number {
   const freqMap: Record<string, number> = {};
   const len = str.length;
-  
+
   for (const char of str) {
     freqMap[char] = (freqMap[char] || 0) + 1;
   }
-  
+
   return Object.values(freqMap).reduce((entropy, freq) => {
     const p = freq / len;
     return entropy - p * Math.log2(p);
@@ -53,7 +58,11 @@ function calculateEntropy(str: string): number {
 
 // Key validation functions
 function isValidOpenAIKey(key: string): boolean {
-  return /^sk-[a-zA-Z0-9]{48}$/.test(key);
+  return /^sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}$/.test(key);
+}
+
+function isValidOpenAIProjectKey(key: string): boolean {
+  return /^sk-proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}$/.test(key);
 }
 
 function isValidGeminiKey(key: string): boolean {
@@ -61,15 +70,15 @@ function isValidGeminiKey(key: string): boolean {
 }
 
 function isValidAnthropicKey(key: string): boolean {
-  return /^sk-ant-api-[a-zA-Z0-9]{32}$/.test(key);
+  return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32}$/.test(key);
 }
 
 function isValidCohereKey(key: string): boolean {
-  return /^(xcohere-)?[a-zA-Z0-9]{40,60}$/.test(key);
+  return /^[a-zA-Z0-9]{40}$/.test(key);
 }
 
 function isValidMistralKey(key: string): boolean {
-  return /^mistral[-_][a-zA-Z0-9]{32,64}$/i.test(key);
+  return /^[a-zA-Z0-9]{32}$/.test(key); // Corrected to match 32 characters without prefix
 }
 
 function isValidHuggingFaceKey(key: string): boolean {
@@ -79,6 +88,7 @@ function isValidHuggingFaceKey(key: string): boolean {
 // Provider validation mapping
 const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
+  'openai-project': isValidOpenAIProjectKey,
   'google-gemini': isValidGeminiKey,
   anthropic: isValidAnthropicKey,
   cohere: isValidCohereKey,
@@ -94,7 +104,7 @@ function redactKey(key: string): string {
 async function fetchRawFileContent(repoFullName: string, filePath: string, ref: string): Promise<string | null> {
   try {
     const rawUrl = `https://raw.githubusercontent.com/${repoFullName}/${ref}/${filePath}`;
-    const response = await axios.get(rawUrl, { 
+    const response = await axios.get(rawUrl, {
       timeout: 15000,
       transformResponse: [data => data]
     });
@@ -121,7 +131,7 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
   for (const [provider, regex] of Object.entries(PROVIDER_PATTERNS)) {
     regex.lastIndex = 0;
     let match: RegExpExecArray | null;
-    
+
     while ((match = regex.exec(content)) !== null) {
       const key = match[1] || match[0];
       // Skip duplicates and invalid keys
@@ -199,10 +209,6 @@ async function waitForRateLimitIfNeeded() {
   }
 }
 
-// --- Patch all GitHub API calls to respect global rate limit pause ---
-// In processSearchQuery, before any axios.get, call waitForRateLimitIfNeeded()
-// In axios error handler, if rate limit is hit, set global pause
-
 // Patch retry wrapper to call waitForRateLimitIfNeeded before each attempt
 async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise<T> {
   let attempt = 0;
@@ -264,7 +270,7 @@ function loadLastScanInfo() {
   if (fs.existsSync(LAST_SCAN_FILE)) {
     try {
       lastScanInfo = JSON.parse(fs.readFileSync(LAST_SCAN_FILE, 'utf-8'));
-    } catch {}
+    } catch { }
   }
 }
 
@@ -405,8 +411,8 @@ export class GitHubCodeLeakFarmService {
   }
 
   private async detectAndSaveLeaks(
-    content: string, 
-    repoName: string, 
+    content: string,
+    repoName: string,
     repoUrl: string,
     filePath: string,
     query: string,
@@ -492,4 +498,4 @@ export class GitHubCodeLeakFarmService {
   }
 }
 
-export const gitHubCodeLeakFarmService = new GitHubCodeLeakFarmService(); 
+export const gitHubCodeLeakFarmService = new GitHubCodeLeakFarmService();

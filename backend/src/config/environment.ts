@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { logger } from '../utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -40,7 +41,6 @@ const envSchema = z.object({
       return repos;
     })
     .default('10'),
-  REDIS_URL: z.string().url('REDIS_URL must be a valid URL').optional(),
   RATE_LIMIT_MAX: z.string()
     .transform((val) => {
       const limit = Number(val);
@@ -80,9 +80,9 @@ function validateEnv() {
         `${err.path.join('.')}: ${err.message}`
       ).join('\n');
       
-      console.error('❌ Environment validation failed:');
-      console.error(errorMessages);
-      console.error('\nPlease check your .env file and ensure all required variables are set correctly.');
+      logger.error('Environment validation failed:');
+      logger.error(errorMessages);
+      logger.error('Please check your .env file and ensure all required variables are set correctly.');
       process.exit(1);
     }
     throw error;

@@ -1,6 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { getLeaksHandler } from '../controllers/leaksController';
-import { getLeakFullKeyHandler } from '../controllers/leakFullKeyController';
+import { getLeaksHandler, getLeakFullKeyHandler } from '../controllers/exploreController';
 
 export async function leaksRoutes(server: FastifyInstance) {
   server.get('/api/leaks', {
