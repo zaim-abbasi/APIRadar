@@ -10,36 +10,60 @@ import path from 'path';
 
 // Enhanced regex patterns with boundary checks and documentation
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
-  openai: /\b(sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})\b/g, // Legacy OpenAI keys
-  'openai-project': /\b(sk-proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})\b/g, // OpenAI project keys
-  'google-gemini': /\b(AIza[0-9A-Za-z\-_]{35})\b/g, // Google API keys (corrected from AIza)
-  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g, // Anthropic keys with version suffix
-  cohere: /\b([a-zA-Z0-9]{40})\b/g, // Cohere keys, fixed 40 characters
-  'mistral-ai': /\b([a-zA-Z0-9]{32})\b/g, // Mistral AI keys, corrected to 32 characters without prefix
-  'huggingface': /\b(hf_[a-zA-Z0-9]{34})\b/g, // Hugging Face tokens
+  openai: /\b(sk-(?:proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}))\b/g,
+  google_gemini: /\b(AIza[0-9A-Za-z\-_]{35})\b/g,
+  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g,
+  cohere: /\b([a-zA-Z0-9]{40})\b/g, // Consider refining if possible
+  mistral_ai: /\b([a-zA-Z0-9]{32})\b/g, // Consider refining if possible
+  huggingface: /\b(hf_[a-zA-Z0-9]{34})\b/g,
 };
 
 // Contextual search queries for broader coverage
-const SEARCH_QUERIES: string[] = [
-  'filename:.env "OPENAI_API_KEY"',
-  'filename:.env "GEMINI_API_KEY"',
-  'filename:.env "ANTHROPIC_API_KEY"',
-  'filename:.env "CO_API_KEY"',
-  'filename:.env "MISTRAL_API_KEY"',
-  'filename:.env "HUGGINGFACE_API_KEY"',
-  'path:config "api_key"',
-  'extension:json "api_key"',
-  'extension:env "API_KEY"',
-  'extension:yaml "api_key"',
-  'extension:yml "api_key"',
-  '"api_key="',
-  '"secret_key="'
+const ENV_VARIATIONS = ['.env', '.env.local', '.env.development', '.env.production'];
+const PROVIDERS = [
+  'OPENAI_API_KEY',
+  'GEMINI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'CO_API_KEY',
+  'MISTRAL_API_KEY',
+  'HUGGINGFACE_API_KEY',
 ];
 
-// Configuration constants
-const SCAN_ENTROPY_THRESHOLD = process.env['SCAN_ENTROPY_THRESHOLD']
-  ? Number(process.env['SCAN_ENTROPY_THRESHOLD'])
-  : 3.5; // Default entropy threshold
+const SEARCH_QUERIES = ENV_VARIATIONS.flatMap(envFile =>
+  PROVIDERS.map(providerKey => `filename:${envFile} "${providerKey}"`)
+);
+
+// Configuration constants with fallback defaults
+const SCAN_ENTROPY_THRESHOLD = Number(process.env['SCAN_ENTROPY_THRESHOLD']) || 4.0;
+const MAX_SEARCH_PAGES = Number(process.env['MAX_SEARCH_PAGES']) || 10; // Prevent infinite loops
+const SEARCH_RETRY_ATTEMPTS = Number(process.env['SEARCH_RETRY_ATTEMPTS']) || 3;
+
+// Type definitions for better type safety
+interface GitHubSearchItem {
+  repository: {
+    full_name: string;
+    html_url: string;
+  };
+  path: string;
+}
+
+interface GitHubSearchResponse {
+  items: GitHubSearchItem[];
+  total_count: number;
+}
+
+// Update: Make all fields optional and allow both snake_case and camelCase for compatibility
+interface GitHubRepoMetadata {
+  created_at?: string;
+  createdAt?: string;
+  name?: string;
+  full_name?: string;
+  riskyFiles?: string[];
+  contributors?: number;
+  hasReadme?: boolean;
+  commitCount?: number;
+  [key: string]: any;
+}
 
 // Calculate Shannon entropy
 function calculateEntropy(str: string): number {
@@ -56,13 +80,10 @@ function calculateEntropy(str: string): number {
   }, 0);
 }
 
-// Key validation functions
+// Key validation functions with stricter validation for generic patterns
 function isValidOpenAIKey(key: string): boolean {
-  return /^sk-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}$/.test(key);
-}
-
-function isValidOpenAIProjectKey(key: string): boolean {
-  return /^sk-proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}$/.test(key);
+  // Matches both legacy and project keys
+  return /^sk-(proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})$/.test(key);
 }
 
 function isValidGeminiKey(key: string): boolean {
@@ -74,11 +95,17 @@ function isValidAnthropicKey(key: string): boolean {
 }
 
 function isValidCohereKey(key: string): boolean {
-  return /^[a-zA-Z0-9]{40}$/.test(key);
+  // Stricter validation for Cohere keys - they should have high entropy and specific character patterns
+  if (!/^[a-zA-Z0-9]{40}$/.test(key)) return false;
+  const entropy = calculateEntropy(key);
+  return entropy >= 4.5; // Higher entropy threshold for generic patterns
 }
 
 function isValidMistralKey(key: string): boolean {
-  return /^[a-zA-Z0-9]{32}$/.test(key); // Corrected to match 32 characters without prefix
+  // Stricter validation for Mistral keys - they should have high entropy and specific character patterns
+  if (!/^[a-zA-Z0-9]{32}$/.test(key)) return false;
+  const entropy = calculateEntropy(key);
+  return entropy >= 4.2; // Higher entropy threshold for generic patterns
 }
 
 function isValidHuggingFaceKey(key: string): boolean {
@@ -88,12 +115,11 @@ function isValidHuggingFaceKey(key: string): boolean {
 // Provider validation mapping
 const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
-  'openai-project': isValidOpenAIProjectKey,
-  'google-gemini': isValidGeminiKey,
+  google_gemini: isValidGeminiKey,
   anthropic: isValidAnthropicKey,
   cohere: isValidCohereKey,
-  'mistral-ai': isValidMistralKey,
-  'huggingface': isValidHuggingFaceKey
+  mistral_ai: isValidMistralKey,
+  huggingface: isValidHuggingFaceKey,
 };
 
 function redactKey(key: string): string {
@@ -334,9 +360,13 @@ export class GitHubCodeLeakFarmService {
   private async processSearchQuery(query: string): Promise<void> {
     let page = 1;
     let hasMoreResults = true;
-    while (this.running && hasMoreResults) {
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = SEARCH_RETRY_ATTEMPTS;
+
+    while (this.running && hasMoreResults && page <= MAX_SEARCH_PAGES) {
       await waitForRateLimitIfNeeded();
-      let response;
+      let response: { data: GitHubSearchResponse };
+      
       try {
         response = await retry(() => axios.get('https://api.github.com/search/code', {
           params: { q: query, per_page: 10, page },
@@ -347,26 +377,44 @@ export class GitHubCodeLeakFarmService {
           },
           timeout: 30000,
         }));
+        consecutiveErrors = 0; // Reset error counter on success
       } catch (error) {
-        this.handleSearchError(error, query);
-        break;
+        consecutiveErrors++;
+        this.handleSearchError(error, query, page);
+        
+        // Break on too many consecutive errors or specific error types
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          logger.error(`[FARM] Too many consecutive errors (${consecutiveErrors}) for query: ${query}, stopping pagination`);
+          break;
+        }
+        
+        // Continue to next page on transient errors
+        page++;
+        continue;
       }
-      const items: any[] = response.data?.items || [];
+
+      const items: GitHubSearchItem[] = response.data?.items || [];
       if (items.length === 0) {
         hasMoreResults = false;
         break;
       }
+
       await this.processSearchResults(items, query);
-      // Pagination control
-      page = items.length === 10 ? page + 1 : 1;
-      if (page === 1) {
-        // Only wait if rate limited (handled in axios interceptor)
-        break;
+      
+      // Pagination control - only increment if we got a full page
+      if (items.length === 10) {
+        page++;
+      } else {
+        hasMoreResults = false;
       }
+    }
+
+    if (page > MAX_SEARCH_PAGES) {
+      // Do not log anything when max page limit is reached
     }
   }
 
-  private async processSearchResults(items: any[], query: string): Promise<void> {
+  private async processSearchResults(items: GitHubSearchItem[], query: string): Promise<void> {
     // Parallelize file scans with concurrency pool
     const scanTasks = items.map(item => async () => {
       await waitForRateLimitIfNeeded();
@@ -450,8 +498,10 @@ export class GitHubCodeLeakFarmService {
 
   private async getRepoCreationDate(repoName: string): Promise<Date> {
     try {
-      const repoMeta = await githubService.getRepoMetadata(repoName);
-      return repoMeta.createdAt ? new Date(repoMeta.createdAt) : new Date();
+      const repoMeta: GitHubRepoMetadata = await githubService.getRepoMetadata(repoName);
+      // Check both snake_case and camelCase for compatibility
+      const created = repoMeta.created_at || repoMeta.createdAt;
+      return created ? new Date(created) : new Date();
     } catch (error) {
       logger.error('[FARM] Repo metadata error: ' + (error instanceof Error ? error.message : String(error)));
       return new Date();
@@ -489,11 +539,17 @@ export class GitHubCodeLeakFarmService {
     }
   }
 
-  private handleSearchError(error: any, query: string): void {
-    if (axios.isAxiosError(error) && error.response?.status === 403) {
-      logger.warn('[FARM] Rate limit hit for query: ' + query);
+  private handleSearchError(error: any, query: string, page: number): void {
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 403) {
+        logger.warn(`[FARM] Rate limit hit for query: ${query} (page ${page})`);
+      } else if (error.response?.status && error.response.status >= 500) {
+        logger.warn(`[FARM] Server error (${error.response.status}) for query: ${query} (page ${page})`);
+      } else {
+        logger.error(`[FARM] Search error for "${query}" (page ${page}): ${error.message}`);
+      }
     } else {
-      logger.error('[FARM] Search error for "' + query + '": ' + (error instanceof Error ? error.message : String(error)));
+      logger.error(`[FARM] Unexpected error for "${query}" (page ${page}): ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }
