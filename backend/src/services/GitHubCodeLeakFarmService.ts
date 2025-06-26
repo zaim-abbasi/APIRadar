@@ -5,8 +5,6 @@ import { logger } from '../utils/logger';
 import { config } from '../config/environment';
 import type { ILeak } from '../models/Leak';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
 
 // Enhanced regex patterns with boundary checks and documentation
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
@@ -37,6 +35,11 @@ const SEARCH_QUERIES = ENV_VARIATIONS.flatMap(envFile =>
 const SCAN_ENTROPY_THRESHOLD = Number(process.env['SCAN_ENTROPY_THRESHOLD']) || 4.0;
 const MAX_SEARCH_PAGES = Number(process.env['MAX_SEARCH_PAGES']) || 10; // Prevent infinite loops
 const SEARCH_RETRY_ATTEMPTS = Number(process.env['SEARCH_RETRY_ATTEMPTS']) || 3;
+
+// Repository age filtering: Only save data for repositories created within the last 12 months
+// This reduces noise from stale repositories with expired API keys
+// Cutoff date: July 1, 2024 (12 months before July 2025)
+const REPOSITORY_AGE_CUTOFF = new Date('2024-07-01T00:00:00Z');
 
 // Type definitions for better type safety
 interface GitHubSearchItem {
@@ -285,26 +288,10 @@ async function batchInsertScanAttempts(attempts: any[]) {
   await ScanAttempt.insertMany(attempts, { ordered: false });
 }
 
-const LAST_SCAN_FILE = path.join(process.cwd(), 'lastScan.json');
-let lastScanInfo: null | { repo: string, filePath: string, commitHash: string, query: string } = null;
-function saveLastScanInfo() {
-  if (lastScanInfo) {
-    fs.writeFileSync(LAST_SCAN_FILE, JSON.stringify(lastScanInfo));
-  }
-}
-function loadLastScanInfo() {
-  if (fs.existsSync(LAST_SCAN_FILE)) {
-    try {
-      lastScanInfo = JSON.parse(fs.readFileSync(LAST_SCAN_FILE, 'utf-8'));
-    } catch { }
-  }
-}
-
 // --- Main Service ---
 export class GitHubCodeLeakFarmService {
   private running = false;
   constructor() {
-    loadLastScanInfo();
   }
 
   public start() {
@@ -331,13 +318,11 @@ export class GitHubCodeLeakFarmService {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
       }
       if (firstCycle && !scannedAnything) {
-        const last = lastScanInfo ? ` Last scanned: ${lastScanInfo.repo}/${lastScanInfo.filePath} at ${lastScanInfo.commitHash} for ${lastScanInfo.query}` : '';
-        logger.init('No new files to scan. System is idle, waiting for new changes...' + last);
+        logger.init('No new files to scan. System is idle, waiting for new changes...');
         firstCycle = false;
       }
       if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
-        const last = lastScanInfo ? ` Last scanned: ${lastScanInfo.repo}/${lastScanInfo.filePath} at ${lastScanInfo.commitHash} for ${lastScanInfo.query}` : '';
-        logger.init('No new files to scan. System is idle, waiting for new changes...' + last);
+        logger.init('No new files to scan. System is idle, waiting for new changes...');
         lastStatusLog = Date.now();
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -421,6 +406,7 @@ export class GitHubCodeLeakFarmService {
       if (!this.running) return;
       const repoName: string = item.repository.full_name;
       const filePath: string = item.path;
+      
       // Exclude documentation files from scan targets
       const docFilePatterns = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^code\_of\_conduct(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
       const fileName = filePath.split('/').pop() || '';
@@ -451,9 +437,6 @@ export class GitHubCodeLeakFarmService {
       if (!content) return;
       await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, commitHash);
       scannedCache.add(cacheKey);
-      // After a successful scan, update lastScanInfo
-      lastScanInfo = { repo: repoName, filePath, commitHash, query };
-      saveLastScanInfo();
     });
     await concurrencyPool(scanTasks, MAX_CONCURRENT_FILE_SCANS);
   }
@@ -466,33 +449,51 @@ export class GitHubCodeLeakFarmService {
     query: string,
     commitHash: string
   ): Promise<void> {
+    // Scan for leaks in all repositories
     const leaks = extractApiKeys(content);
     const foundLeaks: Partial<ILeak>[] = [];
-    for (const { key, provider } of leaks) {
-      if (calculateEntropy(key) < SCAN_ENTROPY_THRESHOLD) continue;
-      try {
-        const [repoCreatedAt, leakIntroducedAt] = await Promise.all([
-          retry(() => this.getRepoCreationDate(repoName)),
-          retry(() => this.getLeakIntroductionDate(repoName, filePath))
-        ]);
-        // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
-        const leakData: Partial<ILeak> = {
-          redactedKey: redactKey(key),
-          fullKey: key,
-          provider,
-          repoUrl,
-          filePath,
-          leakIntroducedAt,
-          leakDetectedAt: new Date(),
-          repoCreatedAt
-        };
-        foundLeaks.push(leakData);
-        logger.leak(provider, repoName);
-      } catch (error) {
-        logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
-      }
+    
+    // Check repository creation date for leak filtering
+    let repoCreatedAt: Date;
+    try {
+      repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName));
+    } catch (error) {
+      logger.error('[FARM] Failed to get repo creation date: ' + (error instanceof Error ? error.message : String(error)));
+      // If we can't get creation date, don't save any leaks but still save scan attempt
+      await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
+      return;
     }
-    await batchUpsertLeaks(foundLeaks);
+    
+    // Process leaks only for repositories less than 12 months old
+    if (repoCreatedAt >= REPOSITORY_AGE_CUTOFF) {
+      for (const { key, provider } of leaks) {
+        if (calculateEntropy(key) < SCAN_ENTROPY_THRESHOLD) continue;
+        try {
+          const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));
+          
+          // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
+          const leakData: Partial<ILeak> = {
+            redactedKey: redactKey(key),
+            fullKey: key,
+            provider,
+            repoUrl,
+            filePath,
+            leakIntroducedAt,
+            leakDetectedAt: new Date(),
+            repoCreatedAt
+          };
+          foundLeaks.push(leakData);
+          logger.leak(provider, repoName);
+        } catch (error) {
+          logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
+        }
+      }
+      
+      // Save leaks for repositories less than 12 months old
+      await batchUpsertLeaks(foundLeaks);
+    }
+    
+    // Always save scan attempt for all repositories (since we scan everything)
     await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, foundLeaks.length > 0, foundLeaks.map(l => l.provider as string));
   }
 
