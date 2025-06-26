@@ -28,12 +28,12 @@ export async function GET(request: NextRequest) {
 
       if (timeFilters[timeRange]) {
         const cutoff = new Date(now.getTime() - timeFilters[timeRange]);
-        filteredLeaks = filteredLeaks.filter(leak => new Date(leak.timestamp) >= cutoff);
+        filteredLeaks = filteredLeaks.filter(leak => new Date(leak.leak_detected_at) >= cutoff);
       }
     }
 
     // Sort by newest first
-    filteredLeaks.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    filteredLeaks.sort((a, b) => new Date(b.leak_detected_at).getTime() - new Date(a.leak_detected_at).getTime());
 
     // Paginate
     const paginatedLeaks = filteredLeaks.slice(offset, offset + limit);

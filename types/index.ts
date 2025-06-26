@@ -2,13 +2,11 @@ export interface LeakedKey {
   id: string;
   redacted_key: string;
   provider: string;
-  repo_name: string;
   repo_url: string;
-  author_name: string;
-  author_url: string;
-  timestamp: string;
   file_path?: string;
-  commit_hash?: string;
+  timestamp: string;
+  repo_created_at?: string;
+  leak_detected_at: string;
 }
 
 export interface ProviderStats {

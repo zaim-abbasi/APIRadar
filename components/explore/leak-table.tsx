@@ -142,18 +142,8 @@ export function LeakTable({ leaks, isLoading, selectedProvider }: LeakTableProps
                         rel="noopener noreferrer"
                         className="font-medium text-primary hover:underline flex items-center gap-1"
                       >
-                        {leak.repo_name}
+                        {leak.repo_url.split('/').slice(-2).join('/')}
                         <ExternalLink className="h-3 w-3" />
-                      </a>
-                      <span className="text-muted-foreground">by</span>
-                      <a
-                        href={leak.author_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary flex items-center gap-1"
-                      >
-                        <User className="h-3 w-3" />
-                        {leak.author_name}
                       </a>
                     </div>
 
@@ -169,10 +159,10 @@ export function LeakTable({ leaks, isLoading, selectedProvider }: LeakTableProps
                           <code className="text-xs">{leak.file_path}</code>
                         </div>
                       )}
-                      {leak.commit_hash && (
+                      {leak.repo_created_at && (
                         <div className="flex items-center gap-1">
-                          <GitCommit className="h-3 w-3" />
-                          <code className="text-xs">{leak.commit_hash}</code>
+                          <Calendar className="h-3 w-3" />
+                          <span>Created {formatDistanceToNow(new Date(leak.repo_created_at), { addSuffix: true })}</span>
                         </div>
                       )}
                     </div>

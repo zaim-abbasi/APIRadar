@@ -1,34 +1,41 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IScanAttempt extends Document {
-  repo_url: string;
-  full_name: string;
-  scanned_at: Date;
-  leak_found: boolean;
-  leak_types: string[];
-  query_used: string;
-  status: 'success' | 'error';
-  error_message?: string;
+  repoUrl: string;         // Full GitHub repo URL
+  fullName: string;        // owner/repo
+  filePath: string;        // Relative file path
+  commitHash: string;      // Latest commit hash for the file
+  scannedAt: Date;         // When the scan was performed
+  leakFound: boolean;      // Whether any leak was found
+  leakTypes: string[];     // Array of provider types (e.g., openai, cohere)
+  queryUsed: string;       // The GitHub Code Search query used
 }
 
 const ScanAttemptSchema = new Schema<IScanAttempt>({
-  repo_url: { type: String, required: true, index: true },
-  full_name: { type: String, required: true },
-  scanned_at: { type: Date, required: true, default: Date.now },
-  leak_found: { type: Boolean, required: true },
-  leak_types: { type: [String], default: [] },
-  query_used: { type: String, required: true },
-  status: { type: String, enum: ['success', 'error'], required: true },
-  error_message: { type: String },
+  repoUrl: { type: String, required: true, trim: true },
+  fullName: { type: String, required: true, trim: true },
+  filePath: { type: String, required: true, trim: true },
+  commitHash: { type: String, required: true, trim: true },
+  scannedAt: { type: Date, required: true },
+  leakFound: { type: Boolean, required: true },
+  leakTypes: { type: [String], default: [] },
+  queryUsed: { type: String, required: true, trim: true },
+}, {
+  versionKey: false, // No __v
+  _id: true,         // Keep _id for MongoDB
+  timestamps: false, // No automatic timestamps
+  toJSON: {
+    transform: (_doc: any, ret: any) => {
+      ret.id = ret._id;
+      delete ret._id;
+      return ret;
+    },
+  },
 });
 
 // Compound index for efficient duplicate checking
-ScanAttemptSchema.index({ repo_url: 1, scanned_at: -1 });
-
-// Index for querying by status and date
-ScanAttemptSchema.index({ status: 1, scanned_at: -1 });
-
-// Index for querying by leak_found
-ScanAttemptSchema.index({ leak_found: 1, scanned_at: -1 });
+ScanAttemptSchema.index({ repoUrl: 1, filePath: 1, queryUsed: 1, commitHash: 1 }, { unique: true });
+ScanAttemptSchema.index({ scannedAt: -1 });
+ScanAttemptSchema.index({ leakFound: 1, scannedAt: -1 });
 
 export const ScanAttempt = mongoose.model<IScanAttempt>('ScanAttempt', ScanAttemptSchema); 

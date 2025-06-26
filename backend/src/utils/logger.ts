@@ -1,9 +1,16 @@
 import pino from 'pino';
 import fs from 'fs';
 import path from 'path';
+import chalk from 'chalk';
+
+function sanitizeLog(str: string): string {
+  // Remove non-printable and non-ASCII characters
+  return str.replace(/[^\x20-\x7E]+/g, '');
+}
 
 const tag = {
   init: '[INIT]',
+  scan: '[SCAN]',
   leak: '[LEAK]',
   farm: '[FARM]',
   discovery: '[DISCOVERY]',
@@ -45,12 +52,24 @@ const streams = [
   { stream: fs.createWriteStream(logFile, { flags: 'a' }) },
 ];
 
-const baseLogger = pino({
+const loggerOptions: any = {
   level: NODE_ENV === 'development' ? 'debug' : 'info',
-}, pino.multistream(streams));
+};
+if (NODE_ENV === 'development') {
+  loggerOptions.transport = {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname',
+    },
+  };
+}
+
+const baseLogger = pino(loggerOptions, pino.multistream(streams));
 
 function format(tagLabel: keyof typeof tag, message: string) {
-  return `${tag[tagLabel]} ${message}`;
+  return `${tag[tagLabel]} ${sanitizeLog(message)}`;
 }
 
 // Helper function for aligned status messages (no emoji)
@@ -62,9 +81,21 @@ function alignStatus(service: string, status: string, details?: string) {
 }
 
 export const logger = {
-  info: (tagLabel: keyof typeof tag, message: string) => baseLogger.info(format(tagLabel, message)),
-  warn: (tagLabel: keyof typeof tag, message: string) => baseLogger.warn(format(tagLabel, message)),
-  error: (tagLabel: keyof typeof tag, message: string) => baseLogger.error(format(tagLabel, message)),
+  init: (message: string) => baseLogger.info(format('init', message)),
+  scan: (repo: string, filePath: string) => {
+    (globalThis as any).__activitySinceStartup = true;
+    baseLogger.info(format('scan', `repo: ${sanitizeLog(repo)} | file: ${sanitizeLog(filePath)}`));
+  },
+  leak: (provider: string, repo: string) => {
+    (globalThis as any).__activitySinceStartup = true;
+    // Blue color for leaks, always print to console
+    const msg = format('leak', `provider: ${sanitizeLog(provider)} | repo: ${sanitizeLog(repo)}`);
+    // eslint-disable-next-line no-console
+    console.log(chalk.blue(msg));
+    baseLogger.info(msg);
+  },
+  warn: (message: string) => baseLogger.warn(format('warn', message)),
+  error: (message: string) => baseLogger.error(format('error', message)),
   debug: (tagLabel: keyof typeof tag, message: string) => {
     if (NODE_ENV === 'development') baseLogger.debug(format(tagLabel, message));
   },
@@ -72,10 +103,15 @@ export const logger = {
     baseLogger.info(format('init', alignStatus(service, status, details)));
   },
   rateLimit: (waitTime: number, resetTime: Date) => {
+    // Only log once per reset window
+    if (!(globalThis as any).__lastRateLimitResetTime) (globalThis as any).__lastRateLimitResetTime = 0;
     const minutes = Math.floor(waitTime / 60000);
     const seconds = Math.floor((waitTime % 60000) / 1000);
     const resetTimeStr = resetTime.toISOString().substring(11, 19);
-    baseLogger.warn(format('github', `GitHub Rate Limit Reached - Pausing scans for ${minutes}m ${seconds}s (resets at ${resetTimeStr} UTC)`));
+    if ((globalThis as any).__lastRateLimitResetTime !== resetTime.getTime()) {
+      baseLogger.warn(format('github', `GitHub Rate Limit Reached - Pausing scans for ${minutes}m ${seconds}s (resets at ${resetTimeStr} UTC)`));
+      (globalThis as any).__lastRateLimitResetTime = resetTime.getTime();
+    }
   },
   rateLimitReset: () => {
     baseLogger.info(format('github', 'GitHub Rate Limit Reset — Resuming scans...'));

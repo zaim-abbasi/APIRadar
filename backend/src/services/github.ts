@@ -46,8 +46,6 @@ export class GitHubService {
     if (this.clients.length === 0) {
       throw new Error('No valid GitHub tokens provided');
     }
-    
-    logger.status('GitHub Token', 'Validated', `${this.clients.length} token(s) available`);
   }
 
   private createClient(token: string): AxiosInstance {
@@ -86,10 +84,6 @@ export class GitHubService {
             return client.request(error.config);
           }
         }
-        const status = error.response?.status || 'unknown';
-        const message = error.response?.data?.message || 'No message';
-        const url = error.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
         throw error;
       }
     );
@@ -104,7 +98,7 @@ export class GitHubService {
 
   private rotateToken(): void {
     this.currentTokenIndex = (this.currentTokenIndex + 1) % this.clients.length;
-    logger.debug('github', `Rotated to token ${this.currentTokenIndex + 1}/${this.clients.length}`);
+    logger.debug('github', 'Rotated to token ' + (this.currentTokenIndex + 1) + '/' + this.clients.length);
   }
 
   private async throttleRequest(): Promise<void> {
@@ -129,7 +123,7 @@ export class GitHubService {
       // If rate limited and we have multiple tokens, try the next one
       if (error.response?.status === 403 && this.clients.length > 1) {
         this.rotateToken();
-        logger.warn('github', `Retrying with next token due to rate limit`);
+        logger.warn('Retrying with next token due to rate limit');
         return await requestFn(this.getCurrentClient());
       }
       throw error;
@@ -185,7 +179,7 @@ export class GitHubService {
         hasMore: response.data.total_count > page * limit,
       };
     } catch (error) {
-      logger.error('github', `Error fetching trending repos: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error fetching trending repos: ${error instanceof Error ? error.message : String(error)}`);
       throw new Error(`Failed to fetch trending repositories: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -229,7 +223,7 @@ export class GitHubService {
         limit: core.limit,
       };
     } catch (error) {
-      logger.error('github', `Error checking rate limit: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error checking rate limit: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -286,7 +280,7 @@ export class GitHubService {
             commitCount,
           };
         } catch (error) {
-          logger.error('github', `Error processing repo ${item.full_name}: ${error instanceof Error ? error.message : String(error)}`);
+          logger.error(`Error processing repo ${item.full_name}: ${error instanceof Error ? error.message : String(error)}`);
           return null;
         }
       }))).filter((repo): repo is GitHubRepo => repo !== null);
@@ -297,11 +291,51 @@ export class GitHubService {
         hasMore: response.data.total_count > page * 20,
       };
     } catch (error: any) {
-      const status = error.response?.status || 'unknown';
       const message = error.response?.data?.message || 'No message';
-      const url = error.config?.url || 'unknown URL';
-      logger.error('github', `API error (${status}) for ${url} → ${message}`);
+      logger.error(message);
       throw error;
+    }
+  }
+
+  async getRepoMetadata(repoName: string): Promise<{
+    createdAt: string;
+    riskyFiles: string[];
+    contributors: number;
+    hasReadme: boolean;
+    commitCount: number;
+  }> {
+    try {
+      // Get repository metadata including creation date
+      const repoResponse = await this.makeRequest(client => 
+        client.get(`/repos/${repoName}`)
+      );
+      
+      const createdAt = repoResponse.data.created_at;
+      
+      // Get additional metadata
+      const [riskyFiles, contributors, hasReadme, commitCount] = await Promise.all([
+        this.getRiskyFiles(repoName),
+        this.getContributorCount(repoName),
+        this.hasReadme(repoName),
+        this.getCommitCount(repoName),
+      ]);
+
+      return {
+        createdAt,
+        riskyFiles,
+        contributors,
+        hasReadme,
+        commitCount,
+      };
+    } catch (error) {
+      logger.error(`Error getting metadata for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        createdAt: new Date().toISOString(),
+        riskyFiles: [],
+        contributors: 1,
+        hasReadme: true,
+        commitCount: 10,
+      };
     }
   }
 
@@ -313,10 +347,7 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
+        logger.error(err.response?.data?.message || 'No message');
       }
 
       // Risky files
@@ -336,14 +367,11 @@ export class GitHubService {
           }
         }
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
+        logger.error(err.response?.data?.message || 'No message');
       }
       return riskyFiles;
     } catch (error) {
-      logger.error('github', `Error getting risky files for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error getting risky files for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
@@ -355,10 +383,7 @@ export class GitHubService {
       );
       return contribs.data.length;
     } catch (err: any) {
-      const status = err.response?.status || 'unknown';
-      const message = err.response?.data?.message || 'No message';
-      const url = err.config?.url || 'unknown URL';
-      logger.error('github', `API error (${status}) for ${url} → ${message}`);
+      logger.error(err.response?.data?.message || 'No message');
       return 1;
     }
   }
@@ -371,10 +396,7 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
+        logger.error(err.response?.data?.message || 'No message');
       }
 
       try {
@@ -383,20 +405,17 @@ export class GitHubService {
         );
         return true;
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        if (status === 404) {
+        if (err.response?.status === 404) {
           // README not found - log as info, not error
-          logger.info('github', `README not found for ${repoName} (404)`);
+          logger.warn(`README not found for ${repoName} (404)`);
           return false;
         } else {
-          logger.error('github', `API error (${status}) for ${url} → ${message}`);
+          logger.error(err.response?.data?.message || 'No message');
           return false;
         }
       }
     } catch (error) {
-      logger.error('github', `Error checking README for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error checking README for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
       return true; // Default to true to avoid false positives
     }
   }
@@ -409,10 +428,7 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
+        logger.error(err.response?.data?.message || 'No message');
       }
 
       try {
@@ -423,15 +439,44 @@ export class GitHubService {
         const totalCommits = link ? parseInt(link.match(/&page=(\d+)>; rel="last"/)?.[1] || '1', 10) : 1;
         return totalCommits;
       } catch (err: any) {
-        const status = err.response?.status || 'unknown';
-        const message = err.response?.data?.message || 'No message';
-        const url = err.config?.url || 'unknown URL';
-        logger.error('github', `API error (${status}) for ${url} → ${message}`);
+        logger.error(err.response?.data?.message || 'No message');
         return 10;
       }
     } catch (error) {
-      logger.error('github', `Error getting commit count for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error getting commit count for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
       return 10;
+    }
+  }
+
+  async getFileLatestCommitDate(repoName: string, filePath: string): Promise<Date> {
+    try {
+      const [owner, repo] = repoName.split('/');
+      const response = await this.makeRequest(client =>
+        client.get(`/repos/${owner}/${repo}/commits`, {
+          params: { path: filePath, per_page: 1 }
+        })
+      );
+      const commit = response.data?.[0]?.commit;
+      return commit?.author?.date ? new Date(commit.author.date) : new Date();
+    } catch (error) {
+      logger.error(`Commit history error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
+      return new Date();
+    }
+  }
+
+  async getFileLatestCommitHash(repoName: string, filePath: string): Promise<string> {
+    try {
+      const [owner, repo] = repoName.split('/');
+      const response = await this.makeRequest(client =>
+        client.get(`/repos/${owner}/${repo}/commits`, {
+          params: { path: filePath, per_page: 1 }
+        })
+      );
+      const commit = response.data?.[0];
+      return commit?.sha || '';
+    } catch (error) {
+      logger.error(`Commit hash error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
+      return '';
     }
   }
 }

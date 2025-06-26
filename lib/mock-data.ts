@@ -1,53 +1,46 @@
 import { LeakedKey, ProviderStats, LeaderboardData } from '@/types';
 
 const generateMockLeaks = (): LeakedKey[] => {
-  const providers = ['openai', 'anthropic', 'google-ai', 'cohere'];
-  const repoNames = [
-    'awesome-chatbot', 'generative-art-api', 'ai-powered-search', 'claude-discord-bot',
-    'email-summarizer', 'ai-playground', 'serverless-rag', 'mobile-app-backend',
-    'web-scraper', 'data-pipeline', 'microservice-auth', 'notification-system'
-  ];
-  const authors = [
-    'john-dev', 'sarah-codes', 'alex-builds', 'maria-tech', 'dave-scripts',
-    'jen-dev', 'mike-codes', 'lisa-builds', 'tom-dev', 'anna-tech'
-  ];
-
   const leaks: LeakedKey[] = [];
-  
+  const providers = ['openai', 'google-gemini', 'anthropic', 'mistral-ai', 'cohere'];
+  const authors = ['john-doe', 'jane-smith', 'dev-team', 'open-source', 'startup-xyz'];
+  const repoNames = ['api-client', 'backend-service', 'mobile-app', 'web-dashboard', 'ml-model'];
+
   for (let i = 0; i < 50; i++) {
     const provider = providers[Math.floor(Math.random() * providers.length)];
-    const repoName = repoNames[Math.floor(Math.random() * repoNames.length)];
     const author = authors[Math.floor(Math.random() * authors.length)];
+    const repoName = repoNames[Math.floor(Math.random() * repoNames.length)];
     
-    let redactedKey = '';
+    let redactedKey: string;
     switch (provider) {
       case 'openai':
-        redactedKey = `sk-****${Math.random().toString(36).substring(7)}`;
+        redactedKey = 'sk-****' + Math.random().toString(36).substring(2, 10);
+        break;
+      case 'google-gemini':
+        redactedKey = 'AIza****' + Math.random().toString(36).substring(2, 10);
         break;
       case 'anthropic':
-        redactedKey = `sk-ant-****${Math.random().toString(36).substring(7)}`;
+        redactedKey = 'x-api-key=****' + Math.random().toString(36).substring(2, 10);
         break;
-      case 'google-ai':
-        redactedKey = `AIzaSy****${Math.random().toString(36).substring(7)}`;
-        break;
-      case 'cohere':
-        redactedKey = `****${Math.random().toString(36).substring(7)}`;
+      case 'mistral-ai':
+        redactedKey = 'Mistral****' + Math.random().toString(36).substring(2, 10);
         break;
       default:
-        redactedKey = `****${Math.random().toString(36).substring(7)}`;
+        redactedKey = 'cohere****' + Math.random().toString(36).substring(2, 10);
     }
+
+    const repoCreatedAt = new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000);
+    const leakDetectedAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
 
     leaks.push({
       id: `leak_${i}`,
       redacted_key: redactedKey,
       provider,
-      repo_name: repoName,
       repo_url: `https://github.com/${author}/${repoName}`,
-      author_name: author,
-      author_url: `https://github.com/${author}`,
-      timestamp: new Date(Date.now() - Math.random() * 86400000 * 7).toISOString(),
       file_path: `src/${Math.random() > 0.5 ? 'config' : 'utils'}/keys.${Math.random() > 0.5 ? 'js' : 'py'}`,
-      commit_hash: Math.random().toString(36).substring(2, 9)
+      timestamp: leakDetectedAt.toISOString(),
+      repo_created_at: repoCreatedAt.toISOString(),
+      leak_detected_at: leakDetectedAt.toISOString()
     });
   }
 

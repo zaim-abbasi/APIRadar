@@ -1,8 +1,6 @@
 import fastify from 'fastify';
 import { config } from './config/environment';
-import { connectToMongoDB, disconnectFromMongoDB, setLogger } from './config/mongo';
-import { registerPlugins } from './config/plugins';
-import { registerRoutes } from './routes';
+import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
 
@@ -24,22 +22,36 @@ const server = fastify({
 
 async function startServer() {
   try {
-    // Set up MongoDB logger
-    setLogger(logger);
-
+    // Validate GitHub tokens
+    if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length < 10) {
+      logger.init('GitHub token invalid or missing. Exiting.');
+      process.exit(1);
+    }
     // Connect to MongoDB
-    await connectToMongoDB();
-
-    // Register plugins and routes
-    await registerPlugins(server);
-    await registerRoutes(server);
-
+    try {
+      await connectToMongoDB();
+    } catch (err: any) {
+      logger.init(`MongoDB connection failed: ${err?.message || err}`);
+      process.exit(1);
+    }
     // Start the GitHub code leak farm service
-    gitHubCodeLeakFarmService.start();
-
+    try {
+      gitHubCodeLeakFarmService.start();
+    } catch (err: any) {
+      logger.init(`Leak farm failed to start: ${err?.message || err}`);
+      process.exit(1);
+    }
     // Start the server
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
-    logger.status('Server Running', `http://localhost:${config.PORT}`);
+    logger.init(`All systems operational. GitHub tokens loaded: 1`);
+
+    // Idle message logic: print after 5 seconds if no scan or leak log
+    (globalThis as any).__activitySinceStartup = false;
+    setTimeout(() => {
+      if (!(globalThis as any).__activitySinceStartup) {
+        logger.init('No new files to scan. System is idle, waiting for new changes...');
+      }
+    }, 5000);
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
@@ -57,7 +69,7 @@ async function startServer() {
     });
 
   } catch (error) {
-    logger.error('init', `Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
+    logger.init(`Startup failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
