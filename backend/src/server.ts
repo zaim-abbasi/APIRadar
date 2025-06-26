@@ -5,19 +5,7 @@ import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
 
 const server = fastify({
-  logger: config.NODE_ENV === 'development' ? {
-    level: 'debug',
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname',
-      },
-    },
-  } : {
-    level: 'warn',
-  },
+  logger: false,
 });
 
 async function startServer() {
@@ -43,7 +31,9 @@ async function startServer() {
     }
     // Start the server
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
-    logger.init(`All systems operational. GitHub tokens loaded: 1`);
+    logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
+    const tokenCount = (config.GITHUB_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean).length;
+    logger.init(`All systems operational. GitHub tokens loaded: ${tokenCount}`);
 
     // Idle message logic: print after 5 seconds if no scan or leak log
     (globalThis as any).__activitySinceStartup = false;

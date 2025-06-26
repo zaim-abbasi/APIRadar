@@ -31,15 +31,11 @@ export class GitHubService {
   private lastRequestTime: number = 0;
   private readonly rateLimitDelay: number;
   
-  // Rate limit tracking
-  private rateLimitResetTime: number | null = null;
-  private lastRateLimitWarning: number = 0;
-
   constructor() {
     this.rateLimitDelay = config.GITHUB_RATE_LIMIT_DELAY;
     
-    // Create clients for all available tokens
-    const tokens = [config.GITHUB_TOKEN, ...config.GITHUB_TOKENS];
+    // Support GITHUB_TOKEN as a single token or comma-separated list
+    const tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
     this.clients = tokens.map(token => this.createClient(token));
     
     // Ensure we have at least one client
@@ -66,21 +62,11 @@ export class GitHubService {
         if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
           const waitTime = resetTime - Date.now() + 1000; // Add 1 second buffer
-          
-          if (waitTime > 0 && waitTime < 3600000) { // Don't wait more than 1 hour
-            // Only log warning once per rate limit window
-            const now = Date.now();
-            if (this.rateLimitResetTime !== resetTime || now - this.lastRateLimitWarning > 60000) {
-              logger.rateLimit(waitTime, new Date(resetTime));
-              this.rateLimitResetTime = resetTime;
-              this.lastRateLimitWarning = now;
-            }
-            
+          if (waitTime > 0 && waitTime < 3600000) {
+            // Only set pause, do not log here
             await new Promise<void>(resolve => setTimeout(resolve, waitTime));
-            
             // Log reset message
             logger.rateLimitReset();
-            
             return client.request(error.config);
           }
         }
@@ -406,8 +392,7 @@ export class GitHubService {
         return true;
       } catch (err: any) {
         if (err.response?.status === 404) {
-          // README not found - log as info, not error
-          logger.warn(`README not found for ${repoName} (404)`);
+          // README not found - do not log anything
           return false;
         } else {
           logger.error(err.response?.data?.message || 'No message');
@@ -430,7 +415,6 @@ export class GitHubService {
       } catch (err: any) {
         logger.error(err.response?.data?.message || 'No message');
       }
-
       try {
         const commits = await this.makeRequest(client => 
           client.get(`/repos/${repoName}/commits?sha=${defaultBranch}&per_page=1`)

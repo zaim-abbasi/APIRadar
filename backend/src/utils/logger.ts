@@ -5,20 +5,36 @@ import chalk from 'chalk';
 
 function sanitizeLog(str: string): string {
   // Remove non-printable and non-ASCII characters
-  return str.replace(/[^\x20-\x7E]+/g, '');
+  return str.replace(/[^\x20-\x7E]+/g, '');
+}
+
+function getTimestamp() {
+  const now = new Date();
+  return now.toTimeString().slice(0, 8); // HH:mm:ss
 }
 
 const tag = {
-  init: '[INIT]',
-  scan: '[SCAN]',
-  leak: '[LEAK]',
-  farm: '[FARM]',
-  discovery: '[DISCOVERY]',
-  github: '[GITHUB]',
-  db: '[DB]',
-  error: '[ERROR]',
-  warn: '[WARN]',
-  info: '[INFO]',
+  init: 'INIT',
+  scan: 'SCAN',
+  leak: 'LEAK',
+  farm: 'FARM',
+  discovery: 'DISCOVERY',
+  github: 'GITHUB',
+  db: 'DB',
+  error: 'ERROR',
+  warn: 'WARN',
+  info: 'INFO',
+};
+
+const colorMap: Record<string, chalk.Chalk> = {
+  INIT: chalk.hex('#a259f7'), // purple
+  SCAN: chalk.green,
+  LEAK: chalk.blue,
+  WARN: chalk.hex('#ff9900'), // orange
+  ERROR: chalk.red,
+  GITHUB: chalk.cyan,
+  DB: chalk.magenta,
+  INFO: chalk.white,
 };
 
 // Get NODE_ENV without importing config to avoid circular dependency
@@ -42,8 +58,7 @@ const streams = [
           target: 'pino-pretty',
           options: {
             colorize: true,
-            translateTime: 'yyyy-mm-dd HH:MM:ss',
-            ignore: 'pid,hostname',
+            ignore: 'pid,hostname,time,translateTime',
           },
         })
       }]
@@ -60,16 +75,16 @@ if (NODE_ENV === 'development') {
     target: 'pino-pretty',
     options: {
       colorize: true,
-      translateTime: 'yyyy-mm-dd HH:MM:ss',
-      ignore: 'pid,hostname',
+      ignore: 'pid,hostname,time,translateTime',
     },
   };
 }
 
 const baseLogger = pino(loggerOptions, pino.multistream(streams));
 
-function format(tagLabel: keyof typeof tag, message: string) {
-  return `${tag[tagLabel]} ${sanitizeLog(message)}`;
+function format(type: keyof typeof tag, message: string) {
+  const label = `[${tag[type]}]`;
+  return `${label} ${sanitizeLog(message)}`;
 }
 
 // Helper function for aligned status messages (no emoji)
@@ -81,40 +96,61 @@ function alignStatus(service: string, status: string, details?: string) {
 }
 
 export const logger = {
-  init: (message: string) => baseLogger.info(format('init', message)),
+  init: (message: string) => {
+    const msg = format('init', message);
+    // eslint-disable-next-line no-console
+    console.log(colorMap.INIT(msg));
+  },
   scan: (repo: string, filePath: string) => {
     (globalThis as any).__activitySinceStartup = true;
-    baseLogger.info(format('scan', `repo: ${sanitizeLog(repo)} | file: ${sanitizeLog(filePath)}`));
+    const msg = format('scan', `repo: ${sanitizeLog(repo)} | file: ${sanitizeLog(filePath)}`);
+    // eslint-disable-next-line no-console
+    console.log(colorMap.SCAN(msg));
   },
   leak: (provider: string, repo: string) => {
     (globalThis as any).__activitySinceStartup = true;
-    // Blue color for leaks, always print to console
-    const msg = format('leak', `provider: ${sanitizeLog(provider)} | repo: ${sanitizeLog(repo)}`);
+    const msg = format('leak', `Provider: ${sanitizeLog(provider)}, Repo: ${sanitizeLog(repo)}`);
     // eslint-disable-next-line no-console
-    console.log(chalk.blue(msg));
-    baseLogger.info(msg);
+    console.log(colorMap.LEAK(msg));
   },
-  warn: (message: string) => baseLogger.warn(format('warn', message)),
-  error: (message: string) => baseLogger.error(format('error', message)),
-  debug: (tagLabel: keyof typeof tag, message: string) => {
-    if (NODE_ENV === 'development') baseLogger.debug(format(tagLabel, message));
+  warn: (message: string) => {
+    const msg = format('warn', message);
+    // eslint-disable-next-line no-console
+    console.log(colorMap.WARN(msg));
+  },
+  error: (message: string) => {
+    const msg = format('error', message);
+    // eslint-disable-next-line no-console
+    console.log(colorMap.ERROR(msg));
+  },
+  debug: (type: keyof typeof tag, message: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      const msg = format(type, message);
+      // eslint-disable-next-line no-console
+      console.log(colorMap.INFO(msg));
+    }
   },
   status: (service: string, status: string, details?: string) => {
-    baseLogger.info(format('init', alignStatus(service, status, details)));
+    const msg = format('init', alignStatus(service, status, details));
+    // eslint-disable-next-line no-console
+    console.log(colorMap.INIT(msg));
   },
   rateLimit: (waitTime: number, resetTime: Date) => {
-    // Only log once per reset window
     if (!(globalThis as any).__lastRateLimitResetTime) (globalThis as any).__lastRateLimitResetTime = 0;
     const minutes = Math.floor(waitTime / 60000);
     const seconds = Math.floor((waitTime % 60000) / 1000);
     const resetTimeStr = resetTime.toISOString().substring(11, 19);
     if ((globalThis as any).__lastRateLimitResetTime !== resetTime.getTime()) {
-      baseLogger.warn(format('github', `GitHub Rate Limit Reached - Pausing scans for ${minutes}m ${seconds}s (resets at ${resetTimeStr} UTC)`));
+      const msg = format('warn', `GitHub Rate Limit Reached - Pausing scans for ${minutes}m ${seconds}s (resets at ${resetTimeStr} UTC)`);
+      // eslint-disable-next-line no-console
+      console.log(colorMap.WARN(msg));
       (globalThis as any).__lastRateLimitResetTime = resetTime.getTime();
     }
   },
   rateLimitReset: () => {
-    baseLogger.info(format('github', 'GitHub Rate Limit Reset — Resuming scans...'));
+    const msg = format('init', 'GitHub Rate Limit Reset — Resuming scans...');
+    // eslint-disable-next-line no-console
+    console.log(colorMap.INIT(msg));
   },
   raw: baseLogger,
 }; 

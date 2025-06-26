@@ -5,6 +5,8 @@ import { logger } from '../utils/logger';
 import { config } from '../config/environment';
 import type { ILeak } from '../models/Leak';
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 // Enhanced regex patterns with boundary checks
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
@@ -30,8 +32,6 @@ const SEARCH_QUERIES: string[] = [
 ];
 
 // Configuration constants
-const MAX_CONCURRENT_SCANS = Number(process.env['MAX_CONCURRENT_SCANS'] || 3);
-const CODE_SEARCH_QUERY_INTERVAL_MS = Number(process.env['CODE_SEARCH_QUERY_INTERVAL_MS'] || 5000);
 const SCAN_ENTROPY_THRESHOLD = process.env['SCAN_ENTROPY_THRESHOLD'] 
   ? Number(process.env['SCAN_ENTROPY_THRESHOLD']) 
   : 3.5; // Default entropy threshold
@@ -133,9 +133,147 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
   return results;
 }
 
+// --- Concurrency Pool Utility ---
+function concurrencyPool<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
+  return new Promise((resolve) => {
+    const results: T[] = [];
+    let i = 0;
+    let active = 0;
+    let done = 0;
+    function next() {
+      if (done === tasks.length) return resolve(results);
+      while (active < limit && i < tasks.length) {
+        const cur = i++;
+        active++;
+        const task = tasks[cur];
+        if (typeof task === 'function') {
+          task()
+            .then((res) => { results[cur] = res; })
+            .catch((err) => { results[cur] = err; })
+            .finally(() => { active--; done++; next(); });
+        } else {
+          results[cur] = undefined as any;
+          active--; done++; next();
+        }
+      }
+    }
+    next();
+  });
+}
+
+// --- Configurable Concurrency ---
+function getEnvInt(name: string): number {
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing required environment variable: ${name}`);
+  const num = Number(val);
+  if (isNaN(num)) throw new Error(`Invalid number for environment variable: ${name}`);
+  return num;
+}
+const MAX_CONCURRENT_QUERIES = getEnvInt('MAX_CONCURRENT_QUERIES');
+const MAX_CONCURRENT_FILE_SCANS = getEnvInt('MAX_CONCURRENT_FILE_SCANS');
+const MAX_RETRIES = getEnvInt('MAX_RETRIES');
+const RETRY_BASE_DELAY = getEnvInt('RETRY_BASE_DELAY');
+
+// --- In-memory cache for already scanned (repo, file, commit) ---
+const scannedCache = new Set<string>();
+
+// --- Global Rate Limit State ---
+let rateLimitPauseUntil: number | null = null;
+let rateLimitActive = false;
+let rateLimitWarned = false;
+
+async function waitForRateLimitIfNeeded() {
+  while (rateLimitPauseUntil && Date.now() < rateLimitPauseUntil) {
+    if (!rateLimitWarned) {
+      const waitSec = Math.ceil((rateLimitPauseUntil - Date.now()) / 1000);
+      logger.warn(`[GITHUB] Rate limit hit. Pausing all scans for ${waitSec}s.`);
+      rateLimitWarned = true;
+    }
+    await new Promise(res => setTimeout(res, 1000));
+  }
+  if (rateLimitActive && rateLimitPauseUntil && Date.now() >= rateLimitPauseUntil) {
+    logger.init('[GITHUB] Rate limit reset, resuming scans...');
+    rateLimitActive = false;
+    rateLimitPauseUntil = null;
+    rateLimitWarned = false;
+  }
+}
+
+// --- Patch all GitHub API calls to respect global rate limit pause ---
+// In processSearchQuery, before any axios.get, call waitForRateLimitIfNeeded()
+// In axios error handler, if rate limit is hit, set global pause
+
+// Patch retry wrapper to call waitForRateLimitIfNeeded before each attempt
+async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise<T> {
+  let attempt = 0;
+  let lastErr;
+  while (attempt < maxRetries) {
+    await waitForRateLimitIfNeeded();
+    try {
+      return await fn();
+    } catch (err: any) {
+      // Detect GitHub rate limit error
+      if (err.response && err.response.status === 403 && err.response.headers && err.response.headers['x-ratelimit-remaining'] === '0') {
+        const reset = err.response.headers['x-ratelimit-reset'];
+        if (reset) {
+          const resetTime = parseInt(reset, 10) * 1000;
+          if (!rateLimitPauseUntil || resetTime > rateLimitPauseUntil) {
+            rateLimitPauseUntil = resetTime;
+            rateLimitActive = true;
+            rateLimitWarned = false;
+          }
+        }
+        // Wait for the pause, then retry
+        await waitForRateLimitIfNeeded();
+        attempt++;
+        continue;
+      }
+      lastErr = err;
+      await new Promise(res => setTimeout(res, RETRY_BASE_DELAY * Math.pow(2, attempt)));
+      attempt++;
+    }
+  }
+  throw lastErr;
+}
+
+// --- Batched upsert for leaks and scan attempts ---
+async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
+  if (!leaks.length) return;
+  const ops = leaks.map(leak => ({
+    updateOne: {
+      filter: { repoUrl: leak.repoUrl, filePath: leak.filePath, provider: leak.provider },
+      update: leak,
+      upsert: true
+    }
+  }));
+  await Leak.bulkWrite(ops, { ordered: false });
+}
+async function batchInsertScanAttempts(attempts: any[]) {
+  if (!attempts.length) return;
+  await ScanAttempt.insertMany(attempts, { ordered: false });
+}
+
+const LAST_SCAN_FILE = path.join(process.cwd(), 'lastScan.json');
+let lastScanInfo: null | { repo: string, filePath: string, commitHash: string, query: string } = null;
+function saveLastScanInfo() {
+  if (lastScanInfo) {
+    fs.writeFileSync(LAST_SCAN_FILE, JSON.stringify(lastScanInfo));
+  }
+}
+function loadLastScanInfo() {
+  if (fs.existsSync(LAST_SCAN_FILE)) {
+    try {
+      lastScanInfo = JSON.parse(fs.readFileSync(LAST_SCAN_FILE, 'utf-8'));
+    } catch {}
+  }
+}
+
+// --- Main Service ---
 export class GitHubCodeLeakFarmService {
   private running = false;
-  private activeScans = new Set<string>();
+  constructor() {
+    loadLastScanInfo();
+  }
 
   public start() {
     if (this.running) return;
@@ -161,11 +299,13 @@ export class GitHubCodeLeakFarmService {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
       }
       if (firstCycle && !scannedAnything) {
-        logger.init('No new files to scan. System is idle, waiting for new changes...');
+        const last = lastScanInfo ? ` Last scanned: ${lastScanInfo.repo}/${lastScanInfo.filePath} at ${lastScanInfo.commitHash} for ${lastScanInfo.query}` : '';
+        logger.init('No new files to scan. System is idle, waiting for new changes...' + last);
         firstCycle = false;
       }
       if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
-        logger.init('No new files to scan. System is idle, waiting for new changes...');
+        const last = lastScanInfo ? ` Last scanned: ${lastScanInfo.repo}/${lastScanInfo.filePath} at ${lastScanInfo.commitHash} for ${lastScanInfo.query}` : '';
+        logger.init('No new files to scan. System is idle, waiting for new changes...' + last);
         lastStatusLog = Date.now();
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -173,26 +313,26 @@ export class GitHubCodeLeakFarmService {
   }
 
   private async executeScanCycle(): Promise<boolean> {
-    const scanPromises: Promise<void>[] = [];
     let scannedAnything = false;
-    for (const query of SEARCH_QUERIES) {
-      if (this.activeScans.size >= MAX_CONCURRENT_SCANS) break;
-      scanPromises.push(this.processSearchQuery(query));
-      this.activeScans.add(query);
-      scannedAnything = true;
-      await new Promise(resolve => setTimeout(resolve, CODE_SEARCH_QUERY_INTERVAL_MS));
-    }
-    await Promise.all(scanPromises);
+    // Parallelize queries with concurrency pool
+    const queryTasks = SEARCH_QUERIES.map(query => async () => {
+      if (!this.running) return false;
+      await this.processSearchQuery(query);
+      return true;
+    });
+    const results = await concurrencyPool(queryTasks, MAX_CONCURRENT_QUERIES);
+    scannedAnything = results.some(Boolean);
     return scannedAnything;
   }
 
   private async processSearchQuery(query: string): Promise<void> {
-    try {
-      let page = 1;
-      let hasMoreResults = true;
-      
-      while (this.running && hasMoreResults) {
-        const response = await axios.get('https://api.github.com/search/code', {
+    let page = 1;
+    let hasMoreResults = true;
+    while (this.running && hasMoreResults) {
+      await waitForRateLimitIfNeeded();
+      let response;
+      try {
+        response = await retry(() => axios.get('https://api.github.com/search/code', {
           params: { q: query, per_page: 10, page },
           headers: {
             'Authorization': `Bearer ${config.GITHUB_TOKEN}`,
@@ -200,56 +340,68 @@ export class GitHubCodeLeakFarmService {
             'User-Agent': 'API-Radar-Scanner/1.0',
           },
           timeout: 30000,
-        });
-        
-        const items: any[] = response.data?.items || [];
-        if (items.length === 0) {
-          hasMoreResults = false;
-          break;
-        }
-        
-        await this.processSearchResults(items, query);
-        
-        // Pagination control
-        page = items.length === 10 ? page + 1 : 1;
-        if (page === 1) {
-          await new Promise(resolve => setTimeout(resolve, 60000)); // Cooldown
-        }
+        }));
+      } catch (error) {
+        this.handleSearchError(error, query);
+        break;
       }
-    } catch (error) {
-      this.handleSearchError(error, query);
-    } finally {
-      this.activeScans.delete(query);
+      const items: any[] = response.data?.items || [];
+      if (items.length === 0) {
+        hasMoreResults = false;
+        break;
+      }
+      await this.processSearchResults(items, query);
+      // Pagination control
+      page = items.length === 10 ? page + 1 : 1;
+      if (page === 1) {
+        // Only wait if rate limited (handled in axios interceptor)
+        break;
+      }
     }
   }
 
   private async processSearchResults(items: any[], query: string): Promise<void> {
-    for (const item of items) {
-      if (!this.running) break;
+    // Parallelize file scans with concurrency pool
+    const scanTasks = items.map(item => async () => {
+      await waitForRateLimitIfNeeded();
+      if (!this.running) return;
       const repoName: string = item.repository.full_name;
       const filePath: string = item.path;
       // Exclude documentation files from scan targets
       const docFilePatterns = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^code\_of\_conduct(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
       const fileName = filePath.split('/').pop() || '';
-      if (docFilePatterns.some(pattern => pattern.test(fileName))) continue;
+      if (docFilePatterns.some(pattern => pattern.test(fileName))) return;
       let commitHash = '';
       try {
-        const commitResp = await githubService.getFileLatestCommitHash(repoName, filePath);
-        commitHash = commitResp || '';
-      } catch (err) {
-        commitHash = '';
+        await waitForRateLimitIfNeeded();
+        commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath));
+      } catch {
+        return;
       }
-      if (!commitHash) continue;
+      if (!commitHash) return;
+      const cacheKey = `${item.repository.html_url}|${filePath}|${query}|${commitHash}`;
+      if (scannedCache.has(cacheKey)) return;
       if (await alreadyScanned(item.repository.html_url, filePath, query, commitHash)) {
-        continue;
+        scannedCache.add(cacheKey);
+        return;
       }
+      await waitForRateLimitIfNeeded();
       logger.scan(repoName, filePath);
-      const content = await fetchRawFileContent(repoName, filePath, 'HEAD');
-      if (!content) {
-        continue;
+      let content;
+      try {
+        await waitForRateLimitIfNeeded();
+        content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'));
+      } catch {
+        return;
       }
+      if (!content) return;
       await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, commitHash);
-    }
+      scannedCache.add(cacheKey);
+      // After a successful scan, update lastScanInfo
+      lastScanInfo = { repo: repoName, filePath, commitHash, query };
+      saveLastScanInfo();
+    });
+    await concurrencyPool(scanTasks, MAX_CONCURRENT_FILE_SCANS);
   }
 
   private async detectAndSaveLeaks(
@@ -261,13 +413,13 @@ export class GitHubCodeLeakFarmService {
     commitHash: string
   ): Promise<void> {
     const leaks = extractApiKeys(content);
-    const foundLeaks: string[] = [];
+    const foundLeaks: Partial<ILeak>[] = [];
     for (const { key, provider } of leaks) {
       if (calculateEntropy(key) < SCAN_ENTROPY_THRESHOLD) continue;
       try {
         const [repoCreatedAt, leakIntroducedAt] = await Promise.all([
-          this.getRepoCreationDate(repoName),
-          this.getLeakIntroductionDate(repoName, filePath)
+          retry(() => this.getRepoCreationDate(repoName)),
+          retry(() => this.getLeakIntroductionDate(repoName, filePath))
         ]);
         // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
         const leakData: Partial<ILeak> = {
@@ -280,18 +432,14 @@ export class GitHubCodeLeakFarmService {
           leakDetectedAt: new Date(),
           repoCreatedAt
         };
-        await Leak.findOneAndUpdate(
-          { repoUrl, filePath, provider },
-          leakData,
-          { upsert: true, new: true }
-        );
-        foundLeaks.push(provider);
+        foundLeaks.push(leakData);
         logger.leak(provider, repoName);
       } catch (error) {
         logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
       }
     }
-    await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, foundLeaks.length > 0, foundLeaks);
+    await batchUpsertLeaks(foundLeaks);
+    await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, foundLeaks.length > 0, foundLeaks.map(l => l.provider as string));
   }
 
   private async getRepoCreationDate(repoName: string): Promise<Date> {
@@ -318,16 +466,18 @@ export class GitHubCodeLeakFarmService {
     leakTypes: string[]
   ): Promise<void> {
     try {
-      await ScanAttempt.create({
-        repoUrl,
-        fullName: repoName,
-        filePath,
-        commitHash,
-        scannedAt: new Date(),
-        leakFound,
-        leakTypes,
-        queryUsed: query
-      });
+      await batchInsertScanAttempts([
+        {
+          repoUrl,
+          fullName: repoName,
+          filePath,
+          commitHash,
+          scannedAt: new Date(),
+          leakFound,
+          leakTypes,
+          queryUsed: query
+        }
+      ]);
     } catch (error) {
       logger.error('[FARM] ScanAttempt save failed: ' + (error instanceof Error ? error.message : String(error)));
     }
