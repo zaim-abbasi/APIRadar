@@ -13,24 +13,17 @@ const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
   openai: /\b(sk-(?:proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}))\b/g,
   google_gemini: /\b(AIza[0-9A-Za-z\-_]{35})\b/g,
   anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g,
-  cohere: /\b([a-zA-Z0-9]{40})\b/g, // Consider refining if possible
-  mistral_ai: /\b([a-zA-Z0-9]{32})\b/g, // Consider refining if possible
   huggingface: /\b(hf_[a-zA-Z0-9]{34})\b/g,
 };
 
-// Contextual search queries for broader coverage
 const ENV_VARIATIONS = [
-  '.env', '.env.local', '.env.development', '.env.production',
-  'config.json', 'secrets.json', 'credentials.json',
-  'docker-compose.yml', 'docker-compose.yaml'
+  '.env'
 ];
 
 const PROVIDERS = [
   'OPENAI_API_KEY', 'OPENAI_KEY', 'OPENAI_TOKEN',
   'GEMINI_API_KEY', 'GEMINI_KEY', 'GOOGLE_AI_KEY',
   'ANTHROPIC_API_KEY', 'ANTHROPIC_KEY', 'CLAUDE_KEY',
-  'CO_API_KEY', 'COHERE_API_KEY', 'COHERE_KEY',
-  'MISTRAL_API_KEY', 'MISTRAL_KEY',
   'HUGGINGFACE_API_KEY', 'HF_TOKEN', 'HUGGINGFACE_TOKEN'
 ];
 
@@ -52,12 +45,9 @@ const generateComprehensiveQueries = () => {
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
 
 // Configuration constants with fallback defaults
-const SCAN_ENTROPY_THRESHOLD = Number(process.env['SCAN_ENTROPY_THRESHOLD']) || 4.0;
-const SEARCH_RETRY_ATTEMPTS = Number(process.env['SEARCH_RETRY_ATTEMPTS']) || 3;
-
-// Repository age filtering: Only save data for repositories created within the last 12 months
-// This reduces noise from stale repositories with expired API keys
-// Cutoff date: July 1, 2024 (12 months before July 2025)
+const SCAN_ENTROPY_THRESHOLD = 2.0;
+const MAX_RETRIES = 2;
+const RETRY_BASE_DELAY = 100;
 const REPOSITORY_AGE_CUTOFF = new Date('2024-07-01T00:00:00Z');
 
 // Type definitions for better type safety
@@ -116,20 +106,6 @@ function isValidAnthropicKey(key: string): boolean {
   return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32}$/.test(key);
 }
 
-function isValidCohereKey(key: string): boolean {
-  // Stricter validation for Cohere keys - they should have high entropy and specific character patterns
-  if (!/^[a-zA-Z0-9]{40}$/.test(key)) return false;
-  const entropy = calculateEntropy(key);
-  return entropy >= 4.5; // Higher entropy threshold for generic patterns
-}
-
-function isValidMistralKey(key: string): boolean {
-  // Stricter validation for Mistral keys - they should have high entropy and specific character patterns
-  if (!/^[a-zA-Z0-9]{32}$/.test(key)) return false;
-  const entropy = calculateEntropy(key);
-  return entropy >= 4.2; // Higher entropy threshold for generic patterns
-}
-
 function isValidHuggingFaceKey(key: string): boolean {
   return /^hf_[a-zA-Z0-9]{34}$/.test(key);
 }
@@ -139,8 +115,6 @@ const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
   google_gemini: isValidGeminiKey,
   anthropic: isValidAnthropicKey,
-  cohere: isValidCohereKey,
-  mistral_ai: isValidMistralKey,
   huggingface: isValidHuggingFaceKey,
 };
 
@@ -196,51 +170,6 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
   }
   return results;
 }
-
-// --- Concurrency Pool Utility ---
-function concurrencyPool<T>(tasks: (() => Promise<T>)[], limit: number): Promise<T[]> {
-  return new Promise((resolve) => {
-    const results: T[] = [];
-    let i = 0;
-    let active = 0;
-    let done = 0;
-    function next() {
-      if (done === tasks.length) return resolve(results);
-      while (active < limit && i < tasks.length) {
-        const cur = i++;
-        active++;
-        const task = tasks[cur];
-        if (typeof task === 'function') {
-          task()
-            .then((res) => { results[cur] = res; })
-            .catch((err) => { results[cur] = err; })
-            .finally(() => { active--; done++; next(); });
-        } else {
-          results[cur] = undefined as any;
-          active--; done++; next();
-        }
-      }
-    }
-    next();
-  });
-}
-
-// --- Configurable Concurrency ---
-function getEnvInt(name: string, fallback?: number): number {
-  const val = process.env[name];
-  if (!val) {
-    if (fallback !== undefined) {
-      return fallback;
-    }
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  const num = Number(val);
-  if (isNaN(num)) throw new Error(`Invalid number for environment variable: ${name}`);
-  return num;
-}
-const MAX_CONCURRENT_FILE_SCANS = getEnvInt('MAX_CONCURRENT_FILE_SCANS', 3);
-const MAX_RETRIES = getEnvInt('MAX_RETRIES', 3);
-const RETRY_BASE_DELAY = getEnvInt('RETRY_BASE_DELAY', 1000);
 
 // --- In-memory cache for already scanned (repo, file, commit) ---
 const scannedCache = new Set<string>();
@@ -410,7 +339,7 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
         }
       }
       lastErr = err;
-      await new Promise(res => setTimeout(res, RETRY_BASE_DELAY * Math.pow(2, attempt)));
+      await new Promise(res => setTimeout(res, RETRY_BASE_DELAY));
       attempt++;
     }
   }
@@ -541,9 +470,6 @@ export class GitHubCodeLeakFarmService {
           lastStatusLog = Date.now();
         }
       }
-      
-      // Shorter wait time to be more responsive
-      await new Promise(resolve => setTimeout(resolve, 500)); // 500ms instead of 1000ms
     }
   }
 
@@ -576,12 +502,6 @@ export class GitHubCodeLeakFarmService {
         scanResumeState.currentQueryIndex = queryIndex + 1;
         scanResumeState.currentPage = 1;
         saveResumeState();
-        
-        // Add a delay between different queries to spread out the load
-        if (queryIndex < ALL_SEARCH_QUERIES.length - 1) {
-          const delay = Math.min(2000, (queryIndex + 1) * 300);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
       } catch (error) {
         logger.error(`[FARM] Error processing query "${query}": ${error instanceof Error ? error.message : String(error)}`);
         // Save current state before moving to next query
@@ -606,7 +526,7 @@ export class GitHubCodeLeakFarmService {
     let page = scanResumeState.currentPage;
     let hasMoreResults = true;
     let consecutiveErrors = 0;
-    const MAX_CONSECUTIVE_ERRORS = SEARCH_RETRY_ATTEMPTS;
+    const MAX_CONSECUTIVE_ERRORS = MAX_RETRIES;
     let totalResults = 0;
     
     while (this.running && hasMoreResults) {
@@ -615,12 +535,6 @@ export class GitHubCodeLeakFarmService {
       // Update resume state with current page
       scanResumeState.currentPage = page;
       saveResumeState();
-      
-      // Add a delay between search API calls to avoid hitting rate limits
-      if (page > 1) {
-        const delay = Math.min(3000, page * 500); // Reduced delays for more aggressive scanning
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
       
       let response: { data: GitHubSearchResponse };
       try {
@@ -709,10 +623,11 @@ export class GitHubCodeLeakFarmService {
     let processedCount = 0;
     let skippedCount = 0;
     
-    // Parallelize file scans with concurrency pool
-    const scanTasks = items.map(item => async () => {
+    // Process files sequentially
+    for (const item of items) {
       await waitForRateLimitIfNeeded();
       if (!this.running) return;
+      
       const repoName: string = item.repository.full_name;
       const filePath: string = item.path;
       
@@ -721,21 +636,21 @@ export class GitHubCodeLeakFarmService {
       const fileName = filePath.split('/').pop() || '';
       if (docFilePatterns.some(pattern => pattern.test(fileName))) {
         skippedCount++;
-        return;
+        continue;
       }
       
       // Skip files with problematic characters that might cause issues
       if (fileName.includes('#') || fileName.includes('?') || fileName.includes('&')) {
         logger.warn(`[FARM] Skipping file with problematic characters: ${filePath}`);
         skippedCount++;
-        return;
+        continue;
       }
       
       // Check cache first to avoid any API calls for already processed files
       const cacheKey = `${item.repository.html_url}|${filePath}|${query}`;
       if (scannedCache.has(cacheKey)) {
         skippedCount++;
-        return;
+        continue;
       }
       
       // Get commit hash first (this is the most recent state of the file)
@@ -746,11 +661,11 @@ export class GitHubCodeLeakFarmService {
       } catch (error) {
         logger.warn(`[FARM] Failed to get commit hash for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
-        return;
+        continue;
       }
       if (!commitHash) {
         skippedCount++;
-        return;
+        continue;
       }
       
       // Now check if this specific commit+query combination was already scanned
@@ -758,7 +673,7 @@ export class GitHubCodeLeakFarmService {
       if (scannedCache.has(cacheKeyWithCommit)) {
         logger.warn(`[FARM] Skipping already scanned file: ${repoName}/${filePath} (commit: ${commitHash.substring(0, 8)})`);
         skippedCount++;
-        return;
+        continue;
       }
       
       // Check database for this specific commit+query combination
@@ -766,7 +681,7 @@ export class GitHubCodeLeakFarmService {
         scannedCache.add(cacheKeyWithCommit);
         logger.warn(`[FARM] Skipping already scanned file: ${repoName}/${filePath} (commit: ${commitHash.substring(0, 8)})`);
         skippedCount++;
-        return;
+        continue;
       }
       
       // If we get here, we need to scan the file - make the content API call
@@ -779,11 +694,11 @@ export class GitHubCodeLeakFarmService {
       } catch (error) {
         logger.warn(`[FARM] Failed to fetch content for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
-        return;
+        continue;
       }
       if (!content) {
         skippedCount++;
-        return;
+        continue;
       }
       
       try {
@@ -794,8 +709,7 @@ export class GitHubCodeLeakFarmService {
         logger.error(`[FARM] Failed to process leaks for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
       }
-    });
-    await concurrencyPool(scanTasks, MAX_CONCURRENT_FILE_SCANS);
+    }
     
     // Log summary for this batch
     if (processedCount > 0 || skippedCount > 0) {

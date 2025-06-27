@@ -86,12 +86,6 @@ export async function waitForRateLimitIfNeeded() {
     return;
   }
   
-  // For search API rate limits, enforce a minimum wait time of 60 seconds
-  // since the search API resets every minute
-  if (lastRateLimitSetTime && (Date.now() - lastRateLimitSetTime) < 60000) {
-    await new Promise(res => setTimeout(res, 60000 - (Date.now() - lastRateLimitSetTime)));
-  }
-  
   while (rateLimitPauseUntil && Date.now() < rateLimitPauseUntil) {
     // Check actual token status every 10 seconds while waiting (less frequent)
     if (Date.now() % 10000 < 1000) { // Every ~10 seconds
@@ -108,7 +102,6 @@ export async function waitForRateLimitIfNeeded() {
       logger.warn(`[GITHUB] Rate limit reached. Waiting ${waitMin}m ${waitSecRemaining}s for reset. Scanner will resume automatically.`);
       rateLimitWarned = true;
     }
-    await new Promise(res => setTimeout(res, 1000));
   }
 }
 

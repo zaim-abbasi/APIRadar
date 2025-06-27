@@ -7,11 +7,8 @@ export class GitHubService {
   private readonly clients: AxiosInstance[];
   private currentTokenIndex: number = 0;
   private lastRequestTime: number = 0;
-  private readonly rateLimitDelay: number;
   
   constructor() {
-    this.rateLimitDelay = config.GITHUB_RATE_LIMIT_DELAY;
-    
     // Support GITHUB_TOKEN as a single token or comma-separated list
     const tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
     this.clients = tokens.map(token => this.createClient(token));
@@ -68,21 +65,7 @@ export class GitHubService {
     logger.debug('github', 'Rotated to token ' + (this.currentTokenIndex + 1) + '/' + this.clients.length);
   }
 
-  private async throttleRequest(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    
-    if (timeSinceLastRequest < this.rateLimitDelay) {
-      const delay = this.rateLimitDelay - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    
-    this.lastRequestTime = Date.now();
-  }
-
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    await this.throttleRequest();
-    
     // Try with current token first
     try {
       return await requestFn(this.getCurrentClient());
