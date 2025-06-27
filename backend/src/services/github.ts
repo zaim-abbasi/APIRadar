@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
+import { waitForRateLimitIfNeeded, setRateLimit, clearRateLimit } from './rateLimitManager';
 
 export class GitHubService {
   private readonly clients: AxiosInstance[];
@@ -38,14 +39,17 @@ export class GitHubService {
       async (error: any) => {
         if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
-          const waitTime = resetTime - Date.now() + 1000; // Add 1 second buffer
-          if (waitTime > 0 && waitTime < 3600000) {
-            // Only set pause, do not log here
-            await new Promise<void>(resolve => setTimeout(resolve, waitTime));
-            // Log reset message
-            logger.rateLimitReset();
+          const now = Date.now();
+          
+          // If the reset time is in the past, clear the rate limit state
+          if (resetTime <= now) {
+            clearRateLimit();
             return client.request(error.config);
           }
+          
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          return client.request(error.config);
         }
         throw error;
       }

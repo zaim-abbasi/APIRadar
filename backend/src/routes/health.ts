@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getConnectionStatus } from '../config/mongo';
+import { clearRateLimit } from '../services/rateLimitManager';
 
 export async function healthRoutes(server: FastifyInstance) {
   server.get('/api/health', async (_request: FastifyRequest, reply: FastifyReply) => {
@@ -22,5 +23,14 @@ export async function healthRoutes(server: FastifyInstance) {
     }
 
     return reply.send(healthData);
+  });
+
+  // Debug endpoint to force clear rate limit state
+  server.post('/api/debug/clear-rate-limit', async (_request: FastifyRequest, reply: FastifyReply) => {
+    clearRateLimit();
+    return reply.send({ 
+      status: 'Rate limit state cleared', 
+      timestamp: new Date().toISOString() 
+    });
   });
 } 

@@ -46,6 +46,13 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGINT', async () => {
       logger.status('Shutting Down', 'Gracefully...');
+      
+      // Stop the farm service first to save current state
+      gitHubCodeLeakFarmService.stop();
+      
+      // Give a moment for the service to save its state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       await disconnectFromMongoDB();
       await server.close();
       process.exit(0);
@@ -53,6 +60,13 @@ async function startServer() {
 
     process.on('SIGTERM', async () => {
       logger.status('Shutting Down', 'Gracefully...');
+      
+      // Stop the farm service first to save current state
+      gitHubCodeLeakFarmService.stop();
+      
+      // Give a moment for the service to save its state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       await disconnectFromMongoDB();
       await server.close();
       process.exit(0);
