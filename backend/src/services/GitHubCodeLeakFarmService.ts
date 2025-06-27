@@ -10,31 +10,46 @@ import path from 'path';
 
 // Enhanced regex patterns with boundary checks and documentation
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
-  openai: /\b(sk-(?:proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}))\b/g,
-  google_gemini: /\b(AIza[0-9A-Za-z\-_]{35})\b/g,
-  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g,
-  huggingface: /\b(hf_[a-zA-Z0-9]{34})\b/g,
+  openai: /\b(sk-[a-zA-Z0-9_-]{20,})\b/g,
+  google_gemini: /\bAIza[0-9A-Za-z]{35,36}\b/g,
+  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g
 };
 
+// File types to search in
 const ENV_VARIATIONS = [
-  '.env'
+  '.env',  // This will catch all .env* files
+  'config.json', 
+  'secrets.yaml', 
+  'docker-compose.yml', 
+  'docker-compose.yaml'
 ];
 
-const PROVIDERS = [
-  'OPENAI_API_KEY', 'OPENAI_KEY', 'OPENAI_TOKEN',
-  'GEMINI_API_KEY', 'GEMINI_KEY', 'GOOGLE_AI_KEY',
-  'ANTHROPIC_API_KEY', 'ANTHROPIC_KEY', 'CLAUDE_KEY',
-  'HUGGINGFACE_API_KEY', 'HF_TOKEN', 'HUGGINGFACE_TOKEN'
-];
+// Generate search patterns from regex for each provider
+const generateSearchPatterns = () => {
+  const patterns: string[] = [];
 
-// Generate comprehensive search queries using ALL ENV_VARIATIONS and ALL PROVIDERS
+  // OpenAI patterns
+  patterns.push('sk-'); // Standard OpenAI keys
+  patterns.push('sk-proj-'); // OpenAI Project API keys
+
+  // Google Gemini patterns
+  patterns.push('AIza'); // Gemini keys
+
+  // Anthropic patterns
+  patterns.push('sk-ant-api'); // Anthropic keys
+
+  return patterns;
+};
+
+// Generate comprehensive search queries using patterns and file types
 const generateComprehensiveQueries = () => {
   const queries: string[] = [];
+  const searchPatterns = generateSearchPatterns();
   
-  // Generate queries for ALL file types × ALL providers
+  // Generate queries for ALL file types × ALL patterns
   ENV_VARIATIONS.forEach(fileType => {
-    PROVIDERS.forEach(provider => {
-      queries.push(`filename:${fileType} "${provider}"`);
+    searchPatterns.forEach(pattern => {
+      queries.push(`filename:${fileType} "${pattern}"`);
     });
   });
   
@@ -94,8 +109,8 @@ function calculateEntropy(str: string): number {
 
 // Key validation functions with stricter validation for generic patterns
 function isValidOpenAIKey(key: string): boolean {
-  // Matches both legacy and project keys
-  return /^sk-(proj-[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20}|[a-zA-Z0-9]{20}T3BlbkFJ[a-zA-Z0-9]{20})$/.test(key);
+  // Updated to match the new pattern
+  return /^sk-[a-zA-Z0-9_-]{20,}$/.test(key);
 }
 
 function isValidGeminiKey(key: string): boolean {
@@ -106,16 +121,11 @@ function isValidAnthropicKey(key: string): boolean {
   return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32}$/.test(key);
 }
 
-function isValidHuggingFaceKey(key: string): boolean {
-  return /^hf_[a-zA-Z0-9]{34}$/.test(key);
-}
-
 // Provider validation mapping
 const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
   google_gemini: isValidGeminiKey,
-  anthropic: isValidAnthropicKey,
-  huggingface: isValidHuggingFaceKey,
+  anthropic: isValidAnthropicKey
 };
 
 function redactKey(key: string): string {
