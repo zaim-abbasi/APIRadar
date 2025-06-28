@@ -103,23 +103,9 @@ const NavbarComponent = () => {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="relative"
             >
-              <Shield className="h-8 w-8 text-primary" />
-              {theme === 'dark' && (
-                <motion.div
-                  className="absolute inset-0 bg-red-500/20 rounded-full blur-md"
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 0.8, 0.5]
-                  }}
-                  transition={{ 
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                />
-              )}
+              <img src="/logo/logo.ico" alt="API Radar Logo" className="h-8 w-auto object-contain" />
             </motion.div>
-            <span className="text-xl font-bold text-foreground">
+            <span className="text-xl font-bold text-red-500">
               API Radar
             </span>
           </Link>

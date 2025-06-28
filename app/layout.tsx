@@ -13,20 +13,20 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'API Radar - Real-Time API Security Monitoring',
-  description: 'Real-time monitoring of leaked API keys from public repositories. Discover vulnerabilities, learn from mistakes, and secure your code with API Radar.',
-  keywords: 'API security, leaked keys, GitHub monitoring, security tools, developer tools, API Radar',
+  title: 'API Radar',
+  description: '',
+  keywords: '',
   authors: [{ name: 'API Radar Team' }],
   openGraph: {
-    title: 'API Radar - Real-Time API Security Monitoring',
-    description: 'Real-time monitoring of leaked API keys from public repositories.',
+    title: 'API Radar',
+    description: '',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'API Radar - Real-Time API Security Monitoring',
-    description: 'Real-time monitoring of leaked API keys from public repositories.',
+    title: 'API Radar',
+    description: '',
   },
   robots: {
     index: true,
@@ -41,6 +41,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/logo/logo.ico" type="image/x-icon" />
+      </head>
       <body className={`${inter.variable} font-sans`}>
         <ThemeProvider
           attribute="class"

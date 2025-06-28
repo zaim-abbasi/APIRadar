@@ -76,16 +76,15 @@ const HeroHeadline = React.memo(() => (
       {/* First Line */}
       <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up opacity-0 animate-delay-100">
         <span className="text-foreground">
-          Beautifully{' '}
+          Exposing{' '}
         </span>
         <span className="text-red-500">
-          Exposed
+          GitHub
         </span>
       </div>
-      
       {/* Second Line */}
       <div className="text-muted-foreground/80 animate-fade-in-up opacity-0 animate-delay-150">
-        API Keys
+        API Leaks
       </div>
     </h1>
   </div>
@@ -122,9 +121,8 @@ FeatureTags.displayName = 'FeatureTags';
 // Memoized Subheading component
 const HeroSubheading = React.memo(() => (
   <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 px-4 animate-fade-in-up opacity-0 animate-delay-400">
-    Real-time intelligence on leaked secrets from public GitHub repositories.{' '}
-    <br className="hidden sm:block" />
-    Explore live incidents, learn from common mistakes, and secure your code before attackers do.
+    Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
+    Discover leaks as they happen, with unmatched detail and speed.
   </p>
 ));
 
