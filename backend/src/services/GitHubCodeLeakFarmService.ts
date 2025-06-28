@@ -8,12 +8,35 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
+// Search patterns with provider names
+const SEARCH_PATTERNS = [
+  {
+    provider: 'anthropic',
+    pattern: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32,})\b/g,
+    searchString: 'sk-ant-api'  // Explicit, optimized search string
+  },
+  {
+    provider: 'google_gemini',
+    pattern: /\bAIza[0-9A-Za-z]{35,36}\b/g,
+    searchString: 'AIza'
+  },
+  {
+    provider: 'openai',
+    pattern: /\b(sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,})\b/g,
+    searchString: 'sk-'
+  }
+];
+
 // Enhanced regex patterns with boundary checks and documentation
-const PROVIDER_PATTERNS: { [provider: string]: RegExp } = {
-  openai: /\b(sk-[a-zA-Z0-9_-]{20,})\b/g,
-  google_gemini: /\bAIza[0-9A-Za-z]{35,36}\b/g,
-  anthropic: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32})\b/g
-};
+const PROVIDER_PATTERNS: { [provider: string]: RegExp } = (() => {
+  const patternMap: { [provider: string]: RegExp } = {};
+  
+  SEARCH_PATTERNS.forEach(({ provider, pattern }) => {
+    patternMap[provider] = pattern;
+  });
+  
+  return patternMap;
+})();
 
 // File types to search in
 const ENV_VARIATIONS = [
@@ -24,32 +47,14 @@ const ENV_VARIATIONS = [
   'docker-compose.yaml'
 ];
 
-// Generate search patterns from regex for each provider
-const generateSearchPatterns = () => {
-  const patterns: string[] = [];
-
-  // OpenAI patterns
-  patterns.push('sk-'); // Standard OpenAI keys
-  patterns.push('sk-proj-'); // OpenAI Project API keys
-
-  // Google Gemini patterns
-  patterns.push('AIza'); // Gemini keys
-
-  // Anthropic patterns
-  patterns.push('sk-ant-api'); // Anthropic keys
-
-  return patterns;
-};
-
 // Generate comprehensive search queries using patterns and file types
 const generateComprehensiveQueries = () => {
   const queries: string[] = [];
-  const searchPatterns = generateSearchPatterns();
   
   // Generate queries for ALL file types × ALL patterns
   ENV_VARIATIONS.forEach(fileType => {
-    searchPatterns.forEach(pattern => {
-      queries.push(`filename:${fileType} "${pattern}"`);
+    SEARCH_PATTERNS.forEach(({ searchString }) => {
+      queries.push(`filename:${fileType} "${searchString}"`);
     });
   });
   
@@ -59,11 +64,17 @@ const generateComprehensiveQueries = () => {
 // Combine all search queries - comprehensive coverage
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
 
+// Group queries by provider for rotation
+const PROVIDER_QUERIES = {
+  openai: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-') && !query.includes('sk-ant-api')),
+  google_gemini: ALL_SEARCH_QUERIES.filter(query => query.includes('AIza')),
+  anthropic: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-ant-api'))
+};
+
 // Configuration constants with fallback defaults
-const SCAN_ENTROPY_THRESHOLD = 2.0;
 const MAX_RETRIES = 2;
 const RETRY_BASE_DELAY = 100;
-const REPOSITORY_AGE_CUTOFF = new Date('2024-07-01T00:00:00Z');
+const REPOSITORY_AGE_CUTOFF = new Date('2025-06-01T00:00:00Z');
 
 // Type definitions for better type safety
 interface GitHubSearchItem {
@@ -72,11 +83,6 @@ interface GitHubSearchItem {
     html_url: string;
   };
   path: string;
-}
-
-interface GitHubSearchResponse {
-  items: GitHubSearchItem[];
-  total_count: number;
 }
 
 // Update: Make all fields optional and allow both snake_case and camelCase for compatibility
@@ -92,33 +98,38 @@ interface GitHubRepoMetadata {
   [key: string]: any;
 }
 
-// Calculate Shannon entropy
-function calculateEntropy(str: string): number {
-  const freqMap: Record<string, number> = {};
-  const len = str.length;
-
-  for (const char of str) {
-    freqMap[char] = (freqMap[char] || 0) + 1;
-  }
-
-  return Object.values(freqMap).reduce((entropy, freq) => {
-    const p = freq / len;
-    return entropy - p * Math.log2(p);
-  }, 0);
+// Filter out placeholder/demo keys that contain common placeholder words
+function isPlaceholderKey(key: string): boolean {
+  const placeholderWords = [
+    'your', 'key', 'demo', 'example', 'placeholder', 'template', 
+    'sample', 'test', 'fake', 'dummy', 'mock', 'production', 'development',
+    'staging', 'local', 'config', 'secret', 'password', 'token'
+  ];
+  
+  const lowerKey = key.toLowerCase();
+  return placeholderWords.some(word => lowerKey.includes(word));
 }
 
 // Key validation functions with stricter validation for generic patterns
 function isValidOpenAIKey(key: string): boolean {
-  // Updated to match the new pattern
-  return /^sk-[a-zA-Z0-9_-]{20,}$/.test(key);
+  // Skip placeholder keys
+  if (isPlaceholderKey(key)) return false;
+  // Use the same pattern as in SEARCH_PATTERNS
+  return /^sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}$/.test(key);
 }
 
 function isValidGeminiKey(key: string): boolean {
-  return /^AIza[0-9A-Za-z\-_]{35}$/.test(key);
+  // Skip placeholder keys
+  if (isPlaceholderKey(key)) return false;
+  // Use the same pattern as in SEARCH_PATTERNS
+  return /^AIza[0-9A-Za-z]{35,36}$/.test(key);
 }
 
 function isValidAnthropicKey(key: string): boolean {
-  return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32}$/.test(key);
+  // Skip placeholder keys
+  if (isPlaceholderKey(key)) return false;
+  // Use the same pattern as in SEARCH_PATTERNS
+  return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32,}$/.test(key);
 }
 
 // Provider validation mapping
@@ -171,30 +182,59 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(content)) !== null) {
+      // Use capture group 1 if available, otherwise use the full match
       const key = match[1] || match[0];
-      // Skip duplicates and invalid keys
-      if (foundKeys.has(key) || !KEY_VALIDATORS[provider] || !KEY_VALIDATORS[provider](key)) continue;
+      
+      // Skip exact duplicates and invalid keys
+      const validator = KEY_VALIDATORS[provider];
+      if (foundKeys.has(key) || !validator || !validator(key)) {
+        continue;
+      }
+      
       foundKeys.add(key);
       results.push({ key, provider });
     }
   }
+  
+  // Only log if keys were found
+  if (results.length > 0) {
+    const keyCounts = results.reduce((acc, { provider }) => {
+      acc[provider] = (acc[provider] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    logger.warn(`[FARM] Found ${results.length} API keys: ${Object.entries(keyCounts).map(([p, c]) => `${p}:${c}`).join(', ')}`);
+  }
+  
   return results;
 }
 
 // --- In-memory cache for already scanned (repo, file, commit) ---
 const scannedCache = new Set<string>();
 
-// --- Resume tracking ---
+// --- Resume tracking with provider rotation ---
 interface ScanResumeState {
+  currentProviderIndex: number;
   currentQueryIndex: number;
   currentPage: number;
   lastProcessedTime: number;
+  providerStates: {
+    openai: { queryIndex: number; page: number };
+    google_gemini: { queryIndex: number; page: number };
+    anthropic: { queryIndex: number; page: number };
+  };
 }
 
 let scanResumeState: ScanResumeState = {
+  currentProviderIndex: 0,
   currentQueryIndex: 0,
   currentPage: 1,
-  lastProcessedTime: Date.now()
+  lastProcessedTime: Date.now(),
+  providerStates: {
+    openai: { queryIndex: 0, page: 1 },
+    google_gemini: { queryIndex: 0, page: 1 },
+    anthropic: { queryIndex: 0, page: 1 }
+  }
 };
 
 // Save resume state to persist across restarts
@@ -212,7 +252,10 @@ function saveResumeState() {
     // Also keep in memory for current session
     (global as any).scanResumeState = state;
     
-    logger.warn(`[FARM] Scan state saved to file: query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
+    // Only log state saves during startup or errors, not during normal operation
+    if (!(global as any).scanResumeState) {
+      logger.warn(`[FARM] Scan state saved: provider ${scanResumeState.currentProviderIndex}, query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
+    }
   } catch (error) {
     logger.warn(`[FARM] Failed to save resume state: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -231,15 +274,24 @@ function loadResumeState(): ScanResumeState {
       // Validate the saved state
       if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
         scanResumeState = {
+          currentProviderIndex: saved.currentProviderIndex || 0,
           currentQueryIndex: saved.currentQueryIndex || 0,
           currentPage: saved.currentPage || 1,
-          lastProcessedTime: saved.lastProcessedTime || Date.now()
+          lastProcessedTime: saved.lastProcessedTime || Date.now(),
+          providerStates: saved.providerStates || {
+            openai: { queryIndex: 0, page: 1 },
+            google_gemini: { queryIndex: 0, page: 1 },
+            anthropic: { queryIndex: 0, page: 1 }
+          }
         };
         
         // Also set in memory
         (global as any).scanResumeState = scanResumeState;
         
-        logger.warn(`[FARM] Resuming scan from file: query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
+        // Only log on first load
+        if (!(global as any).scanResumeState) {
+          logger.warn(`[FARM] Resuming scan: provider ${scanResumeState.currentProviderIndex}, query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
+        }
         return scanResumeState;
       } else {
         logger.warn(`[FARM] Invalid state file format, resetting to beginning`);
@@ -250,11 +302,16 @@ function loadResumeState(): ScanResumeState {
     if ((global as any).scanResumeState) {
       const saved = (global as any).scanResumeState as any;
       scanResumeState = {
+        currentProviderIndex: saved.currentProviderIndex || 0,
         currentQueryIndex: saved.currentQueryIndex || 0,
         currentPage: saved.currentPage || 1,
-        lastProcessedTime: saved.lastProcessedTime || Date.now()
+        lastProcessedTime: saved.lastProcessedTime || Date.now(),
+        providerStates: saved.providerStates || {
+          openai: { queryIndex: 0, page: 1 },
+          google_gemini: { queryIndex: 0, page: 1 },
+          anthropic: { queryIndex: 0, page: 1 }
+        }
       };
-      logger.warn(`[FARM] Resuming scan from memory: query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
       return scanResumeState;
     }
   } catch (error) {
@@ -263,9 +320,15 @@ function loadResumeState(): ScanResumeState {
   
   // Reset to beginning only if no saved state exists
   scanResumeState = {
+    currentProviderIndex: 0,
     currentQueryIndex: 0,
     currentPage: 1,
-    lastProcessedTime: Date.now()
+    lastProcessedTime: Date.now(),
+    providerStates: {
+      openai: { queryIndex: 0, page: 1 },
+      google_gemini: { queryIndex: 0, page: 1 },
+      anthropic: { queryIndex: 0, page: 1 }
+    }
   };
   return scanResumeState;
 }
@@ -283,9 +346,15 @@ function clearScanState(): void {
     
     // Reset in-memory state
     scanResumeState = {
+      currentProviderIndex: 0,
       currentQueryIndex: 0,
       currentPage: 1,
-      lastProcessedTime: Date.now()
+      lastProcessedTime: Date.now(),
+      providerStates: {
+        openai: { queryIndex: 0, page: 1 },
+        google_gemini: { queryIndex: 0, page: 1 },
+        anthropic: { queryIndex: 0, page: 1 }
+      }
     };
     
     // Clear global state
@@ -359,18 +428,43 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
 // --- Batched upsert for leaks and scan attempts ---
 async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
   if (!leaks.length) return;
-  const ops = leaks.map(leak => ({
-    updateOne: {
-      filter: { repoUrl: leak.repoUrl, filePath: leak.filePath, provider: leak.provider },
-      update: leak,
-      upsert: true
+  
+  try {
+    const ops = leaks.map(leak => ({
+      updateOne: {
+        filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider },
+        update: leak,
+        upsert: true
+      }
+    }));
+    
+    await Leak.bulkWrite(ops, { ordered: false });
+  } catch (error: any) {
+    // Handle duplicate key errors gracefully
+    if (error.code === 11000) {
+      // This is a duplicate key error, which is expected when the same leak is found multiple times
+      // We can safely ignore this as the upsert should have handled it
+      logger.warn(`[FARM] Duplicate leak detected (expected): ${error.message}`);
+    } else {
+      // Log other errors
+      logger.error(`[FARM] Failed to save leaks: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }));
-  await Leak.bulkWrite(ops, { ordered: false });
+  }
 }
+
 async function batchInsertScanAttempts(attempts: any[]) {
   if (!attempts.length) return;
-  await ScanAttempt.insertMany(attempts, { ordered: false });
+  
+  try {
+    await ScanAttempt.insertMany(attempts, { ordered: false });
+  } catch (error: any) {
+    // Handle duplicate key errors gracefully for scan attempts too
+    if (error.code === 11000) {
+      logger.warn(`[FARM] Duplicate scan attempt detected (expected): ${error.message}`);
+    } else {
+      logger.error(`[FARM] Failed to save scan attempts: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
 }
 
 // --- Main Service ---
@@ -452,6 +546,8 @@ export class GitHubCodeLeakFarmService {
       let scannedAnything = false;
       try {
         scannedAnything = await this.executeScanCycle();
+        // Reload scan state after each cycle to ensure proper provider rotation
+        scanResumeState = loadResumeState();
       } catch (error) {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
       }
@@ -489,102 +585,120 @@ export class GitHubCodeLeakFarmService {
     // Load resume state at the start of each cycle
     const resumeState = loadResumeState();
     
-    // Start from the current query index and page
-    for (let queryIndex = resumeState.currentQueryIndex; queryIndex < ALL_SEARCH_QUERIES.length; queryIndex++) {
-      if (!this.running) break;
-      
-      const query = ALL_SEARCH_QUERIES[queryIndex];
-      
-      // Update resume state to current position
-      scanResumeState.currentQueryIndex = queryIndex;
-      scanResumeState.currentPage = queryIndex === resumeState.currentQueryIndex ? resumeState.currentPage : 1;
+    // Get provider names for rotation
+    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
+    
+    // Ensure currentProviderIndex is within bounds
+    const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
+    const currentProvider = providerNames[validProviderIndex];
+    
+    // Ensure currentProvider is defined
+    if (!currentProvider) {
+      logger.error(`[FARM] Invalid provider index: ${resumeState.currentProviderIndex}, resetting to 0`);
+      scanResumeState.currentProviderIndex = 0;
       saveResumeState();
-      
-      logger.warn(`[FARM] Processing query ${queryIndex + 1}/${ALL_SEARCH_QUERIES.length}: "${query}" (starting from page ${scanResumeState.currentPage})`);
-      
-      try {
-        if (query) {
-          await this.processAllPagesForQuery(query);
-          scannedAnything = true;
-        }
-        
-        // Move to next query, reset page
-        scanResumeState.currentQueryIndex = queryIndex + 1;
-        scanResumeState.currentPage = 1;
-        saveResumeState();
-      } catch (error) {
-        logger.error(`[FARM] Error processing query "${query}": ${error instanceof Error ? error.message : String(error)}`);
-        // Save current state before moving to next query
-        saveResumeState();
-      }
+      return false;
     }
     
-    // If we completed all queries, reset to beginning for next cycle
-    if (scanResumeState.currentQueryIndex >= ALL_SEARCH_QUERIES.length) {
-      scanResumeState.currentQueryIndex = 0;
-      scanResumeState.currentPage = 1;
+    // Type assertion since we've verified currentProvider exists
+    const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
+    const providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
+    
+    // Get current provider state and ensure it exists
+    const providerState = resumeState.providerStates[typedCurrentProvider] || { queryIndex: 0, page: 1 };
+    let queryIndex = providerState.queryIndex;
+    let page = providerState.page;
+    
+    // Update resume state to current position
+    scanResumeState.currentProviderIndex = validProviderIndex;
+    scanResumeState.currentQueryIndex = queryIndex;
+    scanResumeState.currentPage = page;
+    
+    logger.warn(`[FARM] Processing provider ${validProviderIndex + 1}/${providerNames.length}: ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+    
+    try {
+      // Process current provider's current query (one page only)
+      const query = providerQueries[queryIndex];
+      if (query) {
+        await this.processOnePageForQuery(query, page);
+        scannedAnything = true;
+      }
+      
+      // Move to next query/page for this provider
+      queryIndex++;
+      if (queryIndex >= providerQueries.length) {
+        queryIndex = 0;
+        page++;
+      }
+      
+      // Update provider state
+      scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page };
+      scanResumeState.currentQueryIndex = queryIndex;
+      scanResumeState.currentPage = page;
+      scanResumeState.lastProcessedTime = Date.now();
       saveResumeState();
-      logger.warn(`[FARM] Completed all queries, resetting to beginning for next cycle`);
+      
+      // Move to next provider after processing one page
+      scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
+      saveResumeState();
+      
+      logger.warn(`[FARM] Completed ${typedCurrentProvider} page, moving to next provider: ${providerNames[(validProviderIndex + 1) % providerNames.length]}`);
+    } catch (error) {
+      this.handleSearchError(error, providerQueries[queryIndex] || 'unknown', page);
     }
     
     return scannedAnything;
   }
 
-  // Process all pages for a single query sequentially
-  private async processAllPagesForQuery(query: string): Promise<void> {
-    // Start from the resume state page for this query
-    let page = scanResumeState.currentPage;
-    let hasMoreResults = true;
-    let consecutiveErrors = 0;
-    const MAX_CONSECUTIVE_ERRORS = MAX_RETRIES;
-    let totalResults = 0;
-    
-    while (this.running && hasMoreResults) {
+  // Process only ONE page for a single query
+  private async processOnePageForQuery(query: string, page: number): Promise<void> {
+    try {
       await waitForRateLimitIfNeeded();
+      if (!this.running) return;
       
-      // Update resume state with current page
-      scanResumeState.currentPage = page;
-      saveResumeState();
+      const response = await retry(() => axios.get('https://api.github.com/search/code', {
+        params: { q: query, per_page: 10, page },
+        headers: {
+          'Authorization': `Bearer ${config.GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'API-Radar-Scanner/1.0',
+        },
+        timeout: 30000,
+      }));
       
-      let response: { data: GitHubSearchResponse };
-      try {
-        response = await retry(() => axios.get('https://api.github.com/search/code', {
-          params: { q: query, per_page: 10, page },
-          headers: {
-            'Authorization': `Bearer ${config.GITHUB_TOKEN}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'API-Radar-Scanner/1.0',
-          },
-          timeout: 30000,
-        }));
-        consecutiveErrors = 0;
-        const items: GitHubSearchItem[] = response.data?.items || [];
+      const items: GitHubSearchItem[] = response.data?.items || [];
+      
+      if (items.length === 0) {
+        return;
+      }
+      
+      await this.processSearchResults(items, query);
+      
+    } catch (error: any) {
+      // Improved rate limit handling with better validation
+      if (error.response && error.response.status === 403 && error.response.headers) {
+        const remaining = error.response.headers['x-ratelimit-remaining'];
+        const reset = error.response.headers['x-ratelimit-reset'];
+        const limit = error.response.headers['x-ratelimit-limit'];
         
-        if (items.length === 0) {
-          hasMoreResults = false;
-          break;
-        }
-        
-        totalResults += items.length;
-        
-        await this.processSearchResults(items, query);
-        
-        // Pagination decision logic - continue until no more results
-        if (items.length === 10) {
-          page++;
-          hasMoreResults = true;
-        } else {
-          hasMoreResults = false;
-        }
-      } catch (error: any) {
-        // Improved rate limit handling with better validation
-        if (error.response && error.response.status === 403 && error.response.headers) {
-          const remaining = error.response.headers['x-ratelimit-remaining'];
-          const reset = error.response.headers['x-ratelimit-reset'];
-          const limit = error.response.headers['x-ratelimit-limit'];
+        // Validate if this is a search API rate limit
+        if (validateSearchRateLimitHeaders(remaining, limit)) {
+          const resetTime = parseInt(reset, 10) * 1000;
+          const now = Date.now();
           
-          // Validate if this is a search API rate limit
-          if (validateSearchRateLimitHeaders(remaining, limit)) {
+          // Validate reset time is reasonable (not in the past, not too far in the future)
+          if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
+            setRateLimit(resetTime);
+            // Save current state before waiting for rate limit
+            saveResumeState();
+            await waitForRateLimitIfNeeded();
+            // Retry this page after rate limit reset
+            await this.processOnePageForQuery(query, page);
+            return;
+          }
+        } else {
+          // Only treat as rate limit if remaining is actually 0 and we have a valid reset time
+          if (remaining === '0' && reset) {
             const resetTime = parseInt(reset, 10) * 1000;
             const now = Date.now();
             
@@ -594,39 +708,16 @@ export class GitHubCodeLeakFarmService {
               // Save current state before waiting for rate limit
               saveResumeState();
               await waitForRateLimitIfNeeded();
-              continue; // Continue with the same query after rate limit reset
-            }
-          } else {
-            // Only treat as rate limit if remaining is actually 0 and we have a valid reset time
-            if (remaining === '0' && reset) {
-              const resetTime = parseInt(reset, 10) * 1000;
-              const now = Date.now();
-              
-              // Validate reset time is reasonable (not in the past, not too far in the future)
-              if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
-                setRateLimit(resetTime);
-                // Save current state before waiting for rate limit
-                saveResumeState();
-                await waitForRateLimitIfNeeded();
-                continue; // Continue with the same query after rate limit reset
-              }
+              // Retry this page after rate limit reset
+              await this.processOnePageForQuery(query, page);
+              return;
             }
           }
         }
-        consecutiveErrors++;
-        this.handleSearchError(error, query, page);
-        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          logger.error(`[FARM] Too many consecutive errors (${consecutiveErrors}) for query: ${query}, stopping pagination`);
-          break;
-        }
-        page++;
-        continue;
       }
+      
+      this.handleSearchError(error, query, page);
     }
-    
-    // Reset page to 1 for next query
-    scanResumeState.currentPage = 1;
-    saveResumeState();
   }
 
   private async processSearchResults(items: GitHubSearchItem[], query: string): Promise<void> {
@@ -651,7 +742,6 @@ export class GitHubCodeLeakFarmService {
       
       // Skip files with problematic characters that might cause issues
       if (fileName.includes('#') || fileName.includes('?') || fileName.includes('&')) {
-        logger.warn(`[FARM] Skipping file with problematic characters: ${filePath}`);
         skippedCount++;
         continue;
       }
@@ -669,7 +759,6 @@ export class GitHubCodeLeakFarmService {
         await waitForRateLimitIfNeeded();
         commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath));
       } catch (error) {
-        logger.warn(`[FARM] Failed to get commit hash for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
         continue;
       }
@@ -681,7 +770,6 @@ export class GitHubCodeLeakFarmService {
       // Now check if this specific commit+query combination was already scanned
       const cacheKeyWithCommit = `${item.repository.html_url}|${filePath}|${query}|${commitHash}`;
       if (scannedCache.has(cacheKeyWithCommit)) {
-        logger.warn(`[FARM] Skipping already scanned file: ${repoName}/${filePath} (commit: ${commitHash.substring(0, 8)})`);
         skippedCount++;
         continue;
       }
@@ -689,7 +777,6 @@ export class GitHubCodeLeakFarmService {
       // Check database for this specific commit+query combination
       if (await alreadyScanned(item.repository.html_url, filePath, query, commitHash)) {
         scannedCache.add(cacheKeyWithCommit);
-        logger.warn(`[FARM] Skipping already scanned file: ${repoName}/${filePath} (commit: ${commitHash.substring(0, 8)})`);
         skippedCount++;
         continue;
       }
@@ -702,7 +789,6 @@ export class GitHubCodeLeakFarmService {
         await waitForRateLimitIfNeeded();
         content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'));
       } catch (error) {
-        logger.warn(`[FARM] Failed to fetch content for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
         continue;
       }
@@ -721,7 +807,7 @@ export class GitHubCodeLeakFarmService {
       }
     }
     
-    // Log summary for this batch
+    // Only log summary if there was activity
     if (processedCount > 0 || skippedCount > 0) {
       logger.warn(`[FARM] Query "${query}" summary: ${processedCount} files processed, ${skippedCount} files skipped`);
     }
@@ -749,11 +835,9 @@ export class GitHubCodeLeakFarmService {
       await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
       return;
     }
-    
-    // Process leaks only for repositories less than 12 months old
+  
     if (repoCreatedAt >= REPOSITORY_AGE_CUTOFF) {
       for (const { key, provider } of leaks) {
-        if (calculateEntropy(key) < SCAN_ENTROPY_THRESHOLD) continue;
         try {
           const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));
           
@@ -776,7 +860,9 @@ export class GitHubCodeLeakFarmService {
       }
       
       // Save leaks for repositories less than 12 months old
-      await batchUpsertLeaks(foundLeaks);
+      if (foundLeaks.length > 0) {
+        await batchUpsertLeaks(foundLeaks);
+      }
     }
     
     // Always save scan attempt for all repositories (since we scan everything)

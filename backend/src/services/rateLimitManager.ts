@@ -15,7 +15,7 @@ export async function checkActualRateLimitStatus(): Promise<boolean> {
   try {
     // Throttle checks to avoid too many API calls
     const now = Date.now();
-    if (now - lastActualCheckTime < 5000) { // Only check every 5 seconds
+    if (now - lastActualCheckTime < 30000) { // Only check every 30 seconds (increased from 5)
       return rateLimitActive;
     }
     lastActualCheckTime = now;
@@ -26,7 +26,7 @@ export async function checkActualRateLimitStatus(): Promise<boolean> {
         'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'API-Radar-Scanner/1.0',
       },
-      timeout: 10000,
+      timeout: 5000, // Reduced timeout from 10 seconds to 5
     });
     
     const coreLimit = response.data.resources.core;
@@ -47,7 +47,10 @@ export async function checkActualRateLimitStatus(): Promise<boolean> {
     
     return isRateLimited;
   } catch (error) {
-    logger.error('[GITHUB] Failed to check rate limit status: ' + (error instanceof Error ? error.message : String(error)));
+    // Don't log timeout errors as frequently - only log other errors
+    if (error instanceof Error && !error.message?.includes('timeout')) {
+      logger.error('[GITHUB] Failed to check rate limit status: ' + error.message);
+    }
     return rateLimitActive; // Return current state if we can't check
   }
 }
@@ -59,14 +62,22 @@ export function initializeRateLimitManager() {
 }
 
 export async function waitForRateLimitIfNeeded() {
-  // Always check actual token status first
-  const isStillRateLimited = await checkActualRateLimitStatus();
-  if (!isStillRateLimited) {
-    return; // Token is available, exit immediately
-  }
-  
-  // Check if we're past the rate limit reset time
-  if (rateLimitPauseUntil && Date.now() >= rateLimitPauseUntil) {
+  // If rate limited, just wait for the reset time without any API calls
+  if (rateLimitPauseUntil && Date.now() < rateLimitPauseUntil) {
+    const waitTime = rateLimitPauseUntil - Date.now();
+    const waitSec = Math.ceil(waitTime / 1000);
+    const waitMin = Math.floor(waitSec / 60);
+    const waitSecRemaining = waitSec % 60;
+    
+    if (!rateLimitWarned) {
+      logger.warn(`[GITHUB] Rate limit reached. Waiting ${waitMin}m ${waitSecRemaining}s for reset. Scanner will resume automatically.`);
+      rateLimitWarned = true;
+    }
+    
+    // Wait for the full reset time
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+    
+    // Clear rate limit state and resume
     logger.init('[GITHUB] Rate limit reset, resuming scans...');
     clearRateLimit();
     return;
@@ -84,24 +95,6 @@ export async function waitForRateLimitIfNeeded() {
     logger.init('[GITHUB] Force clearing rate limit state after 2 minutes...');
     clearRateLimit();
     return;
-  }
-  
-  while (rateLimitPauseUntil && Date.now() < rateLimitPauseUntil) {
-    // Check actual token status every 10 seconds while waiting (less frequent)
-    if (Date.now() % 10000 < 1000) { // Every ~10 seconds
-      const currentStatus = await checkActualRateLimitStatus();
-      if (!currentStatus) {
-        return; // Token is available, exit immediately
-      }
-    }
-    
-    if (!rateLimitWarned) {
-      const waitSec = Math.ceil((rateLimitPauseUntil - Date.now()) / 1000);
-      const waitMin = Math.floor(waitSec / 60);
-      const waitSecRemaining = waitSec % 60;
-      logger.warn(`[GITHUB] Rate limit reached. Waiting ${waitMin}m ${waitSecRemaining}s for reset. Scanner will resume automatically.`);
-      rateLimitWarned = true;
-    }
   }
 }
 

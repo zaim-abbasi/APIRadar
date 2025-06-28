@@ -23,7 +23,7 @@ const LeakSchema = new Schema<ILeak>(
       type: String,
       required: true,
       trim: true,
-      maxlength: 200,
+      maxlength: 1000,
       select: false,
     },
     provider: {
@@ -33,7 +33,7 @@ const LeakSchema = new Schema<ILeak>(
       lowercase: true,
       enum: [
         'openai',
-        'google-gemini',
+        'google_gemini',
         'anthropic',
         'mistral-ai',
         'cohere',
