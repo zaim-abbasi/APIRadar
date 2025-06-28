@@ -2,46 +2,72 @@ import { LeakedKey, ProviderStats, LeaderboardData } from '@/types';
 
 const generateMockLeaks = (): LeakedKey[] => {
   const leaks: LeakedKey[] = [];
-  const providers = ['openai', 'google-gemini', 'anthropic', 'mistral-ai', 'cohere'];
-  const authors = ['john-doe', 'jane-smith', 'dev-team', 'open-source', 'startup-xyz'];
-  const repoNames = ['api-client', 'backend-service', 'mobile-app', 'web-dashboard', 'ml-model'];
+  const providers = ['openai', 'anthropic', 'google'];
+  const providerRepos: Record<string, string[]> = {
+    openai: [
+      'openai/openai-python',
+      'openai/openai-cookbook',
+      'openai/openai-node',
+      'openai/gym',
+      'openai/whisper',
+    ],
+    anthropic: [
+      'anthropics/anthropic-sdk-python',
+      'anthropics/anthropic-sdk-js',
+      'anthropics/anthropic-examples',
+      'anthropics/claude-api',
+      'anthropics/anthropic-docs',
+    ],
+    google: [
+      'googleapis/google-api-python-client',
+      'googleapis/google-api-nodejs-client',
+      'google/gemini-api',
+      'googleapis/google-cloud-go',
+      'googleapis/google-cloud-java',
+    ],
+  };
+
+  // Use recent timestamps (within last 30 days)
+  const now = new Date();
+  const oneDay = 24 * 60 * 60 * 1000;
+  const baseTime = now.getTime() - (30 * oneDay); // Start from 30 days ago
 
   for (let i = 0; i < 50; i++) {
-    const provider = providers[Math.floor(Math.random() * providers.length)];
-    const author = authors[Math.floor(Math.random() * authors.length)];
-    const repoName = repoNames[Math.floor(Math.random() * repoNames.length)];
+    const provider = providers[i % providers.length];
+    const repoList = providerRepos[provider];
+    const repoFullName = repoList[i % repoList.length];
     
     let redactedKey: string;
     switch (provider) {
       case 'openai':
-        redactedKey = 'sk-****' + Math.random().toString(36).substring(2, 10);
+        redactedKey = `sk-****${i.toString().padStart(8, '0')}`;
         break;
-      case 'google-gemini':
-        redactedKey = 'AIza****' + Math.random().toString(36).substring(2, 10);
+      case 'google':
+        redactedKey = `AIza****${i.toString().padStart(8, '0')}`;
         break;
       case 'anthropic':
-        redactedKey = 'x-api-key=****' + Math.random().toString(36).substring(2, 10);
-        break;
-      case 'mistral-ai':
-        redactedKey = 'Mistral****' + Math.random().toString(36).substring(2, 10);
+        redactedKey = `x-api-key=****${i.toString().padStart(8, '0')}`;
         break;
       default:
-        redactedKey = 'cohere****' + Math.random().toString(36).substring(2, 10);
+        redactedKey = `unknown****${i.toString().padStart(8, '0')}`;
     }
 
-    const repoCreatedAt = new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000);
-    const leakDetectedAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+    // Distribute leaks over the last 30 days
+    const leakDetectedAt = new Date(baseTime + (i * (30 * oneDay / 50)));
+    const repoCreatedAt = new Date(leakDetectedAt.getTime() - ((i + 1) * 7 * oneDay)); // Repo created 1-7 weeks before leak
 
-    leaks.push({
+    const leak = {
       id: `leak_${i}`,
       redacted_key: redactedKey,
       provider,
-      repo_url: `https://github.com/${author}/${repoName}`,
-      file_path: `src/${Math.random() > 0.5 ? 'config' : 'utils'}/keys.${Math.random() > 0.5 ? 'js' : 'py'}`,
+      repo_url: `https://github.com/${repoFullName}`,
+      file_path: `src/${i % 2 === 0 ? 'config' : 'utils'}/keys.${i % 2 === 0 ? 'js' : 'py'}`,
       timestamp: leakDetectedAt.toISOString(),
       repo_created_at: repoCreatedAt.toISOString(),
       leak_detected_at: leakDetectedAt.toISOString()
-    });
+    };
+
+    leaks.push(leak);
   }
 
   return leaks.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -53,10 +79,9 @@ export const mockLeaderboard: LeaderboardData = {
   topProviders: [
     { provider: 'openai', count: 1247, percentage: 45.3, trend: 'up' },
     { provider: 'anthropic', count: 892, percentage: 32.4, trend: 'up' },
-    { provider: 'google-ai', count: 432, percentage: 15.7, trend: 'down' },
-    { provider: 'cohere', count: 178, percentage: 6.5, trend: 'stable' },
+    { provider: 'google', count: 432, percentage: 15.7, trend: 'down' },
   ],
-  totalLeaks: 2749,
+  totalLeaks: 2571,
   todayLeaks: 89,
   weeklyGrowth: 12.1
 };

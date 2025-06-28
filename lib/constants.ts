@@ -2,8 +2,7 @@ export const PROVIDERS = [
   { value: 'all', label: 'All Providers' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic (Claude)' },
-  { value: 'google-ai', label: 'Google AI' },
-  { value: 'cohere', label: 'Cohere' },
+  { value: 'google', label: 'Google Gemini' },
 ] as const;
 
 export const TIME_RANGES = [

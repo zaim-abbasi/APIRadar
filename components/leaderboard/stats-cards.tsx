@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { motion, useSpring, useInView } from 'framer-motion';
-import { TrendingUp, TrendingDown, Minus, Shield, AlertTriangle, Eye } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { TrendingUp, TrendingDown, Minus, Shield, AlertTriangle, Eye, Calendar, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeaderboardData } from '@/types';
 
@@ -15,114 +14,130 @@ interface AnimatedCounterProps {
   isPercentage?: boolean;
 }
 
-function AnimatedCounter({ value, isPercentage = false }: AnimatedCounterProps) {
-  const ref = React.useRef(null);
-  const isInView = useInView(ref, { once: true });
-  const spring = useSpring(0, {
-    damping: 50,
-    stiffness: 200,
-    mass: 2
-  });
+// Simplified animated counter using CSS transitions
+const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (isInView) {
-      spring.set(value);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          // Simple CSS-based animation
+          const duration = 1000;
+          const steps = 60;
+          const increment = value / steps;
+          let current = 0;
+          
+          const timer = setInterval(() => {
+            current += increment;
+            if (current >= value) {
+              setDisplayValue(value);
+              clearInterval(timer);
+            } else {
+              setDisplayValue(Math.floor(current));
+            }
+          }, duration / steps);
+
+          return () => clearInterval(timer);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const element = document.getElementById('stats-container');
+    if (element) {
+      observer.observe(element);
     }
-  }, [spring, value, isInView]);
 
-  useEffect(() => {
-    return spring.on("change", (latest) => {
-      if (ref.current) {
-        (ref.current as any).textContent = isPercentage 
-          ? `${latest.toFixed(1)}%`
-          : latest.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    return () => observer.disconnect();
+  }, [value]);
+
+  return (
+    <span className="transition-all duration-1000 ease-out">
+      {isPercentage 
+        ? `${displayValue.toFixed(1)}%`
+        : displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 })
       }
-    });
-  }, [spring, isPercentage]);
+    </span>
+  );
+});
 
-  return <span ref={ref} />;
-}
+AnimatedCounter.displayName = 'AnimatedCounter';
 
-const StatsCardsComponent = ({ data }: StatsCardsProps) => {
-  const stats = [
+// Memoized Stat Card component
+const StatCard = React.memo(({ 
+  stat, 
+  index 
+}: { 
+  stat: any; 
+  index: number; 
+}) => (
+  <div 
+    className="group animate-fade-in-up opacity-0"
+    style={{ animationDelay: `${index * 50}ms` }}
+  >
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          {stat.title}
+        </CardTitle>
+        <stat.icon className={`${stat.color} h-7 w-7`} />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold transition-all duration-500 ease-out">
+          {typeof stat.value === 'number' ? (
+            stat.isPercentage ? (
+              <AnimatedCounter value={stat.value} isPercentage />
+            ) : (
+              <AnimatedCounter value={stat.value} />
+            )
+          ) : (
+            stat.value
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+));
+
+StatCard.displayName = 'StatCard';
+
+const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
+  const stats = useMemo(() => [
     {
-      title: 'Total Leaks Found',
+      title: 'Total Repos Scanned',
       value: data.totalLeaks,
-      icon: Shield,
-      color: 'text-red-500',
-      bgColor: 'bg-red-500/10'
+      icon: Search,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500/10'
     },
     {
-      title: 'Leaks Today',
+      title: 'Total Leaks Found',
       value: data.todayLeaks,
       icon: AlertTriangle,
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10'
     },
     {
-      title: 'Weekly Growth',
-      value: data.weeklyGrowth,
-      icon: data.weeklyGrowth > 0 ? TrendingUp : data.weeklyGrowth < 0 ? TrendingDown : Minus,
-      color: data.weeklyGrowth > 0 ? 'text-red-500' : data.weeklyGrowth < 0 ? 'text-green-500' : 'text-gray-500',
-      bgColor: data.weeklyGrowth > 0 ? 'bg-red-500/10' : data.weeklyGrowth < 0 ? 'bg-green-500/10' : 'bg-gray-500/10',
-      isPercentage: true
-    },
-    {
-      title: 'Providers Tracked',
-      value: data.topProviders.length,
-      icon: Eye,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10'
+      title: 'Repository Cutoff',
+      value: 'June 1, 2025',
+      icon: Calendar,
+      color: 'text-green-500',
+      bgColor: 'bg-green-500/10'
     }
-  ];
+  ], [data]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div id="stats-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       {stats.map((stat, index) => (
-        <motion.div
-          key={stat.title}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ 
-            duration: 0.2, 
-            delay: index * 0.03,
-            ease: "easeOut"
-          }}
-          whileHover={{ y: -5, scale: 1.02 }}
-          className="group"
-        >
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                {stat.title}
-              </CardTitle>
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                className={`p-2 rounded-lg ${stat.bgColor} ${stat.color}`}
-              >
-                <stat.icon className="h-4 w-4" />
-              </motion.div>
-            </CardHeader>
-            <CardContent>
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: index * 0.1 + 0.2, type: "spring", stiffness: 400, damping: 25 }}
-                className="text-2xl font-bold"
-              >
-                {stat.isPercentage ? (
-                  <AnimatedCounter value={stat.value} isPercentage />
-                ) : (
-                  <AnimatedCounter value={stat.value} />
-                )}
-              </motion.div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <StatCard key={stat.title} stat={stat} index={index} />
       ))}
     </div>
   );
-}
+});
 
-export const StatsCards = React.memo(StatsCardsComponent);
+StatsCardsComponent.displayName = 'StatsCardsComponent';
+
+export const StatsCards = StatsCardsComponent;

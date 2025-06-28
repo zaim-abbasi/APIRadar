@@ -1,146 +1,176 @@
 "use client";
 
-import { m, LazyMotion, domAnimation } from 'framer-motion';
+import React, { useMemo } from 'react';
 import { Shield, ArrowRight, FileSearch, Zap, Lock, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export function HeroSection() {
+// Memoized Feature Tag component
+const FeatureTag = React.memo(({ 
+  icon: Icon, 
+  text, 
+  color, 
+  delayClass,
+  shouldSpin = false
+}: { 
+  icon: React.ComponentType<{ className?: string }>; 
+  text: string; 
+  color: string; 
+  delayClass: string; 
+  shouldSpin?: boolean;
+}) => (
+  <div 
+    className={cn(
+      "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out animate-fade-in-up opacity-0",
+      delayClass
+    )}
+  >
+    <div className={cn(color, shouldSpin && "animate-spin-slow")}>
+      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+    </div>
+    <span className="text-xs sm:text-sm font-medium text-foreground/90">{text}</span>
+  </div>
+));
+
+FeatureTag.displayName = 'FeatureTag';
+
+// Memoized CTA Button component
+const CTAButton = React.memo(({ 
+  href, 
+  icon: Icon, 
+  children, 
+  variant = "default",
+  secondaryIcon: SecondaryIcon
+}: { 
+  href: string; 
+  icon: React.ComponentType<{ className?: string }>; 
+  children: React.ReactNode; 
+  variant?: "default" | "outline";
+  secondaryIcon?: React.ComponentType<{ className?: string }>;
+}) => (
+  <Button 
+    asChild 
+    size="lg" 
+    variant={variant}
+    className={cn(
+      "group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02] animate-fade-in-up opacity-0 animate-delay-450"
+    )}
+  >
+    <Link href={href} className="flex items-center justify-center">
+      <Icon className="mr-2 h-5 w-5" />
+      {children}
+      {SecondaryIcon && (
+        <SecondaryIcon className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
+      )}
+    </Link>
+  </Button>
+));
+
+CTAButton.displayName = 'CTAButton';
+
+// Memoized Hero Headline component
+const HeroHeadline = React.memo(() => (
+  <div className="mb-6 animate-fade-in-up opacity-0 animate-delay-100">
+    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[0.95] tracking-tight">
+      {/* First Line */}
+      <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up opacity-0 animate-delay-100">
+        <span className="text-foreground">
+          Beautifully{' '}
+        </span>
+        <span className="text-red-500">
+          Exposed
+        </span>
+      </div>
+      
+      {/* Second Line */}
+      <div className="text-muted-foreground/80 animate-fade-in-up opacity-0 animate-delay-150">
+        API Keys
+      </div>
+    </h1>
+  </div>
+));
+
+HeroHeadline.displayName = 'HeroHeadline';
+
+// Memoized Feature Tags component
+const FeatureTags = React.memo(() => {
+  const features = useMemo(() => [
+    { icon: Zap, text: 'Real-time monitoring', color: 'text-yellow-500', delayClass: 'animate-delay-250', shouldSpin: true },
+    { icon: Lock, text: 'Privacy-first approach', color: 'text-green-500', delayClass: 'animate-delay-300', shouldSpin: false },
+    { icon: BookOpen, text: 'Educational insights', color: 'text-blue-500', delayClass: 'animate-delay-350', shouldSpin: false }
+  ], []);
+
   return (
-    <LazyMotion features={domAnimation}>
-      <m.section className="relative h-screen overflow-hidden">
-        {/* Clean Background - No Grid */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/5">
-          {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/10" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10 h-full flex items-center justify-center">
-          <div className="text-center max-w-5xl mx-auto w-full">
-            {/* Main Headline - Optimized Layout */}
-            <m.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="mb-6"
-            >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[0.95] tracking-tight">
-                {/* First Line */}
-                <m.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
-                  className="mb-2 sm:mb-3 md:mb-4"
-                >
-                  <span className="text-foreground">
-                    Beautifully{' '}
-                  </span>
-                  <span className="text-red-500">
-                    Exposed
-                  </span>
-                </m.div>
-                
-                {/* Second Line */}
-                <m.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.15, ease: 'easeOut' }}
-                  className="text-muted-foreground/80"
-                >
-                  API Keys
-                </m.div>
-              </h1>
-            </m.div>
-
-            {/* Feature Tags */}
-            <m.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
-              className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8"
-            >
-              <m.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.25, ease: 'easeOut' }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
-              >
-                <m.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                >
-                  <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
-                </m.div>
-                <span className="text-xs sm:text-sm font-medium text-foreground/90">Real-time monitoring</span>
-              </m.div>
-              
-              <m.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.3, ease: 'easeOut' }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
-              >
-                <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
-                <span className="text-xs sm:text-sm font-medium text-foreground/90">Privacy-first approach</span>
-              </m.div>
-              
-              <m.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.35, ease: 'easeOut' }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out"
-              >
-                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
-                <span className="text-xs sm:text-sm font-medium text-foreground/90">Educational insights</span>
-              </m.div>
-            </m.div>
-
-            {/* Subheading */}
-            <m.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4, ease: 'easeOut' }}
-              className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 px-4"
-            >
-              Real-time intelligence on leaked secrets from public GitHub repositories.{' '}
-              <br className="hidden sm:block" />
-              Explore live incidents, learn from common mistakes, and secure your code before attackers do.
-            </m.p>
-
-            {/* CTA Buttons */}
-            <m.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.45, ease: 'easeOut' }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8"
-            >
-              <Button 
-                asChild 
-                size="lg" 
-                className="group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02]"
-              >
-                <Link href="/explore" className="flex items-center justify-center">
-                  <FileSearch className="mr-2 h-5 w-5" />
-                  Explore Leaks
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
-                </Link>
-              </Button>
-              
-              <Button 
-                asChild 
-                variant="outline" 
-                size="lg" 
-                className="h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02]"
-              >
-                <Link href="/learn" className="flex items-center justify-center">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Learn Security
-                </Link>
-              </Button>
-            </m.div>
-          </div>
-        </div>
-      </m.section>
-    </LazyMotion>
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in-up opacity-0 animate-delay-200">
+      {features.map((feature, index) => (
+        <FeatureTag
+          key={index}
+          icon={feature.icon}
+          text={feature.text}
+          color={feature.color}
+          delayClass={feature.delayClass}
+          shouldSpin={feature.shouldSpin}
+        />
+      ))}
+    </div>
   );
-}
+});
+
+FeatureTags.displayName = 'FeatureTags';
+
+// Memoized Subheading component
+const HeroSubheading = React.memo(() => (
+  <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 px-4 animate-fade-in-up opacity-0 animate-delay-400">
+    Real-time intelligence on leaked secrets from public GitHub repositories.{' '}
+    <br className="hidden sm:block" />
+    Explore live incidents, learn from common mistakes, and secure your code before attackers do.
+  </p>
+));
+
+HeroSubheading.displayName = 'HeroSubheading';
+
+// Memoized CTA Buttons component
+const CTAButtons = React.memo(() => (
+  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8">
+    <CTAButton href="/explore" icon={FileSearch} secondaryIcon={ArrowRight}>
+      Explore Leaks
+    </CTAButton>
+    
+    <CTAButton href="/learn" icon={Shield} variant="outline">
+      Learn Security
+    </CTAButton>
+  </div>
+));
+
+CTAButtons.displayName = 'CTAButtons';
+
+export const HeroSection = React.memo(() => {
+  return (
+    <section className="relative h-screen overflow-hidden">
+      {/* Clean Background - No Grid */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/5">
+        {/* Gradient Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/10" />
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10 h-full flex items-center justify-center">
+        <div className="text-center max-w-5xl mx-auto w-full">
+          {/* Main Headline - Optimized Layout */}
+          <HeroHeadline />
+
+          {/* Feature Tags */}
+          <FeatureTags />
+
+          {/* Subheading */}
+          <HeroSubheading />
+
+          {/* CTA Buttons */}
+          <CTAButtons />
+        </div>
+      </div>
+    </section>
+  );
+});
+
+HeroSection.displayName = 'HeroSection';

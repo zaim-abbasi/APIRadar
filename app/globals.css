@@ -76,3 +76,98 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Custom animations for hero section */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Animation delays */
+.animate-delay-100 {
+  animation-delay: 100ms;
+}
+
+.animate-delay-150 {
+  animation-delay: 150ms;
+}
+
+.animate-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animate-delay-250 {
+  animation-delay: 250ms;
+}
+
+.animate-delay-300 {
+  animation-delay: 300ms;
+}
+
+.animate-delay-350 {
+  animation-delay: 350ms;
+}
+
+.animate-delay-400 {
+  animation-delay: 400ms;
+}
+
+.animate-delay-450 {
+  animation-delay: 450ms;
+}
+
+/* Completely disable focus rings on dropdown buttons */
+[role="combobox"],
+[data-radix-popper-content-wrapper] button,
+[data-radix-popper-content-wrapper] [role="combobox"],
+button[role="combobox"],
+button[aria-haspopup="dialog"],
+button[aria-expanded] {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
+
+/* Disable focus rings on all select triggers */
+[data-radix-select-trigger],
+[data-radix-popover-trigger] {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
+
+/* Disable focus rings on command input */
+[data-radix-command-input] {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
