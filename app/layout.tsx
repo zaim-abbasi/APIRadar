@@ -1,5 +1,5 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { Navbar } from '@/components/layout/navbar';
@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'API Radar - Real-time API Key Leak Detection',
+  title: 'API Radar',
   description: 'Live tracking of exposed API keys from millions of GitHub repositories. Discover leaks as they happen with unmatched detail and speed.',
   keywords: 'API keys, security, GitHub, leaks, monitoring, detection',
   authors: [{ name: 'Zaim Abbasi' }],
@@ -27,7 +27,11 @@ export const metadata: Metadata = {
     title: 'API Radar - Real-time API Key Leak Detection',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
   },
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: '#ef4444',
 };
 
@@ -53,7 +57,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >

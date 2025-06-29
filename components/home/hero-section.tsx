@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { Shield, ArrowRight, FileSearch, Zap, Lock, BookOpen } from 'lucide-react';
+import { Shield, ArrowRight, FileSearch, Zap, Lock, BookOpen, Eye, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -49,22 +49,17 @@ const CTAButton = React.memo(({
   variant?: "default" | "outline";
   secondaryIcon?: React.ComponentType<{ className?: string }>;
 }) => (
-  <Button 
-    asChild 
-    size="lg" 
-    variant={variant}
-    className={cn(
-      "group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02] animate-fade-in-up opacity-0 animate-delay-450"
-    )}
+  <Link 
+    href={href} 
+    prefetch={true}
+    className="inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-primary-foreground rounded-md group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02] flex items-center justify-center animate-fade-in-up opacity-0 animate-delay-450"
   >
-    <Link href={href} prefetch={true} className="flex items-center justify-center">
-      <Icon className="mr-2 h-5 w-5" />
-      {children}
-      {SecondaryIcon && (
-        <SecondaryIcon className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
-      )}
-    </Link>
-  </Button>
+    <Icon className="mr-2 h-5 w-5" />
+    {children}
+    {SecondaryIcon && (
+      <SecondaryIcon className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
+    )}
+  </Link>
 ));
 
 CTAButton.displayName = 'CTAButton';
@@ -95,9 +90,9 @@ HeroHeadline.displayName = 'HeroHeadline';
 // Memoized Feature Tags component
 const FeatureTags = React.memo(() => {
   const features = useMemo(() => [
-    { icon: Zap, text: 'Real-time monitoring', color: 'text-yellow-500', delayClass: 'animate-delay-250', shouldSpin: true },
-    { icon: Lock, text: 'Privacy-first approach', color: 'text-green-500', delayClass: 'animate-delay-300', shouldSpin: false },
-    { icon: BookOpen, text: 'Educational insights', color: 'text-blue-500', delayClass: 'animate-delay-350', shouldSpin: false }
+    { icon: Zap, text: 'Real-time detection', color: 'text-yellow-500', delayClass: 'animate-delay-250', shouldSpin: true },
+    { icon: Eye, text: 'Instant visibility', color: 'text-green-500', delayClass: 'animate-delay-300', shouldSpin: false },
+    { icon: Globe, text: 'Global coverage', color: 'text-blue-500', delayClass: 'animate-delay-350', shouldSpin: false }
   ], []);
 
   return (
