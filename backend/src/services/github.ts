@@ -6,7 +6,6 @@ import { waitForRateLimitIfNeeded, setRateLimit, clearRateLimit } from './rateLi
 export class GitHubService {
   private readonly clients: AxiosInstance[];
   private currentTokenIndex: number = 0;
-  private lastRequestTime: number = 0;
   
   constructor() {
     // Support GITHUB_TOKEN as a single token or comma-separated list

@@ -34,7 +34,7 @@ const ScanAttemptSchema = new Schema<IScanAttempt>({
 });
 
 // Compound index for efficient duplicate checking
-ScanAttemptSchema.index({ repoUrl: 1, filePath: 1, queryUsed: 1, commitHash: 1 }, { unique: true });
+ScanAttemptSchema.index({ repoUrl: 1, filePath: 1, commitHash: 1 }, { unique: true });
 ScanAttemptSchema.index({ scannedAt: -1 });
 ScanAttemptSchema.index({ leakFound: 1, scannedAt: -1 });
 

@@ -155,17 +155,15 @@ async function fetchRawFileContent(repoFullName: string, filePath: string, ref: 
   }
 }
 
-async function alreadyScanned(repoUrl: string, filePath: string, query: string, commitHash: string): Promise<boolean> {
+async function alreadyScanned(repoUrl: string, filePath: string, commitHash: string): Promise<boolean> {
   try {
     const recentScan = await ScanAttempt.findOne({
       repoUrl,
       filePath,
-      queryUsed: query,
       commitHash
     }).lean();
     return !!recentScan;
   } catch (error) {
-    // If database query fails, assume not scanned to be safe
     logger.warn(`[FARM] Database query failed for duplicate check: ${error instanceof Error ? error.message : String(error)}`);
     return false;
   }
@@ -438,7 +436,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
   try {
     const ops = leaks.map(leak => ({
       updateOne: {
-        filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider },
+        filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider, filePath: leak.filePath },
         update: leak,
         upsert: true
       }
@@ -448,7 +446,13 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
   } catch (error: any) {
     // Handle duplicate key errors gracefully
     if (error.code === 11000) {
-      // This is a duplicate key error, which is expected when the same leak is found multiple times
+      // Check if it's a fullKey duplicate (which we want to prevent)
+      if (error.message && error.message.includes('fullKey')) {
+        logger.warn(`[FARM] Duplicate API key detected (fullKey): ${error.message}`);
+        // For fullKey duplicates, we should not save the duplicate
+        return;
+      }
+      // This is a duplicate key error for the compound index, which is expected when the same leak is found multiple times
       // We can safely ignore this as the upsert should have handled it
       logger.warn(`[FARM] Duplicate leak detected (expected): ${error.message}`);
     } else {
@@ -512,8 +516,7 @@ export class GitHubCodeLeakFarmService {
     const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
     const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
     let firstCycle = true;
-    let consecutiveIdleCycles = 0;
-    const MAX_IDLE_CYCLES = 5; // After 5 idle cycles, force a scan
+    let scanCompleted = false;
     
     while (this.running) {
       // Check configurations every 30 seconds
@@ -525,6 +528,7 @@ export class GitHubCodeLeakFarmService {
             logger.warn('[FARM] Configuration was missing and has been reinitialized');
             // Reload scan state after reinitialization
             scanResumeState = await loadResumeState();
+            scanCompleted = false; // Reset completion flag if config was reinitialized
           }
         } catch (error) {
           logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -566,27 +570,32 @@ export class GitHubCodeLeakFarmService {
         clearRateLimit();
       }
       
+      // If scan is completed, don't continue scanning
+      if (scanCompleted) {
+        if (firstCycle) {
+          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+          firstCycle = false;
+        } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
+          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+          lastStatusLog = Date.now();
+        }
+        // Wait a bit before checking again
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        continue;
+      }
+      
       let scannedAnything = false;
       try {
         scannedAnything = await this.executeScanCycle();
+        // Check if scan cycle is complete
+        if (!scannedAnything) {
+          scanCompleted = true;
+          logger.warn('[FARM] Scan cycle completed - no more files to process');
+        }
         // Reload scan state after each cycle to ensure proper provider rotation
         scanResumeState = await loadResumeState();
       } catch (error) {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
-      }
-      
-      // Track consecutive idle cycles
-      if (!scannedAnything) {
-        consecutiveIdleCycles++;
-      } else {
-        consecutiveIdleCycles = 0; // Reset counter when we find something
-      }
-      
-      // Force scan after MAX_IDLE_CYCLES to ensure we're not missing anything
-      if (consecutiveIdleCycles >= MAX_IDLE_CYCLES) {
-        logger.init('[FARM] Force scanning after consecutive idle cycles...');
-        consecutiveIdleCycles = 0;
-        // Continue to next cycle which will scan again
       }
       
       // Only show idle message if not rate limited and no scanning occurred
@@ -798,7 +807,7 @@ export class GitHubCodeLeakFarmService {
       }
       
       // Check database for this specific commit+query combination
-      if (await alreadyScanned(item.repository.html_url, filePath, query, commitHash)) {
+      if (await alreadyScanned(item.repository.html_url, filePath, commitHash)) {
         scannedCache.add(cacheKeyWithCommit);
         skippedCount++;
         continue;

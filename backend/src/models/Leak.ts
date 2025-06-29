@@ -86,7 +86,13 @@ const LeakSchema = new Schema<ILeak>(
 
 // Compound unique index to prevent duplicate leaks
 LeakSchema.index(
-  { repoUrl: 1, redactedKey: 1, provider: 1 },
+  { repoUrl: 1, redactedKey: 1, provider: 1, filePath: 1 },
+  { unique: true }
+);
+
+// Unique index on fullKey to prevent duplicate API keys across all repositories
+LeakSchema.index(
+  { fullKey: 1 },
   { unique: true }
 );
 
