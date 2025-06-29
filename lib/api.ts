@@ -66,4 +66,30 @@ export async function fetchTopProviders(): Promise<ApiResponse<{ topProviders: A
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Failed to fetch top providers' };
   }
+}
+
+export async function fetchLeaderboardData(): Promise<ApiResponse<{
+  totalReposScanned: number;
+  totalLeaksFound: number;
+  repositoryAgeCutoff: string;
+  topProviders: Array<{ provider: string; count: number; percentage: number }>;
+}>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard-data`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Failed to fetch leaderboard data' };
+  }
 } 

@@ -5,8 +5,7 @@ import { ILeak, Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck, validateSearchRateLimitHeaders } from './rateLimitManager';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
+import { ConfigurationService } from './ConfigurationService';
 
 // Search patterns with provider names
 const SEARCH_PATTERNS = [
@@ -74,7 +73,6 @@ const PROVIDER_QUERIES = {
 // Configuration constants with fallback defaults
 const MAX_RETRIES = 2;
 const RETRY_BASE_DELAY = 100;
-const REPOSITORY_AGE_CUTOFF = new Date('2025-06-01T00:00:00Z');
 
 // Type definitions for better type safety
 interface GitHubSearchItem {
@@ -238,16 +236,18 @@ let scanResumeState: ScanResumeState = {
 };
 
 // Save resume state to persist across restarts
-function saveResumeState() {
+async function saveResumeState() {
   try {
     const state = {
       ...scanResumeState,
       savedAt: new Date()
     };
     
-    // Save to file for persistence across restarts
-    const stateFilePath = path.join(__dirname, '..', '..', 'scan-state.json');
-    fs.writeFileSync(stateFilePath, JSON.stringify(state, null, 2));
+    // Save to database for persistence across restarts
+    const success = await ConfigurationService.setScanState(state);
+    if (!success) {
+      logger.warn('[FARM] Failed to save scan state to database');
+    }
     
     // Also keep in memory for current session
     (global as any).scanResumeState = state;
@@ -262,43 +262,38 @@ function saveResumeState() {
 }
 
 // Load resume state
-function loadResumeState(): ScanResumeState {
+async function loadResumeState(): Promise<ScanResumeState> {
   try {
-    const stateFilePath = path.join(__dirname, '..', '..', 'scan-state.json');
+    // Try to load from database first
+    const saved = await ConfigurationService.getScanState();
     
-    // Try to load from file first
-    if (fs.existsSync(stateFilePath)) {
-      const fileContent = fs.readFileSync(stateFilePath, 'utf8');
-      const saved = JSON.parse(fileContent);
-      
-      // Validate the saved state
-      if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
-        scanResumeState = {
-          currentProviderIndex: saved.currentProviderIndex || 0,
-          currentQueryIndex: saved.currentQueryIndex || 0,
-          currentPage: saved.currentPage || 1,
-          lastProcessedTime: saved.lastProcessedTime || Date.now(),
-          providerStates: saved.providerStates || {
-            openai: { queryIndex: 0, page: 1 },
-            google_gemini: { queryIndex: 0, page: 1 },
-            anthropic: { queryIndex: 0, page: 1 }
-          }
-        };
-        
-        // Also set in memory
-        (global as any).scanResumeState = scanResumeState;
-        
-        // Only log on first load
-        if (!(global as any).scanResumeState) {
-          logger.warn(`[FARM] Resuming scan: provider ${scanResumeState.currentProviderIndex}, query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
+    // Validate the saved state
+    if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
+      scanResumeState = {
+        currentProviderIndex: saved.currentProviderIndex || 0,
+        currentQueryIndex: saved.currentQueryIndex || 0,
+        currentPage: saved.currentPage || 1,
+        lastProcessedTime: saved.lastProcessedTime || Date.now(),
+        providerStates: saved.providerStates || {
+          openai: { queryIndex: 0, page: 1 },
+          google_gemini: { queryIndex: 0, page: 1 },
+          anthropic: { queryIndex: 0, page: 1 }
         }
-        return scanResumeState;
-      } else {
-        logger.warn(`[FARM] Invalid state file format, resetting to beginning`);
+      };
+      
+      // Also set in memory
+      (global as any).scanResumeState = scanResumeState;
+      
+      // Only log on first load
+      if (!(global as any).scanResumeState) {
+        logger.warn(`[FARM] Resuming scan: provider ${scanResumeState.currentProviderIndex}, query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
       }
+      return scanResumeState;
+    } else {
+      logger.warn(`[FARM] Invalid state format in database, resetting to beginning`);
     }
     
-    // Fallback to memory state if file doesn't exist or is invalid
+    // Fallback to memory state if database doesn't have valid state
     if ((global as any).scanResumeState) {
       const saved = (global as any).scanResumeState as any;
       scanResumeState = {
@@ -334,14 +329,25 @@ function loadResumeState(): ScanResumeState {
 }
 
 // Utility function to clear scan state and reset to beginning
-function clearScanState(): void {
+async function clearScanState(): Promise<void> {
   try {
-    const stateFilePath = path.join(__dirname, '..', '..', 'scan-state.json');
+    // Clear the state from database
+    const success = await ConfigurationService.setScanState({
+      currentProviderIndex: 0,
+      currentQueryIndex: 0,
+      currentPage: 1,
+      lastProcessedTime: Date.now(),
+      providerStates: {
+        openai: { queryIndex: 0, page: 1 },
+        google_gemini: { queryIndex: 0, page: 1 },
+        anthropic: { queryIndex: 0, page: 1 }
+      }
+    });
     
-    // Delete the state file if it exists
-    if (fs.existsSync(stateFilePath)) {
-      fs.unlinkSync(stateFilePath);
-      logger.warn(`[FARM] Scan state file deleted`);
+    if (success) {
+      logger.warn(`[FARM] Scan state cleared from database`);
+    } else {
+      logger.warn(`[FARM] Failed to clear scan state from database`);
     }
     
     // Reset in-memory state
@@ -501,13 +507,30 @@ export class GitHubCodeLeakFarmService {
   private async scanLoop(): Promise<void> {
     let lastStatusLog = Date.now();
     let lastRateLimitCheck = Date.now();
+    let lastConfigCheck = Date.now();
     const STATUS_LOG_INTERVAL = 1 * 60 * 1000; // 1 minute
     const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
+    const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
     let firstCycle = true;
     let consecutiveIdleCycles = 0;
     const MAX_IDLE_CYCLES = 5; // After 5 idle cycles, force a scan
     
     while (this.running) {
+      // Check configurations every 30 seconds
+      if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
+        lastConfigCheck = Date.now();
+        try {
+          const wasReinitialized = await ConfigurationService.checkAndReinitialize();
+          if (wasReinitialized) {
+            logger.warn('[FARM] Configuration was missing and has been reinitialized');
+            // Reload scan state after reinitialization
+            scanResumeState = await loadResumeState();
+          }
+        } catch (error) {
+          logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+
       // Check if we're currently rate limited
       if (rateLimitActive && rateLimitPauseUntil) {
         // Check if rate limit state is stuck
@@ -547,7 +570,7 @@ export class GitHubCodeLeakFarmService {
       try {
         scannedAnything = await this.executeScanCycle();
         // Reload scan state after each cycle to ensure proper provider rotation
-        scanResumeState = loadResumeState();
+        scanResumeState = await loadResumeState();
       } catch (error) {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
       }
@@ -583,7 +606,7 @@ export class GitHubCodeLeakFarmService {
     let scannedAnything = false;
     
     // Load resume state at the start of each cycle
-    const resumeState = loadResumeState();
+    const resumeState = await loadResumeState();
     
     // Get provider names for rotation
     const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
@@ -596,7 +619,7 @@ export class GitHubCodeLeakFarmService {
     if (!currentProvider) {
       logger.error(`[FARM] Invalid provider index: ${resumeState.currentProviderIndex}, resetting to 0`);
       scanResumeState.currentProviderIndex = 0;
-      saveResumeState();
+      await saveResumeState();
       return false;
     }
     
@@ -636,11 +659,11 @@ export class GitHubCodeLeakFarmService {
       scanResumeState.currentQueryIndex = queryIndex;
       scanResumeState.currentPage = page;
       scanResumeState.lastProcessedTime = Date.now();
-      saveResumeState();
+      await saveResumeState();
       
       // Move to next provider after processing one page
       scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
-      saveResumeState();
+      await saveResumeState();
       
       logger.warn(`[FARM] Completed ${typedCurrentProvider} page, moving to next provider: ${providerNames[(validProviderIndex + 1) % providerNames.length]}`);
     } catch (error) {
@@ -835,8 +858,26 @@ export class GitHubCodeLeakFarmService {
       await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
       return;
     }
+
+    // Get repository age cutoff from database
+    let repositoryAgeCutoff: Date;
+    try {
+      const cutoff = await ConfigurationService.getRepositoryAgeCutoff();
+      if (!cutoff) {
+        logger.error('[FARM] Repository age cutoff not found in database. Please set it via the configuration API.');
+        // Don't save any leaks if cutoff is not configured
+        await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
+        return;
+      }
+      repositoryAgeCutoff = cutoff;
+    } catch (error) {
+      logger.error('[FARM] Failed to get repository age cutoff from database: ' + (error instanceof Error ? error.message : String(error)));
+      // Don't save any leaks if we can't get the cutoff
+      await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
+      return;
+    }
   
-    if (repoCreatedAt >= REPOSITORY_AGE_CUTOFF) {
+    if (repoCreatedAt >= repositoryAgeCutoff) {
       for (const { key, provider } of leaks) {
         try {
           const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));

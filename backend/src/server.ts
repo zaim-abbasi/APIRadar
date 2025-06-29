@@ -4,6 +4,7 @@ import { config } from './config/environment';
 import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
+import { ConfigurationService } from './services/ConfigurationService';
 import { registerRoutes } from './routes';
 
 const server = fastify({
@@ -33,6 +34,16 @@ async function startServer() {
       logger.init(`MongoDB connection failed: ${err?.message || err}`);
       process.exit(1);
     }
+
+    // Initialize configuration defaults
+    try {
+      await ConfigurationService.initializeDefaults();
+      logger.init('Configuration initialized successfully');
+    } catch (err: any) {
+      logger.init(`Configuration initialization failed: ${err?.message || err}`);
+      // Don't exit, just log the error
+    }
+
     // Start the GitHub code leak farm service
     try {
       gitHubCodeLeakFarmService.start();

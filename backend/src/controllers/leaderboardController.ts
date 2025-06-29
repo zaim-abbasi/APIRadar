@@ -1,44 +1,37 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
+import { ConfigurationService } from '../services/ConfigurationService';
 
-export async function getLeaderboardHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getLeaderboardDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const leaderboard = await Leak.aggregate([
-      { $group: { _id: '$provider', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+    // Fetch all leaderboard data in parallel for better performance
+    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders] = await Promise.all([
+      ScanAttempt.countDocuments(),
+      Leak.countDocuments(),
+      ConfigurationService.getRepositoryAgeCutoff(),
+      Leak.aggregate([
+        { $group: { _id: '$provider', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 }
+      ])
     ]);
-    return reply.send({ leaderboard });
-  } catch (error) {
-    request.log.error(error);
-    return reply.status(500).send({ error: 'Failed to fetch leaderboard' });
-  }
-}
 
-export async function getProvidersHandler(request: FastifyRequest, reply: FastifyReply) {
-  try {
-    // Return the 6 supported providers in ascending order
-    const providers = [
-      'anthropic',
-      'cohere', 
-      'google-gemini',
-      'huggingface',
-      'mistral-ai',
-      'openai'
-    ];
-    return reply.send({ providers });
-  } catch (error) {
-    request.log.error(error);
-    return reply.status(500).send({ error: 'Failed to fetch providers' });
-  }
-}
+    // Calculate percentages for top providers
+    const providersWithPercentage = topProviders.map(provider => ({
+      provider: provider._id,
+      count: provider.count,
+      percentage: totalLeaksFound > 0 ? (provider.count / totalLeaksFound) * 100 : 0
+    }));
 
-export async function getTotalReposScannedHandler(request: FastifyRequest, reply: FastifyReply) {
-  try {
-    const totalReposScanned = await ScanAttempt.countDocuments();
-    return reply.send({ totalReposScanned });
+    return reply.send({
+      totalReposScanned,
+      totalLeaksFound,
+      repositoryAgeCutoff: repositoryAgeCutoff?.toISOString(),
+      topProviders: providersWithPercentage
+    });
   } catch (error) {
     request.log.error(error);
-    return reply.status(500).send({ error: 'Failed to fetch total repos scanned' });
+    return reply.status(500).send({ error: 'Failed to fetch leaderboard data' });
   }
 } 

@@ -2,7 +2,7 @@
 
 import React, { Suspense, useMemo, useState, useEffect } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
-import { fetchTotalReposScanned, fetchTotalLeaksFound, fetchTopProviders } from '@/lib/api';
+import { fetchLeaderboardData } from '@/lib/api';
 
 const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
 
@@ -49,44 +49,48 @@ const ChartsSection = React.memo(({ data }: { data: any }) => {
 ChartsSection.displayName = 'ChartsSection';
 
 const LeaderboardPage = React.memo(() => {
-  const [totalReposScanned, setTotalReposScanned] = useState<number | null>(null);
-  const [totalLeaksFound, setTotalLeaksFound] = useState<number | null>(null);
-  const [topProviders, setTopProviders] = useState<any[] | null>(null);
+  const [leaderboardData, setLeaderboardData] = useState<{
+    totalReposScanned: number | null;
+    totalLeaksFound: number | null;
+    repositoryAgeCutoff: string | null;
+    topProviders: any[] | null;
+  }>({
+    totalReposScanned: null,
+    totalLeaksFound: null,
+    repositoryAgeCutoff: null,
+    topProviders: null
+  });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch data from backend
+  // Fetch all leaderboard data from single endpoint
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // Fetch all data points in parallel
-        const [reposResponse, leaksResponse, providersResponse] = await Promise.all([
-          fetchTotalReposScanned(),
-          fetchTotalLeaksFound(),
-          fetchTopProviders()
-        ]);
+        const response = await fetchLeaderboardData();
 
-        if (reposResponse.data) {
-          setTotalReposScanned(reposResponse.data.totalReposScanned);
+        if (response.data) {
+          setLeaderboardData({
+            totalReposScanned: response.data.totalReposScanned,
+            totalLeaksFound: response.data.totalLeaksFound,
+            repositoryAgeCutoff: response.data.repositoryAgeCutoff,
+            topProviders: response.data.topProviders
+          });
         } else {
-          setTotalReposScanned(null);
-        }
-
-        if (leaksResponse.data) {
-          setTotalLeaksFound(leaksResponse.data.totalLeaksFound);
-        } else {
-          setTotalLeaksFound(null);
-        }
-
-        if (providersResponse.data) {
-          setTopProviders(providersResponse.data.topProviders);
-        } else {
-          setTopProviders(null);
+          setLeaderboardData({
+            totalReposScanned: null,
+            totalLeaksFound: null,
+            repositoryAgeCutoff: null,
+            topProviders: null
+          });
         }
       } catch (error) {
-        setTotalReposScanned(null);
-        setTotalLeaksFound(null);
-        setTopProviders(null);
+        setLeaderboardData({
+          totalReposScanned: null,
+          totalLeaksFound: null,
+          repositoryAgeCutoff: null,
+          topProviders: null
+        });
       } finally {
         setIsLoading(false);
       }
@@ -98,20 +102,20 @@ const LeaderboardPage = React.memo(() => {
   // Memoize the stats data with real data from backend
   const statsData = useMemo(() => {
     const data = {
-      totalLeaks: totalReposScanned, // Total Repos Scanned
-      todayLeaks: totalLeaksFound, // Total Leaks Found
-      weeklyGrowth: 0 // We'll keep this as 0 for now since we don't have this data from backend
+      totalLeaks: leaderboardData.totalReposScanned, // Total Repos Scanned
+      todayLeaks: leaderboardData.totalLeaksFound, // Total Leaks Found
+      repositoryCutoff: leaderboardData.repositoryAgeCutoff // Repository Cutoff Date
     };
     return data;
-  }, [totalReposScanned, totalLeaksFound]);
+  }, [leaderboardData.totalReposScanned, leaderboardData.totalLeaksFound, leaderboardData.repositoryAgeCutoff]);
 
   // Memoize the chart data with real top providers data
   const chartData = useMemo(() => {
     return {
-      topProviders: topProviders || [],
-      totalLeaks: totalLeaksFound || 0
+      topProviders: leaderboardData.topProviders || [],
+      totalLeaks: leaderboardData.totalLeaksFound || 0
     };
-  }, [topProviders, totalLeaksFound]);
+  }, [leaderboardData.topProviders, leaderboardData.totalLeaksFound]);
 
   // Show loading state while data is being fetched
   if (isLoading) {

@@ -2,17 +2,19 @@
 
 ## Scan State Persistence
 
-The scanning service now automatically saves its progress to a file (`scan-state.json`) in the backend directory. This ensures that scanning progress is preserved even when the service is stopped with Ctrl+C or crashes.
+The scanning service now automatically saves its progress to the database (`configurations` collection). This ensures that scanning progress is preserved even when the service is stopped with Ctrl+C or crashes.
 
 ### How It Works
 
 - **Automatic Saving**: The scan state is saved before each major operation (query processing, page requests, rate limit pauses)
-- **File Location**: `backend/scan-state.json`
+- **Database Storage**: `configurations` collection with key `scan_state`
 - **State Information**: 
+  - `currentProviderIndex`: Which provider is being processed (0-2 for openai, google_gemini, anthropic)
   - `currentQueryIndex`: Which search query is being processed (0-49, etc.)
   - `currentPage`: Which page of results is being processed (1, 2, 3, etc.)
   - `lastProcessedTime`: Timestamp of last activity
-  - `savedAt`: When the state was last saved
+  - `providerStates`: Individual state for each provider
+  - `scanStatus`: Current status of the scan
 
 ### Benefits
 
@@ -20,46 +22,86 @@ The scanning service now automatically saves its progress to a file (`scan-state
 - ✅ **Survives crashes**: State is saved before each operation
 - ✅ **Survives restarts**: Automatically resumes from where it left off
 - ✅ **Rate limit resilience**: State is saved before rate limit pauses
+- ✅ **Database persistence**: More reliable than file-based storage
+- ✅ **Multi-provider support**: Tracks state for each AI provider separately
 
 ### Manual Management
 
 #### Clear Scan State (Reset to Beginning)
 ```bash
-# Manually delete the state file
-rm backend/scan-state.json
+# Use the API endpoint to clear state
+curl -X POST http://localhost:3001/api/config/scan-state \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scanState": {
+      "currentProviderIndex": 0,
+      "currentQueryIndex": 0,
+      "currentPage": 1,
+      "lastProcessedTime": 1703123456789,
+      "providerStates": {
+        "openai": { "queryIndex": 0, "page": 1 },
+        "google_gemini": { "queryIndex": 0, "page": 1 },
+        "anthropic": { "queryIndex": 0, "page": 1 }
+      },
+      "scanStatus": "idle"
+    }
+  }'
 ```
 
 #### View Current State
 ```bash
-# Check the state file
-cat backend/scan-state.json
+# Check the current state via API
+curl http://localhost:3001/api/config/scan-state
 ```
+
+#### Force Reinitialize Configurations
+```bash
+# Force reinitialize all configurations with fresh defaults
+curl -X POST http://localhost:3001/api/config/reinitialize
+```
+
+### Automatic Recovery
+
+The backend automatically detects when configurations are missing and recreates them:
+
+- **Periodic Check**: Every 30 seconds, the system checks if configurations exist
+- **Auto-Recovery**: If configurations are missing, they are automatically recreated with:
+  - Cutoff date = one month before today
+  - Scan state = start from page 1 for all providers
+- **Logging**: You'll see `[FARM] Configuration was missing and has been reinitialized` in the logs
+- **Seamless Operation**: The scanning continues normally after recovery
 
 ### Log Messages
 
 You'll see these messages in the logs:
 
-- `[FARM] Scan state saved to file: query 15, page 7` - State saved
-- `[FARM] Resuming scan from file: query 15, page 7` - Resuming from file
-- `[FARM] Resuming scan from memory: query 15, page 7` - Fallback to memory
-- `[FARM] Scan state cleared, will start from beginning on next restart` - State cleared
+- `[FARM] Scan state saved: provider 1, query 15, page 7` - State saved
+- `[FARM] Resuming scan: provider 1, query 15, page 7` - Resuming from database
+- `[FARM] Scan state cleared from database` - State cleared
+- `[FARM] Invalid state format in database, resetting to beginning` - Fallback to defaults
 
-### File Format
+### Database Schema
 
-The `scan-state.json` file contains:
+The `scan_state` configuration contains:
 ```json
 {
+  "currentProviderIndex": 1,
   "currentQueryIndex": 15,
   "currentPage": 7,
   "lastProcessedTime": 1703123456789,
-  "savedAt": "2023-12-21T10:30:56.789Z"
+  "providerStates": {
+    "openai": { "queryIndex": 0, "page": 1 },
+    "google_gemini": { "queryIndex": 15, "page": 7 },
+    "anthropic": { "queryIndex": 0, "page": 1 }
+  },
+  "scanStatus": "scanning"
 }
 ```
 
 ### Notes
 
-- The state file is automatically ignored by git (added to `.gitignore`)
-- If the state file is corrupted or invalid, the system will reset to the beginning
-- The system falls back to memory state if the file doesn't exist
-- State is saved both to file and memory for redundancy
-- This is an internal tool - no external API endpoints are exposed for state management 
+- The state is automatically initialized on first startup with default values
+- If the database is unavailable, the system will use default values
+- The system validates state format and resets if invalid
+- State is saved both to database and memory for redundancy
+- API endpoints are available for state management at `/api/config/scan-state` 

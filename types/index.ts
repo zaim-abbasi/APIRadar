@@ -21,6 +21,7 @@ export interface LeaderboardData {
   totalLeaks: number;
   todayLeaks: number;
   weeklyGrowth: number;
+  repositoryCutoff: string | null;
 }
 
 export interface FilterOptions {

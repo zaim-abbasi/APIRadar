@@ -14,6 +14,10 @@ interface AnimatedCounterProps {
   isPercentage?: boolean;
 }
 
+interface AnimatedDateProps {
+  dateString: string | null;
+}
+
 // Optimized animated counter using CSS transitions
 const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
   const [displayValue, setDisplayValue] = useState(0);
@@ -95,6 +99,93 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
 
 AnimatedCounter.displayName = 'AnimatedCounter';
 
+// Optimized animated date component
+const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
+  const [displayDate, setDisplayDate] = useState<string>('');
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // Handle null value (loading state)
+  if (dateString === null || dateString === undefined) {
+    return (
+      <span className="transition-all duration-600 ease-out">
+        <span className="inline-block w-24 h-6 bg-muted animate-pulse rounded"></span>
+      </span>
+    );
+  }
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true);
+          animateDate(dateString);
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    const element = document.getElementById('stats-container');
+    if (element) {
+      observer.observe(element);
+    }
+
+    return () => observer.disconnect();
+  }, [dateString, isVisible]);
+
+  // Handle date changes after initial animation
+  useEffect(() => {
+    if (isVisible && hasAnimated && displayDate !== dateString) {
+      // If the date changes after initial animation, animate to new date
+      animateDate(dateString);
+    }
+  }, [dateString, isVisible, hasAnimated, displayDate]);
+
+  const animateDate = (targetDate: string) => {
+    const duration = 600;
+    const startTime = performance.now();
+    const startDate = new Date(displayDate || targetDate);
+    const endDate = new Date(targetDate);
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Use easing function for smoother animation
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      
+      // Interpolate between dates
+      const currentTimeStamp = startDate.getTime() + (endDate.getTime() - startDate.getTime()) * easedProgress;
+      const currentDate = new Date(currentTimeStamp);
+      
+      // Format the date
+      const formattedDate = currentDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      setDisplayDate(formattedDate);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setHasAnimated(true);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  };
+
+  return (
+    <span className="transition-all duration-600 ease-out">
+      {displayDate}
+    </span>
+  );
+});
+
+AnimatedDate.displayName = 'AnimatedDate';
+
 // Memoized Stat Card component
 const StatCard = React.memo(({ 
   stat, 
@@ -125,6 +216,8 @@ const StatCard = React.memo(({
               ) : (
                 <AnimatedCounter value={stat.value} />
               )
+            ) : stat.isDate ? (
+              <AnimatedDate dateString={stat.value} />
             ) : (
               <span className="text-lg font-medium">{stat.value}</span>
             )}
@@ -155,12 +248,13 @@ const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
     },
     {
       title: 'Repository Cutoff',
-      value: 'June 1, 2025',
+      value: data.repositoryCutoff,
       icon: Calendar,
       color: 'text-green-500',
-      bgColor: 'bg-green-500/10'
+      bgColor: 'bg-green-500/10',
+      isDate: true
     }
-  ], [data.totalLeaks, data.todayLeaks]);
+  ], [data.totalLeaks, data.todayLeaks, data.repositoryCutoff]);
 
   return (
     <div id="stats-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
