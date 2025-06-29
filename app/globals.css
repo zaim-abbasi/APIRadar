@@ -139,6 +139,58 @@
   animation-delay: 450ms;
 }
 
+/* Enhanced skeleton loading animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, 
+    hsl(var(--muted)) 25%, 
+    hsl(var(--muted-foreground) / 0.1) 50%, 
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Smooth data loading transitions */
+.data-loading {
+  opacity: 0.7;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.data-loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Progressive loading animations */
+@keyframes slide-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progressive-load {
+  animation: slide-in-up 0.4s ease-out forwards;
+}
+
+/* Staggered card animations */
+.card-stagger-1 { animation-delay: 0ms; }
+.card-stagger-2 { animation-delay: 50ms; }
+.card-stagger-3 { animation-delay: 100ms; }
+
 /* Completely disable focus rings on dropdown buttons */
 [role="combobox"],
 [data-radix-popper-content-wrapper] button,

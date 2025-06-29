@@ -37,7 +37,10 @@ const ChartsSection = React.memo(({ data }: { data: any }) => {
     <div className="animate-fade-in-up opacity-0 animate-delay-300 flex-1 min-h-0">
       <Suspense fallback={
         <div className="h-full w-full flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">Loading chart data...</span>
+          <div className="space-y-4 w-full max-w-md">
+            <div className="h-8 skeleton rounded"></div>
+            <div className="h-64 skeleton rounded"></div>
+          </div>
         </div>
       }>
         <ProviderChart data={chartData} totalLeaks={data.totalLeaks} />
@@ -60,13 +63,12 @@ const LeaderboardPage = React.memo(() => {
     repositoryAgeCutoff: null,
     topProviders: null
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Fetch all leaderboard data from single endpoint
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
         const response = await fetchLeaderboardData();
 
         if (response.data) {
@@ -77,22 +79,24 @@ const LeaderboardPage = React.memo(() => {
             topProviders: response.data.topProviders
           });
         } else {
+          // Set fallback data instead of null for better UX
           setLeaderboardData({
-            totalReposScanned: null,
-            totalLeaksFound: null,
-            repositoryAgeCutoff: null,
-            topProviders: null
+            totalReposScanned: 0,
+            totalLeaksFound: 0,
+            repositoryAgeCutoff: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+            topProviders: []
           });
         }
       } catch (error) {
+        // Set fallback data on error for better UX
         setLeaderboardData({
-          totalReposScanned: null,
-          totalLeaksFound: null,
-          repositoryAgeCutoff: null,
-          topProviders: null
+          totalReposScanned: 0,
+          totalLeaksFound: 0,
+          repositoryAgeCutoff: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          topProviders: []
         });
       } finally {
-        setIsLoading(false);
+        setIsDataLoaded(true);
       }
     };
 
@@ -117,37 +121,16 @@ const LeaderboardPage = React.memo(() => {
     };
   }, [leaderboardData.topProviders, leaderboardData.totalLeaksFound]);
 
-  // Show loading state while data is being fetched
-  if (isLoading) {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="container mx-auto px-4 py-4 flex flex-col h-full">
-          <div className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              Security Leaderboard
-            </h1>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Analytics and trends of API key leaks across different providers.
-            </p>
-          </div>
-          <div className="flex items-center justify-center h-full">
-            <span className="text-muted-foreground text-sm">Loading data...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col h-full">
         {/* Header */}
         <LeaderboardHeader />
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Always show, with skeleton loading */}
         <StatsSection data={statsData} />
 
-        {/* Charts */}
+        {/* Charts - Show skeleton while loading */}
         <ChartsSection data={chartData} />
       </div>
     </div>

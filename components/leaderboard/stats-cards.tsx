@@ -24,21 +24,14 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
   const [isVisible, setIsVisible] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
 
-  // Handle null value (loading state)
-  if (value === null || value === undefined) {
-    return (
-      <span className="transition-all duration-600 ease-out">
-        <span className="inline-block w-8 h-6 bg-muted animate-pulse rounded"></span>
-      </span>
-    );
-  }
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
-          animateValue(0, value);
+          if (value !== null && value !== undefined) {
+            animateValue(0, value);
+          }
         }
       },
       { threshold: 0.1, rootMargin: '50px' }
@@ -54,7 +47,7 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
 
   // Handle value changes after initial animation
   useEffect(() => {
-    if (isVisible && hasAnimated && displayValue !== value) {
+    if (isVisible && hasAnimated && displayValue !== value && value !== null && value !== undefined) {
       // If the value changes after initial animation, animate to new value
       animateValue(displayValue, value);
     }
@@ -90,6 +83,15 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
     return displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 });
   }, [displayValue, isPercentage]);
 
+  // Handle null value (loading state) - show skeleton instead of empty space
+  if (value === null || value === undefined) {
+    return (
+      <span className="transition-all duration-600 ease-out">
+        <span className="inline-block w-16 h-6 skeleton rounded"></span>
+      </span>
+    );
+  }
+
   return (
     <span className="transition-all duration-600 ease-out">
       {formattedValue}
@@ -105,21 +107,14 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
 
-  // Handle null value (loading state)
-  if (dateString === null || dateString === undefined) {
-    return (
-      <span className="transition-all duration-600 ease-out">
-        <span className="inline-block w-24 h-6 bg-muted animate-pulse rounded"></span>
-      </span>
-    );
-  }
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
-          animateDate(dateString);
+          if (dateString) {
+            animateDate(dateString);
+          }
         }
       },
       { threshold: 0.1, rootMargin: '50px' }
@@ -133,9 +128,12 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
     return () => observer.disconnect();
   }, [dateString, isVisible]);
 
-  // Handle date changes after initial animation
+  // Handle initial date setting and date changes
   useEffect(() => {
-    if (isVisible && hasAnimated && displayDate !== dateString) {
+    if (dateString && !displayDate) {
+      // Initial date setting - animate immediately
+      animateDate(dateString);
+    } else if (isVisible && hasAnimated && displayDate !== dateString && dateString) {
       // If the date changes after initial animation, animate to new date
       animateDate(dateString);
     }
@@ -177,6 +175,15 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
     requestAnimationFrame(animate);
   };
 
+  // Handle null value (loading state) - show skeleton instead of empty space
+  if (dateString === null || dateString === undefined) {
+    return (
+      <span className="transition-all duration-600 ease-out">
+        <span className="inline-block w-32 h-6 skeleton rounded"></span>
+      </span>
+    );
+  }
+
   return (
     <span className="transition-all duration-600 ease-out">
       {displayDate}
@@ -198,7 +205,7 @@ const StatCard = React.memo(({
   
   return (
     <div 
-      className="group animate-fade-in-up opacity-0"
+      className={`group progressive-load card-stagger-${(index % 3) + 1}`}
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-200 hover:shadow-sm shadow-sm">
