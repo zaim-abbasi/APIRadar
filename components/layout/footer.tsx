@@ -103,6 +103,12 @@ const FooterComponent = () => {
           {/* Right: GitHub & Email */}
           <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-end">
             <a
+              href="mailto:zaim.k.abbasi@gmail.com"
+              className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150"
+            >
+              Email the Dev
+            </a>
+            <a
               href="https://github.com/zaim-abbasi"
               target="_blank"
               rel="noopener noreferrer"
@@ -111,12 +117,6 @@ const FooterComponent = () => {
             >
               <Github className="h-3.5 w-3.5" />
               <span className="sr-only">GitHub</span>
-            </a>
-            <a
-              href="mailto:zaim.k.abbasi@gmail.com"
-              className="pl-2 pr-2 py-1 text-sm font-semibold text-white bg-red-500 border-none rounded-md shadow-md flex items-center gap-2 transition-all duration-150 hover:bg-red-600 hover:text-white focus:outline-none"
-            >
-              Email the Dev
             </a>
           </div>
         </div>

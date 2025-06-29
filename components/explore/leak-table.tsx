@@ -102,7 +102,7 @@ const CopyButton = React.memo(({
     >
       <div>
         {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-green-500" />
+          <Check className="h-4 w-4 text-green-600" />
         ) : (
           <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
         )}
@@ -117,12 +117,18 @@ const CopyButton = React.memo(({
     >
       <div>
         {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-green-500" />
+          <Check className="h-4 w-4 text-green-600" />
         ) : (
           <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
         )}
       </div>
-      <span className="text-sm font-semibold text-red-500 hover:text-red-600 transition-colors duration-150">Copy</span>
+      <span className={`text-sm font-semibold transition-all duration-200 ${
+        copiedKey === leak.id 
+          ? 'text-green-600' 
+          : 'text-red-500 hover:text-red-600'
+      }`}>
+        {copiedKey === leak.id ? 'Copied' : 'Copy'}
+      </span>
     </Button>
   </>
 ));
@@ -216,14 +222,12 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: L
     try {
       await navigator.clipboard.writeText(text);
       setCopiedKey(keyId);
-      toast.success('Key copied to clipboard');
-      
-      // Reset copied state after 2 seconds
+      // Reset copied state after 1 second
       setTimeout(() => {
         setCopiedKey(null);
-      }, 2000);
+      }, 1000);
     } catch (err) {
-      toast.error('Failed to copy key');
+      // Optionally handle error, but no toast
     }
   }, []);
 

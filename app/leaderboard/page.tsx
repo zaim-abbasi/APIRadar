@@ -2,8 +2,7 @@
 
 import React, { Suspense, useMemo, useState, useEffect } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
-import { mockLeaderboard } from '@/lib/mock-data';
-import { fetchTotalReposScanned, fetchTotalLeaksFound } from '@/lib/api';
+import { fetchTotalReposScanned, fetchTotalLeaksFound, fetchTopProviders } from '@/lib/api';
 
 const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
 
@@ -52,15 +51,19 @@ ChartsSection.displayName = 'ChartsSection';
 const LeaderboardPage = React.memo(() => {
   const [totalReposScanned, setTotalReposScanned] = useState<number | null>(null);
   const [totalLeaksFound, setTotalLeaksFound] = useState<number | null>(null);
+  const [topProviders, setTopProviders] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch data from backend
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both data points in parallel
-        const [reposResponse, leaksResponse] = await Promise.all([
+        setIsLoading(true);
+        // Fetch all data points in parallel
+        const [reposResponse, leaksResponse, providersResponse] = await Promise.all([
           fetchTotalReposScanned(),
-          fetchTotalLeaksFound()
+          fetchTotalLeaksFound(),
+          fetchTopProviders()
         ]);
 
         if (reposResponse.data) {
@@ -74,33 +77,62 @@ const LeaderboardPage = React.memo(() => {
         } else {
           setTotalLeaksFound(null);
         }
+
+        if (providersResponse.data) {
+          setTopProviders(providersResponse.data.topProviders);
+        } else {
+          setTopProviders(null);
+        }
       } catch (error) {
         setTotalReposScanned(null);
         setTotalLeaksFound(null);
+        setTopProviders(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Memoize the data to prevent unnecessary re-renders
-  const leaderboardData = useMemo(() => mockLeaderboard, []);
-
   // Memoize the stats data with real data from backend
   const statsData = useMemo(() => {
     const data = {
       totalLeaks: totalReposScanned, // Total Repos Scanned
       todayLeaks: totalLeaksFound, // Total Leaks Found
-      weeklyGrowth: leaderboardData.weeklyGrowth
+      weeklyGrowth: 0 // We'll keep this as 0 for now since we don't have this data from backend
     };
     return data;
-  }, [totalReposScanned, totalLeaksFound, leaderboardData.weeklyGrowth]);
+  }, [totalReposScanned, totalLeaksFound]);
 
-  // Memoize the chart data
-  const chartData = useMemo(() => ({
-    topProviders: leaderboardData.topProviders,
-    totalLeaks: totalLeaksFound ?? leaderboardData.totalLeaks
-  }), [leaderboardData.topProviders, totalLeaksFound, leaderboardData.totalLeaks]);
+  // Memoize the chart data with real top providers data
+  const chartData = useMemo(() => {
+    return {
+      topProviders: topProviders || [],
+      totalLeaks: totalLeaksFound || 0
+    };
+  }, [topProviders, totalLeaksFound]);
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="container mx-auto px-4 py-4 flex flex-col h-full">
+          <div className="mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
+              Security Leaderboard
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Analytics and trends of API key leaks across different providers.
+            </p>
+          </div>
+          <div className="flex items-center justify-center h-full">
+            <span className="text-muted-foreground text-sm">Loading data...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col">

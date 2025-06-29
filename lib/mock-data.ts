@@ -2,7 +2,7 @@ import { LeakedKey, ProviderStats, LeaderboardData } from '@/types';
 
 const generateMockLeaks = (): LeakedKey[] => {
   const leaks: LeakedKey[] = [];
-  const providers = ['openai', 'anthropic', 'google'];
+  const providers = ['openai', 'anthropic', 'google_gemini'];
   const providerRepos: Record<string, string[]> = {
     openai: [
       'openai/openai-python',
@@ -18,7 +18,7 @@ const generateMockLeaks = (): LeakedKey[] => {
       'anthropics/claude-api',
       'anthropics/anthropic-docs',
     ],
-    google: [
+    google_gemini: [
       'googleapis/google-api-python-client',
       'googleapis/google-api-nodejs-client',
       'google/gemini-api',
@@ -42,7 +42,7 @@ const generateMockLeaks = (): LeakedKey[] => {
       case 'openai':
         redactedKey = `sk-****${i.toString().padStart(8, '0')}`;
         break;
-      case 'google':
+      case 'google_gemini':
         redactedKey = `AIza****${i.toString().padStart(8, '0')}`;
         break;
       case 'anthropic':
@@ -79,7 +79,7 @@ export const mockLeaderboard: LeaderboardData = {
   topProviders: [
     { provider: 'openai', count: 43, percentage: 48.3, trend: 'up' },
     { provider: 'anthropic', count: 31, percentage: 34.8, trend: 'up' },
-    { provider: 'google', count: 15, percentage: 16.9, trend: 'down' },
+    { provider: 'google_gemini', count: 15, percentage: 16.9, trend: 'down' },
   ],
   totalLeaks: 89,
   todayLeaks: 89,

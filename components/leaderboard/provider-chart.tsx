@@ -16,14 +16,24 @@ interface ProviderChartProps {
 const providerColors: Record<string, string> = {
   'openai': '#10b981',
   'anthropic': '#d97706',
-  'google': '#3b82f6',
-  'cohere': '#8b5cf6',
-  'aws': '#f97316',
-  'stripe': '#8b5cf6',
-  'github': '#6b7280',
-  'discord': '#6366f1',
-  'twilio': '#ef4444',
-  'sendgrid': '#06b6d4',
+  'google_gemini': '#3b82f6',
+};
+
+// Function to map database provider names to display names
+const getProviderDisplayName = (provider: string): string => {
+  const displayNames: Record<string, string> = {
+    'openai': 'OpenAI',
+    'google_gemini': 'Google (Gemini)',
+    'anthropic': 'Anthropic (Claude)',
+    'cohere': 'Cohere',
+    'aws': 'AWS',
+    'stripe': 'Stripe',
+    'github': 'GitHub',
+    'discord': 'Discord',
+    'twilio': 'Twilio',
+    'sendgrid': 'SendGrid'
+  };
+  return displayNames[provider] || provider;
 };
 
 // Memoized Custom Tooltip component
@@ -55,7 +65,7 @@ const ProviderListItem = React.memo(({
   const providerColor = useMemo(() => providerColors[provider.provider] || '#6b7280', [provider.provider]);
   const formattedCount = useMemo(() => provider.count.toLocaleString(), [provider.count]);
   const formattedPercentage = useMemo(() => provider.percentage.toFixed(1), [provider.percentage]);
-  const formattedName = useMemo(() => provider.provider.replace('-', ' '), [provider.provider]);
+  const formattedName = useMemo(() => getProviderDisplayName(provider.provider), [provider.provider]);
 
   return (
     <div 
@@ -143,7 +153,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
                     dataKey="provider" 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={11}
-                    tickFormatter={(value) => value.replace('-', ' ')}
+                    tickFormatter={(value) => getProviderDisplayName(value)}
                   />
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"

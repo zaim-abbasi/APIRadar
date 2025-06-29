@@ -45,4 +45,25 @@ export async function fetchTotalLeaksFound(): Promise<ApiResponse<{ totalLeaksFo
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Failed to fetch total leaks found' };
   }
+}
+
+export async function fetchTopProviders(): Promise<ApiResponse<{ topProviders: Array<{ provider: string; count: number }> }>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/top-providers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Failed to fetch top providers' };
+  }
 } 

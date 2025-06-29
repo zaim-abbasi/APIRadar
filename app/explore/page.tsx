@@ -54,16 +54,14 @@ const ResultsCount = React.memo(({
       )}
     </div>
     <div className="flex-shrink-0">
-      <Button
-        variant="outline"
-        size="sm"
+      <button
         onClick={onRefresh}
         disabled={isLoading}
-        className="h-9 pl-2 pr-3 py-2 text-sm font-semibold text-white bg-red-500 border-none rounded-md shadow-md flex items-center gap-2 transition-all duration-150 hover:bg-red-600 hover:text-white focus:outline-none"
+        className="h-9 pl-2 pr-3 py-2 text-sm font-semibold text-primary-foreground bg-primary border-none rounded-md shadow-md flex items-center gap-2 transition-all duration-150 hover:bg-primary/90 hover:text-white focus:outline-none"
       >
-        <RefreshCw className={isLoading ? 'animate-spin' : ''} size={18} />
+        <RefreshCw className={`mr-2 h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Refreshing...' : 'Refresh'}
-      </Button>
+      </button>
     </div>
   </div>
 ));

@@ -110,17 +110,15 @@ const StatCard = React.memo(({
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-200 hover:shadow-sm hover:shadow-primary/5 hover:scale-[1.01] shadow-sm">
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-200 hover:shadow-sm shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-          <CardTitle className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
+          <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
             {stat.title}
           </CardTitle>
-          <div className={`p-2 rounded-md ${stat.bgColor} group-hover:scale-105 transition-transform duration-200`}>
-            <IconComponent className={`${stat.color} h-5 w-5`} />
-          </div>
+          <IconComponent className={`${stat.color} h-8 w-8`} />
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <div className="text-xl font-bold transition-all duration-500 ease-out text-foreground">
+          <div className="text-xl font-medium transition-all duration-500 ease-out text-foreground">
             {typeof stat.value === 'number' ? (
               stat.isPercentage ? (
                 <AnimatedCounter value={stat.value} isPercentage />
@@ -128,7 +126,7 @@ const StatCard = React.memo(({
                 <AnimatedCounter value={stat.value} />
               )
             ) : (
-              <span className="text-lg">{stat.value}</span>
+              <span className="text-lg font-medium">{stat.value}</span>
             )}
           </div>
         </CardContent>
