@@ -1,8 +1,10 @@
 import fastify from 'fastify';
+import cors from '@fastify/cors';
 import { config } from './config/environment';
 import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
+import { registerRoutes } from './routes';
 
 const server = fastify({
   logger: false,
@@ -10,6 +12,15 @@ const server = fastify({
 
 async function startServer() {
   try {
+    // Register CORS
+    await server.register(cors, {
+      origin: true, // Allow all origins in development
+      credentials: true,
+    });
+
+    // Register routes
+    await registerRoutes(server);
+
     // Validate GitHub tokens
     if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length < 10) {
       logger.init('GitHub token invalid or missing. Exiting.');

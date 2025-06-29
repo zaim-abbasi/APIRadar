@@ -18,31 +18,23 @@ interface AnimatedCounterProps {
 const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  // Handle null value (loading state)
+  if (value === null || value === undefined) {
+    return (
+      <span className="transition-all duration-600 ease-out">
+        <span className="inline-block w-8 h-6 bg-muted animate-pulse rounded"></span>
+      </span>
+    );
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
-          // Optimized animation with requestAnimationFrame
-          const duration = 600; // Even faster animation
-          const startTime = performance.now();
-          
-          const animate = (currentTime: number) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Use easing function for smoother animation
-            const easedProgress = 1 - Math.pow(1 - progress, 3);
-            const currentValue = Math.floor(value * easedProgress);
-            setDisplayValue(currentValue);
-            
-            if (progress < 1) {
-              requestAnimationFrame(animate);
-            }
-          };
-          
-          requestAnimationFrame(animate);
+          animateValue(0, value);
         }
       },
       { threshold: 0.1, rootMargin: '50px' }
@@ -55,6 +47,37 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
 
     return () => observer.disconnect();
   }, [value, isVisible]);
+
+  // Handle value changes after initial animation
+  useEffect(() => {
+    if (isVisible && hasAnimated && displayValue !== value) {
+      // If the value changes after initial animation, animate to new value
+      animateValue(displayValue, value);
+    }
+  }, [value, isVisible, hasAnimated, displayValue]);
+
+  const animateValue = (from: number, to: number) => {
+    const duration = 600;
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Use easing function for smoother animation
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = Math.floor(from + (to - from) * easedProgress);
+      setDisplayValue(currentValue);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setHasAnimated(true);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  };
 
   const formattedValue = useMemo(() => {
     if (isPercentage) {

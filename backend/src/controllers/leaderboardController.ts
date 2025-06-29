@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
+import { ScanAttempt } from '../models/ScanAttempt';
 
 export async function getLeaderboardHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -29,5 +30,15 @@ export async function getProvidersHandler(request: FastifyRequest, reply: Fastif
   } catch (error) {
     request.log.error(error);
     return reply.status(500).send({ error: 'Failed to fetch providers' });
+  }
+}
+
+export async function getTotalReposScannedHandler(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const totalReposScanned = await ScanAttempt.countDocuments();
+    return reply.send({ totalReposScanned });
+  } catch (error) {
+    request.log.error(error);
+    return reply.status(500).send({ error: 'Failed to fetch total repos scanned' });
   }
 } 

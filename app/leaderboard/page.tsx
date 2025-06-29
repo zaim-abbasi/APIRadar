@@ -1,8 +1,9 @@
 "use client";
 
-import React, { Suspense, useMemo, useCallback } from 'react';
+import React, { Suspense, useMemo, useState, useEffect } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
 import { mockLeaderboard } from '@/lib/mock-data';
+import { fetchTotalReposScanned, fetchTotalLeaksFound } from '@/lib/api';
 
 const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
 
@@ -48,31 +49,58 @@ const ChartsSection = React.memo(({ data }: { data: any }) => {
 
 ChartsSection.displayName = 'ChartsSection';
 
-// Memoized loading fallback component
-const LoadingFallback = React.memo(() => (
-  <div className="h-full w-full flex items-center justify-center">
-    <span className="text-muted-foreground text-sm">Loading chart data...</span>
-  </div>
-));
-
-LoadingFallback.displayName = 'LoadingFallback';
-
 const LeaderboardPage = React.memo(() => {
+  const [totalReposScanned, setTotalReposScanned] = useState<number | null>(null);
+  const [totalLeaksFound, setTotalLeaksFound] = useState<number | null>(null);
+
+  // Fetch data from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch both data points in parallel
+        const [reposResponse, leaksResponse] = await Promise.all([
+          fetchTotalReposScanned(),
+          fetchTotalLeaksFound()
+        ]);
+
+        if (reposResponse.data) {
+          setTotalReposScanned(reposResponse.data.totalReposScanned);
+        } else {
+          setTotalReposScanned(null);
+        }
+
+        if (leaksResponse.data) {
+          setTotalLeaksFound(leaksResponse.data.totalLeaksFound);
+        } else {
+          setTotalLeaksFound(null);
+        }
+      } catch (error) {
+        setTotalReposScanned(null);
+        setTotalLeaksFound(null);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   // Memoize the data to prevent unnecessary re-renders
   const leaderboardData = useMemo(() => mockLeaderboard, []);
 
-  // Memoize the stats data
-  const statsData = useMemo(() => ({
-    totalLeaks: leaderboardData.totalLeaks,
-    todayLeaks: leaderboardData.todayLeaks,
-    weeklyGrowth: leaderboardData.weeklyGrowth
-  }), [leaderboardData.totalLeaks, leaderboardData.todayLeaks, leaderboardData.weeklyGrowth]);
+  // Memoize the stats data with real data from backend
+  const statsData = useMemo(() => {
+    const data = {
+      totalLeaks: totalReposScanned, // Total Repos Scanned
+      todayLeaks: totalLeaksFound, // Total Leaks Found
+      weeklyGrowth: leaderboardData.weeklyGrowth
+    };
+    return data;
+  }, [totalReposScanned, totalLeaksFound, leaderboardData.weeklyGrowth]);
 
   // Memoize the chart data
   const chartData = useMemo(() => ({
     topProviders: leaderboardData.topProviders,
-    totalLeaks: leaderboardData.totalLeaks
-  }), [leaderboardData.topProviders, leaderboardData.totalLeaks]);
+    totalLeaks: totalLeaksFound ?? leaderboardData.totalLeaks
+  }), [leaderboardData.topProviders, totalLeaksFound, leaderboardData.totalLeaks]);
 
   return (
     <div className="h-screen flex flex-col">
