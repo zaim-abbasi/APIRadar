@@ -3,12 +3,13 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { Shield, Github, Linkedin } from 'lucide-react';
+import Image from 'next/image';
 
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
-  <Link href="/" className="flex items-center space-x-2">
+  <Link href="/" className="flex items-center space-x-1">
     <div className="transition-transform duration-200 hover:rotate-180">
-      <img src="/logo/logo.ico" alt="API Radar Logo" className="h-5 w-auto object-contain" />
+      <Image src="/logo/logo.ico" alt="API Radar Logo" height={20} width={20} className="h-5 w-auto object-contain" priority />
     </div>
     <span className="text-base font-bold text-red-500">
       API Radar
@@ -24,7 +25,6 @@ const FooterNavigation = React.memo(() => {
     { href: '/', label: 'Home' },
     { href: '/explore', label: 'Explore' },
     { href: '/leaderboard', label: 'Leaderboard' },
-    { href: '/learn', label: 'Learn' }
   ], []);
 
   return (
@@ -33,6 +33,7 @@ const FooterNavigation = React.memo(() => {
         <Link
           key={item.href}
           href={item.href}
+          prefetch={true}
           className="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
         >
           {item.label}
@@ -88,7 +89,7 @@ const FooterComponent = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
           {/* Left: Logo & Name */}
-          <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-start">
+          <div className="flex items-center space-x-1 w-full md:w-auto justify-center md:justify-start">
             <FooterLogo />
           </div>
 
@@ -113,7 +114,7 @@ const FooterComponent = () => {
             </a>
             <a
               href="mailto:zaim.k.abbasi@gmail.com"
-              className="px-3 py-1.5 rounded bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors"
+              className="pl-2 pr-2 py-1 text-sm font-semibold text-white bg-red-500 border-none rounded-md shadow-md flex items-center gap-2 transition-all duration-150 hover:bg-red-600 hover:text-white focus:outline-none"
             >
               Email the Dev
             </a>

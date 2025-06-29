@@ -98,13 +98,13 @@ const CopyButton = React.memo(({
       variant="ghost"
       size="icon"
       onClick={() => onCopy(leak.redacted_key, leak.id)}
-      className="h-9 w-9 md:hidden cursor-pointer focus:outline-none hover:bg-muted/50"
+      className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-transparent group"
     >
       <div>
         {copiedKey === leak.id ? (
           <Check className="h-4 w-4 text-green-500" />
         ) : (
-          <Copy className="h-4 w-4" />
+          <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
         )}
       </div>
     </Button>
@@ -113,16 +113,16 @@ const CopyButton = React.memo(({
       variant="ghost"
       size="sm"
       onClick={() => onCopy(leak.redacted_key, leak.id)}
-      className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 cursor-pointer focus:outline-none hover:bg-muted/50"
+      className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none group"
     >
       <div>
         {copiedKey === leak.id ? (
           <Check className="h-4 w-4 text-green-500" />
         ) : (
-          <Copy className="h-4 w-4" />
+          <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
         )}
       </div>
-      <span className="text-sm font-medium">Copy</span>
+      <span className="text-sm font-semibold text-red-500 hover:text-red-600 transition-colors duration-150">Copy</span>
     </Button>
   </>
 ));
@@ -208,45 +208,51 @@ const LeakCard = React.memo(({
 
 LeakCard.displayName = 'LeakCard';
 
-export const LeakTable = React.memo(({ leaks, isLoading, selectedProvider }: LeakTableProps) => {
+const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: LeakTableProps) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const copyToClipboard = useCallback(async (text: string, keyId: string) => {
+  // Memoized copy handler
+  const handleCopy = useCallback(async (text: string, keyId: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedKey(keyId);
-      toast.success('Key Copied', {
-        duration: 1800,
-        position: 'top-center', // move toast upward if supported by sonner
-        className: 'mt-8 rounded-lg bg-background/95 border border-green-200 dark:border-green-700 shadow-lg',
-      });
-      setTimeout(() => setCopiedKey(null), 2000);
+      toast.success('Key copied to clipboard');
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedKey(null);
+      }, 2000);
     } catch (err) {
-      toast.error('Failed to copy to clipboard');
+      toast.error('Failed to copy key');
     }
   }, []);
+
+  // Memoized leaks array to prevent unnecessary re-renders
+  const memoizedLeaks = useMemo(() => leaks, [leaks]);
 
   if (isLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (leaks.length === 0) {
+  if (memoizedLeaks.length === 0) {
     return <EmptyState selectedProvider={selectedProvider} />;
   }
 
   return (
     <div className="space-y-4">
-      {leaks.map((leak, index) => (
+      {memoizedLeaks.map((leak, index) => (
         <LeakCard
           key={leak.id}
           leak={leak}
           index={index}
           copiedKey={copiedKey}
-          onCopy={copyToClipboard}
+          onCopy={handleCopy}
         />
       ))}
     </div>
   );
 });
 
-LeakTable.displayName = 'LeakTable';
+LeakTableComponent.displayName = 'LeakTableComponent';
+
+export const LeakTable = LeakTableComponent;

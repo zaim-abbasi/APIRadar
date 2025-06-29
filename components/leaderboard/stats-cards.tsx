@@ -14,7 +14,7 @@ interface AnimatedCounterProps {
   isPercentage?: boolean;
 }
 
-// Simplified animated counter using CSS transitions
+// Optimized animated counter using CSS transitions
 const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -22,28 +22,30 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
-          // Simple CSS-based animation
-          const duration = 1000;
-          const steps = 60;
-          const increment = value / steps;
-          let current = 0;
+          // Optimized animation with requestAnimationFrame
+          const duration = 600; // Even faster animation
+          const startTime = performance.now();
           
-          const timer = setInterval(() => {
-            current += increment;
-            if (current >= value) {
-              setDisplayValue(value);
-              clearInterval(timer);
-            } else {
-              setDisplayValue(Math.floor(current));
+          const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Use easing function for smoother animation
+            const easedProgress = 1 - Math.pow(1 - progress, 3);
+            const currentValue = Math.floor(value * easedProgress);
+            setDisplayValue(currentValue);
+            
+            if (progress < 1) {
+              requestAnimationFrame(animate);
             }
-          }, duration / steps);
-
-          return () => clearInterval(timer);
+          };
+          
+          requestAnimationFrame(animate);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1, rootMargin: '50px' }
     );
 
     const element = document.getElementById('stats-container');
@@ -52,14 +54,18 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
     }
 
     return () => observer.disconnect();
-  }, [value]);
+  }, [value, isVisible]);
+
+  const formattedValue = useMemo(() => {
+    if (isPercentage) {
+      return `${displayValue.toFixed(1)}%`;
+    }
+    return displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  }, [displayValue, isPercentage]);
 
   return (
-    <span className="transition-all duration-1000 ease-out">
-      {isPercentage 
-        ? `${displayValue.toFixed(1)}%`
-        : displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 })
-      }
+    <span className="transition-all duration-600 ease-out">
+      {formattedValue}
     </span>
   );
 });
@@ -73,34 +79,40 @@ const StatCard = React.memo(({
 }: { 
   stat: any; 
   index: number; 
-}) => (
-  <div 
-    className="group animate-fade-in-up opacity-0"
-    style={{ animationDelay: `${index * 50}ms` }}
-  >
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-          {stat.title}
-        </CardTitle>
-        <stat.icon className={`${stat.color} h-7 w-7`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold transition-all duration-500 ease-out">
-          {typeof stat.value === 'number' ? (
-            stat.isPercentage ? (
-              <AnimatedCounter value={stat.value} isPercentage />
+}) => {
+  const IconComponent = useMemo(() => stat.icon, [stat.icon]);
+  
+  return (
+    <div 
+      className="group animate-fade-in-up opacity-0"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-200 hover:shadow-sm hover:shadow-primary/5 hover:scale-[1.01] shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+          <CardTitle className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
+            {stat.title}
+          </CardTitle>
+          <div className={`p-2 rounded-md ${stat.bgColor} group-hover:scale-105 transition-transform duration-200`}>
+            <IconComponent className={`${stat.color} h-5 w-5`} />
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <div className="text-xl font-bold transition-all duration-500 ease-out text-foreground">
+            {typeof stat.value === 'number' ? (
+              stat.isPercentage ? (
+                <AnimatedCounter value={stat.value} isPercentage />
+              ) : (
+                <AnimatedCounter value={stat.value} />
+              )
             ) : (
-              <AnimatedCounter value={stat.value} />
-            )
-          ) : (
-            stat.value
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-));
+              <span className="text-lg">{stat.value}</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+});
 
 StatCard.displayName = 'StatCard';
 
@@ -127,10 +139,10 @@ const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
       color: 'text-green-500',
       bgColor: 'bg-green-500/10'
     }
-  ], [data]);
+  ], [data.totalLeaks, data.todayLeaks]);
 
   return (
-    <div id="stats-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div id="stats-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
       {stats.map((stat, index) => (
         <StatCard key={stat.title} stat={stat} index={index} />
       ))}

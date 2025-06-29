@@ -57,7 +57,7 @@ const CTAButton = React.memo(({
       "group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02] animate-fade-in-up opacity-0 animate-delay-450"
     )}
   >
-    <Link href={href} className="flex items-center justify-center">
+    <Link href={href} prefetch={true} className="flex items-center justify-center">
       <Icon className="mr-2 h-5 w-5" />
       {children}
       {SecondaryIcon && (
@@ -133,10 +133,6 @@ const CTAButtons = React.memo(() => (
   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8">
     <CTAButton href="/explore" icon={FileSearch} secondaryIcon={ArrowRight}>
       Explore Leaks
-    </CTAButton>
-    
-    <CTAButton href="/learn" icon={Shield} variant="outline">
-      Learn Security
     </CTAButton>
   </div>
 ));

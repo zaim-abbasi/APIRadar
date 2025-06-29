@@ -8,12 +8,12 @@ import { useTheme } from 'next-themes';
 import { Shield, Moon, Sun, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const navItems = [
   { href: '/', label: 'Home' },
   { href: '/explore', label: 'Explore' },
   { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/learn', label: 'Learn' }
 ];
 
 const NavLinks = () => {
@@ -24,6 +24,7 @@ const NavLinks = () => {
         <Link
           key={item.href}
           href={item.href}
+          prefetch={true}
           className={cn(
             "relative px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
             pathname === item.href
@@ -59,6 +60,7 @@ const MobileNavLinks = ({ onLinkClick }: { onLinkClick: () => void }) => {
         >
           <Link
             href={item.href}
+            prefetch={true}
             onClick={onLinkClick}
             className={cn(
               "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
@@ -97,13 +99,13 @@ const NavbarComponent = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2" onClick={handleNavClick}>
+          <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
             <motion.div
               whileHover={{ rotate: 180 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="relative"
             >
-              <img src="/logo/logo.ico" alt="API Radar Logo" className="h-8 w-auto object-contain" />
+              <Image src="/logo/logo.ico" alt="API Radar Logo" height={32} width={32} className="h-8 w-auto object-contain" priority />
             </motion.div>
             <span className="text-xl font-bold text-red-500">
               API Radar

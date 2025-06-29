@@ -38,7 +38,7 @@ API Radar is a large, multi-component system. It scans GitHub for secrets, detec
 - Deduplication and scan tracking
 - Redacted keys by default; secure full-key endpoint
 - Full audit logging
-- Modern frontend: real-time explorer, leaderboard, learning tools
+- Modern frontend: real-time explorer, leaderboard
 - Built with Fastify, MongoDB, TypeScript, Next.js, Tailwind CSS
 
 ---
@@ -69,7 +69,7 @@ flowchart TD
   E -- "Duplicate" --> G["Log Scan Attempt"]
   F --> H["Redacted Key API"]
   F --> I["Full Key API (secure)"]
-  H --> J["Frontend: Explore, Leaderboard, Learn"]
+  H --> J["Frontend: Explore, Leaderboard"]
   I --> K["Frontend: Copy Key Button"]
   G --> L["Comprehensive Logging"]
   F --> L

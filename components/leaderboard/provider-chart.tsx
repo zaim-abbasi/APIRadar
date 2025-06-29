@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,10 @@ import { ProviderStats } from '@/types';
 
 interface ProviderChartProps {
   data: ProviderStats[];
+  totalLeaks?: number;
 }
 
+// Static provider colors object
 const providerColors: Record<string, string> = {
   'openai': '#10b981',
   'anthropic': '#d97706',
@@ -50,24 +52,32 @@ const ProviderListItem = React.memo(({
   provider: ProviderStats; 
   index: number; 
 }) => {
+  const providerColor = useMemo(() => providerColors[provider.provider] || '#6b7280', [provider.provider]);
+  const formattedCount = useMemo(() => provider.count.toLocaleString(), [provider.count]);
+  const formattedPercentage = useMemo(() => provider.percentage.toFixed(1), [provider.percentage]);
+  const formattedName = useMemo(() => provider.provider.replace('-', ' '), [provider.provider]);
+
   return (
     <div 
-      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group animate-fade-in-up opacity-0"
+      className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-150 group animate-fade-in-up opacity-0 border border-border/30 hover:border-border/50"
       style={{ animationDelay: `${index * 30 + 150}ms` }}
     >
       <div className="flex items-center gap-3">
         <div 
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: providerColors[provider.provider] }}
+          className="w-2.5 h-2.5 rounded-full shadow-sm"
+          style={{ backgroundColor: providerColor }}
         />
         <div>
-          <div className="font-medium capitalize group-hover:text-primary transition-colors">
-            {provider.provider.replace('-', ' ')}
+          <div className="font-medium capitalize group-hover:text-primary transition-colors text-sm">
+            {formattedName}
           </div>
-          <div className="text-sm text-muted-foreground">
-            {provider.count.toLocaleString()} leaks
+          <div className="text-xs text-muted-foreground">
+            {formattedCount} leaks
           </div>
         </div>
+      </div>
+      <div className="text-xs font-medium text-muted-foreground">
+        {formattedPercentage}%
       </div>
     </div>
   );
@@ -75,42 +85,77 @@ const ProviderListItem = React.memo(({
 
 ProviderListItem.displayName = 'ProviderListItem';
 
-const ProviderChartComponent = React.memo(({ data }: ProviderChartProps) => {
+const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartProps) => {
   const chartData = useMemo(() => data.map(item => ({
     ...item,
     fill: providerColors[item.provider] || '#6b7280'
   })), [data]);
 
+  const topProviders = useMemo(() => data.slice(0, 5), [data]);
+
+  // Calculate y-axis domain with professional tick marks
+  const yAxisDomain = useMemo(() => {
+    if (totalLeaks) {
+      // For small numbers like 89, use appropriate scaling
+      if (totalLeaks <= 100) {
+        const maxValue = Math.max(...data.map(item => item.count));
+        // Use a more appropriate scale based on the actual max value
+        if (maxValue <= 50) {
+          return [0, 50];
+        } else if (maxValue <= 100) {
+          return [0, 100];
+        }
+      }
+      // For larger numbers, use more sophisticated scaling
+      const maxValue = Math.max(...data.map(item => item.count));
+      const scale = Math.pow(10, Math.floor(Math.log10(maxValue)));
+      return [0, Math.ceil(maxValue / scale) * scale];
+    }
+    // Fallback to max value in data
+    const maxValue = Math.max(...data.map(item => item.count));
+    return [0, Math.ceil(maxValue * 1.2)];
+  }, [data, totalLeaks]);
+
+  // Custom tick formatter for professional number display
+  const formatYAxisTick = useCallback((value: number) => {
+    if (value === 0) return '0';
+    if (value < 1000) return value.toString();
+    return value.toLocaleString();
+  }, []);
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4">
       {/* Chart */}
       <div className="lg:col-span-2 animate-fade-in-up opacity-0 animate-delay-150 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full">
-          <CardHeader>
-            <CardTitle>Leaks by Provider</CardTitle>
-            <CardDescription>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Leaks by Provider</CardTitle>
+            <CardDescription className="text-xs">
               Distribution of leaked API keys across different providers
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-60 w-full min-w-0">
+          <CardContent className="pt-0">
+            <div className="h-48 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
                   <XAxis 
                     dataKey="provider" 
                     stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
+                    fontSize={11}
                     tickFormatter={(value) => value.replace('-', ' ')}
                   />
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
+                    fontSize={11}
+                    domain={yAxisDomain}
+                    tickFormatter={formatYAxisTick}
+                    tickCount={6}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar 
                     dataKey="count" 
-                    radius={[4, 4, 0, 0]}
+                    radius={[3, 3, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -121,15 +166,15 @@ const ProviderChartComponent = React.memo(({ data }: ProviderChartProps) => {
 
       {/* Provider List */}
       <div className="animate-fade-in-up opacity-0 animate-delay-200 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full">
-          <CardHeader>
-            <CardTitle>Top Providers</CardTitle>
-            <CardDescription>
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Top Providers</CardTitle>
+            <CardDescription className="text-xs">
               Most frequently leaked API providers
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {data.slice(0, 5).map((provider, index) => (
+          <CardContent className="pt-0 space-y-2">
+            {topProviders.map((provider, index) => (
               <ProviderListItem key={provider.provider} provider={provider} index={index} />
             ))}
           </CardContent>

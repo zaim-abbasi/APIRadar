@@ -77,11 +77,11 @@ export const mockLeaks = generateMockLeaks();
 
 export const mockLeaderboard: LeaderboardData = {
   topProviders: [
-    { provider: 'openai', count: 1247, percentage: 45.3, trend: 'up' },
-    { provider: 'anthropic', count: 892, percentage: 32.4, trend: 'up' },
-    { provider: 'google', count: 432, percentage: 15.7, trend: 'down' },
+    { provider: 'openai', count: 43, percentage: 48.3, trend: 'up' },
+    { provider: 'anthropic', count: 31, percentage: 34.8, trend: 'up' },
+    { provider: 'google', count: 15, percentage: 16.9, trend: 'down' },
   ],
-  totalLeaks: 2571,
+  totalLeaks: 89,
   todayLeaks: 89,
   weeklyGrowth: 12.1
 };
