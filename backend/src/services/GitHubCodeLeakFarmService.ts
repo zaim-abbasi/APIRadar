@@ -488,12 +488,35 @@ export class GitHubCodeLeakFarmService {
   }
 
   public start() {
-    if (this.running) return;
+    if (this.running) {
+      logger.warn('[FARM] Service is already running');
+      return;
+    }
+
     this.running = true;
+    logger.init('[FARM] Starting GitHub code leak farm service...');
     
-    logger.status('farm', 'Service started', 'GitHubCodeLeakFarm');
+    // Immediately check and reinitialize configurations if needed
+    this.immediateConfigCheck();
     
+    // Start the main scan loop
     this.scanLoop();
+  }
+
+  private async immediateConfigCheck() {
+    try {
+      logger.init('[FARM] Performing immediate configuration check...');
+      const wasReinitialized = await ConfigurationService.checkAndReinitialize();
+      if (wasReinitialized) {
+        logger.warn('[FARM] Configuration was missing and has been reinitialized on startup');
+        // Reload scan state after reinitialization
+        scanResumeState = await loadResumeState();
+      } else {
+        logger.init('[FARM] All configurations are present, proceeding with scan');
+      }
+    } catch (error) {
+      logger.error(`[FARM] Immediate configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   public stop() {
@@ -507,7 +530,6 @@ export class GitHubCodeLeakFarmService {
 
   public clearState() {
     clearScanState();
-    logger.status('farm', 'Scan state cleared', 'GitHubCodeLeakFarm');
   }
 
   private async scanLoop(): Promise<void> {
@@ -898,7 +920,8 @@ export class GitHubCodeLeakFarmService {
     try {
       const cutoff = await ConfigurationService.getRepositoryAgeCutoff();
       if (!cutoff) {
-        logger.error('[FARM] Repository age cutoff not found in database. Please set it via the configuration API.');
+        logger.error('[FARM] Repository age cutoff not found in database. Please set it via the configuration API or restart the service to auto-initialize.');
+        logger.error('[FARM] You can also manually reinitialize configurations using: curl -X POST http://localhost:3001/api/config/reinitialize');
         // Don't save any leaks if cutoff is not configured
         await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
         return;
@@ -906,6 +929,7 @@ export class GitHubCodeLeakFarmService {
       repositoryAgeCutoff = cutoff;
     } catch (error) {
       logger.error('[FARM] Failed to get repository age cutoff from database: ' + (error instanceof Error ? error.message : String(error)));
+      logger.error('[FARM] This may indicate a database connectivity issue. Check MongoDB connection and try restarting the service.');
       // Don't save any leaks if we can't get the cutoff
       await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
       return;

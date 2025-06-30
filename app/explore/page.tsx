@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
-import { mockLeaks } from '@/lib/mock-data';
 import { TIME_RANGES, SORT_OPTIONS, PROVIDERS } from '@/lib/constants';
 import { Provider } from '@/types';
 import { fetchLeaks } from '@/lib/api';
@@ -217,9 +216,6 @@ const ExplorePage = React.memo(() => {
 
   // Memoized allowed providers
   const allowedProviders = useMemo(() => ['openai', 'anthropic', 'google'], []);
-
-  // Memoized mock data to prevent recreation
-  const memoizedMockLeaks = useMemo(() => mockLeaks, []);
 
   useEffect(() => {
     setIsClient(true);

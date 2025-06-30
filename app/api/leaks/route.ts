@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockLeaks } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -9,39 +8,31 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') || '0');
 
   try {
-    let filteredLeaks = [...mockLeaks];
-
-    // Filter by provider
+    // Build query parameters for backend API
+    const params = new URLSearchParams();
     if (provider && provider !== 'all') {
-      filteredLeaks = filteredLeaks.filter(leak => leak.provider === provider);
+      params.append('provider', provider);
     }
-
-    // Filter by time range
     if (timeRange) {
-      const now = new Date();
-      const timeFilters: Record<string, number> = {
-        '1h': 60 * 60 * 1000,
-        '24h': 24 * 60 * 60 * 1000,
-        '7d': 7 * 24 * 60 * 60 * 1000,
-        '30d': 30 * 24 * 60 * 60 * 1000,
-      };
+      params.append('timeRange', timeRange);
+    }
+    params.append('limit', limit.toString());
+    params.append('page', Math.floor(offset / limit + 1).toString());
 
-      if (timeFilters[timeRange]) {
-        const cutoff = new Date(now.getTime() - timeFilters[timeRange]);
-        filteredLeaks = filteredLeaks.filter(leak => new Date(leak.leak_detected_at) >= cutoff);
-      }
+    // Fetch data from backend
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    const response = await fetch(`${backendUrl}/api/leaks?${params.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`Backend API error: ${response.status}`);
     }
 
-    // Sort by newest first
-    filteredLeaks.sort((a, b) => new Date(b.leak_detected_at).getTime() - new Date(a.leak_detected_at).getTime());
-
-    // Paginate
-    const paginatedLeaks = filteredLeaks.slice(offset, offset + limit);
-
+    const data = await response.json();
+    
     return NextResponse.json({
-      leaks: paginatedLeaks,
-      total: filteredLeaks.length,
-      hasMore: offset + limit < filteredLeaks.length
+      leaks: data.leaks || [],
+      total: data.total || 0,
+      hasMore: data.hasMore || false
     });
   } catch (error) {
     console.error('Error fetching leaks:', error);
