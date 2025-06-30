@@ -92,4 +92,35 @@ export async function fetchLeaderboardData(): Promise<ApiResponse<{
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Failed to fetch leaderboard data' };
   }
+}
+
+export async function fetchLeaks({ provider, timeRange, sortBy, page = 1, limit = 10 }: {
+  provider?: string;
+  timeRange?: string;
+  sortBy?: string;
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<{ leaks: any[]; total: number; hasMore: boolean }>> {
+  try {
+    const params = new URLSearchParams();
+    if (provider) params.append('provider', provider);
+    if (timeRange) params.append('timeRange', timeRange);
+    if (sortBy) params.append('sortBy', sortBy);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
+  }
 } 

@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LeakedKey, Provider } from '@/types';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn, parseGitHubRepoUrl } from '@/lib/utils';
 
 interface LeakTableProps {
   leaks: LeakedKey[];
@@ -97,14 +97,14 @@ const CopyButton = React.memo(({
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => onCopy(leak.redacted_key, leak.id)}
+      onClick={() => onCopy(leak.redactedKey, leak.id)}
       className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-transparent group"
     >
       <div>
         {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-green-600" />
+          <Check className="h-4 w-4 text-foreground" />
         ) : (
-          <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
+          <Copy className="h-4 w-4 text-foreground transition-colors duration-150" />
         )}
       </div>
     </Button>
@@ -112,21 +112,17 @@ const CopyButton = React.memo(({
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => onCopy(leak.redacted_key, leak.id)}
-      className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none group"
+      onClick={() => onCopy(leak.redactedKey, leak.id)}
+      className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none"
     >
       <div>
         {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-green-600" />
+          <Check className="h-4 w-4 text-foreground" />
         ) : (
-          <Copy className="h-4 w-4 text-red-500 hover:text-red-600 transition-colors duration-150" />
+          <Copy className="h-4 w-4 text-foreground transition-colors duration-150" />
         )}
       </div>
-      <span className={`text-sm font-semibold transition-all duration-200 ${
-        copiedKey === leak.id 
-          ? 'text-green-600' 
-          : 'text-red-500 hover:text-red-600'
-      }`}>
+      <span className="text-sm font-semibold transition-all duration-200 text-foreground">
         {copiedKey === leak.id ? 'Copied' : 'Copy'}
       </span>
     </Button>
@@ -134,6 +130,16 @@ const CopyButton = React.memo(({
 ));
 
 CopyButton.displayName = 'CopyButton';
+
+// Utility to normalize redacted key display to 20 chars (first 4 + 12 * + last 4)
+function normalizeRedactedKey(key: string): string {
+  if (!key || key.length <= 8) return key;
+  const first = key.slice(0, 4);
+  const last = key.slice(-4);
+  const totalLength = 20;
+  const asterisksCount = totalLength - first.length - last.length;
+  return `${first}${'*'.repeat(asterisksCount)}${last}`;
+}
 
 // Memoized Leak Card component
 const LeakCard = React.memo(({ 
@@ -156,51 +162,81 @@ const LeakCard = React.memo(({
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
             {/* Provider & Key */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <Badge
+            <div className="flex flex-row items-center gap-2 min-w-[180px]">
+              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-150 w-[180px] text-left">
+                {normalizeRedactedKey(leak.redactedKey)}
+              </code>
+              <div
                 className={cn(
-                  "font-mono text-xs font-medium border",
-                  providerColors[leak.provider] || providerColors['github']
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border",
+                  leak.provider === 'google_gemini'
+                    ? 'bg-blue-200/40 text-blue-700 dark:text-blue-300 border-blue-400/30'
+                    : providerColors[leak.provider] || providerColors['github']
                 )}
               >
-                {leak.provider}
-              </Badge>
-              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-150">
-                {leak.redacted_key}
-              </code>
+                {leak.provider === 'google_gemini' ? 'gemini' : leak.provider}
+              </div>
             </div>
 
             {/* Repository Info */}
             <div className="flex items-center gap-2 text-sm">
-              <a
-                href={leak.repo_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-150 cursor-pointer"
-              >
-                {leak.repo_url.split('/').slice(-2).join('/')}
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              {(() => {
+                const parsed = parseGitHubRepoUrl(leak.repoUrl);
+                if (!parsed) return (
+                  <a
+                    href={leak.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-150 cursor-pointer"
+                  >
+                    {leak.repoUrl.split('/').slice(-2).join('/')}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                );
+                return (
+                  <div className="flex items-center gap-2 text-sm">
+                    <a
+                      href={leak.repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary hover:underline flex items-center gap-1"
+                    >
+                      {parsed.repo}
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <span className="text-muted-foreground">by</span>
+                    <a
+                      href={`https://github.com/${parsed.owner}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-primary flex items-center gap-1"
+                    >
+                      <User className="h-3 w-3" />
+                      {parsed.owner}
+                    </a>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Metadata - beautiful, compact, and readable on mobile */}
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
-                <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.timestamp), { addSuffix: true })}</span>
-                {leak.file_path && (
-                  <>
-                    <FileText className="h-3 w-3 flex-shrink-0 ml-2 text-muted-foreground/70" />
-                    <code className="truncate max-w-[120px] sm:max-w-[200px] text-xs align-middle text-foreground/70 bg-muted/50 px-1.5 py-0.5 rounded border border-border/30" title={leak.file_path}>{leak.file_path}</code>
-                  </>
+                <span className="truncate text-foreground/80 font-semibold">API added in Repo:</span>
+                <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
+                {leak.filePath && (
+                  <span className="flex items-center gap-1">
+                    <FileText className="h-3 w-3 flex-shrink-0" />
+                    <code className="text-xs truncate max-w-[120px] sm:max-w-[200px]" title={leak.filePath}>{leak.filePath}</code>
+                  </span>
                 )}
               </div>
-              {leak.repo_created_at && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-                  <span className="text-muted-foreground/80">Created {formatDistanceToNow(new Date(leak.repo_created_at), { addSuffix: true })}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
+                <span className="truncate text-foreground/80 font-semibold">Leak Detected:</span>
+                <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakDetectedAt), { addSuffix: true })}</span>
+              </div>
             </div>
           </div>
 
@@ -222,12 +258,13 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: L
     try {
       await navigator.clipboard.writeText(text);
       setCopiedKey(keyId);
+      toast.success('API key copied to clipboard!');
       // Reset copied state after 1 second
       setTimeout(() => {
         setCopiedKey(null);
       }, 1000);
     } catch (err) {
-      // Optionally handle error, but no toast
+      toast.error('Failed to copy API key');
     }
   }, []);
 

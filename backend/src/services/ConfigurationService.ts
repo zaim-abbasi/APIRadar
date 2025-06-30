@@ -89,11 +89,11 @@ export class ConfigurationService {
     try {
       console.log('Force reinitializing configurations...');
       
-      // Set cutoff date to one month before today
+      // Set cutoff date to 15 days before today
       const today = new Date();
-      const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-      await this.setRepositoryAgeCutoff(oneMonthAgo);
-      console.log('Reinitialized repository age cutoff to one month before today:', oneMonthAgo.toISOString());
+      const fifteenDaysAgo = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+      await this.setRepositoryAgeCutoff(fifteenDaysAgo);
+      console.log('Reinitialized repository age cutoff to 15 days before today:', fifteenDaysAgo.toISOString());
 
       // Set scan state to start from beginning
       const defaultScanState = {
@@ -126,11 +126,11 @@ export class ConfigurationService {
       // Check if repository_age_cutoff exists, if not set default
       const cutoff = await this.getRepositoryAgeCutoff();
       if (!cutoff) {
-        // Set cutoff date to one month before today
+        // Set cutoff date to 15 days before today
         const today = new Date();
-        const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-        await this.setRepositoryAgeCutoff(oneMonthAgo);
-        console.log('Initialized repository age cutoff to one month before today:', oneMonthAgo.toISOString());
+        const fifteenDaysAgo = new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000);
+        await this.setRepositoryAgeCutoff(fifteenDaysAgo);
+        console.log('Initialized repository age cutoff to 15 days before today:', fifteenDaysAgo.toISOString());
       }
 
       // Check if scan_state exists, if not set default

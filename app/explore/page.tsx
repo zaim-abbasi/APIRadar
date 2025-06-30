@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
 import { mockLeaks } from '@/lib/mock-data';
-import { TIME_RANGES, SORT_OPTIONS } from '@/lib/constants';
+import { TIME_RANGES, SORT_OPTIONS, PROVIDERS } from '@/lib/constants';
 import { Provider } from '@/types';
+import { fetchLeaks } from '@/lib/api';
 
 const PAGE_SIZE = 10;
 
@@ -27,28 +28,36 @@ const ExploreHeader = React.memo(() => (
 
 ExploreHeader.displayName = 'ExploreHeader';
 
+// Helper to get provider label from value
+function getProviderLabel(value: string) {
+  const found = PROVIDERS.find((p) => p.value === value);
+  return found ? found.label : value;
+}
+
 // Memoized Results Count component
 const ResultsCount = React.memo(({ 
   filteredLeaks, 
   selectedProvider, 
   isClient, 
   isLoading, 
-  onRefresh 
+  onRefresh, 
+  total
 }: { 
   filteredLeaks: any[]; 
   selectedProvider: Provider; 
   isClient: boolean; 
   isLoading: boolean; 
   onRefresh: () => void; 
+  total: number;
 }) => (
   <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-200">
     <div className="flex-1 text-sm text-muted-foreground truncate">
       {isClient && (
         <>
-          <span className="block sm:hidden">{filteredLeaks.length} leaks found</span>
+          <span className="block sm:hidden">{total} leaks found</span>
           <span className="hidden sm:inline">
-            {filteredLeaks.length} leak{filteredLeaks.length !== 1 ? 's' : ''} found
-            {selectedProvider !== 'all' && ` for ${selectedProvider}`}
+            {total} leak{total !== 1 ? 's' : ''} found
+            {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
           </span>
         </>
       )}
@@ -57,9 +66,9 @@ const ResultsCount = React.memo(({
       <button
         onClick={onRefresh}
         disabled={isLoading}
-        className="h-9 pl-2 pr-3 py-2 text-sm font-semibold text-primary-foreground bg-primary border-none rounded-md shadow-md flex items-center gap-2 transition-all duration-150 hover:bg-primary/90 hover:text-white focus:outline-none"
+        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-150 hover:bg-primary/90 focus:outline-none"
       >
-        <RefreshCw className={`mr-2 h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Refreshing...' : 'Refresh'}
       </button>
     </div>
@@ -79,7 +88,8 @@ const FiltersSection = React.memo(({
   filteredLeaks, 
   isClient, 
   isLoading, 
-  onRefresh 
+  onRefresh, 
+  total
 }: { 
   selectedProvider: Provider; 
   onProviderChange: (provider: Provider) => void; 
@@ -91,6 +101,7 @@ const FiltersSection = React.memo(({
   isClient: boolean; 
   isLoading: boolean; 
   onRefresh: () => void; 
+  total: number;
 }) => (
   <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-4 animate-fade-in-up opacity-0 animate-delay-150">
     <div className="flex flex-col lg:flex-row gap-3">
@@ -138,6 +149,7 @@ const FiltersSection = React.memo(({
       isClient={isClient}
       isLoading={isLoading}
       onRefresh={onRefresh}
+      total={total}
     />
   </div>
 ));
@@ -180,12 +192,16 @@ LoadingIndicator.displayName = 'LoadingIndicator';
 
 const ExplorePage = React.memo(() => {
   const [selectedProvider, setSelectedProvider] = useState<Provider>('all');
-  const [timeRange, setTimeRange] = useState('24h');
+  const [timeRange, setTimeRange] = useState('7d');
   const [sortBy, setSortBy] = useState('newest');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // for initial/full reload
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // for infinite scroll
   const [isClient, setIsClient] = useState(false);
   const [page, setPage] = useState(1);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshIndex, setRefreshIndex] = useState(0);
+  const [leaks, setLeaks] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   
   // Ref for intersection observer
   const loadingRef = useRef<HTMLDivElement>(null);
@@ -209,122 +225,88 @@ const ExplorePage = React.memo(() => {
     setIsClient(true);
   }, []);
 
-  // Reset page when filters change
+  // Infinite scroll: observe loadingRef and increment page when visible
+  useEffect(() => {
+    if (!hasMore || isLoading) return;
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new window.IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage((prev) => prev + 1);
+      }
+    }, { rootMargin: '0px 0px 600px 0px' });
+
+    if (loadingRef.current) {
+      observerRef.current.observe(loadingRef.current);
+    }
+
+    return () => observerRef.current?.disconnect();
+  }, [hasMore, isLoading]);
+
+  // Reset page to 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [selectedProvider, timeRange, sortBy]);
 
-  // Optimized filtered leaks with better memoization
-  const filteredLeaks = useMemo(() => {
-    let filtered = [...memoizedMockLeaks];
-
-    // Only show leaks from supported providers
-    filtered = filtered.filter(leak => allowedProviders.includes(leak.provider));
-
-    // Filter by provider
-    if (selectedProvider !== 'all') {
-      filtered = filtered.filter(leak => leak.provider === selectedProvider);
+  // Update fetchAndSetLeaks to append leaks if page > 1
+  const fetchAndSetLeaks = useCallback(async () => {
+    if (page === 1) {
+      setIsLoading(true);
+      setIsLoadingMore(false);
+    } else {
+      setIsLoadingMore(true);
     }
-
-    // Filter by time range
-    const cutoffTime = timeFilters[timeRange];
-    if (cutoffTime) {
-      const cutoff = new Date(Date.now() - cutoffTime);
-      filtered = filtered.filter(leak => new Date(leak.timestamp) >= cutoff);
+    const { data, error } = await fetchLeaks({
+      provider: selectedProvider,
+      timeRange,
+      sortBy,
+      page,
+      limit: PAGE_SIZE,
+    });
+    if (data) {
+      setLeaks((prev) => {
+        if (page === 1) return data.leaks;
+        const existingIds = new Set(prev.map((l) => l.id));
+        const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
+        return [...prev, ...newLeaks];
+      });
+      setTotal(data.total);
+      setHasMore(data.hasMore);
     }
+    setIsLoading(false);
+    setIsLoadingMore(false);
+  }, [selectedProvider, timeRange, sortBy, page, refreshIndex]);
 
-    // Sort
-    switch (sortBy) {
-      case 'newest':
-        filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        break;
-      case 'oldest':
-        filtered.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-        break;
-      case 'provider':
-        filtered.sort((a, b) => a.provider.localeCompare(b.provider));
-        break;
-    }
-
-    return filtered;
-  }, [selectedProvider, timeRange, sortBy, allowedProviders, timeFilters, memoizedMockLeaks]);
-
-  // Optimized paginated leaks
-  const paginatedLeaks = useMemo(() => {
-    return filteredLeaks.slice(0, page * PAGE_SIZE);
-  }, [filteredLeaks, page]);
-
-  // Memoized hasMore check
-  const hasMore = useMemo(() => {
-    return paginatedLeaks.length < filteredLeaks.length;
-  }, [paginatedLeaks.length, filteredLeaks.length]);
-
-  const handleProviderChange = useCallback((provider: Provider) => {
-    setSelectedProvider(provider);
-  }, []);
-
-  const handleRefresh = useCallback(() => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
-  }, []);
-
-  const loadMore = useCallback(() => {
-    if (loadingMore || !hasMore) return;
-    
-    setLoadingMore(true);
-    setTimeout(() => {
-      setPage(p => p + 1);
-      setLoadingMore(false);
-    }, 300);
-  }, [loadingMore, hasMore]);
-
-  // Optimized Intersection Observer with better cleanup
   useEffect(() => {
-    if (!loadingRef.current) return;
+    fetchAndSetLeaks();
+  }, [fetchAndSetLeaks]);
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !loadingMore) {
-          loadMore();
-        }
-      },
-      {
-        rootMargin: '300px',
-        threshold: 0.1,
-      }
-    );
-
-    observerRef.current.observe(loadingRef.current);
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-    };
-  }, [hasMore, loadingMore, loadMore]);
+  const handleRefresh = () => {
+    setPage(1);
+    setRefreshIndex((i) => i + 1);
+  };
 
   // Memoized filter props to prevent unnecessary re-renders
   const filterProps = useMemo(() => ({
     selectedProvider,
-    onProviderChange: handleProviderChange,
+    onProviderChange: setSelectedProvider,
     timeRange,
     setTimeRange,
     sortBy,
     setSortBy,
-    filteredLeaks,
+    filteredLeaks: leaks,
     isClient,
     isLoading,
-    onRefresh: handleRefresh
-  }), [selectedProvider, handleProviderChange, timeRange, setTimeRange, sortBy, setSortBy, filteredLeaks, isClient, isLoading, handleRefresh]);
+    onRefresh: handleRefresh,
+    total
+  }), [selectedProvider, setSelectedProvider, timeRange, setTimeRange, sortBy, setSortBy, leaks, isClient, isLoading, handleRefresh, total]);
 
   // Memoized results props
   const resultsProps = useMemo(() => ({
-    filteredLeaks: paginatedLeaks,
+    filteredLeaks: leaks,
     isLoading,
     selectedProvider
-  }), [paginatedLeaks, isLoading, selectedProvider]);
+  }), [leaks, isLoading, selectedProvider]);
 
   return (
     <div className="container mx-auto px-4 py-4">
@@ -335,12 +317,29 @@ const ExplorePage = React.memo(() => {
       <FiltersSection {...filterProps} />
 
       {/* Results */}
-      <ResultsSection {...resultsProps} />
+      {/* Only show full-table skeleton if initial load */}
+      {isLoading && page === 1 ? (
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
+          ))}
+        </div>
+      ) : (
+        <ResultsSection {...resultsProps} />
+      )}
 
       {/* Invisible trigger for infinite scroll */}
       {hasMore && (
         <div ref={loadingRef}>
           <LoadingIndicator />
+          {isLoadingMore && (
+            <div className="py-6">
+              {/* Skeleton cards for loading more */}
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

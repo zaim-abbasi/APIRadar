@@ -139,7 +139,9 @@ const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
 
 function redactKey(key: string): string {
   if (key.length <= 8) return key;
-  return `${key.substring(0, 4)}${'*'.repeat(key.length - 8)}${key.substring(key.length - 4)}`;
+  // Use a fixed number of asterisks (12) to ensure consistent length
+  const fixedAsterisks = 12;
+  return `${key.substring(0, 4)}${'*'.repeat(fixedAsterisks)}${key.substring(key.length - 4)}`;
 }
 
 async function fetchRawFileContent(repoFullName: string, filePath: string, ref: string): Promise<string | null> {
@@ -646,14 +648,15 @@ export class GitHubCodeLeakFarmService {
     scanResumeState.currentQueryIndex = queryIndex;
     scanResumeState.currentPage = page;
     
-    logger.warn(`[FARM] Processing provider ${validProviderIndex + 1}/${providerNames.length}: ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
-    
     try {
       // Process current provider's current query (one page only)
       const query = providerQueries[queryIndex];
       if (query) {
         await this.processOnePageForQuery(query, page);
         scannedAnything = true;
+        
+        // Only log when there's actual scanning activity
+        logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
       }
       
       // Move to next query/page for this provider
@@ -661,6 +664,25 @@ export class GitHubCodeLeakFarmService {
       if (queryIndex >= providerQueries.length) {
         queryIndex = 0;
         page++;
+      }
+      
+      // If any provider's page exceeds 100, reset all to page 1 and log
+      const MAX_PAGE = 100;
+      let shouldResetPages = false;
+      for (const provider of providerNames) {
+        const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
+        if (state.page > MAX_PAGE) {
+          shouldResetPages = true;
+          break;
+        }
+      }
+      if (shouldResetPages) {
+        for (const provider of providerNames) {
+          scanResumeState.providerStates[provider] = { queryIndex: 0, page: 1 };
+        }
+        scanResumeState.currentPage = 1;
+        scanResumeState.currentQueryIndex = 0;
+        logger.warn(`[FARM] Max page reached (>${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
       }
       
       // Update provider state
@@ -674,7 +696,10 @@ export class GitHubCodeLeakFarmService {
       scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
       await saveResumeState();
       
-      logger.warn(`[FARM] Completed ${typedCurrentProvider} page, moving to next provider: ${providerNames[(validProviderIndex + 1) % providerNames.length]}`);
+      // Only log when moving to the first provider (indicating a complete cycle)
+      if (scanResumeState.currentProviderIndex === 0) {
+        logger.warn(`[FARM] Completed scan cycle - all providers processed for current page`);
+      }
     } catch (error) {
       this.handleSearchError(error, providerQueries[queryIndex] || 'unknown', page);
     }
@@ -902,8 +927,12 @@ export class GitHubCodeLeakFarmService {
             leakDetectedAt: new Date(),
             repoCreatedAt
           };
+          // Blue log for new leak found
+          logger.leak(
+            provider,
+            `${repoName} | ${filePath} | ${redactKey(key)}`
+          );
           foundLeaks.push(leakData);
-          logger.leak(provider, repoName);
         } catch (error) {
           logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
         }
