@@ -15,11 +15,12 @@ const PAGE_SIZE = 10;
 
 // Memoized Header component
 const ExploreHeader = React.memo(() => (
-  <div className="mb-4 animate-fade-in-up opacity-0 animate-delay-100">
-    <h1 className="text-2xl md:text-3xl font-bold mb-2">
+  <div className="mb-3 animate-fade-in-up opacity-0 animate-delay-100 text-center">
+    <h1 className="text-3xl md:text-4xl font-semibold mb-1 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight inline-block relative">
       Explore Leaked Keys
+      <span className="block mx-auto mt-1 h-0.5 w-10 rounded-full bg-gradient-to-r from-primary to-foreground opacity-60" />
     </h1>
-    <p className="text-sm md:text-base text-muted-foreground">
+    <p className="text-base text-muted-foreground max-w-xl mx-auto leading-snug mt-1">
       Real-time feed of API key leaks discovered in public repositories.
     </p>
   </div>

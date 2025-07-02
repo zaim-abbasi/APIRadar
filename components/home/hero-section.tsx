@@ -22,12 +22,13 @@ const FeatureTag = React.memo(({
 }) => (
   <div 
     className={cn(
-      "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-card/40 backdrop-blur-sm border border-border/40 hover:bg-card/60 transition-all duration-200 ease-in-out animate-fade-in-up opacity-0",
+      "flex items-center gap-2 px-3 py-1.5 rounded-full border bg-card dark:bg-card/60 border-primary/30 shadow-sm backdrop-blur-md",
+      "transition-all duration-200 ease-in-out animate-fade-in-up opacity-0",
       delayClass
     )}
   >
-    <div className={cn(color, shouldSpin && "animate-spin-slow")}>
-      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+    <div className={cn(color, "animate-pulse-slow", shouldSpin && "animate-spin-slow")}> 
+      <Icon className="h-4 w-4" />
     </div>
     <span className="text-xs sm:text-sm font-medium text-foreground/90">{text}</span>
   </div>
@@ -67,18 +68,18 @@ CTAButton.displayName = 'CTAButton';
 // Memoized Hero Headline component
 const HeroHeadline = React.memo(() => (
   <div className="mb-6 animate-fade-in-up opacity-0 animate-delay-100">
-    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[0.95] tracking-tight">
+    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-[0.95] tracking-tight drop-shadow-sm">
       {/* First Line */}
       <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up opacity-0 animate-delay-100">
         <span className="text-foreground">
           Exposing{' '}
         </span>
-        <span className="text-red-500">
+        <span className="text-red-600 drop-shadow-md">
           GitHub
         </span>
       </div>
       {/* Second Line */}
-      <div className="text-muted-foreground/80 animate-fade-in-up opacity-0 animate-delay-150">
+      <div className="text-muted-foreground/80 animate-fade-in-up opacity-0 animate-delay-150 drop-shadow-sm">
         API Leaks
       </div>
     </h1>
@@ -96,7 +97,7 @@ const FeatureTags = React.memo(() => {
   ], []);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in-up opacity-0 animate-delay-200">
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up opacity-0 animate-delay-200">
       {features.map((feature, index) => (
         <FeatureTag
           key={index}
@@ -115,7 +116,7 @@ FeatureTags.displayName = 'FeatureTags';
 
 // Memoized Subheading component
 const HeroSubheading = React.memo(() => (
-  <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-10 px-4 animate-fade-in-up opacity-0 animate-delay-400">
+  <p className="text-base md:text-lg text-muted-foreground leading-snug mb-6 sm:mb-8 px-4 animate-fade-in-up opacity-0 animate-delay-400">
     Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
     Discover leaks as they happen, with unmatched detail and speed.
   </p>
@@ -125,7 +126,7 @@ HeroSubheading.displayName = 'HeroSubheading';
 
 // Memoized CTA Buttons component
 const CTAButtons = React.memo(() => (
-  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8">
+  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-4">
     <CTAButton href="/explore" icon={FileSearch} secondaryIcon={ArrowRight}>
       Explore Leaks
     </CTAButton>
@@ -143,8 +144,8 @@ export const HeroSection = React.memo(() => {
         <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/10" />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10 h-full flex items-center justify-center">
-        <div className="text-center max-w-5xl mx-auto w-full">
+      <div className="container mx-auto relative z-10 h-full flex items-center justify-center">
+        <div className="text-center max-w-7xl mx-auto w-full">
           {/* Main Headline - Optimized Layout */}
           <HeroHeadline />
 

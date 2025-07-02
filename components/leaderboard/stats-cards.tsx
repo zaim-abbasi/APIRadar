@@ -126,9 +126,9 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
     }
 
     return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateString, isVisible]);
 
-  // Handle initial date setting and date changes
   useEffect(() => {
     if (dateString && !displayDate) {
       // Initial date setting - animate immediately
@@ -137,6 +137,7 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
       // If the date changes after initial animation, animate to new date
       animateDate(dateString);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateString, isVisible, hasAnimated, displayDate]);
 
   const animateDate = (targetDate: string) => {
@@ -156,12 +157,8 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
       const currentTimeStamp = startDate.getTime() + (endDate.getTime() - startDate.getTime()) * easedProgress;
       const currentDate = new Date(currentTimeStamp);
       
-      // Format the date
-      const formattedDate = currentDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      // Format the date as YYYY-MM-DD (SSR-safe)
+      const formattedDate = currentDate.toISOString().slice(0, 10);
       
       setDisplayDate(formattedDate);
       
@@ -175,23 +172,69 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
     requestAnimationFrame(animate);
   };
 
-  // Handle null value (loading state) - show skeleton instead of empty space
-  if (dateString === null || dateString === undefined) {
+  // Only return null after all hooks have been called
+  if (!dateString || isNaN(new Date(dateString).getTime())) {
+    return null;
+  }
+
+  return (
+    <span className="transition-all duration-600 ease-out">{displayDate}</span>
+  );
+});
+
+AnimatedDate.displayName = 'AnimatedDate';
+
+function AnimatedDateCounterInline({ dateString }: { dateString: string | null }) {
+  const [mounted, setMounted] = useState(false);
+  const [day, setDay] = useState(1);
+  const [year, setYear] = useState(2000);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !dateString || isNaN(new Date(dateString).getTime())) return;
+    const targetDate = new Date(dateString);
+    const targetDay = targetDate.getUTCDate();
+    const targetYear = targetDate.getUTCFullYear();
+    let frame: number;
+    let start: number | null = null;
+    const animate = (timestamp: number) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / 600, 1);
+      setDay(Math.round(1 + (targetDay - 1) * progress));
+      setYear(Math.round(2000 + (targetYear - 2000) * progress));
+      if (progress < 1) {
+        frame = requestAnimationFrame(animate);
+      }
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [mounted, dateString]);
+
+  if (!dateString || isNaN(new Date(dateString).getTime())) return null;
+  const date = new Date(dateString);
+  const month = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ][date.getUTCMonth()];
+
+  // On first render (SSR), show the final value
+  if (!mounted) {
     return (
       <span className="transition-all duration-600 ease-out">
-        <span className="inline-block w-32 h-6 skeleton rounded"></span>
+        {date.getUTCDate()} {month}, {date.getUTCFullYear()}
       </span>
     );
   }
 
   return (
     <span className="transition-all duration-600 ease-out">
-      {displayDate}
+      {day} {month}, {year}
     </span>
   );
-});
-
-AnimatedDate.displayName = 'AnimatedDate';
+}
 
 // Memoized Stat Card component
 const StatCard = React.memo(({ 
@@ -210,7 +253,7 @@ const StatCard = React.memo(({
     >
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-200 hover:shadow-sm shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors tracking-tight">
+          <CardTitle className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors tracking-tight">
             {stat.title}
           </CardTitle>
           <IconComponent className={`${stat.color} h-8 w-8`} />
@@ -224,7 +267,7 @@ const StatCard = React.memo(({
                 <AnimatedCounter value={stat.value} />
               )
             ) : stat.isDate ? (
-              <AnimatedDate dateString={stat.value} />
+              <AnimatedDateCounterInline dateString={stat.value} />
             ) : (
               <span className="text-lg font-medium">{stat.value}</span>
             )}
@@ -254,6 +297,13 @@ const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
       bgColor: 'bg-orange-500/10'
     },
     {
+      title: 'Leaks Found Today',
+      value: data.leaksFoundToday,
+      icon: Eye,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-500/10'
+    },
+    {
       title: 'Repository Cutoff',
       value: data.repositoryCutoff,
       icon: Calendar,
@@ -261,10 +311,13 @@ const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
       bgColor: 'bg-green-500/10',
       isDate: true
     }
-  ], [data.totalLeaks, data.todayLeaks, data.repositoryCutoff]);
+  ], [data.totalLeaks, data.todayLeaks, data.leaksFoundToday, data.repositoryCutoff]);
 
   return (
-    <div id="stats-container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <div
+      id="stats-container"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+    >
       {stats.map((stat, index) => (
         <StatCard key={stat.title} stat={stat} index={index} />
       ))}

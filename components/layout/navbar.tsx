@@ -105,10 +105,11 @@ const NavbarComponent = () => {
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="relative"
             >
-              <Image src="/logo/logo.ico" alt="API Radar Logo" height={32} width={32} className="h-8 w-auto object-contain" priority />
+              <Image src="/logo/logo-png.png" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority />
             </motion.div>
-            <span className="text-xl font-bold text-red-500">
-              API Radar
+            <span className="text-xl font-medium">
+              <span className="text-red-600">API</span>
+              <span className="text-zinc-900 dark:text-white"> Radar</span>
             </span>
           </Link>
 

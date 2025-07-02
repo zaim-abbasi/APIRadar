@@ -9,10 +9,11 @@ import Image from 'next/image';
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center space-x-1">
     <div className="transition-transform duration-200 hover:rotate-180">
-      <Image src="/logo/logo.ico" alt="API Radar Logo" height={20} width={20} className="h-5 w-auto object-contain" priority />
+      <Image src="/logo/logo-png.png" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority />
     </div>
-    <span className="text-base font-bold text-red-500">
-      API Radar
+    <span className="text-base font-medium">
+      <span className="text-red-600">API</span>
+      <span className="text-zinc-900 dark:text-white"> Radar</span>
     </span>
   </Link>
 ));
@@ -85,7 +86,7 @@ SocialLinks.displayName = 'SocialLinks';
 
 const FooterComponent = () => {
   return (
-    <footer className="border-t border-border/40 bg-background/95 backdrop-blur">
+    <footer className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
           {/* Left: Logo & Name */}

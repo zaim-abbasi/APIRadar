@@ -17,7 +17,12 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     }
 
     // Fetch all leaderboard data in parallel for better performance
-    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders] = await Promise.all([
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders, todayLeaks] = await Promise.all([
       ScanAttempt.countDocuments().lean(),
       Leak.countDocuments().lean(),
       ConfigurationService.getRepositoryAgeCutoff(),
@@ -25,7 +30,8 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
         { $group: { _id: '$provider', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 10 }
-      ])
+      ]),
+      Leak.countDocuments({ leakDetectedAt: { $gte: startOfDay, $lte: endOfDay } }).lean()
     ]);
 
     // Calculate percentages for top providers
@@ -39,7 +45,8 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       totalReposScanned,
       totalLeaksFound,
       repositoryAgeCutoff: repositoryAgeCutoff?.toISOString(),
-      topProviders: providersWithPercentage
+      topProviders: providersWithPercentage,
+      todayLeaks
     };
 
     // Cache the response

@@ -51,6 +51,9 @@ export default function RootLayout({
         {/* Preload critical fonts */}
         <link rel="preload" href="/logo/logo.ico" as="image" type="image/x-icon" />
         
+        {/* Favicon */}
+        <link rel="icon" href="/logo/logo-png.png" type="image/png" sizes="446x446" />
+        
         {/* DNS prefetch for external resources */}
         <link rel="dns-prefetch" href="//github.com" />
         <link rel="dns-prefetch" href="//linkedin.com" />

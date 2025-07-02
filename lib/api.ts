@@ -71,8 +71,9 @@ export async function fetchTopProviders(): Promise<ApiResponse<{ topProviders: A
 export async function fetchLeaderboardData(): Promise<ApiResponse<{
   totalReposScanned: number;
   totalLeaksFound: number;
-  repositoryAgeCutoff: string;
+  repositoryAgeCutoff: string | null;
   topProviders: Array<{ provider: string; count: number; percentage: number }>;
+  todayLeaks: number;
 }>> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/leaderboard-data`, {
