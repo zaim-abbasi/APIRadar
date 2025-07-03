@@ -9,6 +9,7 @@ import { Shield, Moon, Sun, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { UserMenu } from '@/components/auth/user-menu';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -97,7 +98,7 @@ const NavbarComponent = () => {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-16 items-center relative">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
             <motion.div
@@ -113,13 +114,13 @@ const NavbarComponent = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Desktop Navigation - Centered relative to full navbar width */}
+          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
             <NavLinks />
           </div>
 
-          {/* Theme Toggle & Mobile Menu */}
-          <div className="flex items-center space-x-2">
+          {/* Theme Toggle, User Menu & Mobile Menu - Right side */}
+          <div className="flex items-center space-x-2 ml-auto">
             <Button
               variant="ghost"
               size="icon"
@@ -139,6 +140,9 @@ const NavbarComponent = () => {
                 )}
               </motion.div>
             </Button>
+
+            {/* User Menu */}
+            <UserMenu />
 
             {/* Mobile Menu Button */}
             <Button

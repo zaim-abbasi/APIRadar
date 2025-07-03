@@ -45,7 +45,7 @@ const CTAButton = React.memo(({
   secondaryIcon: SecondaryIcon
 }: { 
   href: string; 
-  icon: React.ComponentType<{ className?: string }>; 
+  icon?: React.ComponentType<{ className?: string }>; 
   children: React.ReactNode; 
   variant?: "default" | "outline";
   secondaryIcon?: React.ComponentType<{ className?: string }>;
@@ -53,10 +53,15 @@ const CTAButton = React.memo(({
   <Link 
     href={href} 
     prefetch={true}
-    className="inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 text-primary-foreground rounded-md group h-11 sm:h-12 px-6 sm:px-8 text-sm sm:text-base font-medium bg-primary hover:bg-primary/90 transition-all duration-200 ease-in-out min-w-[140px] sm:min-w-[160px] hover:scale-[1.02] flex items-center justify-center animate-fade-in-up opacity-0 animate-delay-450"
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 rounded-lg group h-12 sm:h-13 px-6 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[160px] sm:w-[180px] hover:scale-[1.02] animate-fade-in-up opacity-0 animate-delay-450 shadow-lg",
+      variant === "default" 
+        ? "text-primary-foreground bg-primary hover:bg-primary/90 shadow-primary/25" 
+        : "text-foreground bg-secondary hover:bg-secondary/80 border border-border shadow-secondary/25"
+    )}
   >
-    <Icon className="mr-2 h-5 w-5" />
-    {children}
+    {Icon && <Icon className="mr-2 h-5 w-5" />}
+    <span className="text-center">{children}</span>
     {SecondaryIcon && (
       <SecondaryIcon className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
     )}
@@ -126,8 +131,11 @@ HeroSubheading.displayName = 'HeroSubheading';
 
 // Memoized CTA Buttons component
 const CTAButtons = React.memo(() => (
-  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-4">
-    <CTAButton href="/explore" icon={FileSearch} secondaryIcon={ArrowRight}>
+  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-8 sm:mb-12">
+    <CTAButton href="/leaderboard" variant="outline">
+      Leaderboard
+    </CTAButton>
+    <CTAButton href="/explore" secondaryIcon={ArrowRight}>
       Explore Leaks
     </CTAButton>
   </div>
@@ -145,7 +153,7 @@ export const HeroSection = React.memo(() => {
       </div>
 
       <div className="container mx-auto relative z-10 h-full flex items-center justify-center">
-        <div className="text-center max-w-7xl mx-auto w-full">
+        <div className="text-center max-w-7xl mx-auto w-full -mt-16">
           {/* Main Headline - Optimized Layout */}
           <HeroHeadline />
 
