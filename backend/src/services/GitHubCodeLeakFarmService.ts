@@ -698,7 +698,7 @@ export class GitHubCodeLeakFarmService {
 
   private isScanStateComplete(state: ScanResumeState): boolean {
     const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
-    const MAX_PAGE = 100;
+    const MAX_PAGE = 150;
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
       if (!providerState || providerState.page <= MAX_PAGE) {
@@ -761,8 +761,8 @@ export class GitHubCodeLeakFarmService {
           page++;
         }
         
-        // If any provider's page exceeds 100, reset all to page 1 and log
-        const MAX_PAGE = 100;
+        // If any provider's page exceeds 150, reset all to page 1 and log
+        const MAX_PAGE = 150;
         let shouldResetPages = false;
         for (const provider of providerNames) {
           const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
@@ -777,6 +777,9 @@ export class GitHubCodeLeakFarmService {
           }
           scanResumeState.currentPage = 1;
           scanResumeState.currentQueryIndex = 0;
+          // Reset the current provider's page and query index too
+          page = 1;
+          queryIndex = 0;
           logger.warn(`[FARM] Max page reached (>${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
         }
         
@@ -835,6 +838,10 @@ export class GitHubCodeLeakFarmService {
         if (error.response?.status === 403) {
           // Rate limit or permission error - this is expected and handled by retry logic
           logger.warn(`[FARM] Rate limit or permission error for query "${query}" (page ${page}): ${error.message}`);
+          return; // Don't re-throw, just return gracefully
+        } else if (error.response?.status === 422) {
+          // Unprocessable Entity - invalid search query, skip this query
+          logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
           return; // Don't re-throw, just return gracefully
         } else if (error.response?.status && error.response.status >= 500) {
           // Server error - this is expected and handled by retry logic
@@ -1073,6 +1080,8 @@ export class GitHubCodeLeakFarmService {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 403) {
         logger.warn(`[FARM] Rate limit hit for query: ${query} (page ${page})`);
+      } else if (error.response?.status === 422) {
+        logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
       } else if (error.response?.status && error.response.status >= 500) {
         logger.warn(`[FARM] Server error (${error.response.status}) for query: ${query} (page ${page})`);
       } else {
