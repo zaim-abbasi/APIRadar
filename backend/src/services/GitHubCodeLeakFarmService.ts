@@ -392,36 +392,38 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
         const remaining = err.response.headers['x-ratelimit-remaining'];
         const reset = err.response.headers['x-ratelimit-reset'];
         const limit = err.response.headers['x-ratelimit-limit'];
+        const message = err.response.data?.message || '';
         
-        // Validate if this is a search API rate limit
-        if (validateSearchRateLimitHeaders(remaining, limit)) {
+        const shortLog = `[GITHUB] 403: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
+        logger.warn(shortLog);
+
+        // Handle code search rate limit
+        if (
+          remaining === '0' &&
+          limit === '10' &&
+          reset &&
+          Number(reset) * 1000 > Date.now()
+        ) {
           const resetTime = parseInt(reset, 10) * 1000;
-          const now = Date.now();
-          
-          // Validate reset time is reasonable (not in the past, not too far in the future)
-          if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
-            setRateLimit(resetTime);
-            // Wait for the pause, then retry
-            await waitForRateLimitIfNeeded();
-            attempt++;
-            continue;
-          }
-        } else {
-          // Only treat as rate limit if remaining is actually 0 and we have a valid reset time
-          if (remaining === '0' && reset) {
-            const resetTime = parseInt(reset, 10) * 1000;
-            const now = Date.now();
-            
-            // Validate reset time is reasonable (not in the past, not too far in the future)
-            if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
-              setRateLimit(resetTime);
-              // Wait for the pause, then retry
-              await waitForRateLimitIfNeeded();
-              attempt++;
-              continue;
-            }
-          }
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          attempt++;
+          continue;
         }
+
+        // Handle secondary/abuse rate limits (message contains 'abuse' or 'secondary')
+        if (message.toLowerCase().includes('abuse') || message.toLowerCase().includes('secondary')) {
+          logger.warn('[GITHUB] Secondary or abuse rate limit detected. Retrying after backoff...');
+          await new Promise(res => setTimeout(res, 60000)); // Wait 1 minute before retry
+          attempt++;
+          continue;
+        }
+
+        // If not a real rate limit, treat as a generic 403 and retry after a short delay
+        logger.warn('[GITHUB] 403 received but not a real rate limit. Retrying after short delay...');
+        await new Promise(res => setTimeout(res, 5000));
+        attempt++;
+        continue;
       }
       lastErr = err;
       await new Promise(res => setTimeout(res, RETRY_BASE_DELAY));
@@ -759,40 +761,38 @@ export class GitHubCodeLeakFarmService {
         const remaining = error.response.headers['x-ratelimit-remaining'];
         const reset = error.response.headers['x-ratelimit-reset'];
         const limit = error.response.headers['x-ratelimit-limit'];
+        const message = error.response.data?.message || '';
         
-        // Validate if this is a search API rate limit
-        if (validateSearchRateLimitHeaders(remaining, limit)) {
+        const shortLog = `[GITHUB] 403: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
+        logger.warn(shortLog);
+
+        // Handle code search rate limit
+        if (
+          remaining === '0' &&
+          limit === '10' &&
+          reset &&
+          Number(reset) * 1000 > Date.now()
+        ) {
           const resetTime = parseInt(reset, 10) * 1000;
-          const now = Date.now();
-          
-          // Validate reset time is reasonable (not in the past, not too far in the future)
-          if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
-            setRateLimit(resetTime);
-            // Save current state before waiting for rate limit
-            saveResumeState();
-            await waitForRateLimitIfNeeded();
-            // Retry this page after rate limit reset
-            await this.processOnePageForQuery(query, page);
-            return;
-          }
-        } else {
-          // Only treat as rate limit if remaining is actually 0 and we have a valid reset time
-          if (remaining === '0' && reset) {
-            const resetTime = parseInt(reset, 10) * 1000;
-            const now = Date.now();
-            
-            // Validate reset time is reasonable (not in the past, not too far in the future)
-            if (resetTime > now && resetTime < now + 3600000) { // Within 1 hour
-              setRateLimit(resetTime);
-              // Save current state before waiting for rate limit
-              saveResumeState();
-              await waitForRateLimitIfNeeded();
-              // Retry this page after rate limit reset
-              await this.processOnePageForQuery(query, page);
-              return;
-            }
-          }
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          await this.processOnePageForQuery(query, page);
+          return;
         }
+
+        // Handle secondary/abuse rate limits (message contains 'abuse' or 'secondary')
+        if (message.toLowerCase().includes('abuse') || message.toLowerCase().includes('secondary')) {
+          logger.warn('[GITHUB] Secondary or abuse rate limit detected. Retrying after backoff...');
+          await new Promise(res => setTimeout(res, 60000)); // Wait 1 minute before retry
+          await this.processOnePageForQuery(query, page);
+          return;
+        }
+
+        // If not a real rate limit, treat as a generic 403 and retry after a short delay
+        logger.warn('[GITHUB] 403 received but not a real rate limit. Retrying after short delay...');
+        await new Promise(res => setTimeout(res, 5000));
+        await this.processOnePageForQuery(query, page);
+        return;
       }
       
       this.handleSearchError(error, query, page);

@@ -2,7 +2,7 @@ export const PROVIDERS = [
   { value: 'all', label: 'All Providers' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic (Claude)' },
-  { value: 'google_gemini', label: 'Gemini' },
+  { value: 'google', label: 'Google' },
 ] as const;
 
 export const TIME_RANGES = [
@@ -16,3 +16,11 @@ export const SORT_OPTIONS = [
   { value: 'oldest', label: 'Oldest First' },
   { value: 'provider', label: 'Provider' }
 ] as const;
+
+// Add a mapping for frontend-to-backend provider values
+export const PROVIDER_API_MAP: Record<string, string> = {
+  google: 'google_gemini',
+  openai: 'openai',
+  anthropic: 'anthropic',
+  all: 'all',
+};

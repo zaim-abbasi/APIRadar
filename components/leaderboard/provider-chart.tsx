@@ -23,7 +23,7 @@ const providerColors: Record<string, string> = {
 const getProviderDisplayName = (provider: string): string => {
   const displayNames: Record<string, string> = {
     'openai': 'OpenAI',
-    'google_gemini': 'Google (Gemini)',
+    'google_gemini': 'Google',
     'anthropic': 'Anthropic (Claude)',
     'cohere': 'Cohere',
     'aws': 'AWS',
@@ -105,26 +105,14 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
   // Calculate y-axis domain with professional tick marks
   const yAxisDomain = useMemo(() => {
-    if (totalLeaks) {
-      // For small numbers like 89, use appropriate scaling
-      if (totalLeaks <= 100) {
-        const maxValue = Math.max(...data.map(item => item.count));
-        // Use a more appropriate scale based on the actual max value
-        if (maxValue <= 50) {
-          return [0, 50];
-        } else if (maxValue <= 100) {
-          return [0, 100];
-        }
-      }
-      // For larger numbers, use more sophisticated scaling
-      const maxValue = Math.max(...data.map(item => item.count));
-      const scale = Math.pow(10, Math.floor(Math.log10(maxValue)));
-      return [0, Math.ceil(maxValue / scale) * scale];
-    }
-    // Fallback to max value in data
-    const maxValue = Math.max(...data.map(item => item.count));
-    return [0, Math.ceil(maxValue * 1.2)];
-  }, [data, totalLeaks]);
+    if (data.length === 0) return [0, 1];
+    const minBar = Math.min(...data.map(item => item.count));
+    const maxBar = Math.max(...data.map(item => item.count));
+    // Crop aggressively: min just below the smallest bar, max just above the largest
+    const minValue = Math.max(0, minBar - Math.ceil((maxBar - minBar) * 0.8));
+    const maxValue = Math.ceil(maxBar * 1.05);
+    return [minValue, maxValue];
+  }, [data]);
 
   // Custom tick formatter for professional number display
   const formatYAxisTick = useCallback((value: number) => {

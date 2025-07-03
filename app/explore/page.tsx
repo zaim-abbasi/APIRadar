@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
-import { TIME_RANGES, SORT_OPTIONS, PROVIDERS } from '@/lib/constants';
+import { TIME_RANGES, SORT_OPTIONS, PROVIDERS, PROVIDER_API_MAP } from '@/lib/constants';
 import { Provider } from '@/types';
 import { fetchLeaks } from '@/lib/api';
 
@@ -253,8 +253,9 @@ const ExplorePage = React.memo(() => {
     } else {
       setIsLoadingMore(true);
     }
+    const backendProvider = PROVIDER_API_MAP[selectedProvider] || selectedProvider;
     const { data, error } = await fetchLeaks({
-      provider: selectedProvider,
+      provider: backendProvider,
       timeRange,
       sortBy,
       page,

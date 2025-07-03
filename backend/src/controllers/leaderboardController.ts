@@ -3,8 +3,18 @@ import { Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
 import { ConfigurationService } from '../services/ConfigurationService';
 
+// TypeScript interface for leaderboard response
+interface LeaderboardResponse {
+  totalReposScanned: number;
+  totalLeaksFound: number;
+  repositoryAgeCutoff: string | null;
+  topProviders: { provider: string; count: number; percentage: number }[];
+  todayLeaks: number;
+}
+
 // Simple in-memory cache for leaderboard data
-let leaderboardCache: any = null;
+// For high scale, consider using a distributed cache like Redis
+let leaderboardCache: LeaderboardResponse | null = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 30 * 1000; // 30 seconds
 
@@ -16,11 +26,21 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       return reply.send(leaderboardCache);
     }
 
-    // Fetch all leaderboard data in parallel for better performance
-    const startOfDay = new Date();
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    // Calculate start and end of day in Pakistan Standard Time (UTC+5)
+    const nowUtc = new Date();
+    // Offset in minutes for UTC+5
+    const pkOffsetMinutes = 5 * 60;
+    // Get current UTC+5 time
+    const nowPk = new Date(nowUtc.getTime() + pkOffsetMinutes * 60 * 1000);
+    // Start of day in PKT
+    const startOfDayPk = new Date(nowPk);
+    startOfDayPk.setHours(0, 0, 0, 0);
+    // End of day in PKT
+    const endOfDayPk = new Date(nowPk);
+    endOfDayPk.setHours(23, 59, 59, 999);
+    // Convert PKT start/end to UTC for MongoDB
+    const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
+    const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
 
     const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders, todayLeaks] = await Promise.all([
       ScanAttempt.countDocuments().lean(),
@@ -31,7 +51,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
         { $sort: { count: -1 } },
         { $limit: 10 }
       ]),
-      Leak.countDocuments({ leakDetectedAt: { $gte: startOfDay, $lte: endOfDay } }).lean()
+      Leak.countDocuments({ leakDetectedAt: { $gte: startOfDayUtc, $lte: endOfDayUtc } }).lean()
     ]);
 
     // Calculate percentages for top providers
@@ -41,10 +61,10 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       percentage: totalLeaksFound > 0 ? (provider.count / totalLeaksFound) * 100 : 0
     }));
 
-    const response = {
+    const response: LeaderboardResponse = {
       totalReposScanned,
       totalLeaksFound,
-      repositoryAgeCutoff: repositoryAgeCutoff?.toISOString(),
+      repositoryAgeCutoff: repositoryAgeCutoff?.toISOString() ?? null,
       topProviders: providersWithPercentage,
       todayLeaks
     };

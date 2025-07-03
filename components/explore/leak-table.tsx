@@ -169,12 +169,12 @@ const LeakCard = React.memo(({
               <div
                 className={cn(
                   "inline-flex items-center rounded-full px-2.5 py-0.5 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border",
-                  leak.provider === 'google_gemini'
+                  (leak.provider === 'google_gemini' || leak.provider === 'google')
                     ? 'bg-blue-200/40 text-blue-700 dark:text-blue-300 border-blue-400/30'
                     : providerColors[leak.provider] || providerColors['github']
                 )}
               >
-                {leak.provider === 'google_gemini' ? 'gemini' : leak.provider}
+                {(leak.provider === 'google_gemini' || leak.provider === 'google') ? 'google' : leak.provider}
               </div>
             </div>
 
@@ -223,7 +223,7 @@ const LeakCard = React.memo(({
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
-                <span className="truncate text-foreground/80 font-semibold">API added in Repo:</span>
+                <span className="truncate text-foreground/80 font-semibold">Key added in Repo:</span>
                 <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
                 {leak.filePath && (
                   <span className="flex items-center gap-1">
