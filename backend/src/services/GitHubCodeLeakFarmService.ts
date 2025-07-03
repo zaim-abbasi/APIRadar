@@ -387,6 +387,9 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
       const resultPromise = fn();
       return await Promise.race([resultPromise, timeoutPromise]);
     } catch (err: any) {
+      // Always set lastErr to ensure we have a valid error to throw
+      lastErr = err;
+      
       // Detect GitHub rate limit error with better validation
       if (err.response && err.response.status === 403 && err.response.headers) {
         const remaining = err.response.headers['x-ratelimit-remaining'];
@@ -397,10 +400,24 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
         const shortLog = `[GITHUB] 403: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
         logger.warn(shortLog);
 
-        // Handle code search rate limit
+        // Handle code search rate limit (10 requests per minute)
         if (
           remaining === '0' &&
-          limit === '10' &&
+          (limit === '10' || limit === 10) &&
+          reset &&
+          Number(reset) * 1000 > Date.now()
+        ) {
+          const resetTime = parseInt(reset, 10) * 1000;
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          attempt++;
+          continue;
+        }
+
+        // Handle core API rate limit (5000 requests per hour)
+        if (
+          remaining === '0' &&
+          (limit === '5000' || limit === 5000) &&
           reset &&
           Number(reset) * 1000 > Date.now()
         ) {
@@ -419,16 +436,32 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
           continue;
         }
 
+        // If we have rate limit headers but they don't match known patterns, still treat as rate limit
+        if (remaining === '0' && reset && Number(reset) * 1000 > Date.now()) {
+          logger.warn('[GITHUB] Unknown rate limit pattern detected, treating as rate limit...');
+          const resetTime = parseInt(reset, 10) * 1000;
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          attempt++;
+          continue;
+        }
+
         // If not a real rate limit, treat as a generic 403 and retry after a short delay
         logger.warn('[GITHUB] 403 received but not a real rate limit. Retrying after short delay...');
         await new Promise(res => setTimeout(res, 5000));
         attempt++;
         continue;
       }
-      lastErr = err;
+      
+      // For non-403 errors, wait before retry
       await new Promise(res => setTimeout(res, RETRY_BASE_DELAY));
       attempt++;
     }
+  }
+  
+  // Ensure we always throw a valid error
+  if (!lastErr) {
+    lastErr = new Error('Retry failed after maximum attempts');
   }
   throw lastErr;
 }
@@ -535,200 +568,241 @@ export class GitHubCodeLeakFarmService {
   }
 
   private async scanLoop(): Promise<void> {
-    let lastStatusLog = Date.now();
-    let lastRateLimitCheck = Date.now();
-    let lastConfigCheck = Date.now();
-    const STATUS_LOG_INTERVAL = 1 * 60 * 1000; // 1 minute
-    const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
-    const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
-    let firstCycle = true;
-    let scanCompleted = false;
-    
-    while (this.running) {
-      // Check configurations every 30 seconds
-      if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
-        lastConfigCheck = Date.now();
-        try {
-          const wasReinitialized = await ConfigurationService.checkAndReinitialize();
-          if (wasReinitialized) {
-            logger.warn('[FARM] Configuration was missing and has been reinitialized');
-            // Reload scan state after reinitialization
-            scanResumeState = await loadResumeState();
-            scanCompleted = false; // Reset completion flag if config was reinitialized
+    try {
+      let lastStatusLog = Date.now();
+      let lastRateLimitCheck = Date.now();
+      let lastConfigCheck = Date.now();
+      const STATUS_LOG_INTERVAL = 1 * 60 * 1000; // 1 minute
+      const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
+      const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
+      let firstCycle = true;
+      let scanCompleted = false;
+      while (this.running) {
+        // Check configurations every 30 seconds
+        if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
+          lastConfigCheck = Date.now();
+          try {
+            const wasReinitialized = await ConfigurationService.checkAndReinitialize();
+            if (wasReinitialized) {
+              logger.warn('[FARM] Configuration was missing and has been reinitialized');
+              // Reload scan state after reinitialization
+              scanResumeState = await loadResumeState();
+              scanCompleted = false; // Reset completion flag if config was reinitialized
+            }
+          } catch (error) {
+            logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
           }
-        } catch (error) {
-          logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
         }
-      }
 
-      // Check if we're currently rate limited
-      if (rateLimitActive && rateLimitPauseUntil) {
-        // Check if rate limit state is stuck
-        if (isRateLimitStuck()) {
-          logger.init('[GITHUB] Detected stuck rate limit state, force clearing...');
+        // Check if we're currently rate limited
+        if (rateLimitActive && rateLimitPauseUntil) {
+          // Check if rate limit state is stuck
+          if (isRateLimitStuck()) {
+            logger.init('[GITHUB] Detected stuck rate limit state, force clearing...');
+            clearRateLimit();
+            continue;
+          }
+          
+          // Check actual token status every 30 seconds
+          if (Date.now() - lastRateLimitCheck > RATE_LIMIT_CHECK_INTERVAL) {
+            lastRateLimitCheck = Date.now();
+            const isStillRateLimited = await checkActualRateLimitStatus();
+            if (!isStillRateLimited) {
+              // Token is no longer rate limited, continue with scanning
+              continue;
+            }
+          }
+          
+          // If the rate limit time is in the past, force clear it
+          if (rateLimitPauseUntil < Date.now()) {
+            logger.init('[GITHUB] Detected rate limit has expired, clearing state...');
+            clearRateLimit();
+          } else {
+            await waitForRateLimitIfNeeded();
+            continue; // Skip the rest of the loop while rate limited
+          }
+        }
+        
+        // Additional check: if we have old rate limit state that's more than 5 minutes old, clear it
+        if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
+          logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
           clearRateLimit();
+        }
+        
+        // If scan is completed, don't continue scanning
+        if (scanCompleted) {
+          if (firstCycle) {
+            logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+            firstCycle = false;
+          } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
+            logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+            lastStatusLog = Date.now();
+          }
+          await new Promise(resolve => setTimeout(resolve, 10000));
           continue;
         }
         
-        // Check actual token status every 30 seconds
-        if (Date.now() - lastRateLimitCheck > RATE_LIMIT_CHECK_INTERVAL) {
-          lastRateLimitCheck = Date.now();
-          const isStillRateLimited = await checkActualRateLimitStatus();
-          if (!isStillRateLimited) {
-            // Token is no longer rate limited, continue with scanning
-            continue;
+        let scannedAnything = false;
+        try {
+          scannedAnything = await this.executeScanCycle();
+          // Check if scan cycle is complete
+          if (!scannedAnything) {
+            let state: ScanResumeState | null = null;
+            try {
+              state = await loadResumeState();
+            } catch (stateErr) {
+              logger.error('[FARM] Failed to load scan state, resetting: ' + (stateErr instanceof Error ? stateErr.stack : String(stateErr)));
+              await clearScanState();
+              scanCompleted = false;
+              continue;
+            }
+            if (!state || typeof state !== 'object' || !state.providerStates) {
+              logger.error('[FARM] Scan state is invalid or corrupted, resetting.');
+              await clearScanState();
+              scanCompleted = false;
+              continue;
+            }
+            const allDone = this.isScanStateComplete(state);
+            if (allDone) {
+              scanCompleted = true;
+              logger.warn('[FARM] Scan cycle completed - no more files to process');
+            } else {
+              logger.warn('[FARM] Scan state not complete, continuing scan...');
+              scanCompleted = false;
+            }
           }
+          scanResumeState = await loadResumeState();
+        } catch (error) {
+          logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.stack : String(error)));
+          await clearScanState();
+          scanCompleted = false;
+          continue;
         }
         
-        // If the rate limit time is in the past, force clear it
-        if (rateLimitPauseUntil < Date.now()) {
-          logger.init('[GITHUB] Detected rate limit has expired, clearing state...');
-          clearRateLimit();
-        } else {
-          await waitForRateLimitIfNeeded();
-          continue; // Skip the rest of the loop while rate limited
+        // Only show idle message if not rate limited and no scanning occurred
+        if (!rateLimitActive && !scannedAnything) {
+          if (firstCycle) {
+            logger.init('No new files to scan. System is idle, waiting for new changes...');
+            firstCycle = false;
+          } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
+            logger.init('No new files to scan. System is idle, waiting for new changes...');
+            lastStatusLog = Date.now();
+          }
         }
       }
-      
-      // Additional check: if we have old rate limit state that's more than 5 minutes old, clear it
-      if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
-        logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
-        clearRateLimit();
-      }
-      
-      // If scan is completed, don't continue scanning
-      if (scanCompleted) {
-        if (firstCycle) {
-          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
-          firstCycle = false;
-        } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
-          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
-          lastStatusLog = Date.now();
-        }
-        // Wait a bit before checking again
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        continue;
-      }
-      
-      let scannedAnything = false;
-      try {
-        scannedAnything = await this.executeScanCycle();
-        // Check if scan cycle is complete
-        if (!scannedAnything) {
-          scanCompleted = true;
-          logger.warn('[FARM] Scan cycle completed - no more files to process');
-        }
-        // Reload scan state after each cycle to ensure proper provider rotation
-        scanResumeState = await loadResumeState();
-      } catch (error) {
-        logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.message : String(error)));
-      }
-      
-      // Only show idle message if not rate limited and no scanning occurred
-      if (!rateLimitActive && !scannedAnything) {
-        if (firstCycle) {
-          logger.init('No new files to scan. System is idle, waiting for new changes...');
-          firstCycle = false;
-        } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
-          logger.init('No new files to scan. System is idle, waiting for new changes...');
-          lastStatusLog = Date.now();
-        }
+    } catch (fatalError) {
+      logger.error('[FARM] FATAL: Unhandled error in scanLoop: ' + (fatalError instanceof Error ? fatalError.stack : String(fatalError)));
+      setTimeout(() => this.scanLoop(), 10000);
+    }
+  }
+
+  private isScanStateComplete(state: ScanResumeState): boolean {
+    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
+    const MAX_PAGE = 100;
+    for (const provider of providerNames) {
+      const providerState = state.providerStates[provider];
+      if (!providerState || providerState.page <= MAX_PAGE) {
+        return false;
       }
     }
+    return true;
   }
 
   private async executeScanCycle(): Promise<boolean> {
     let scannedAnything = false;
-    
-    // Load resume state at the start of each cycle
-    const resumeState = await loadResumeState();
-    
-    // Get provider names for rotation
-    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
-    
-    // Ensure currentProviderIndex is within bounds
-    const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
-    const currentProvider = providerNames[validProviderIndex];
-    
-    // Ensure currentProvider is defined
-    if (!currentProvider) {
-      logger.error(`[FARM] Invalid provider index: ${resumeState.currentProviderIndex}, resetting to 0`);
-      scanResumeState.currentProviderIndex = 0;
-      await saveResumeState();
-      return false;
-    }
-    
-    // Type assertion since we've verified currentProvider exists
-    const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
-    const providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
-    
-    // Get current provider state and ensure it exists
-    const providerState = resumeState.providerStates[typedCurrentProvider] || { queryIndex: 0, page: 1 };
-    let queryIndex = providerState.queryIndex;
-    let page = providerState.page;
-    
-    // Update resume state to current position
-    scanResumeState.currentProviderIndex = validProviderIndex;
-    scanResumeState.currentQueryIndex = queryIndex;
-    scanResumeState.currentPage = page;
-    
     try {
-      // Process current provider's current query (one page only)
-      const query = providerQueries[queryIndex];
-      if (query) {
-        await this.processOnePageForQuery(query, page);
-        scannedAnything = true;
-        
-        // Only log when there's actual scanning activity
-        logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+      // Load resume state at the start of each cycle
+      const resumeState = await loadResumeState();
+      
+      // Get provider names for rotation
+      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
+      
+      // Ensure currentProviderIndex is within bounds
+      const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
+      const currentProvider = providerNames[validProviderIndex];
+      
+      // Ensure currentProvider is defined
+      if (!currentProvider) {
+        logger.error(`[FARM] Invalid provider index: ${resumeState.currentProviderIndex}, resetting to 0`);
+        scanResumeState.currentProviderIndex = 0;
+        await saveResumeState();
+        return false;
       }
       
-      // Move to next query/page for this provider
-      queryIndex++;
-      if (queryIndex >= providerQueries.length) {
-        queryIndex = 0;
-        page++;
-      }
+      // Type assertion since we've verified currentProvider exists
+      const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
+      const providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
       
-      // If any provider's page exceeds 100, reset all to page 1 and log
-      const MAX_PAGE = 100;
-      let shouldResetPages = false;
-      for (const provider of providerNames) {
-        const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
-        if (state.page > MAX_PAGE) {
-          shouldResetPages = true;
-          break;
-        }
-      }
-      if (shouldResetPages) {
-        for (const provider of providerNames) {
-          scanResumeState.providerStates[provider] = { queryIndex: 0, page: 1 };
-        }
-        scanResumeState.currentPage = 1;
-        scanResumeState.currentQueryIndex = 0;
-        logger.warn(`[FARM] Max page reached (>${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
-      }
+      // Get current provider state and ensure it exists
+      const providerState = resumeState.providerStates[typedCurrentProvider] || { queryIndex: 0, page: 1 };
+      let queryIndex = providerState.queryIndex;
+      let page = providerState.page;
       
-      // Update provider state
-      scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page };
+      // Update resume state to current position
+      scanResumeState.currentProviderIndex = validProviderIndex;
       scanResumeState.currentQueryIndex = queryIndex;
       scanResumeState.currentPage = page;
-      scanResumeState.lastProcessedTime = Date.now();
-      await saveResumeState();
       
-      // Move to next provider after processing one page
-      scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
-      await saveResumeState();
-      
-      // Only log when moving to the first provider (indicating a complete cycle)
-      if (scanResumeState.currentProviderIndex === 0) {
-        logger.warn(`[FARM] Completed scan cycle - all providers processed for current page`);
+      try {
+        // Process current provider's current query (one page only)
+        const query = providerQueries[queryIndex];
+        if (query) {
+          await this.processOnePageForQuery(query, page);
+          scannedAnything = true;
+          
+          // Only log when there's actual scanning activity
+          logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+        }
+        
+        // Move to next query/page for this provider
+        queryIndex++;
+        if (queryIndex >= providerQueries.length) {
+          queryIndex = 0;
+          page++;
+        }
+        
+        // If any provider's page exceeds 100, reset all to page 1 and log
+        const MAX_PAGE = 100;
+        let shouldResetPages = false;
+        for (const provider of providerNames) {
+          const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
+          if (state.page > MAX_PAGE) {
+            shouldResetPages = true;
+            break;
+          }
+        }
+        if (shouldResetPages) {
+          for (const provider of providerNames) {
+            scanResumeState.providerStates[provider] = { queryIndex: 0, page: 1 };
+          }
+          scanResumeState.currentPage = 1;
+          scanResumeState.currentQueryIndex = 0;
+          logger.warn(`[FARM] Max page reached (>${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
+        }
+        
+        // Update provider state
+        scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page };
+        scanResumeState.currentQueryIndex = queryIndex;
+        scanResumeState.currentPage = page;
+        scanResumeState.lastProcessedTime = Date.now();
+        await saveResumeState();
+        
+        // Move to next provider after processing one page
+        scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
+        
+        // Only log when moving to the first provider (indicating a complete cycle)
+        if (scanResumeState.currentProviderIndex === 0) {
+          logger.warn(`[FARM] Completed scan cycle - all providers processed for current page`);
+        }
+      } catch (error) {
+        this.handleSearchError(error, providerQueries[queryIndex] || 'unknown', page);
       }
+      
+      return scannedAnything;
     } catch (error) {
-      this.handleSearchError(error, providerQueries[queryIndex] || 'unknown', page);
+      logger.error(`[FARM] Unhandled error in executeScanCycle: ${error instanceof Error ? error.stack : String(error)}`);
+      throw error;
     }
-    
-    return scannedAnything;
   }
 
   // Process only ONE page for a single query
@@ -756,46 +830,26 @@ export class GitHubCodeLeakFarmService {
       await this.processSearchResults(items, query);
       
     } catch (error: any) {
-      // Improved rate limit handling with better validation
-      if (error.response && error.response.status === 403 && error.response.headers) {
-        const remaining = error.response.headers['x-ratelimit-remaining'];
-        const reset = error.response.headers['x-ratelimit-reset'];
-        const limit = error.response.headers['x-ratelimit-limit'];
-        const message = error.response.data?.message || '';
-        
-        const shortLog = `[GITHUB] 403: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
-        logger.warn(shortLog);
-
-        // Handle code search rate limit
-        if (
-          remaining === '0' &&
-          limit === '10' &&
-          reset &&
-          Number(reset) * 1000 > Date.now()
-        ) {
-          const resetTime = parseInt(reset, 10) * 1000;
-          setRateLimit(resetTime);
-          await waitForRateLimitIfNeeded();
-          await this.processOnePageForQuery(query, page);
-          return;
+      // Handle expected errors gracefully instead of treating them as unhandled
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          // Rate limit or permission error - this is expected and handled by retry logic
+          logger.warn(`[FARM] Rate limit or permission error for query "${query}" (page ${page}): ${error.message}`);
+          return; // Don't re-throw, just return gracefully
+        } else if (error.response?.status && error.response.status >= 500) {
+          // Server error - this is expected and handled by retry logic
+          logger.warn(`[FARM] Server error (${error.response.status}) for query "${query}" (page ${page}): ${error.message}`);
+          return; // Don't re-throw, just return gracefully
+        } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          // Timeout error - this is expected and handled by retry logic
+          logger.warn(`[FARM] Timeout error for query "${query}" (page ${page}): ${error.message}`);
+          return; // Don't re-throw, just return gracefully
         }
-
-        // Handle secondary/abuse rate limits (message contains 'abuse' or 'secondary')
-        if (message.toLowerCase().includes('abuse') || message.toLowerCase().includes('secondary')) {
-          logger.warn('[GITHUB] Secondary or abuse rate limit detected. Retrying after backoff...');
-          await new Promise(res => setTimeout(res, 60000)); // Wait 1 minute before retry
-          await this.processOnePageForQuery(query, page);
-          return;
-        }
-
-        // If not a real rate limit, treat as a generic 403 and retry after a short delay
-        logger.warn('[GITHUB] 403 received but not a real rate limit. Retrying after short delay...');
-        await new Promise(res => setTimeout(res, 5000));
-        await this.processOnePageForQuery(query, page);
-        return;
       }
       
-      this.handleSearchError(error, query, page);
+      // For truly unexpected errors, log them but don't crash the scan loop
+      logger.error(`[FARM] Unexpected error in processOnePageForQuery for "${query}" (page ${page}): ${error instanceof Error ? error.message : String(error)}`);
+      // Don't re-throw - let the scan continue with the next query/page
     }
   }
 

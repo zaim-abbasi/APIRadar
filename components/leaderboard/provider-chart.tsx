@@ -96,23 +96,35 @@ const ProviderListItem = React.memo(({
 ProviderListItem.displayName = 'ProviderListItem';
 
 const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartProps) => {
-  const chartData = useMemo(() => data.map(item => ({
+  // Defensive: fallback for missing/null/empty data
+  const safeData = Array.isArray(data) ? data : [];
+  const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
+
+  if (!safeData.length) {
+    return (
+      <div className="w-full text-center text-muted-foreground my-8" role="status">
+        No provider data available.
+      </div>
+    );
+  }
+
+  const chartData = useMemo(() => safeData.map(item => ({
     ...item,
     fill: providerColors[item.provider] || '#6b7280'
-  })), [data]);
+  })), [safeData]);
 
-  const topProviders = useMemo(() => data.slice(0, 5), [data]);
+  const topProviders = useMemo(() => safeData.slice(0, 5), [safeData]);
 
   // Calculate y-axis domain with professional tick marks
   const yAxisDomain = useMemo(() => {
-    if (data.length === 0) return [0, 1];
-    const minBar = Math.min(...data.map(item => item.count));
-    const maxBar = Math.max(...data.map(item => item.count));
+    if (safeData.length === 0) return [0, 1];
+    const minBar = Math.min(...safeData.map(item => item.count));
+    const maxBar = Math.max(...safeData.map(item => item.count));
     // Crop aggressively: min just below the smallest bar, max just above the largest
     const minValue = Math.max(0, minBar - Math.ceil((maxBar - minBar) * 0.8));
     const maxValue = Math.ceil(maxBar * 1.05);
     return [minValue, maxValue];
-  }, [data]);
+  }, [safeData]);
 
   // Custom tick formatter for professional number display
   const formatYAxisTick = useCallback((value: number) => {
@@ -122,10 +134,10 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
   }, []);
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
       {/* Chart */}
       <div className="lg:col-span-2 animate-fade-in-up opacity-0 animate-delay-150 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm" aria-label="Leaks by Provider">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Leaks by Provider</CardTitle>
             <CardDescription className="text-xs">
@@ -164,7 +176,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
       {/* Provider List */}
       <div className="animate-fade-in-up opacity-0 animate-delay-200 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm" aria-label="Top Providers">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Top Providers</CardTitle>
             <CardDescription className="text-xs">
@@ -172,9 +184,13 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
-            {topProviders.map((provider, index) => (
-              <ProviderListItem key={provider.provider} provider={provider} index={index} />
-            ))}
+            {topProviders.length ? (
+              topProviders.map((provider, index) => (
+                <ProviderListItem key={provider.provider} provider={provider} index={index} />
+              ))
+            ) : (
+              <div className="text-muted-foreground text-center">No providers to display.</div>
+            )}
           </CardContent>
         </Card>
       </div>

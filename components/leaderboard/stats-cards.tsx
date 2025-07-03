@@ -280,38 +280,63 @@ const StatCard = React.memo(({
 
 StatCard.displayName = 'StatCard';
 
-const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
+function StatsErrorFallback() {
+  return (
+    <div className="text-center text-destructive my-4" role="alert">
+      Failed to load stats. Please try refreshing the page.
+    </div>
+  );
+}
+
+export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsProps) {
+  // Defensive: fallback for missing/null data
+  if (!data || typeof data !== 'object') {
+    return <StatsErrorFallback />;
+  }
+  const {
+    totalLeaks,
+    todayLeaks,
+    leaksFoundToday,
+    repositoryCutoff
+  } = data;
+
+  // Defensive: fallback for all stats
+  const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
+  const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;
+  const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
+  const safeRepositoryCutoff = typeof repositoryCutoff === 'string' ? repositoryCutoff : null;
+
   const stats = useMemo(() => [
     {
       title: 'Total Repos Scanned',
-      value: data.totalLeaks,
+      value: safeTotalLeaks,
       icon: Search,
       color: 'text-blue-500',
       bgColor: 'bg-blue-500/10'
     },
     {
       title: 'Total Leaks Found',
-      value: data.todayLeaks,
+      value: safeTodayLeaks,
       icon: AlertTriangle,
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10'
     },
     {
       title: 'Leaks Found Today',
-      value: data.leaksFoundToday,
+      value: safeLeaksFoundToday,
       icon: Eye,
       color: 'text-purple-500',
       bgColor: 'bg-purple-500/10'
     },
     {
       title: 'Repository Cutoff',
-      value: data.repositoryCutoff,
+      value: safeRepositoryCutoff,
       icon: Calendar,
       color: 'text-green-500',
       bgColor: 'bg-green-500/10',
       isDate: true
     }
-  ], [data.totalLeaks, data.todayLeaks, data.leaksFoundToday, data.repositoryCutoff]);
+  ], [safeTotalLeaks, safeTodayLeaks, safeLeaksFoundToday, safeRepositoryCutoff]);
 
   return (
     <div
@@ -325,6 +350,4 @@ const StatsCardsComponent = React.memo(({ data }: StatsCardsProps) => {
   );
 });
 
-StatsCardsComponent.displayName = 'StatsCardsComponent';
-
-export const StatsCards = StatsCardsComponent;
+StatsCards.displayName = 'StatsCards';

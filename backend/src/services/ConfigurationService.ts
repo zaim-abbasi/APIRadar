@@ -69,9 +69,7 @@ export class ConfigurationService {
    */
   static async setScanState(scanState: any): Promise<boolean> {
     const success = await this.setConfig('scan_state', scanState);
-    if (success) {
-      console.log('Scan state set successfully');
-    } else {
+    if (!success) {
       console.error('Failed to set scan state');
     }
     return success;
