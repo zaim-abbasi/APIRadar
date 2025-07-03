@@ -53,7 +53,7 @@ const generateComprehensiveQueries = () => {
   // Generate queries for ALL file types × ALL patterns
   ENV_VARIATIONS.forEach(fileType => {
     SEARCH_PATTERNS.forEach(({ searchString }) => {
-      queries.push(`filename:${fileType} "${searchString}"`);
+      queries.push(`filename:${fileType} ${searchString}`);
     });
   });
   
@@ -698,7 +698,7 @@ export class GitHubCodeLeakFarmService {
 
   private isScanStateComplete(state: ScanResumeState): boolean {
     const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
-    const MAX_PAGE = 150;
+    const MAX_PAGE = 100; // GitHub search API limit is 1000 results (100 pages × 10 results)
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
       if (!providerState || providerState.page <= MAX_PAGE) {
@@ -761,8 +761,8 @@ export class GitHubCodeLeakFarmService {
           page++;
         }
         
-        // If any provider's page exceeds 150, reset all to page 1 and log
-        const MAX_PAGE = 150;
+        // If any provider's page exceeds 100, reset all to page 1 and log
+        const MAX_PAGE = 100; // GitHub search API limit is 1000 results (100 pages × 10 results)
         let shouldResetPages = false;
         for (const provider of providerNames) {
           const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
@@ -840,9 +840,17 @@ export class GitHubCodeLeakFarmService {
           logger.warn(`[FARM] Rate limit or permission error for query "${query}" (page ${page}): ${error.message}`);
           return; // Don't re-throw, just return gracefully
         } else if (error.response?.status === 422) {
-          // Unprocessable Entity - invalid search query, skip this query
-          logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
-          return; // Don't re-throw, just return gracefully
+          // Unprocessable Entity - could be invalid search query or no more results
+          const errorMessage = error.response.data?.message || '';
+          if (page > 100 || errorMessage.includes('page') || errorMessage.includes('limit') || errorMessage.includes('422')) {
+            // No more results available (beyond GitHub's search limit for this query)
+            logger.warn(`[FARM] No more results available for query "${query}" (page ${page}): Reached end of results`);
+            return; // Don't re-throw, just return gracefully
+          } else {
+            // Invalid search query syntax
+            logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
+            return; // Don't re-throw, just return gracefully
+          }
         } else if (error.response?.status && error.response.status >= 500) {
           // Server error - this is expected and handled by retry logic
           logger.warn(`[FARM] Server error (${error.response.status}) for query "${query}" (page ${page}): ${error.message}`);
@@ -876,12 +884,14 @@ export class GitHubCodeLeakFarmService {
       const docFilePatterns = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^code\_of\_conduct(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
       const fileName = filePath.split('/').pop() || '';
       if (docFilePatterns.some(pattern => pattern.test(fileName))) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Documentation file (${fileName})`);
         skippedCount++;
         continue;
       }
       
       // Skip files with problematic characters that might cause issues
       if (fileName.includes('#') || fileName.includes('?') || fileName.includes('&')) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Problematic characters in filename (${fileName})`);
         skippedCount++;
         continue;
       }
@@ -889,6 +899,7 @@ export class GitHubCodeLeakFarmService {
       // Check cache first to avoid any API calls for already processed files
       const cacheKey = `${item.repository.html_url}|${filePath}|${query}`;
       if (scannedCache.has(cacheKey)) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in cache (query: ${query})`);
         skippedCount++;
         continue;
       }
@@ -899,10 +910,12 @@ export class GitHubCodeLeakFarmService {
         await waitForRateLimitIfNeeded();
         commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath));
       } catch (error) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to get commit hash: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
         continue;
       }
       if (!commitHash) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No commit hash returned`);
         skippedCount++;
         continue;
       }
@@ -910,6 +923,7 @@ export class GitHubCodeLeakFarmService {
       // Now check if this specific commit+query combination was already scanned
       const cacheKeyWithCommit = `${item.repository.html_url}|${filePath}|${query}|${commitHash}`;
       if (scannedCache.has(cacheKeyWithCommit)) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned with this commit (${commitHash.substring(0, 8)}...)`);
         skippedCount++;
         continue;
       }
@@ -917,6 +931,7 @@ export class GitHubCodeLeakFarmService {
       // Check database for this specific commit+query combination
       if (await alreadyScanned(item.repository.html_url, filePath, commitHash)) {
         scannedCache.add(cacheKeyWithCommit);
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in database (commit: ${commitHash.substring(0, 8)}...)`);
         skippedCount++;
         continue;
       }
@@ -929,10 +944,12 @@ export class GitHubCodeLeakFarmService {
         await waitForRateLimitIfNeeded();
         content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'));
       } catch (error) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to fetch content: ${error instanceof Error ? error.message : String(error)}`);
         skippedCount++;
         continue;
       }
       if (!content) {
+        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No content returned`);
         skippedCount++;
         continue;
       }
