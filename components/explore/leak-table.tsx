@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { cn, parseGitHubRepoUrl } from '@/lib/utils';
 
 interface LeakTableProps {
-  leaks: LeakedKey[];
+  leaks: (LeakedKey | null)[];
   isLoading?: boolean;
   selectedProvider: Provider;
 }
@@ -157,7 +157,7 @@ const LeakCard = React.memo(({
     className="group animate-fade-in-up opacity-0"
     style={{ animationDelay: `${index * 30}ms` }}
   >
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px]">
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">

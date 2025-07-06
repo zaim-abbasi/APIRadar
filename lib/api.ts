@@ -5,13 +5,35 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export async function fetchTotalReposScanned(): Promise<ApiResponse<{ totalReposScanned: number }>> {
+// Helper function to create authenticated headers
+function createAuthHeaders(session?: any) {
+  let userId = 'anonymous';
+  let userEmail = 'anonymous@example.com';
+  let userPlan: 'free' | 'basic' | 'pro' = 'free';
+  let isAuthenticated = 'false';
+
+  if (session?.user) {
+    userId = session.user.id || session.user.email || 'authenticated';
+    userEmail = session.user.email || 'authenticated@example.com';
+    userPlan = session.user.plan || 'basic';
+    isAuthenticated = 'true';
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'x-user-id': userId,
+    'x-user-email': userEmail,
+    'x-user-plan': userPlan,
+    'x-user-authenticated': isAuthenticated,
+  };
+}
+
+export async function fetchTotalReposScanned(session?: any): Promise<ApiResponse<{ totalReposScanned: number }>> {
   try {
+    const headers = createAuthHeaders(session);
     const response = await fetch(`${API_BASE_URL}/api/total-repos-scanned`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -26,13 +48,12 @@ export async function fetchTotalReposScanned(): Promise<ApiResponse<{ totalRepos
   }
 }
 
-export async function fetchTotalLeaksFound(): Promise<ApiResponse<{ totalLeaksFound: number }>> {
+export async function fetchTotalLeaksFound(session?: any): Promise<ApiResponse<{ totalLeaksFound: number }>> {
   try {
+    const headers = createAuthHeaders(session);
     const response = await fetch(`${API_BASE_URL}/api/total-leaks-found`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -47,13 +68,12 @@ export async function fetchTotalLeaksFound(): Promise<ApiResponse<{ totalLeaksFo
   }
 }
 
-export async function fetchTopProviders(): Promise<ApiResponse<{ topProviders: Array<{ provider: string; count: number }> }>> {
+export async function fetchTopProviders(session?: any): Promise<ApiResponse<{ topProviders: Array<{ provider: string; count: number }> }>> {
   try {
+    const headers = createAuthHeaders(session);
     const response = await fetch(`${API_BASE_URL}/api/top-providers`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -109,7 +129,7 @@ export async function fetchLeaderboardDataServer(): Promise<{
 }
 
 // Client-side version of fetchLeaderboardData
-export async function fetchLeaderboardData(): Promise<ApiResponse<{
+export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
   totalReposScanned: number;
   totalLeaksFound: number;
   repositoryAgeCutoff: string | null;
@@ -117,11 +137,10 @@ export async function fetchLeaderboardData(): Promise<ApiResponse<{
   todayLeaks: number;
 }>> {
   try {
+    const headers = createAuthHeaders(session);
     const response = await fetch(`${API_BASE_URL}/api/leaderboard-data`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -136,33 +155,89 @@ export async function fetchLeaderboardData(): Promise<ApiResponse<{
   }
 }
 
-export async function fetchLeaks({ provider, timeRange, sortBy, page = 1, limit = 10 }: {
+export async function fetchLeaks({ 
+  provider, 
+  timeRange, 
+  sortBy, 
+  page = 1, 
+  limit = 10,
+  session
+}: {
   provider?: string;
   timeRange?: string;
   sortBy?: string;
   page?: number;
   limit?: number;
-}): Promise<ApiResponse<{ leaks: any[]; total: number; hasMore: boolean }>> {
+  session?: any;
+}): Promise<ApiResponse<{ 
+  leaks: any[]; 
+  total: number; 
+  hasMore: boolean;
+  planLimits?: {
+    maxLeaks: number;
+    canInfiniteScroll: boolean;
+    maxTimeRange: string;
+  };
+}>> {
   try {
+    const headers = createAuthHeaders(session);
     const params = new URLSearchParams();
     if (provider) params.append('provider', provider);
     if (timeRange) params.append('timeRange', timeRange);
     if (sortBy) params.append('sortBy', sortBy);
     params.append('page', String(page));
     params.append('limit', String(limit));
+    
     const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
+    
+    if (response.status === 401) {
+      return { error: 'Authentication required' };
+    }
+    
+    if (response.status === 429) {
+      const data = await response.json();
+      return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
+    }
+    
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
+    
     const data = await response.json();
     return { data };
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
+  }
+}
+
+export async function fetchLeakFullKey(leakId: string, session?: any): Promise<ApiResponse<{ fullKey: string }>> {
+  try {
+    const headers = createAuthHeaders(session);
+    const response = await fetch(`${API_BASE_URL}/api/leaks/${leakId}/fullkey`, {
+      method: 'GET',
+      headers,
+    });
+    
+    if (response.status === 401) {
+      return { error: 'Authentication required' };
+    }
+    
+    if (response.status === 403) {
+      return { error: 'Full key access requires Pro plan' };
+    }
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Failed to fetch full key' };
   }
 } 

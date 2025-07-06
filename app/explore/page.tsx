@@ -9,6 +9,7 @@ import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
 import { TIME_RANGES, SORT_OPTIONS, PROVIDERS, PROVIDER_API_MAP } from '@/lib/constants';
 import { Provider } from '@/types';
+import { LeakedKey } from '@/types';
 import { fetchLeaks } from '@/lib/api';
 import { useSession, signIn } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
@@ -21,18 +22,8 @@ const PAGE_SIZE = 10;
 const INFINITE_SCROLL_MARGIN = '0px 0px 600px 0px';
 
 // Types for better type safety
-interface LeakData {
-  id: string;
-  provider: string;
-  repository: string;
-  file: string;
-  line: number;
-  createdAt: string;
-  [key: string]: any;
-}
-
 interface LeaksResponse {
-  leaks: LeakData[];
+  leaks: LeakedKey[];
   total: number;
   hasMore: boolean;
 }
@@ -96,7 +87,7 @@ const ResultsCount = React.memo(({
   total,
   error
 }: { 
-  filteredLeaks: LeakData[]; 
+  filteredLeaks: LeakedKey[]; 
   selectedProvider: Provider; 
   isClient: boolean; 
   isLoading: boolean; 
@@ -161,7 +152,7 @@ const FiltersSection = React.memo(({
   setTimeRange: (range: string) => void; 
   sortBy: string; 
   setSortBy: (sort: string) => void; 
-  filteredLeaks: LeakData[]; 
+  filteredLeaks: LeakedKey[]; 
   isClient: boolean; 
   isLoading: boolean; 
   onRefresh: () => void; 
@@ -264,14 +255,14 @@ const ResultsSection = React.memo(({
   plan,
   error
 }: { 
-  filteredLeaks: LeakData[]; 
+  filteredLeaks: LeakedKey[]; 
   isLoading: boolean; 
   selectedProvider: Provider; 
   session: any;
   plan: string;
   error: string | null;
 }) => {
-  let visibleLeaks: (LeakData | null)[] = [];
+  let visibleLeaks: (LeakedKey | null)[] = [];
   let tileLimit = 2;
   const isUnauthenticated = !session || !session.user;
   
@@ -279,8 +270,9 @@ const ResultsSection = React.memo(({
     visibleLeaks = filteredLeaks;
     tileLimit = filteredLeaks.length;
   } else if (plan === 'basic') {
-    visibleLeaks = filteredLeaks.slice(0, 5);
-    tileLimit = 5;
+    // Always show up to 4 leaks
+    visibleLeaks = filteredLeaks.slice(0, 4);
+    tileLimit = 4;
   } else {
     // Always show exactly 3 tiles (fill with nulls if needed)
     visibleLeaks = filteredLeaks.slice(0, 3);
@@ -308,6 +300,76 @@ const ResultsSection = React.memo(({
     );
   }
 
+  // Show loading skeleton if loading and no leaks yet
+  if (isLoading && filteredLeaks.length === 0) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
+        ))}
+      </div>
+    );
+  }
+
+  // Show empty state only if not loading and no leaks
+  if (!isLoading && filteredLeaks.length === 0) {
+    return (
+      <div className="animate-fade-in-up opacity-0 animate-delay-10">
+        <div className="min-h-[200px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-lg font-semibold mb-2">
+              No leaks found
+            </div>
+            <div className="text-muted-foreground text-sm">
+              No leaked keys match your current filters.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare grid items: leaks only
+  const leakCards = visibleLeaks.map((leak, idx) => (
+    <LeakTable
+      key={leak ? leak.id : `skeleton-${idx}`}
+      leaks={[leak]}
+      isLoading={isLoading && !leak}
+      selectedProvider={selectedProvider}
+    />
+  ));
+
+  // Action card (out of grid, but styled like a grid item)
+  let actionCard: React.ReactNode = null;
+  if (isUnauthenticated) {
+    actionCard = (
+      <div className="mt-4 w-full sm:w-[calc(50%-0.5rem)] mx-auto">
+        <ActionCard
+          title="Sign in to see more leaks"
+          subtitle="Sign in to unlock more API key leaks and advanced features."
+          button={
+            <button
+              onClick={() => signIn('github', { callbackUrl: window.location.href })}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
+            >
+              Sign in with GitHub
+            </button>
+          }
+        />
+      </div>
+    );
+  } else if (plan === 'basic') {
+    actionCard = (
+      <div className="mt-4 w-full sm:w-[calc(50%-0.5rem)] mx-auto">
+        <ActionCard
+          title="Request a Free Pro Trial"
+          subtitle="Get Full Access to All API Key Leaks and Advanced Features for a Limited Time."
+          button={<UpgradeToProCardWithTrialButton session={session} onlyButton />}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in-up opacity-0 animate-delay-10">
       <Suspense fallback={
@@ -315,43 +377,12 @@ const ResultsSection = React.memo(({
           <span className="text-muted-foreground text-sm">Loading results…</span>
         </div>
       }>
-        {/* Leak tiles (with skeletons for nulls) */}
-        <LeakTable 
-          leaks={visibleLeaks} 
-          isLoading={isLoading}
-          selectedProvider={selectedProvider}
-        />
-        {/* Gating tile for unauthenticated users: always show as 4th tile */}
-        {isUnauthenticated && (
-          <div className="mt-4 flex justify-center">
-            <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
-              <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
-                <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
-                  <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-base sm:text-lg">Sign in to see more leaks</span>
-                    </div>
-                    <span className="text-muted-foreground text-xs sm:text-sm">Sign in to unlock more API key leaks and advanced features.</span>
-                  </div>
-                  <div className="flex-shrink-0 flex flex-col items-end">
-                    <button
-                      onClick={() => signIn('github', { callbackUrl: window.location.href })}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
-                    >
-                      Sign in with GitHub
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Gating tile for authenticated non-pro users (if more leaks exist) */}
-        {!isUnauthenticated && filteredLeaks.length > tileLimit && plan !== 'pro' && (
-          <div className="mt-4 flex justify-center">
-            <UpgradeToProCardWithTrialButton session={session} />
-          </div>
-        )}
+        {/* Grid layout for leak cards only */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+          {leakCards}
+        </div>
+        {/* Action card below the grid, styled to match grid items */}
+        {actionCard}
       </Suspense>
     </div>
   );
@@ -366,8 +397,35 @@ const LoadingIndicator = React.memo(() => (
 
 LoadingIndicator.displayName = 'LoadingIndicator';
 
-// Production-grade trial request component
-function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
+// Shared ActionCard component for consistent sizing
+const ActionCard = ({
+  title,
+  subtitle,
+  button,
+}: {
+  title: React.ReactNode;
+  subtitle: React.ReactNode;
+  button: React.ReactNode;
+}) => (
+  <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
+    <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg h-[120px]">
+      <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold text-base sm:text-lg">{title}</span>
+          </div>
+          <span className="text-muted-foreground text-xs sm:text-sm">{subtitle}</span>
+        </div>
+        <div className="flex-shrink-0 flex flex-col items-end">
+          {button}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Update UpgradeToProCardWithTrialButton to support onlyButton prop
+function UpgradeToProCardWithTrialButton({ session, onlyButton = false }: { session: any; onlyButton?: boolean }) {
   const { plan, requestedTrial: hookRequestedTrial } = usePlanCheck();
   const [requestedTrial, setRequestedTrial] = React.useState<boolean>(!!session?.user?.requestedTrial);
   const isBasic = plan === 'basic';
@@ -400,6 +458,20 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
     }
   }
 
+  const button = isBasic && !requestedTrial ? (
+    <button
+      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      onClick={handleRequest}
+      disabled={status === 'submitting'}
+    >
+      {status === 'submitting' ? 'Requesting...' : 'Request Pro Trial'}
+    </button>
+  ) : requestedTrial || status === 'success' ? (
+    <span className="inline-block px-3 py-1 rounded bg-muted text-muted-foreground font-medium text-xs sm:text-sm">Pro trial request sent</span>
+  ) : null;
+
+  if (onlyButton) return button;
+
   return (
     <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
       <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
@@ -411,18 +483,7 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
             <span className="text-muted-foreground text-xs sm:text-sm">Get Full Access to All API Key Leaks and Advanced Features for a Limited Time.</span>
           </div>
           <div className="flex-shrink-0 flex flex-col items-end">
-            {isBasic && !requestedTrial ? (
-              <button
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleRequest}
-                disabled={status === 'submitting'}
-              >
-                {status === 'submitting' ? 'Requesting...' : 'Request Pro Trial'}
-              </button>
-            ) : requestedTrial || status === 'success' ? (
-              <span className="inline-block px-3 py-1 rounded bg-muted text-muted-foreground font-medium text-xs sm:text-sm">Pro trial request sent</span>
-            ) : null}
-            {status === 'error' && <span className="inline-block mt-2 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium text-xs sm:text-sm">Error sending request. Please try again.</span>}
+            {button}
           </div>
         </div>
       </div>
@@ -430,9 +491,13 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
   );
 }
 
+// In-memory cache for the first page of leaks (default filters)
+const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = { leaks: [], timestamp: 0 };
+const CACHE_TTL = 60 * 1000; // 1 minute
+
 // Main ExplorePage component with production-grade features
 const ExplorePage = React.memo(() => {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { plan, isPro, isBasic, isAuthenticated } = usePlanCheck();
   
   // State management with proper typing
@@ -447,15 +512,26 @@ const ExplorePage = React.memo(() => {
     isLoadingMore: false,
     error: null
   });
-  
+
   const [paginationState, setPaginationState] = useState<PaginationState>({
     page: 1,
     hasMore: false,
     total: 0,
     refreshIndex: 0
   });
-  
-  const [leaks, setLeaks] = useState<LeakData[]>([]);
+
+  // Use cached leaks for the first page and default filters
+  const isDefaultFilters =
+    filterState.selectedProvider === 'all' &&
+    filterState.timeRange === '7d' &&
+    filterState.sortBy === 'newest' &&
+    paginationState.page === 1;
+
+  const [leaks, setLeaks] = useState<LeakedKey[]>(
+    isDefaultFilters && firstPageCache.leaks.length > 0 && Date.now() - firstPageCache.timestamp < CACHE_TTL
+      ? firstPageCache.leaks
+      : []
+  );
   const [isClient, setIsClient] = useState(false);
   
   // Refs for intersection observer
@@ -501,7 +577,7 @@ const ExplorePage = React.memo(() => {
     setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
   }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
 
-  // Production-grade data fetching with error handling
+  // Data fetching with error handling and infinite scroll
   const fetchAndSetLeaks = useCallback(async () => {
     try {
       if (paginationState.page === 1) {
@@ -517,6 +593,7 @@ const ExplorePage = React.memo(() => {
         sortBy: filterState.sortBy,
         page: paginationState.page,
         limit: PAGE_SIZE,
+        session,
       });
       
       if (error) {
@@ -530,7 +607,14 @@ const ExplorePage = React.memo(() => {
       
       if (data) {
         setLeaks((prev) => {
-          if (paginationState.page === 1) return data.leaks;
+          if (paginationState.page === 1) {
+            // Update cache for default filters
+            if (isDefaultFilters) {
+              firstPageCache.leaks = data.leaks;
+              firstPageCache.timestamp = Date.now();
+            }
+            return data.leaks;
+          }
           const existingIds = new Set(prev.map((l) => l.id));
           const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
           return [...prev, ...newLeaks];
@@ -556,11 +640,11 @@ const ExplorePage = React.memo(() => {
     } finally {
       setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
     }
-  }, [filterState, paginationState.page, paginationState.refreshIndex]);
+  }, [filterState, paginationState.page, paginationState.refreshIndex, session, isDefaultFilters]);
 
   useEffect(() => {
     fetchAndSetLeaks();
-  }, [fetchAndSetLeaks]);
+  }, [fetchAndSetLeaks, session]);
 
   const handleRefresh = useCallback(() => {
     setPaginationState(prev => ({ ...prev, page: 1, refreshIndex: prev.refreshIndex + 1 }));
@@ -579,7 +663,7 @@ const ExplorePage = React.memo(() => {
     setFilterState(prev => ({ ...prev, sortBy }));
   }, []);
 
-  // Memoized filter props to prevent unnecessary re-renders
+  // Memoized filter props
   const filterProps = useMemo(() => ({
     selectedProvider: filterState.selectedProvider,
     onProviderChange: handleProviderChange,
@@ -616,18 +700,9 @@ const ExplorePage = React.memo(() => {
       <FiltersSection {...filterProps} />
 
       {/* Results */}
-      {/* Only show full-table skeleton if initial load */}
-      {loadingState.isLoading && paginationState.page === 1 ? (
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
-          ))}
-        </div>
-      ) : (
-        <ResultsSection {...resultsProps} />
-      )}
+      <ResultsSection {...resultsProps} />
 
-      {/* Invisible trigger for infinite scroll */}
+      {/* Infinite scroll trigger */}
       {paginationState.hasMore && (
         <div ref={loadingRef}>
           <LoadingIndicator />

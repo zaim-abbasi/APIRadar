@@ -33,6 +33,10 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'x-user-id': 'anonymous',
+        'x-user-email': 'anonymous@example.com',
+        'x-user-plan': 'free',
+        'x-user-authenticated': 'false',
       },
       // Production caching - 5 minutes
       next: { revalidate: 300 }

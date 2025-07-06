@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { z } from 'zod';
+import { AuthenticatedRequest, getPlanLimits, validatePlanAccess } from '../middleware/auth';
 
 const querySchema = z.object({
   provider: z.string().optional(),
@@ -10,66 +11,195 @@ const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
 });
 
-export async function getLeaksHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
+    // Ensure authentication middleware has run
+    if (!request.user) {
+      return reply.status(401).send({ error: 'Authentication required' });
+    }
+
     const parsed = querySchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid query', details: parsed.error.errors });
     }
+
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
+    const user = request.user;
+    const planLimits = getPlanLimits(user.plan);
+
+    // Security: Enforce plan-based limits
+    const enforcedLimit = Math.min(limit, planLimits.maxLeaks);
+    const enforcedPage = planLimits.canInfiniteScroll ? page : 1;
+
+    // Security: Enforce time range limits
+    let enforcedTimeRange = timeRange;
+    if (planLimits.maxTimeRange !== 'all') {
+      if (timeRange && timeRange !== planLimits.maxTimeRange) {
+        // Log potential security violation
+        request.log.warn({
+          msg: 'Time range violation attempt',
+          userId: user.id,
+          userPlan: user.plan,
+          requestedTimeRange: timeRange,
+          allowedTimeRange: planLimits.maxTimeRange,
+          ip: request.ip
+        });
+        enforcedTimeRange = planLimits.maxTimeRange;
+      }
+    }
+
+    // Build filter with security constraints
     const filter: any = {};
     if (provider && provider !== 'all') filter.provider = provider;
-    if (timeRange) {
+    
+    if (enforcedTimeRange) {
       const now = new Date();
       let days = 0;
-      if (timeRange === '7d') days = 7;
-      else if (timeRange === '15d') days = 15;
-      else if (timeRange === '30d') days = 30;
+      if (enforcedTimeRange === '7d') days = 7;
+      else if (enforcedTimeRange === '15d') days = 15;
+      else if (enforcedTimeRange === '30d') days = 30;
       if (days > 0) {
         const fromDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
         filter.leakIntroducedAt = { $gte: fromDate };
       }
     }
+
+    // Security: For non-pro users, limit to recent leaks only
+    if (user.plan !== 'pro') {
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 30); // Last 30 days for non-pro
+      filter.leakDetectedAt = { $gte: recentDate };
+    }
+
     let sort: any = { leakIntroducedAt: -1 };
     if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };
     else if (sortBy === 'provider') sort = { provider: 1, leakIntroducedAt: -1 };
-    // You can add more sort options if needed
+
+    // Get total count for pagination
     const total = await Leak.countDocuments(filter);
+
+    // Security: Enforce maximum results for non-pro users
+    let maxResults = total;
+    if (user.plan !== 'pro') {
+      maxResults = Math.min(total, planLimits.maxLeaks);
+    }
+
+    // Calculate pagination with security limits
+    const skip = planLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
+    const actualLimit = planLimits.canInfiniteScroll ? enforcedLimit : planLimits.maxLeaks;
+
+    // Fetch leaks with security constraints
     const leaks = await Leak.find(filter)
-      .select('+fullKey redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
+      .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
       .sort(sort)
-      .skip((page - 1) * limit)
-      .limit(limit)
+      .skip(skip)
+      .limit(actualLimit)
       .lean();
-    // Map fields to camelCase for frontend
-    const mappedLeaks = leaks.map((leak: any) => ({
-      id: leak.id || leak._id,
-      redactedKey: leak.redactedKey,
-      provider: leak.provider,
-      repoUrl: leak.repoUrl,
-      filePath: leak.filePath,
-      fullKey: leak.fullKey,
-      leakDetectedAt: leak.leakDetectedAt,
-      leakIntroducedAt: leak.leakIntroducedAt,
-      repoCreatedAt: leak.repoCreatedAt,
-    }));
-    return reply.send({ leaks: mappedLeaks, total, hasMore: page * limit < total });
+
+    // Security: Remove sensitive data for non-pro users
+    const mappedLeaks = leaks.map((leak: any) => {
+      const mappedLeak = {
+        id: leak.id || leak._id,
+        redactedKey: leak.redactedKey,
+        provider: leak.provider,
+        repoUrl: leak.repoUrl,
+        filePath: leak.filePath,
+        leakDetectedAt: leak.leakDetectedAt,
+        leakIntroducedAt: leak.leakIntroducedAt,
+        repoCreatedAt: leak.repoCreatedAt,
+      };
+
+      // Only include fullKey for pro users
+      if (user.plan === 'pro') {
+        (mappedLeak as any).fullKey = leak.fullKey;
+      }
+
+      return mappedLeak;
+    });
+
+    // Security: Calculate hasMore based on plan limits
+    let hasMore = false;
+    if (planLimits.canInfiniteScroll) {
+      hasMore = (enforcedPage * enforcedLimit) < maxResults;
+    }
+
+    // Log access for security monitoring
+    request.log.info({
+      msg: 'Leaks accessed',
+      userId: user.id,
+      userPlan: user.plan,
+      isAuthenticated: user.isAuthenticated,
+      requestedLimit: limit,
+      enforcedLimit: actualLimit,
+      requestedPage: page,
+      enforcedPage: enforcedPage,
+      totalResults: total,
+      returnedResults: mappedLeaks.length,
+      hasMore,
+      ip: request.ip
+    });
+
+    return reply.send({ 
+      leaks: mappedLeaks, 
+      total: maxResults, 
+      hasMore,
+      planLimits: {
+        maxLeaks: planLimits.maxLeaks,
+        canInfiniteScroll: planLimits.canInfiniteScroll,
+        maxTimeRange: planLimits.maxTimeRange
+      }
+    });
+
   } catch (error) {
-    request.log.error(error);
+    request.log.error('Error fetching leaks:', error);
     return reply.status(500).send({ error: 'Failed to fetch leaks' });
   }
 }
 
-export async function getLeakFullKeyHandler(request: FastifyRequest, reply: FastifyReply) {
-  const { id } = request.params as { id: string };
+export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
+    // Ensure authentication middleware has run
+    if (!request.user) {
+      return reply.status(401).send({ error: 'Authentication required' });
+    }
+
+    const { id } = request.params as { id: string };
+    const user = request.user;
+    const planLimits = getPlanLimits(user.plan);
+
+    // Security: Only pro users can access full keys
+    if (!planLimits.canAccessFullKey) {
+      request.log.warn({
+        msg: 'Unauthorized full key access attempt',
+        userId: user.id,
+        userPlan: user.plan,
+        leakId: id,
+        ip: request.ip
+      });
+      return reply.status(403).send({ 
+        error: 'Full key access requires Pro plan',
+        upgradeRequired: true
+      });
+    }
+
     const leak = await Leak.findById(id).select('+fullKey');
     if (!leak) {
       return reply.status(404).send({ error: 'Leak not found' });
     }
+
+    // Log full key access for security monitoring
+    request.log.info({
+      msg: 'Full key accessed',
+      userId: user.id,
+      userPlan: user.plan,
+      leakId: id,
+      ip: request.ip
+    });
+
     return reply.send({ fullKey: leak.fullKey });
+
   } catch (error) {
-    request.log.error(error);
+    request.log.error('Error fetching full key:', error);
     return reply.status(500).send({ error: 'Failed to fetch full key' });
   }
 } 
