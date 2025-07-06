@@ -16,17 +16,64 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 
+// Production constants
 const PAGE_SIZE = 10;
+const INFINITE_SCROLL_MARGIN = '0px 0px 600px 0px';
+
+// Types for better type safety
+interface LeakData {
+  id: string;
+  provider: string;
+  repository: string;
+  file: string;
+  line: number;
+  createdAt: string;
+  [key: string]: any;
+}
+
+interface LeaksResponse {
+  leaks: LeakData[];
+  total: number;
+  hasMore: boolean;
+}
+
+interface FilterState {
+  selectedProvider: Provider;
+  timeRange: string;
+  sortBy: string;
+}
+
+interface LoadingState {
+  isLoading: boolean;
+  isLoadingMore: boolean;
+  error: string | null;
+}
+
+interface PaginationState {
+  page: number;
+  hasMore: boolean;
+  total: number;
+  refreshIndex: number;
+}
+
+// Production-grade error handling
+class ExplorePageError extends Error {
+  constructor(message: string, public code: string, public context?: any) {
+    super(message);
+    this.name = 'ExplorePageError';
+  }
+}
 
 // Memoized Header component
 const ExploreHeader = React.memo(() => (
-  <div className="mb-3 animate-fade-in-up opacity-0 animate-delay-10 text-center">
-    <h1 className="text-3xl md:text-4xl font-semibold mb-1 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight inline-block relative">
+  <div className="mb-6 text-center">
+    <h1 className="text-3xl md:text-4xl font-semibold mb-2 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight">
       Explore Leaked Keys
-      <span className="block mx-auto mt-1 h-0.5 w-10 rounded-full bg-gradient-to-r from-primary to-foreground opacity-60" />
     </h1>
-    <p className="text-base text-muted-foreground max-w-xl mx-auto leading-snug mt-1">
-      Real-time feed of API key leaks discovered in public repositories.
+    <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
+    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+      Real-time feed of API key leaks discovered in public repositories. 
+      Track security incidents as they happen with detailed insights.
     </p>
   </div>
 ));
@@ -34,44 +81,53 @@ const ExploreHeader = React.memo(() => (
 ExploreHeader.displayName = 'ExploreHeader';
 
 // Helper to get provider label from value
-function getProviderLabel(value: string) {
+function getProviderLabel(value: string): string {
   const found = PROVIDERS.find((p) => p.value === value);
   return found ? found.label : value;
 }
 
-// Memoized Results Count component
+// Memoized Results Count component with improved error handling
 const ResultsCount = React.memo(({ 
   filteredLeaks, 
   selectedProvider, 
   isClient, 
   isLoading, 
   onRefresh, 
-  total
+  total,
+  error
 }: { 
-  filteredLeaks: any[]; 
+  filteredLeaks: LeakData[]; 
   selectedProvider: Provider; 
   isClient: boolean; 
   isLoading: boolean; 
   onRefresh: () => void; 
   total: number;
+  error: string | null;
 }) => (
   <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-10">
-    <div className="flex-1 text-sm text-muted-foreground truncate">
-      {isClient && (
-        <>
-          <span className="block sm:hidden">{total} leaks found</span>
-          <span className="hidden sm:inline">
-            {total} leak{total !== 1 ? 's' : ''} found
-            {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
+    <div className="flex flex-1 items-center gap-2">
+      <div className="flex-1 text-sm text-muted-foreground truncate">
+        {isClient && !error && (
+          <>
+            <span className="block sm:hidden">{total} leaks found</span>
+            <span className="hidden sm:inline">
+              {total} leak{total !== 1 ? 's' : ''} found
+              {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
+            </span>
+          </>
+        )}
+        {error && (
+          <span className="text-destructive text-sm">
+            Error loading data. Please try refreshing.
           </span>
-        </>
-      )}
+        )}
+      </div>
     </div>
     <div className="flex-shrink-0">
       <button
         onClick={onRefresh}
         disabled={isLoading}
-        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none"
+        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Refreshing...' : 'Refresh'}
@@ -82,7 +138,7 @@ const ResultsCount = React.memo(({
 
 ResultsCount.displayName = 'ResultsCount';
 
-// Memoized Filters component
+// Memoized Filters component with improved error handling
 const FiltersSection = React.memo(({ 
   selectedProvider, 
   onProviderChange, 
@@ -96,7 +152,8 @@ const FiltersSection = React.memo(({
   onRefresh, 
   total,
   session,
-  plan
+  plan,
+  error
 }: { 
   selectedProvider: Provider; 
   onProviderChange: (provider: Provider) => void; 
@@ -104,13 +161,14 @@ const FiltersSection = React.memo(({
   setTimeRange: (range: string) => void; 
   sortBy: string; 
   setSortBy: (sort: string) => void; 
-  filteredLeaks: any[]; 
+  filteredLeaks: LeakData[]; 
   isClient: boolean; 
   isLoading: boolean; 
   onRefresh: () => void; 
   total: number;
   session: any;
   plan: string;
+  error: string | null;
 }) => {
   // Time filter gating logic
   const isPro = plan === 'pro';
@@ -123,7 +181,7 @@ const FiltersSection = React.memo(({
   const [message, setMessage] = useState('');
 
   return (
-    <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-4 animate-fade-in-up opacity-0 animate-delay-10">
+    <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-6 animate-fade-in-up opacity-0 animate-delay-10">
       <div className="flex flex-col lg:flex-row gap-3">
         {/* Provider Filter */}
         <ProviderFilter
@@ -189,6 +247,7 @@ const FiltersSection = React.memo(({
         isLoading={isLoading}
         onRefresh={onRefresh}
         total={total}
+        error={error}
       />
     </div>
   );
@@ -196,23 +255,26 @@ const FiltersSection = React.memo(({
 
 FiltersSection.displayName = 'FiltersSection';
 
-// Memoized Results component
+// Memoized Results component with improved error handling
 const ResultsSection = React.memo(({ 
   filteredLeaks, 
   isLoading, 
   selectedProvider, 
   session, 
-  plan 
+  plan,
+  error
 }: { 
-  filteredLeaks: any[]; 
+  filteredLeaks: LeakData[]; 
   isLoading: boolean; 
   selectedProvider: Provider; 
   session: any;
   plan: string;
+  error: string | null;
 }) => {
-  let visibleLeaks = [];
+  let visibleLeaks: (LeakData | null)[] = [];
   let tileLimit = 2;
   const isUnauthenticated = !session || !session.user;
+  
   if (plan === 'pro') {
     visibleLeaks = filteredLeaks;
     tileLimit = filteredLeaks.length;
@@ -226,6 +288,24 @@ const ResultsSection = React.memo(({
       visibleLeaks.push(null);
     }
     tileLimit = 3;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="animate-fade-in-up opacity-0 animate-delay-10">
+        <div className="min-h-[200px] flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-destructive text-lg font-semibold mb-2">
+              Failed to load data
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {error}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -286,6 +366,7 @@ const LoadingIndicator = React.memo(() => (
 
 LoadingIndicator.displayName = 'LoadingIndicator';
 
+// Production-grade trial request component
 function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
   const { plan, requestedTrial: hookRequestedTrial } = usePlanCheck();
   const [requestedTrial, setRequestedTrial] = React.useState<boolean>(!!session?.user?.requestedTrial);
@@ -297,18 +378,24 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
   }, [hookRequestedTrial]);
 
   async function handleRequest() {
-    setStatus('submitting');
-    const res = await fetch('/api/user/request-trial', { method: 'POST' });
-    if (res.ok) {
-      setStatus('success');
-      setRequestedTrial(true);
-      // Immediately refresh status from API to ensure UI is up to date
-      const statusRes = await fetch('/api/user/trial-status');
-      if (statusRes.ok) {
-        const data = await statusRes.json();
-        setRequestedTrial(!!data.requestedTrial);
+    try {
+      setStatus('submitting');
+      const res = await fetch('/api/user/request-trial', { method: 'POST' });
+      
+      if (res.ok) {
+        setStatus('success');
+        setRequestedTrial(true);
+        // Immediately refresh status from API to ensure UI is up to date
+        const statusRes = await fetch('/api/user/trial-status');
+        if (statusRes.ok) {
+          const data = await statusRes.json();
+          setRequestedTrial(!!data.requestedTrial);
+        }
+      } else {
+        throw new Error(`Request failed: ${res.status}`);
       }
-    } else {
+    } catch (error) {
+      console.error('Trial request failed:', error);
       setStatus('error');
     }
   }
@@ -326,7 +413,7 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
           <div className="flex-shrink-0 flex flex-col items-end">
             {isBasic && !requestedTrial ? (
               <button
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleRequest}
                 disabled={status === 'submitting'}
               >
@@ -343,22 +430,35 @@ function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
   );
 }
 
+// Main ExplorePage component with production-grade features
 const ExplorePage = React.memo(() => {
   const { data: session } = useSession();
   const { plan, isPro, isBasic, isAuthenticated } = usePlanCheck();
-  const [selectedProvider, setSelectedProvider] = useState<Provider>('all');
-  const [timeRange, setTimeRange] = useState('7d');
-  const [sortBy, setSortBy] = useState('newest');
-  const [isLoading, setIsLoading] = useState(false); // for initial/full reload
-  const [isLoadingMore, setIsLoadingMore] = useState(false); // for infinite scroll
-  const [isClient, setIsClient] = useState(false);
-  const [page, setPage] = useState(1);
-  const [refreshIndex, setRefreshIndex] = useState(0);
-  const [leaks, setLeaks] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   
-  // Ref for intersection observer
+  // State management with proper typing
+  const [filterState, setFilterState] = useState<FilterState>({
+    selectedProvider: 'all',
+    timeRange: '7d',
+    sortBy: 'newest'
+  });
+  
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    isLoading: false,
+    isLoadingMore: false,
+    error: null
+  });
+  
+  const [paginationState, setPaginationState] = useState<PaginationState>({
+    page: 1,
+    hasMore: false,
+    total: 0,
+    refreshIndex: 0
+  });
+  
+  const [leaks, setLeaks] = useState<LeakData[]>([]);
+  const [isClient, setIsClient] = useState(false);
+  
+  // Refs for intersection observer
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -379,95 +479,136 @@ const ExplorePage = React.memo(() => {
 
   // Infinite scroll: observe loadingRef and increment page when visible
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!paginationState.hasMore || loadingState.isLoading) return;
     if (observerRef.current) observerRef.current.disconnect();
 
     observerRef.current = new window.IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        setPage((prev) => prev + 1);
+        setPaginationState(prev => ({ ...prev, page: prev.page + 1 }));
       }
-    }, { rootMargin: '0px 0px 600px 0px' });
+    }, { rootMargin: INFINITE_SCROLL_MARGIN });
 
     if (loadingRef.current) {
       observerRef.current.observe(loadingRef.current);
     }
 
     return () => observerRef.current?.disconnect();
-  }, [hasMore, isLoading]);
+  }, [paginationState.hasMore, loadingState.isLoading]);
 
   // Reset page to 1 and set loading true when filters change
   useEffect(() => {
-    setPage(1);
-    setIsLoading(true);
-  }, [selectedProvider, timeRange, sortBy]);
+    setPaginationState(prev => ({ ...prev, page: 1 }));
+    setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
 
-  // Update fetchAndSetLeaks to append leaks if page > 1
+  // Production-grade data fetching with error handling
   const fetchAndSetLeaks = useCallback(async () => {
-    if (page === 1) {
-      setIsLoading(true);
-      setIsLoadingMore(false);
-    } else {
-      setIsLoadingMore(true);
-    }
-    const backendProvider = PROVIDER_API_MAP[selectedProvider] || selectedProvider;
-    const { data, error } = await fetchLeaks({
-      provider: backendProvider,
-      timeRange,
-      sortBy,
-      page,
-      limit: PAGE_SIZE,
-    });
-    if (data) {
-      setLeaks((prev) => {
-        if (page === 1) return data.leaks;
-        const existingIds = new Set(prev.map((l) => l.id));
-        const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
-        return [...prev, ...newLeaks];
+    try {
+      if (paginationState.page === 1) {
+        setLoadingState(prev => ({ ...prev, isLoading: true, isLoadingMore: false, error: null }));
+      } else {
+        setLoadingState(prev => ({ ...prev, isLoadingMore: true }));
+      }
+      
+      const backendProvider = PROVIDER_API_MAP[filterState.selectedProvider] || filterState.selectedProvider;
+      const { data, error } = await fetchLeaks({
+        provider: backendProvider,
+        timeRange: filterState.timeRange,
+        sortBy: filterState.sortBy,
+        page: paginationState.page,
+        limit: PAGE_SIZE,
       });
-      setTotal(data.total);
-      setHasMore(data.hasMore);
+      
+      if (error) {
+        throw new ExplorePageError(error, 'FETCH_ERROR', { 
+          provider: backendProvider, 
+          timeRange: filterState.timeRange, 
+          sortBy: filterState.sortBy,
+          page: paginationState.page 
+        });
+      }
+      
+      if (data) {
+        setLeaks((prev) => {
+          if (paginationState.page === 1) return data.leaks;
+          const existingIds = new Set(prev.map((l) => l.id));
+          const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
+          return [...prev, ...newLeaks];
+        });
+        setPaginationState(prev => ({ 
+          ...prev, 
+          total: data.total, 
+          hasMore: data.hasMore 
+        }));
+      }
+    } catch (error) {
+      console.error('ExplorePage data fetch failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+        filterState,
+        paginationState
+      });
+      
+      setLoadingState(prev => ({ 
+        ...prev, 
+        error: error instanceof Error ? error.message : 'Failed to load data' 
+      }));
+    } finally {
+      setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
     }
-    setIsLoading(false);
-    setIsLoadingMore(false);
-  }, [selectedProvider, timeRange, sortBy, page, refreshIndex]);
+  }, [filterState, paginationState.page, paginationState.refreshIndex]);
 
   useEffect(() => {
     fetchAndSetLeaks();
   }, [fetchAndSetLeaks]);
 
-  const handleRefresh = () => {
-    setPage(1);
-    setRefreshIndex((i) => i + 1);
-  };
+  const handleRefresh = useCallback(() => {
+    setPaginationState(prev => ({ ...prev, page: 1, refreshIndex: prev.refreshIndex + 1 }));
+    setLoadingState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const handleProviderChange = useCallback((provider: Provider) => {
+    setFilterState(prev => ({ ...prev, selectedProvider: provider }));
+  }, []);
+
+  const handleTimeRangeChange = useCallback((timeRange: string) => {
+    setFilterState(prev => ({ ...prev, timeRange }));
+  }, []);
+
+  const handleSortByChange = useCallback((sortBy: string) => {
+    setFilterState(prev => ({ ...prev, sortBy }));
+  }, []);
 
   // Memoized filter props to prevent unnecessary re-renders
   const filterProps = useMemo(() => ({
-    selectedProvider,
-    onProviderChange: setSelectedProvider,
-    timeRange,
-    setTimeRange,
-    sortBy,
-    setSortBy,
+    selectedProvider: filterState.selectedProvider,
+    onProviderChange: handleProviderChange,
+    timeRange: filterState.timeRange,
+    setTimeRange: handleTimeRangeChange,
+    sortBy: filterState.sortBy,
+    setSortBy: handleSortByChange,
     filteredLeaks: leaks,
     isClient,
-    isLoading,
+    isLoading: loadingState.isLoading,
     onRefresh: handleRefresh,
-    total,
+    total: paginationState.total,
     session,
     plan: plan,
-  }), [selectedProvider, setSelectedProvider, timeRange, setTimeRange, sortBy, setSortBy, leaks, isClient, isLoading, handleRefresh, total, session, plan]);
+    error: loadingState.error
+  }), [filterState, leaks, isClient, loadingState.isLoading, loadingState.error, handleRefresh, paginationState.total, session, plan, handleProviderChange, handleTimeRangeChange, handleSortByChange]);
 
   // Memoized results props
   const resultsProps = useMemo(() => ({
     filteredLeaks: leaks,
-    isLoading,
-    selectedProvider,
+    isLoading: loadingState.isLoading,
+    selectedProvider: filterState.selectedProvider,
     session,
     plan: plan,
-  }), [leaks, isLoading, selectedProvider, session, plan]);
+    error: loadingState.error
+  }), [leaks, loadingState.isLoading, filterState.selectedProvider, session, plan, loadingState.error]);
 
   return (
-    <div className="container mx-auto px-4 py-4">
+    <div className="container mx-auto px-4 py-6">
       {/* Header */}
       <ExploreHeader />
 
@@ -476,7 +617,7 @@ const ExplorePage = React.memo(() => {
 
       {/* Results */}
       {/* Only show full-table skeleton if initial load */}
-      {isLoading && page === 1 ? (
+      {loadingState.isLoading && paginationState.page === 1 ? (
         <div className="space-y-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
@@ -487,10 +628,10 @@ const ExplorePage = React.memo(() => {
       )}
 
       {/* Invisible trigger for infinite scroll */}
-      {hasMore && (
+      {paginationState.hasMore && (
         <div ref={loadingRef}>
           <LoadingIndicator />
-          {isLoadingMore && (
+          {loadingState.isLoadingMore && (
             <div className="py-6">
               {/* Skeleton cards for loading more */}
               {Array.from({ length: 5 }).map((_, i) => (

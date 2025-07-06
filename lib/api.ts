@@ -68,6 +68,47 @@ export async function fetchTopProviders(): Promise<ApiResponse<{ topProviders: A
   }
 }
 
+// Server-side version of fetchLeaderboardData
+export async function fetchLeaderboardDataServer(): Promise<{
+  totalReposScanned: number;
+  totalLeaksFound: number;
+  repositoryAgeCutoff: string | null;
+  topProviders: Array<{ provider: string; count: number; percentage: number }>;
+  todayLeaks: number;
+}> {
+  try {
+    // Use the Next.js API route instead of calling backend directly
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/leaderboard`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Add cache control for better performance
+      next: { revalidate: 300 } // Cache for 5 minutes
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching leaderboard data server-side:', error);
+    // Return fallback data on error
+    return {
+      totalReposScanned: 0,
+      totalLeaksFound: 0,
+      repositoryAgeCutoff: null,
+      topProviders: [],
+      todayLeaks: 0
+    };
+  }
+}
+
+// Client-side version of fetchLeaderboardData
 export async function fetchLeaderboardData(): Promise<ApiResponse<{
   totalReposScanned: number;
   totalLeaksFound: number;

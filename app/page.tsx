@@ -1,14 +1,11 @@
 import React from 'react';
 import { HeroSection } from '@/components/home/hero-section';
 
-const HomePage = React.memo(() => {
+// Main page component
+export default function HomePage() {
   return (
     <div className="relative">
       <HeroSection />
     </div>
   );
-});
-
-HomePage.displayName = 'HomePage';
-
-export default HomePage;
+}
