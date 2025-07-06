@@ -41,7 +41,7 @@ const CustomTooltip = React.memo(({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-lg shadow-lg animate-fade-in-up opacity-0 animate-delay-100">
+      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-lg shadow-lg">
         <p className="font-medium capitalize">{label}</p>
         <p className="text-sm text-muted-foreground">
           <span className="font-medium">{data.count.toLocaleString()}</span> leaks
@@ -69,8 +69,7 @@ const ProviderListItem = React.memo(({
 
   return (
     <div 
-      className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-150 group animate-fade-in-up opacity-0 border border-border/30 hover:border-border/50"
-      style={{ animationDelay: `${index * 30 + 150}ms` }}
+      className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-150 group border border-border/30 hover:border-border/50"
     >
       <div className="flex items-center gap-3">
         <div 
@@ -136,7 +135,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
       {/* Chart */}
-      <div className="lg:col-span-2 animate-fade-in-up opacity-0 animate-delay-150 w-full">
+      <div className="lg:col-span-2 w-full">
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm" aria-label="Leaks by Provider">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Leaks by Provider</CardTitle>
@@ -175,7 +174,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
       </div>
 
       {/* Provider List */}
-      <div className="animate-fade-in-up opacity-0 animate-delay-200 w-full">
+      <div className="w-full">
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm" aria-label="Top Providers">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Top Providers</CardTitle>

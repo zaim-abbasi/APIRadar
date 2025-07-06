@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { usePlanCheck } from '@/hooks/use-plan-check';
 import { UserCircle, LogOut, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,20 +18,8 @@ import { cn } from '@/lib/utils';
 
 export function UserMenu() {
   const { data: session, status } = useSession();
-  const [showLoading, setShowLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
-
-  // Optimized loading state - shorter delay for production
-  useEffect(() => {
-    if (status === 'loading') {
-      setShowLoading(true);
-    } else {
-      const timer = setTimeout(() => {
-        setShowLoading(false);
-      }, 100); // Reduced from 200ms to 100ms for faster response
-      return () => clearTimeout(timer);
-    }
-  }, [status]);
+  const { plan, daysRemaining } = usePlanCheck();
 
   // Optimized sign-in handler with immediate redirect
   const handleSignIn = useCallback(async () => {
@@ -62,7 +51,7 @@ export function UserMenu() {
   }, [isSigningOut]);
 
   // Show optimized loading state
-  if (status === 'loading' || showLoading) {
+  if (status === 'loading') {
     return (
       <div className="h-9 w-9 rounded-full bg-muted animate-pulse flex items-center justify-center">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -70,25 +59,13 @@ export function UserMenu() {
     );
   }
 
-  // Show optimized sign in button
+  // Show nothing when not signed in
   if (!session) {
-    return (
-      <Button
-        onClick={handleSignIn}
-        variant="outline"
-        size="sm"
-        className="h-9 px-4 font-medium"
-      >
-        <UserCircle className="mr-2 h-4 w-4" />
-        Sign in with GitHub
-      </Button>
-    );
+    return null;
   }
 
   // Show optimized user avatar with dropdown
   const user = session.user as any;
-  const plan = user?.plan || 'basic';
-  const daysRemaining = user?.days_remaining_in_premium || 0;
 
   return (
     <DropdownMenu>
@@ -124,11 +101,6 @@ export function UserMenu() {
             )} />
             Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
           </span>
-          {plan === 'pro' && daysRemaining > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {daysRemaining} days left
-            </span>
-          )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 

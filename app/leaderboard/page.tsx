@@ -8,7 +8,7 @@ const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider
 
 // Memoized Header component
 const LeaderboardHeader = React.memo(() => (
-  <div className="mb-3 animate-fade-in-up opacity-0 animate-delay-100 text-center">
+  <div className="mb-3 text-center">
     <h1 className="text-3xl md:text-4xl font-semibold mb-1 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight inline-block relative">
       Security Leaderboard
       <span className="block mx-auto mt-1 h-0.5 w-10 rounded-full bg-gradient-to-r from-primary to-foreground opacity-60" />
@@ -23,7 +23,7 @@ LeaderboardHeader.displayName = 'LeaderboardHeader';
 
 // Memoized Stats Section
 const StatsSection = React.memo(({ data }: { data: any }) => (
-  <div className="animate-fade-in-up opacity-0 animate-delay-150">
+  <div>
     <StatsCards data={data} />
   </div>
 ));
@@ -35,7 +35,7 @@ const ChartsSection = React.memo(({ data }: { data: any }) => {
   const chartData = useMemo(() => data.topProviders, [data.topProviders]);
   
   return (
-    <div className="animate-fade-in-up opacity-0 animate-delay-300 flex-1 min-h-0">
+    <div className="flex-1 min-h-0">
       <Suspense fallback={
         <div className="h-full w-full flex items-center justify-center">
           <div className="space-y-4 w-full max-w-md">
@@ -52,6 +52,36 @@ const ChartsSection = React.memo(({ data }: { data: any }) => {
 
 ChartsSection.displayName = 'ChartsSection';
 
+// Cache helper functions
+const CACHE_KEY = 'leaderboard_data';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedData = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < CACHE_DURATION) {
+        return data;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to read cached leaderboard data:', error);
+  }
+  return null;
+};
+
+const setCachedData = (data: any) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (error) {
+    console.warn('Failed to cache leaderboard data:', error);
+  }
+};
+
 const LeaderboardPage = React.memo(() => {
   const [leaderboardData, setLeaderboardData] = useState<{
     totalReposScanned: number | null;
@@ -67,6 +97,28 @@ const LeaderboardPage = React.memo(() => {
     todayLeaks: null
   });
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Set client flag after mount to prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Load cached data after client mount
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const cached = getCachedData();
+    if (cached) {
+      setLeaderboardData({
+        totalReposScanned: cached.totalReposScanned,
+        totalLeaksFound: cached.totalLeaksFound,
+        repositoryAgeCutoff: cached.repositoryAgeCutoff,
+        topProviders: cached.topProviders,
+        todayLeaks: cached.todayLeaks
+      });
+    }
+  }, [isClient]);
 
   // Fetch all leaderboard data from single endpoint
   useEffect(() => {
@@ -75,13 +127,16 @@ const LeaderboardPage = React.memo(() => {
         const response = await fetchLeaderboardData();
 
         if (response.data) {
-          setLeaderboardData({
+          const newData = {
             totalReposScanned: response.data.totalReposScanned,
             totalLeaksFound: response.data.totalLeaksFound,
             repositoryAgeCutoff: response.data.repositoryAgeCutoff,
             topProviders: response.data.topProviders,
             todayLeaks: response.data.todayLeaks
-          });
+          };
+          
+          setLeaderboardData(newData);
+          setCachedData(newData); // Cache the fresh data
         } else {
           // Set fallback data instead of null for better UX
           setLeaderboardData({

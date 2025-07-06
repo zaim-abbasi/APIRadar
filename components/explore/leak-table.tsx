@@ -68,7 +68,7 @@ LoadingSkeleton.displayName = 'LoadingSkeleton';
 
 // Memoized Empty State component
 const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provider }) => (
-  <div className="text-center py-12 animate-fade-in-up opacity-0 animate-delay-100">
+  <div className="text-center py-12 animate-fade-in-up opacity-0 animate-delay-10">
     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
     <h3 className="text-lg font-semibold mb-2">No leaks found</h3>
     <p className="text-muted-foreground">
@@ -104,7 +104,7 @@ const CopyButton = React.memo(({
         {copiedKey === leak.id ? (
           <Check className="h-4 w-4 text-foreground" />
         ) : (
-          <Copy className="h-4 w-4 text-foreground transition-colors duration-150" />
+          <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
         )}
       </div>
     </Button>
@@ -119,10 +119,10 @@ const CopyButton = React.memo(({
         {copiedKey === leak.id ? (
           <Check className="h-4 w-4 text-foreground" />
         ) : (
-          <Copy className="h-4 w-4 text-foreground transition-colors duration-150" />
+          <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
         )}
       </div>
-      <span className="text-sm font-semibold transition-all duration-200 text-foreground">
+      <span className="text-sm font-semibold transition-all duration-75 text-foreground">
         {copiedKey === leak.id ? 'Copied' : 'Copy'}
       </span>
     </Button>
@@ -163,7 +163,7 @@ const LeakCard = React.memo(({
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
             {/* Provider & Key */}
             <div className="flex flex-row items-center gap-2 min-w-[180px]">
-              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-150 w-[180px] text-left">
+              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-75 w-[180px] text-left">
                 {normalizeRedactedKey(leak.redactedKey)}
               </code>
               <div
@@ -187,7 +187,7 @@ const LeakCard = React.memo(({
                     href={leak.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-150 cursor-pointer"
+                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-75 cursor-pointer"
                   >
                     {leak.repoUrl.split('/').slice(-2).join('/')}
                     <ExternalLink className="h-3 w-3" />
@@ -282,13 +282,34 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: L
   return (
     <div className="space-y-4">
       {memoizedLeaks.map((leak, index) => (
-        <LeakCard
-          key={leak.id}
-          leak={leak}
-          index={index}
-          copiedKey={copiedKey}
-          onCopy={handleCopy}
-        />
+        leak ? (
+          <LeakCard
+            key={leak.id}
+            leak={leak}
+            index={index}
+            copiedKey={copiedKey}
+            onCopy={handleCopy}
+          />
+        ) : (
+          <Card key={index} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-center gap-3">
+                    <div className="h-6 w-20 bg-muted rounded-full" />
+                    <div className="h-4 w-32 bg-muted rounded" />
+                  </div>
+                  <div className="h-4 w-3/4 bg-muted rounded" />
+                  <div className="flex gap-4">
+                    <div className="h-3 w-24 bg-muted rounded" />
+                    <div className="h-3 w-32 bg-muted rounded" />
+                  </div>
+                </div>
+                <div className="h-9 w-9 bg-muted rounded" />
+              </div>
+            </CardContent>
+          </Card>
+        )
       ))}
     </div>
   );

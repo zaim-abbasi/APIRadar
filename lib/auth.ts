@@ -22,13 +22,14 @@ export const authOptions: NextAuthOptions = {
           const db = client.db();
           
           const userData = {
-            githubId: profile?.id || user.id,
+            githubId: (profile as any)?.id || user.id,
             email: user.email,
             name: user.name,
             image: user.image,
             plan: 'basic',
-            days_remaining_in_premium: 0,
-            createdAt: new Date()
+            pro_days_remaining: 0,
+            createdAt: new Date(),
+            requestedTrial: false,
           };
 
           // Optimized upsert with better error handling
@@ -58,7 +59,8 @@ export const authOptions: NextAuthOptions = {
         // Use JWT token data for better performance
         session.user.id = token.id as string;
         session.user.plan = token.plan as string;
-        session.user.days_remaining_in_premium = token.days_remaining_in_premium as number;
+        session.user.pro_days_remaining = token.pro_days_remaining as number;
+        session.user.requestedTrial = token.requestedTrial as boolean;
       }
       return session;
     },
@@ -87,9 +89,10 @@ export const authOptions: NextAuthOptions = {
               email: user.email,
               name: user.name,
               image: user.image,
-              plan: 'basic',
-              days_remaining_in_premium: 0,
-              createdAt: new Date()
+                          plan: 'basic',
+            pro_days_remaining: 0,
+            createdAt: new Date(),
+            requestedTrial: false,
             };
 
             const result = await db.collection("users").insertOne(userData);
@@ -97,15 +100,112 @@ export const authOptions: NextAuthOptions = {
           }
           
           if (userDoc) {
+            // Check if user is pro based on days remaining and reduce days daily
+            let plan = userDoc.plan || 'basic';
+            let daysRemaining = userDoc.pro_days_remaining || 0;
+            let lastUpdated = userDoc.lastProDayUpdate || null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+
+            // Check if we need to reduce days (once per day)
+            if (daysRemaining > 0 && lastUpdated) {
+              const lastUpdateDate = new Date(lastUpdated);
+              lastUpdateDate.setHours(0, 0, 0, 0);
+              
+              // If last update was before today, reduce days
+              if (lastUpdateDate < today) {
+                const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
+                daysRemaining = Math.max(0, daysRemaining - daysDiff);
+              }
+            }
+
+            // If user has days remaining in premium, they are pro
+            if (daysRemaining > 0) {
+              plan = 'pro';
+            } else {
+              plan = 'basic';
+            }
+
+            // Update the user's plan and days in the database
+            await db.collection("users").updateOne(
+              { _id: userDoc._id },
+              { 
+                $set: { 
+                  plan: plan,
+                  pro_days_remaining: daysRemaining,
+                  lastProDayUpdate: today,
+                  updatedAt: new Date()
+                }
+              }
+            );
+
             token.id = userDoc._id.toString();
-            token.plan = userDoc.plan;
-            token.days_remaining_in_premium = userDoc.days_remaining_in_premium;
+            token.plan = plan;
+            token.pro_days_remaining = daysRemaining;
+            token.requestedTrial = userDoc.requestedTrial || false;
           }
         } catch (error) {
           console.error("Error fetching user data for JWT:", error);
           // Set default values if database fails
           token.plan = 'basic';
-          token.days_remaining_in_premium = 0;
+          token.pro_days_remaining = 0;
+        }
+      } else if (token.id) {
+        // For existing sessions, refresh the plan data
+        try {
+          const client = await clientPromise;
+          const db = client.db();
+          
+          const userDoc = await db.collection("users").findOne({
+            _id: token.id as any
+          });
+          
+          if (userDoc) {
+            // Check if user is pro based on days remaining and reduce days daily
+            let plan = userDoc.plan || 'basic';
+            let daysRemaining = userDoc.pro_days_remaining || 0;
+            let lastUpdated = userDoc.lastProDayUpdate || null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+
+            // Check if we need to reduce days (once per day)
+            if (daysRemaining > 0 && lastUpdated) {
+              const lastUpdateDate = new Date(lastUpdated);
+              lastUpdateDate.setHours(0, 0, 0, 0);
+              
+              // If last update was before today, reduce days
+              if (lastUpdateDate < today) {
+                const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
+                daysRemaining = Math.max(0, daysRemaining - daysDiff);
+              }
+            }
+
+            // If user has days remaining in premium, they are pro
+            if (daysRemaining > 0) {
+              plan = 'pro';
+            } else {
+              plan = 'basic';
+            }
+
+            // Update the user's plan and days in the database
+            await db.collection("users").updateOne(
+              { _id: userDoc._id },
+              { 
+                $set: { 
+                  plan: plan,
+                  pro_days_remaining: daysRemaining,
+                  lastProDayUpdate: today,
+                  updatedAt: new Date()
+                }
+              }
+            );
+
+            token.plan = plan;
+            token.pro_days_remaining = daysRemaining;
+            token.requestedTrial = userDoc.requestedTrial || false;
+          }
+        } catch (error) {
+          console.error("Error refreshing user data for JWT:", error);
         }
       }
       return token;

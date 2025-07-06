@@ -1,11 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const provider = searchParams.get('provider');
   const timeRange = searchParams.get('timeRange');
-  const limit = parseInt(searchParams.get('limit') || '20');
+  let limit = parseInt(searchParams.get('limit') || '20');
   const offset = parseInt(searchParams.get('offset') || '0');
+
+  // Secure: Enforce leak limits based on user plan
+  let plan = 'basic';
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      plan = 'unauthenticated';
+    } else {
+      plan = session.user.plan || 'basic';
+    }
+  } catch (e) {
+    plan = 'unauthenticated';
+  }
+
+  if (plan === 'pro') {
+    // No enforced limit, use requested or default
+  } else if (plan === 'basic') {
+    limit = Math.min(limit, 5);
+  } else {
+    // Unauthenticated
+    limit = Math.min(limit, 3);
+  }
 
   try {
     // Build query parameters for backend API

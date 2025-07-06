@@ -248,8 +248,7 @@ const StatCard = React.memo(({
   
   return (
     <div 
-      className={`group progressive-load card-stagger-${(index % 3) + 1}`}
-      style={{ animationDelay: `${index * 50}ms` }}
+      className="group"
     >
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-200 hover:shadow-sm shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
@@ -259,17 +258,21 @@ const StatCard = React.memo(({
           <IconComponent className={`${stat.color} h-8 w-8`} />
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <div className="text-xl font-medium transition-all duration-500 ease-out text-foreground">
-            {typeof stat.value === 'number' ? (
+          <div className="text-xl font-medium text-foreground">
+            {typeof stat.value === 'number' && stat.value !== null ? (
               stat.isPercentage ? (
-                <AnimatedCounter value={stat.value} isPercentage />
+                <span>{stat.value.toFixed(1)}%</span>
               ) : (
-                <AnimatedCounter value={stat.value} />
+                <span>{stat.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
               )
-            ) : stat.isDate ? (
-              <AnimatedDateCounterInline dateString={stat.value} />
+            ) : stat.isDate && stat.value ? (
+              <span>{new Date(stat.value).toLocaleDateString('en-US', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+              })}</span>
             ) : (
-              <span className="text-lg font-medium">{stat.value}</span>
+              <span className="inline-block w-16 h-6 skeleton rounded"></span>
             )}
           </div>
         </CardContent>

@@ -8,14 +8,16 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       plan?: string;
-      days_remaining_in_premium?: number;
+      pro_days_remaining?: number;
+      requestedTrial?: boolean;
     };
   }
 
   interface User {
     id?: string;
     plan?: string;
-    days_remaining_in_premium?: number;
+    pro_days_remaining?: number;
+    requestedTrial?: boolean;
   }
 }
 
@@ -23,6 +25,7 @@ declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
     plan?: string;
-    days_remaining_in_premium?: number;
+    pro_days_remaining?: number;
+    requestedTrial?: boolean;
   }
 } 

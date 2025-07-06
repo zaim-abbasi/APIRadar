@@ -54,10 +54,10 @@ const CTAButton = React.memo(({
     href={href} 
     prefetch={true}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 rounded-lg group h-12 sm:h-13 px-6 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[160px] sm:w-[180px] hover:scale-[1.02] animate-fade-in-up opacity-0 animate-delay-450 shadow-lg",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 animate-fade-in-up",
       variant === "default" 
-        ? "text-primary-foreground bg-primary hover:bg-primary/90 shadow-primary/25" 
-        : "text-foreground bg-secondary hover:bg-secondary/80 border border-border shadow-secondary/25"
+        ? "bg-primary text-primary-foreground border-primary/80 hover:bg-primary/90 hover:border-primary shadow-sm"
+        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-primary/60 shadow-sm"
     )}
   >
     {Icon && <Icon className="mr-2 h-5 w-5" />}
@@ -72,10 +72,10 @@ CTAButton.displayName = 'CTAButton';
 
 // Memoized Hero Headline component
 const HeroHeadline = React.memo(() => (
-  <div className="mb-6 animate-fade-in-up opacity-0 animate-delay-100">
+  <div className="mb-6 animate-fade-in-up">
     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-[0.95] tracking-tight drop-shadow-sm">
       {/* First Line */}
-      <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up opacity-0 animate-delay-100">
+      <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up">
         <span className="text-foreground">
           Exposing{' '}
         </span>
@@ -84,7 +84,7 @@ const HeroHeadline = React.memo(() => (
         </span>
       </div>
       {/* Second Line */}
-      <div className="text-muted-foreground/80 animate-fade-in-up opacity-0 animate-delay-150 drop-shadow-sm">
+      <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">
         API Leaks
       </div>
     </h1>
@@ -96,20 +96,20 @@ HeroHeadline.displayName = 'HeroHeadline';
 // Memoized Feature Tags component
 const FeatureTags = React.memo(() => {
   const features = useMemo(() => [
-    { icon: Zap, text: 'Real-time detection', color: 'text-yellow-500', delayClass: 'animate-delay-250', shouldSpin: true },
-    { icon: Eye, text: 'Instant visibility', color: 'text-green-500', delayClass: 'animate-delay-300', shouldSpin: false },
-    { icon: Globe, text: 'Global coverage', color: 'text-blue-500', delayClass: 'animate-delay-350', shouldSpin: false }
+    { icon: Zap, text: 'Real-time detection', color: 'text-yellow-500', shouldSpin: true },
+    { icon: Eye, text: 'Instant visibility', color: 'text-green-500', shouldSpin: false },
+    { icon: Globe, text: 'Global coverage', color: 'text-blue-500', shouldSpin: false }
   ], []);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up opacity-0 animate-delay-200">
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up">
       {features.map((feature, index) => (
         <FeatureTag
           key={index}
           icon={feature.icon}
           text={feature.text}
           color={feature.color}
-          delayClass={feature.delayClass}
+          delayClass=""
           shouldSpin={feature.shouldSpin}
         />
       ))}
@@ -121,7 +121,7 @@ FeatureTags.displayName = 'FeatureTags';
 
 // Memoized Subheading component
 const HeroSubheading = React.memo(() => (
-  <p className="text-base md:text-lg text-muted-foreground leading-snug mb-6 sm:mb-8 px-4 animate-fade-in-up opacity-0 animate-delay-400">
+  <p className="text-base md:text-lg text-muted-foreground leading-snug mb-6 sm:mb-8 px-4 animate-fade-in-up">
     Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
     Discover leaks as they happen, with unmatched detail and speed.
   </p>
@@ -135,8 +135,11 @@ const CTAButtons = React.memo(() => (
     <CTAButton href="/leaderboard" variant="outline">
       Leaderboard
     </CTAButton>
-    <CTAButton href="/explore" secondaryIcon={ArrowRight}>
-      Explore Leaks
+    <CTAButton href="/explore">
+      <span className="flex items-center justify-center w-full">
+        Explore Leaks
+        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
+      </span>
     </CTAButton>
   </div>
 ));
@@ -153,7 +156,7 @@ export const HeroSection = React.memo(() => {
       </div>
 
       <div className="container mx-auto relative z-10 h-full flex items-center justify-center">
-        <div className="text-center max-w-7xl mx-auto w-full -mt-16">
+        <div className="min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full">
           {/* Main Headline - Optimized Layout */}
           <HeroHeadline />
 

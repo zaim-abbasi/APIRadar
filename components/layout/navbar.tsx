@@ -80,47 +80,42 @@ const MobileNavLinks = ({ onLinkClick }: { onLinkClick: () => void }) => {
 
 const NavbarComponent = () => {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleNavClick = () => {
     setIsMenuOpen(false);
   };
 
-  if (!mounted) {
-    return null;
-  }
-
   return (
     <nav className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center relative">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
-            <motion.div
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative"
-            >
-              <Image src="/logo/logo-png.png" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority />
-            </motion.div>
-            <span className="text-xl font-medium">
-              <span className="text-red-600">API</span>
-              <span className="text-zinc-900 dark:text-white"> Radar</span>
-            </span>
-          </Link>
-
-          {/* Desktop Navigation - Centered relative to full navbar width */}
-          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
-            <NavLinks />
+        <div className="flex h-16 items-center w-full">
+          {/* Left: Logo */}
+          <div className="flex items-center flex-shrink-0">
+            <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
+              <motion.div
+                whileHover={{ rotate: 180 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="relative"
+              >
+                <Image src="/logo/logo-png.png" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority />
+              </motion.div>
+              <span className="text-xl font-medium">
+                <span className="text-red-600">API</span>
+                <span className="text-zinc-900 dark:text-white"> Radar</span>
+              </span>
+            </Link>
           </div>
 
-          {/* Theme Toggle, User Menu & Mobile Menu - Right side */}
-          <div className="flex items-center space-x-2 ml-auto">
+          {/* Center: Nav Links */}
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center space-x-8">
+              <NavLinks />
+            </div>
+          </div>
+
+          {/* Right: Theme Toggle, User Menu, Mobile Menu */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"

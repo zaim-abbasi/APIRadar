@@ -10,12 +10,17 @@ const LeakTable = React.lazy(() => import('@/components/explore/leak-table').the
 import { TIME_RANGES, SORT_OPTIONS, PROVIDERS, PROVIDER_API_MAP } from '@/lib/constants';
 import { Provider } from '@/types';
 import { fetchLeaks } from '@/lib/api';
+import { useSession, signIn } from 'next-auth/react';
+import { usePlanCheck } from '@/hooks/use-plan-check';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 
 const PAGE_SIZE = 10;
 
 // Memoized Header component
 const ExploreHeader = React.memo(() => (
-  <div className="mb-3 animate-fade-in-up opacity-0 animate-delay-100 text-center">
+  <div className="mb-3 animate-fade-in-up opacity-0 animate-delay-10 text-center">
     <h1 className="text-3xl md:text-4xl font-semibold mb-1 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight inline-block relative">
       Explore Leaked Keys
       <span className="block mx-auto mt-1 h-0.5 w-10 rounded-full bg-gradient-to-r from-primary to-foreground opacity-60" />
@@ -50,7 +55,7 @@ const ResultsCount = React.memo(({
   onRefresh: () => void; 
   total: number;
 }) => (
-  <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-200">
+  <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-10">
     <div className="flex-1 text-sm text-muted-foreground truncate">
       {isClient && (
         <>
@@ -66,7 +71,7 @@ const ResultsCount = React.memo(({
       <button
         onClick={onRefresh}
         disabled={isLoading}
-        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-150 hover:bg-primary/90 focus:outline-none"
+        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none"
       >
         <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Refreshing...' : 'Refresh'}
@@ -89,7 +94,9 @@ const FiltersSection = React.memo(({
   isClient, 
   isLoading, 
   onRefresh, 
-  total
+  total,
+  session,
+  plan
 }: { 
   selectedProvider: Provider; 
   onProviderChange: (provider: Provider) => void; 
@@ -102,57 +109,90 @@ const FiltersSection = React.memo(({
   isLoading: boolean; 
   onRefresh: () => void; 
   total: number;
-}) => (
-  <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-4 animate-fade-in-up opacity-0 animate-delay-150">
-    <div className="flex flex-col lg:flex-row gap-3">
-      {/* Provider Filter */}
-      <ProviderFilter
+  session: any;
+  plan: string;
+}) => {
+  // Time filter gating logic
+  const isPro = plan === 'pro';
+  const isBasic = plan === 'basic';
+  const isLoggedIn = !!session?.user;
+  const requestedTrial = session?.user?.requestedTrial;
+  const [open, setOpen] = useState(false);
+  const [formStatus, setFormStatus] = useState('idle');
+  const [email, setEmail] = useState(session?.user?.email || '');
+  const [message, setMessage] = useState('');
+
+  return (
+    <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-4 animate-fade-in-up opacity-0 animate-delay-10">
+      <div className="flex flex-col lg:flex-row gap-3">
+        {/* Provider Filter */}
+        <ProviderFilter
+          selectedProvider={selectedProvider}
+          onProviderChange={onProviderChange}
+        />
+
+        {/* Time Range */}
+        <Select value={timeRange} onValueChange={setTimeRange}>
+          <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <TooltipProvider>
+              {TIME_RANGES.map((range) => {
+                const isDisabled = !isPro && range.value !== '7d';
+                return isDisabled ? (
+                  <Tooltip key={range.value} delayDuration={100}>
+                    <TooltipTrigger asChild>
+                      <div className="relative">
+                        <SelectItem value={range.value} disabled className="opacity-50 cursor-not-allowed flex items-center">
+                          {range.label}
+                          <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>
+                        </SelectItem>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
+                      Upgrade to Pro to access this range
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                );
+              })}
+            </TooltipProvider>
+          </SelectContent>
+        </Select>
+
+        {/* Sort */}
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
+            <SortAsc className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Results Count */}
+      <ResultsCount 
+        filteredLeaks={filteredLeaks}
         selectedProvider={selectedProvider}
-        onProviderChange={onProviderChange}
+        isClient={isClient}
+        isLoading={isLoading}
+        onRefresh={onRefresh}
+        total={total}
       />
-
-      {/* Time Range */}
-      <Select value={timeRange} onValueChange={setTimeRange}>
-        <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-150 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-          <Filter className="h-4 w-4 mr-2" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {TIME_RANGES.map((range) => (
-            <SelectItem key={range.value} value={range.value}>
-              {range.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Sort */}
-      <Select value={sortBy} onValueChange={setSortBy}>
-        <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-150 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-          <SortAsc className="h-4 w-4 mr-2" />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {SORT_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
-
-    {/* Results Count */}
-    <ResultsCount 
-      filteredLeaks={filteredLeaks}
-      selectedProvider={selectedProvider}
-      isClient={isClient}
-      isLoading={isLoading}
-      onRefresh={onRefresh}
-      total={total}
-    />
-  </div>
-));
+  );
+});
 
 FiltersSection.displayName = 'FiltersSection';
 
@@ -160,26 +200,82 @@ FiltersSection.displayName = 'FiltersSection';
 const ResultsSection = React.memo(({ 
   filteredLeaks, 
   isLoading, 
-  selectedProvider 
+  selectedProvider, 
+  session, 
+  plan 
 }: { 
   filteredLeaks: any[]; 
   isLoading: boolean; 
   selectedProvider: Provider; 
-}) => (
-  <div className="animate-fade-in-up opacity-0 animate-delay-300">
-    <Suspense fallback={
-      <div className="min-h-[200px] flex items-center justify-center">
-        <span className="text-muted-foreground text-sm">Loading results…</span>
-      </div>
-    }>
-      <LeakTable 
-        leaks={filteredLeaks} 
-        isLoading={isLoading}
-        selectedProvider={selectedProvider}
-      />
-    </Suspense>
-  </div>
-));
+  session: any;
+  plan: string;
+}) => {
+  let visibleLeaks = [];
+  let tileLimit = 2;
+  const isUnauthenticated = !session || !session.user;
+  if (plan === 'pro') {
+    visibleLeaks = filteredLeaks;
+    tileLimit = filteredLeaks.length;
+  } else if (plan === 'basic') {
+    visibleLeaks = filteredLeaks.slice(0, 5);
+    tileLimit = 5;
+  } else {
+    // Always show exactly 3 tiles (fill with nulls if needed)
+    visibleLeaks = filteredLeaks.slice(0, 3);
+    while (visibleLeaks.length < 3) {
+      visibleLeaks.push(null);
+    }
+    tileLimit = 3;
+  }
+
+  return (
+    <div className="animate-fade-in-up opacity-0 animate-delay-10">
+      <Suspense fallback={
+        <div className="min-h-[200px] flex items-center justify-center">
+          <span className="text-muted-foreground text-sm">Loading results…</span>
+        </div>
+      }>
+        {/* Leak tiles (with skeletons for nulls) */}
+        <LeakTable 
+          leaks={visibleLeaks} 
+          isLoading={isLoading}
+          selectedProvider={selectedProvider}
+        />
+        {/* Gating tile for unauthenticated users: always show as 4th tile */}
+        {isUnauthenticated && (
+          <div className="mt-4 flex justify-center">
+            <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
+              <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
+                <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
+                  <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-base sm:text-lg">Sign in to see more leaks</span>
+                    </div>
+                    <span className="text-muted-foreground text-xs sm:text-sm">Sign in to unlock more API key leaks and advanced features.</span>
+                  </div>
+                  <div className="flex-shrink-0 flex flex-col items-end">
+                    <button
+                      onClick={() => signIn('github', { callbackUrl: window.location.href })}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
+                    >
+                      Sign in with GitHub
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Gating tile for authenticated non-pro users (if more leaks exist) */}
+        {!isUnauthenticated && filteredLeaks.length > tileLimit && plan !== 'pro' && (
+          <div className="mt-4 flex justify-center">
+            <UpgradeToProCardWithTrialButton session={session} />
+          </div>
+        )}
+      </Suspense>
+    </div>
+  );
+});
 
 ResultsSection.displayName = 'ResultsSection';
 
@@ -190,7 +286,66 @@ const LoadingIndicator = React.memo(() => (
 
 LoadingIndicator.displayName = 'LoadingIndicator';
 
+function UpgradeToProCardWithTrialButton({ session }: { session: any }) {
+  const { plan, requestedTrial: hookRequestedTrial } = usePlanCheck();
+  const [requestedTrial, setRequestedTrial] = React.useState<boolean>(!!session?.user?.requestedTrial);
+  const isBasic = plan === 'basic';
+  const [status, setStatus] = React.useState<'idle'|'submitting'|'success'|'error'>('idle');
+
+  React.useEffect(() => {
+    setRequestedTrial(!!hookRequestedTrial);
+  }, [hookRequestedTrial]);
+
+  async function handleRequest() {
+    setStatus('submitting');
+    const res = await fetch('/api/user/request-trial', { method: 'POST' });
+    if (res.ok) {
+      setStatus('success');
+      setRequestedTrial(true);
+      // Immediately refresh status from API to ensure UI is up to date
+      const statusRes = await fetch('/api/user/trial-status');
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        setRequestedTrial(!!data.requestedTrial);
+      }
+    } else {
+      setStatus('error');
+    }
+  }
+
+  return (
+    <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
+      <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
+        <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
+          <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-semibold text-base sm:text-lg">Request a Free Pro Trial</span>
+            </div>
+            <span className="text-muted-foreground text-xs sm:text-sm">Get Full Access to All API Key Leaks and Advanced Features for a Limited Time.</span>
+          </div>
+          <div className="flex-shrink-0 flex flex-col items-end">
+            {isBasic && !requestedTrial ? (
+              <button
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
+                onClick={handleRequest}
+                disabled={status === 'submitting'}
+              >
+                {status === 'submitting' ? 'Requesting...' : 'Request Pro Trial'}
+              </button>
+            ) : requestedTrial || status === 'success' ? (
+              <span className="inline-block px-3 py-1 rounded bg-muted text-muted-foreground font-medium text-xs sm:text-sm">Pro trial request sent</span>
+            ) : null}
+            {status === 'error' && <span className="inline-block mt-2 px-3 py-1 rounded bg-destructive text-destructive-foreground font-medium text-xs sm:text-sm">Error sending request. Please try again.</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const ExplorePage = React.memo(() => {
+  const { data: session } = useSession();
+  const { plan, isPro, isBasic, isAuthenticated } = usePlanCheck();
   const [selectedProvider, setSelectedProvider] = useState<Provider>('all');
   const [timeRange, setTimeRange] = useState('7d');
   const [sortBy, setSortBy] = useState('newest');
@@ -240,9 +395,10 @@ const ExplorePage = React.memo(() => {
     return () => observerRef.current?.disconnect();
   }, [hasMore, isLoading]);
 
-  // Reset page to 1 when filters change
+  // Reset page to 1 and set loading true when filters change
   useEffect(() => {
     setPage(1);
+    setIsLoading(true);
   }, [selectedProvider, timeRange, sortBy]);
 
   // Update fetchAndSetLeaks to append leaks if page > 1
@@ -296,15 +452,19 @@ const ExplorePage = React.memo(() => {
     isClient,
     isLoading,
     onRefresh: handleRefresh,
-    total
-  }), [selectedProvider, setSelectedProvider, timeRange, setTimeRange, sortBy, setSortBy, leaks, isClient, isLoading, handleRefresh, total]);
+    total,
+    session,
+    plan: plan,
+  }), [selectedProvider, setSelectedProvider, timeRange, setTimeRange, sortBy, setSortBy, leaks, isClient, isLoading, handleRefresh, total, session, plan]);
 
   // Memoized results props
   const resultsProps = useMemo(() => ({
     filteredLeaks: leaks,
     isLoading,
-    selectedProvider
-  }), [leaks, isLoading, selectedProvider]);
+    selectedProvider,
+    session,
+    plan: plan,
+  }), [leaks, isLoading, selectedProvider, session, plan]);
 
   return (
     <div className="container mx-auto px-4 py-4">
