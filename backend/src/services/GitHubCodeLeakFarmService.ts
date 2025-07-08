@@ -3,7 +3,7 @@ import { config } from '../config/environment';
 import { githubService } from './github';
 import { ILeak, Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
-import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck, validateSearchRateLimitHeaders } from './rateLimitManager';
+import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
 
