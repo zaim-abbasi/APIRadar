@@ -121,29 +121,7 @@ const NavbarComponent = () => {
 
           {/* Right: Theme Toggle, User Menu, Mobile Menu */}
           <div className="flex items-center space-x-2 flex-shrink-0">
-            {mounted && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="h-9 w-9"
-              >
-                <motion.div
-                  key={theme}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                </motion.div>
-              </Button>
-            )}
-
-            {/* User Menu */}
+            {/* User Menu (profile icon always visible) */}
             <UserMenu />
 
             {/* Mobile Menu Button */}

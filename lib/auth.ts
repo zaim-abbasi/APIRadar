@@ -36,11 +36,16 @@ export const authOptions: NextAuthOptions = {
           await db.collection("users").updateOne(
             { githubId: userData.githubId },
             { 
-              $setOnInsert: userData,
+              $setOnInsert: {
+                githubId: userData.githubId,
+                createdAt: userData.createdAt,
+                plan: userData.plan,
+                pro_days_remaining: userData.pro_days_remaining,
+                requestedTrial: userData.requestedTrial
+              },
               $set: {
                 email: userData.email,
                 name: userData.name,
-                image: userData.image,
                 updatedAt: new Date()
               }
             },
@@ -88,11 +93,10 @@ export const authOptions: NextAuthOptions = {
               githubId: account.providerAccountId,
               email: user.email,
               name: user.name,
-              image: user.image,
-                          plan: 'basic',
-            pro_days_remaining: 0,
-            createdAt: new Date(),
-            requestedTrial: false,
+              plan: 'basic',
+              pro_days_remaining: 0,
+              createdAt: new Date(),
+              requestedTrial: false,
             };
 
             const result = await db.collection("users").insertOne(userData);
@@ -222,5 +226,5 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  debug: false,
 }; 
