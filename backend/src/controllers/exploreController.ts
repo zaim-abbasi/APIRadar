@@ -90,7 +90,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     // Fetch leaks with security constraints
     const leaks = await Leak.find(filter)
-      .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
+      .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
       .sort(sort)
       .skip(skip)
       .limit(actualLimit)
@@ -107,13 +107,8 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         leakDetectedAt: leak.leakDetectedAt,
         leakIntroducedAt: leak.leakIntroducedAt,
         repoCreatedAt: leak.repoCreatedAt,
+        fullKey: leak.fullKey
       };
-
-      // Only include fullKey for pro users
-      if (user.plan === 'pro') {
-        (mappedLeak as any).fullKey = leak.fullKey;
-      }
-
       return mappedLeak;
     });
 

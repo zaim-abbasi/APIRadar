@@ -97,7 +97,7 @@ const CopyButton = React.memo(({
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => onCopy(leak.redactedKey, leak.id)}
+      onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
       className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-transparent group"
     >
       <div>
@@ -112,7 +112,7 @@ const CopyButton = React.memo(({
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => onCopy(leak.redactedKey, leak.id)}
+      onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
       className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none"
     >
       <div>
