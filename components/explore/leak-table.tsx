@@ -163,7 +163,7 @@ const LeakCard = React.memo(({
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
             {/* Provider & Key */}
             <div className="flex flex-row items-center gap-2 min-w-[180px]">
-              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-75 w-[180px] text-left">
+              <code className="text-sm font-mono bg-muted px-2 py-1 rounded text-muted-foreground md:group-hover:text-foreground transition-colors duration-75 w-full sm:w-[180px] text-left break-all sm:break-normal">
                 {normalizeRedactedKey(leak.redactedKey)}
               </code>
               <div
@@ -179,7 +179,7 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Repository Info */}
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
               {(() => {
                 const parsed = parseGitHubRepoUrl(leak.repoUrl);
                 if (!parsed) return (
@@ -187,19 +187,19 @@ const LeakCard = React.memo(({
                     href={leak.repoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-75 cursor-pointer"
+                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-75 cursor-pointer break-all sm:break-normal"
                   >
                     {leak.repoUrl.split('/').slice(-2).join('/')}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 );
                 return (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
                     <a
                       href={leak.repoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-primary hover:underline flex items-center gap-1"
+                      className="font-medium text-primary hover:underline flex items-center gap-1 break-all sm:break-normal"
                     >
                       {parsed.repo}
                       <ExternalLink className="h-3 w-3" />
@@ -209,7 +209,7 @@ const LeakCard = React.memo(({
                       href={`https://github.com/${parsed.owner}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary flex items-center gap-1"
+                      className="text-muted-foreground hover:text-primary flex items-center gap-1 break-all sm:break-normal"
                     >
                       <User className="h-3 w-3" />
                       {parsed.owner}
@@ -221,21 +221,21 @@ const LeakCard = React.memo(({
 
             {/* Metadata - beautiful, compact, and readable on mobile */}
             <div className="space-y-0.5">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-w-0">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
-                <span className="truncate text-foreground/80 font-semibold">Key added in Repo:</span>
-                <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
+                <span className="sm:truncate text-foreground/80 font-semibold">Key added in Repo:</span>
+                <span className="sm:truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
                 {leak.filePath && (
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3 flex-shrink-0" />
-                    <code className="text-xs truncate max-w-[120px] sm:max-w-[200px]" title={leak.filePath}>{leak.filePath}</code>
+                    <code className="text-xs break-all sm:truncate sm:max-w-[200px]" title={leak.filePath}>{leak.filePath}</code>
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-w-0">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
-                <span className="truncate text-foreground/80 font-semibold">Leak Detected:</span>
-                <span className="truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakDetectedAt), { addSuffix: true })}</span>
+                <span className="sm:truncate text-foreground/80 font-semibold">Leak Detected:</span>
+                <span className="sm:truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakDetectedAt), { addSuffix: true })}</span>
               </div>
             </div>
           </div>

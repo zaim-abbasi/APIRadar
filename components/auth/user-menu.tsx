@@ -83,9 +83,9 @@ export function UserMenu() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-9 w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm"
+          className="h-8 w-8 md:h-9 md:w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm"
         >
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-8 w-8 md:h-9 md:w-9">
             <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-medium bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white select-none">
               {displayLetter}
             </AvatarFallback>

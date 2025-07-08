@@ -148,26 +148,51 @@ CTAButtons.displayName = 'CTAButtons';
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative h-screen overflow-hidden">
+    <section className="relative h-auto min-h-[80vh] sm:h-screen overflow-hidden">
       {/* Clean Background - No Grid */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/5">
         {/* Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/10" />
       </div>
 
-      <div className="container mx-auto relative z-10 h-full flex items-center justify-center">
-        <div className="min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full">
+      <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-3 sm:px-0">
+        <div className="min-h-[80vh] sm:min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full py-4 sm:py-0">
           {/* Main Headline - Optimized Layout */}
-          <HeroHeadline />
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-tight tracking-tight drop-shadow-sm">
+              <div className="mb-1 sm:mb-3 md:mb-4 animate-fade-in-up">
+                <span className="text-foreground">Exposing{' '}</span>
+                <span className="text-red-600 drop-shadow-md">GitHub</span>
+              </div>
+              <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">API Leaks</div>
+            </h1>
+          </div>
 
           {/* Feature Tags */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-6 animate-fade-in-up">
           <FeatureTags />
+          </div>
 
           {/* Subheading */}
-          <HeroSubheading />
+          <div className="mb-5 sm:mb-8 px-2 animate-fade-in-up">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-snug">
+              Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
+              Discover leaks as they happen, with unmatched detail and speed.
+            </p>
+          </div>
 
           {/* CTA Buttons */}
-          <CTAButtons />
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-center items-center mb-4 sm:mb-12">
+            <CTAButton href="/leaderboard" variant="outline">
+              Leaderboard
+            </CTAButton>
+            <CTAButton href="/explore">
+              <span className="flex items-center justify-center w-full">
+                Explore Leaks
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
+              </span>
+            </CTAButton>
+          </div>
         </div>
       </div>
     </section>

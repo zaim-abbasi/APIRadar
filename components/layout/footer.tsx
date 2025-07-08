@@ -88,21 +88,21 @@ const FooterComponent = () => {
   return (
     <footer className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full text-center">
           {/* Left: Logo & Name */}
-          <div className="flex items-center space-x-1 w-full md:w-auto justify-center md:justify-start">
+          <div className="flex items-center space-x-1 w-full md:w-auto justify-center md:justify-start mb-2 md:mb-0">
             <FooterLogo />
           </div>
 
           {/* Center: Copyright */}
-          <div className="w-full md:w-auto flex justify-center">
+          <div className="w-full md:w-auto flex justify-center mb-2 md:mb-0">
             <span className="text-xs text-muted-foreground text-center">
               © 2025 API Radar. Real-time detection and tracking of API key leaks.
             </span>
           </div>
 
           {/* Right: GitHub & Email */}
-          <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-end">
+          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 space-x-0 md:space-x-2 w-full md:w-auto justify-center md:justify-end">
             <a
               href="mailto:zaim.k.abbasi@gmail.com"
               className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150"

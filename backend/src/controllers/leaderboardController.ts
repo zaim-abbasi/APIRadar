@@ -9,7 +9,6 @@ interface LeaderboardResponse {
   totalLeaksFound: number;
   repositoryAgeCutoff: string | null;
   topProviders: { provider: string; count: number; percentage: number }[];
-  todayLeaks: number;
 }
 
 // Simple in-memory cache for leaderboard data
@@ -42,7 +41,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
     const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
 
-    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders, todayLeaks] = await Promise.all([
+    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders] = await Promise.all([
       ScanAttempt.countDocuments().lean(),
       Leak.countDocuments().lean(),
       ConfigurationService.getRepositoryAgeCutoff(),
@@ -50,8 +49,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
         { $group: { _id: '$provider', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 10 }
-      ]),
-      Leak.countDocuments({ leakDetectedAt: { $gte: startOfDayUtc, $lte: endOfDayUtc } }).lean()
+      ])
     ]);
 
     // Calculate percentages for top providers
@@ -65,8 +63,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       totalReposScanned,
       totalLeaksFound,
       repositoryAgeCutoff: repositoryAgeCutoff?.toISOString() ?? null,
-      topProviders: providersWithPercentage,
-      todayLeaks
+      topProviders: providersWithPercentage
     };
 
     // Cache the response

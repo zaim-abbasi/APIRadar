@@ -15,7 +15,6 @@ interface LeaderboardData {
 interface StatsData {
   totalLeaks: number;
   todayLeaks: number;
-  leaksFoundToday: number;
   repositoryCutoff: string | null;
 }
 
@@ -130,7 +129,6 @@ export default async function LeaderboardPage() {
   const statsData: StatsData = {
     totalLeaks: leaderboardData.totalReposScanned,
     todayLeaks: leaderboardData.totalLeaksFound,
-    leaksFoundToday: leaderboardData.todayLeaks,
     repositoryCutoff: leaderboardData.repositoryAgeCutoff
   };
 

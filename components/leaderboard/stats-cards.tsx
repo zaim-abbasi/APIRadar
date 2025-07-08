@@ -299,14 +299,12 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   const {
     totalLeaks,
     todayLeaks,
-    leaksFoundToday,
     repositoryCutoff
   } = data;
 
   // Defensive: fallback for all stats
   const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
   const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;
-  const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
   const safeRepositoryCutoff = typeof repositoryCutoff === 'string' ? repositoryCutoff : null;
 
   const stats = useMemo(() => [
@@ -325,13 +323,6 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
       bgColor: 'bg-orange-500/10'
     },
     {
-      title: 'Leaks Found Today',
-      value: safeLeaksFoundToday,
-      icon: Eye,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10'
-    },
-    {
       title: 'Repository Cutoff',
       value: safeRepositoryCutoff,
       icon: Calendar,
@@ -339,12 +330,12 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
       bgColor: 'bg-green-500/10',
       isDate: true
     }
-  ], [safeTotalLeaks, safeTodayLeaks, safeLeaksFoundToday, safeRepositoryCutoff]);
+  ], [safeTotalLeaks, safeTodayLeaks, safeRepositoryCutoff]);
 
   return (
     <div
       id="stats-container"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
     >
       {stats.map((stat, index) => (
         <StatCard key={stat.title} stat={stat} index={index} />
