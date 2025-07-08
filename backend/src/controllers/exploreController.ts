@@ -75,10 +75,10 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };
     else if (sortBy === 'provider') sort = { provider: 1, leakIntroducedAt: -1 };
 
-    // Get total count for pagination
+    // Get total count for pagination (for summary)
     const total = await Leak.countDocuments(filter);
 
-    // Security: Enforce maximum results for non-pro users
+    // Security: Enforce maximum results for non-pro users (for cards only)
     let maxResults = total;
     if (user.plan !== 'pro') {
       maxResults = Math.min(total, planLimits.maxLeaks);
@@ -117,10 +117,10 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       return mappedLeak;
     });
 
-    // Security: Calculate hasMore based on plan limits
+    // Calculate hasMore based on plan limits
     let hasMore = false;
     if (planLimits.canInfiniteScroll) {
-      hasMore = (enforcedPage * enforcedLimit) < maxResults;
+      hasMore = (enforcedPage * enforcedLimit) < total; // use true total for hasMore
     }
 
     // Log access for security monitoring
@@ -141,7 +141,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     return reply.send({ 
       leaks: mappedLeaks, 
-      total: maxResults, 
+      total, // always return the true total for summary
       hasMore,
       planLimits: {
         maxLeaks: planLimits.maxLeaks,
