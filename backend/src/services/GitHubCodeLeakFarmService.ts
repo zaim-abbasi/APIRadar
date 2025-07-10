@@ -698,7 +698,7 @@ export class GitHubCodeLeakFarmService {
 
   private isScanStateComplete(state: ScanResumeState): boolean {
     const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
-    const MAX_PAGE = 120; // GitHub search API limit is 1200 results (120 pages × 10 results)
+    const MAX_PAGE = 100; // GitHub search API limit is 1000 results (100 pages × 10 results)
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
       if (!providerState || providerState.page <= MAX_PAGE) {
@@ -762,7 +762,7 @@ export class GitHubCodeLeakFarmService {
         }
         
         // If any provider's page exceeds 120, reset all to page 1 and log
-        const MAX_PAGE = 120; // GitHub search API limit is 1200 results (120 pages × 10 results)
+        const MAX_PAGE = 100; // GitHub search API limit is 1000 results (100 pages × 10 results)
         let shouldResetPages = false;
         for (const provider of providerNames) {
           const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
@@ -780,7 +780,7 @@ export class GitHubCodeLeakFarmService {
           // Reset the current provider's page and query index too
           page = 1;
           queryIndex = 0;
-          logger.warn(`[FARM] Max page reached (>${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
+          logger.warn(`[FARM] Max page reached (> ${MAX_PAGE}). Resetting all providers to page 1 to catch new repos.`);
         }
         
         // Update provider state
@@ -842,7 +842,7 @@ export class GitHubCodeLeakFarmService {
         } else if (error.response?.status === 422) {
           // Unprocessable Entity - could be invalid search query or no more results
           const errorMessage = error.response.data?.message || '';
-          if (page > 120 || errorMessage.includes('page') || errorMessage.includes('limit') || errorMessage.includes('422')) {
+          if (page > 100 || errorMessage.includes('page') || errorMessage.includes('limit') || errorMessage.includes('422')) {
             // No more results available (beyond GitHub's search limit for this query)
             logger.warn(`[FARM] No more results available for query "${query}" (page ${page}): Reached end of results`);
             return; // Don't re-throw, just return gracefully
