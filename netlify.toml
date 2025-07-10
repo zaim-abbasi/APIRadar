@@ -1,7 +1,0 @@
-[build]
-  base = ""
-  publish = "app/.next"
-  command = "npm run build --workspace=app"
-
-[build.environment]
-  NPM_FLAGS = "--prefix=../" 
