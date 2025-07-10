@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward the request to backend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
     const url = new URL(request.url);
     const backendUrlWithParams = `${backendUrl}/api/leaks${url.search}`;
     

@@ -15,7 +15,11 @@ async function startServer() {
   try {
     // Register CORS
     await server.register(cors, {
-      origin: true, // Allow all origins in development
+      origin: [
+        'http://localhost:3000', // Local frontend
+        'https://apiradar.live', // Production frontend
+        'https://www.apiradar.live' // (optional) www subdomain
+      ],
       credentials: true,
     });
 

@@ -1,17 +1,10 @@
 import React, { Suspense } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
+import { LeaderboardData, ProviderStats } from '@/types';
 
 const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
 
 // Types for better type safety
-interface LeaderboardData {
-  totalReposScanned: number;
-  totalLeaksFound: number;
-  repositoryAgeCutoff: string | null;
-  topProviders: Array<{ provider: string; count: number; percentage: number }>;
-  todayLeaks: number;
-}
-
 interface StatsData {
   totalLeaks: number;
   todayLeaks: number;
@@ -19,13 +12,13 @@ interface StatsData {
 }
 
 interface ChartData {
-  topProviders: Array<{ provider: string; count: number; percentage: number }>;
+  topProviders: ProviderStats[];
   totalLeaks: number;
 }
 
 // Production-grade data fetching with proper error handling
 async function fetchLeaderboardData(): Promise<LeaderboardData> {
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   
   try {
     const response = await fetch(`${backendUrl}/api/leaderboard-data`, {
@@ -47,17 +40,22 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
 
     const data = await response.json();
     
-    // Validate data structure
-    if (!data || typeof data !== 'object') {
-      throw new Error('Invalid data structure received from backend');
-    }
+    // Map topProviders to include 'trend' (default to 'stable' if missing)
+    const topProviders: ProviderStats[] = Array.isArray(data.topProviders)
+      ? data.topProviders.map((p: any) => ({
+          provider: p.provider,
+          count: p.count,
+          percentage: p.percentage,
+          trend: p.trend || 'stable',
+        }))
+      : [];
 
     return {
-      totalReposScanned: Number(data.totalReposScanned) || 0,
-      totalLeaksFound: Number(data.totalLeaksFound) || 0,
-      repositoryAgeCutoff: data.repositoryAgeCutoff || null,
-      topProviders: Array.isArray(data.topProviders) ? data.topProviders : [],
-      todayLeaks: Number(data.todayLeaks) || 0
+      topProviders,
+      totalLeaks: Number(data.totalReposScanned) || 0, // map to totalReposScanned
+      todayLeaks: Number(data.totalLeaksFound) || 0,  // map to totalLeaksFound
+      weeklyGrowth: Number(data.weeklyGrowth) || 0,
+      repositoryCutoff: data.repositoryAgeCutoff || null, // map to repositoryAgeCutoff
     };
     
   } catch (error) {
@@ -70,11 +68,11 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
 
     // Return safe fallback data
     return {
-      totalReposScanned: 0,
-      totalLeaksFound: 0,
-      repositoryAgeCutoff: null,
-      topProviders: [],
-      todayLeaks: 0
+      topProviders: [{ provider: 'unknown', count: 0, percentage: 0, trend: 'stable' }],
+      totalLeaks: 0,
+      todayLeaks: 0,
+      weeklyGrowth: 0,
+      repositoryCutoff: null,
     };
   }
 }
@@ -95,7 +93,7 @@ const LeaderboardHeader = React.memo(() => (
 
 LeaderboardHeader.displayName = 'LeaderboardHeader';
 
-const StatsSection = React.memo(({ data }: { data: StatsData }) => (
+const StatsSection = React.memo(({ data }: { data: LeaderboardData }) => (
   <div className="mb-8">
     <StatsCards data={data} />
   </div>
@@ -126,15 +124,13 @@ export default async function LeaderboardPage() {
   const leaderboardData = await fetchLeaderboardData();
 
   // Prepare data with proper validation
-  const statsData: StatsData = {
-    totalLeaks: leaderboardData.totalReposScanned,
-    todayLeaks: leaderboardData.totalLeaksFound,
-    repositoryCutoff: leaderboardData.repositoryAgeCutoff
-  };
-
-  const chartData: ChartData = {
-    topProviders: leaderboardData.topProviders,
-    totalLeaks: leaderboardData.totalLeaksFound
+  const statsData: LeaderboardData = leaderboardData;
+  const chartData = {
+    topProviders: leaderboardData.topProviders.map((p) => ({
+      ...p,
+      trend: p.trend || 'stable',
+    })),
+    totalLeaks: leaderboardData.totalLeaks
   };
 
   return (
