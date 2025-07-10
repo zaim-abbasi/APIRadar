@@ -56,24 +56,24 @@ export function UserMenu() {
 
   // Always show the profile icon (Avatar)
   let displayLetter = 'U';
-  let userName = undefined;
-  let userEmail = undefined;
+  let userName: string | undefined = undefined;
+  let userEmail: string | undefined = undefined;
   let userPlan = undefined;
   let userImage = '';
   if (session && session.user) {
-    userName = session.user.name;
-    userEmail = session.user.email;
+    userName = session.user.name ?? undefined;
+    userEmail = session.user.email ?? undefined;
     userPlan = plan;
     userImage = session.user.image || '';
     if (userName && typeof userName === 'string' && userName.length > 0) {
       displayLetter = userName.charAt(0).toUpperCase();
-    } else if (userEmail && typeof userEmail === 'string' && userEmail.length > 0) {
-      displayLetter = userEmail.charAt(0).toUpperCase();
+    } else if (typeof userEmail === 'string' && (userEmail as string).length > 0) {
+      displayLetter = (userEmail as string).charAt(0).toUpperCase();
     }
   } else if (status === 'loading' && typeof session === 'undefined') {
     // If loading, try to use email from previous session (if available)
-    if (userEmail && typeof userEmail === 'string' && userEmail.length > 0) {
-      displayLetter = userEmail.charAt(0).toUpperCase();
+    if (typeof userEmail === 'string' && (userEmail as string).length > 0) {
+      displayLetter = (userEmail as string).charAt(0).toUpperCase();
     }
   }
 
