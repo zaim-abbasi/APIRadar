@@ -134,3 +134,21 @@ GITHUB_RATE_LIMIT_DELAY=1000
 - PRs, issues, and feature requests are welcome
 - See [CONTRIBUTING.md](CONTRIBUTING.md) for details
 - All code must pass linting, tests, and review
+
+## SEO Backlinks & Monitoring Checklist
+
+### Backlinks Strategy
+- Submit API Radar to developer directories (Product Hunt, Dev.to, Indie Hackers, etc.)
+- Write guest posts or tutorials on tech blogs and link back to https://apiradar.live
+- Share on social media (Twitter, LinkedIn, Reddit, Hacker News)
+- Engage in relevant forums (Stack Overflow, GitHub Discussions) and include your link in your profile or signature
+- Ask partners, friends, or satisfied users to link to your site
+
+### Monitoring & Analytics
+- Set up Google Search Console for https://apiradar.live
+- Submit your sitemap: https://apiradar.live/sitemap.xml
+- Set up Google Analytics for traffic monitoring
+- Regularly check Google Search Console for crawl errors and performance
+- Use Google PageSpeed Insights to monitor and optimize site speed
+
+---
