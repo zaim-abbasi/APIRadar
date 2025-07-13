@@ -1,3 +1,9 @@
+# *
 User-agent: *
 Allow: /
-Sitemap: https://apiradar.live/sitemap.xml 
+
+# Host
+Host: https://apiradar.live
+
+# Sitemaps
+Sitemap: https://apiradar.live/sitemap.xml
