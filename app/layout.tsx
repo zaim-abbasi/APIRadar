@@ -102,13 +102,12 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Product",
+            "@type": "WebApplication",
             "name": "API Radar",
             "description": "API Radar helps you discover, monitor, and analyze public APIs and code leaks from GitHub and other sources.",
-            "brand": {
-              "@type": "Brand",
-              "name": "API Radar"
-            }
+            "applicationCategory": "SecurityApplication",
+            "operatingSystem": "Web Browser",
+            "url": "https://apiradar.live"
           })
         }} />
         {/* Preload critical pages for faster navigation */}

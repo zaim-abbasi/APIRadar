@@ -1,0 +1,23 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Explore Leaked Keys - API Radar',
+  description: 'Real-time feed of API key leaks discovered in public repositories. Track security incidents as they happen with detailed insights.',
+  openGraph: {
+    title: 'Explore Leaked Keys - API Radar',
+    description: 'Real-time feed of API key leaks discovered in public repositories.',
+    url: 'https://apiradar.live/explore',
+  },
+  twitter: {
+    title: 'Explore Leaked Keys - API Radar',
+    description: 'Real-time feed of API key leaks discovered in public repositories.',
+  },
+};
+
+export default function ExploreLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return children;
+} 

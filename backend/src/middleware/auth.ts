@@ -14,15 +14,15 @@ export interface AuthenticatedRequest extends FastifyRequest {
 // Plan-based limits
 export const PLAN_LIMITS = {
   free: {
-    maxLeaks: 2,
-    maxTimeRange: '7d',
+    maxLeaks: 4,
+    maxTimeRange: '15d', // Backend allows both 7d and 15d via controller logic
     canAccessFullKey: false,
     canInfiniteScroll: false
   },
   basic: {
-    maxLeaks: 4,
-    maxTimeRange: '30d',
-    canAccessFullKey: false,
+    maxLeaks: 6,
+    maxTimeRange: '15d', // Backend allows both 7d and 15d via controller logic
+    canAccessFullKey: true,
     canInfiniteScroll: false
   },
   pro: {

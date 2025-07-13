@@ -9,7 +9,8 @@ import {
   User, 
   FileText, 
   GitCommit,
-  Check
+  Check,
+  Lock
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provide
 
 EmptyState.displayName = 'EmptyState';
 
-// Memoized Copy Button component
+// Memoized Copy Button component - BULLETPROOF SECURITY
 const CopyButton = React.memo(({ 
   leak, 
   copiedKey, 
@@ -91,43 +92,79 @@ const CopyButton = React.memo(({
   leak: LeakedKey; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
-}) => (
-  <>
-    {/* Mobile: just the icon, always visible */}
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-      className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-transparent group"
-    >
-      <div>
-        {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-foreground" />
-        ) : (
-          <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
-        )}
-      </div>
-    </Button>
-    {/* Desktop: icon + text, visible on hover of card */}
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-      className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover:opacity-100 !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none"
-    >
-      <div>
-        {copiedKey === leak.id ? (
-          <Check className="h-4 w-4 text-foreground" />
-        ) : (
-          <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
-        )}
-      </div>
-      <span className="text-sm font-semibold transition-all duration-75 text-foreground">
-        {copiedKey === leak.id ? 'Copied' : 'Copy'}
-      </span>
-    </Button>
-  </>
-));
+}) => {
+  // BULLETPROOF SECURITY: Double-check locked status and sensitive data
+  const isLocked = leak.isLocked === true;
+  const hasSensitiveData = leak.fullKey && !isLocked;
+  
+  // SECURITY: Never allow copy for locked content, even if manipulated
+  if (isLocked || !hasSensitiveData) {
+    return (
+      <>
+        {/* Mobile: Lock icon only */}
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled
+          className="h-9 w-9 md:hidden cursor-not-allowed focus:outline-none !bg-transparent !hover:bg-transparent group opacity-50"
+        >
+          <Lock className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        
+        {/* Desktop: Lock icon + text on hover */}
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled
+          className="hidden md:flex items-center gap-2 h-9 px-3 invisible group-hover:visible !bg-transparent !hover:bg-transparent cursor-not-allowed focus:outline-none"
+        >
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium transition-all duration-75 text-muted-foreground">
+            Sign in to copy full key
+          </span>
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* Mobile: just the icon, always visible */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
+        className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-transparent group"
+      >
+        <div>
+          {copiedKey === leak.id ? (
+            <Check className="h-4 w-4 text-foreground" />
+          ) : (
+            <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
+          )}
+        </div>
+      </Button>
+      {/* Desktop: icon + text, visible on hover of card */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
+        className="hidden md:flex items-center gap-2 h-9 px-3 invisible group-hover:visible !bg-transparent !hover:bg-transparent cursor-pointer focus:outline-none"
+      >
+        <div>
+          {copiedKey === leak.id ? (
+            <Check className="h-4 w-4 text-foreground" />
+          ) : (
+            <Copy className="h-4 w-4 text-foreground transition-colors duration-75" />
+          )}
+        </div>
+        <span className="text-sm font-semibold transition-all duration-75 text-foreground">
+          {copiedKey === leak.id ? 'Copied' : 'Copy'}
+        </span>
+      </Button>
+    </>
+  );
+});
 
 CopyButton.displayName = 'CopyButton';
 
@@ -152,13 +189,22 @@ const LeakCard = React.memo(({
   index: number; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
-}) => (
-  <div 
-    className="group animate-fade-in-up opacity-0"
-    style={{ animationDelay: `${index * 30}ms` }}
-  >
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px]">
-      <CardContent className="p-4 sm:p-6">
+}) => {
+  // BULLETPROOF SECURITY: Never render sensitive data for locked content
+  const isLocked = leak.isLocked === true;
+  
+  // SECURITY: Ensure sensitive data is never in DOM for locked content
+  const safeRepoUrl = isLocked ? null : leak.repoUrl;
+  const safeFilePath = isLocked ? null : leak.filePath;
+  const safeFullKey = isLocked ? null : leak.fullKey;
+  
+    return (
+    <div 
+      className="group animate-fade-in-up opacity-0"
+      style={{ animationDelay: `${index * 30}ms` }}
+    >
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px]">
+      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''}`}>
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
             {/* Provider & Key */}
@@ -178,25 +224,24 @@ const LeakCard = React.memo(({
               </div>
             </div>
 
-            {/* Repository Info */}
+            {/* Repository Info - BULLETPROOF SECURITY */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
-              {(() => {
-                const parsed = parseGitHubRepoUrl(leak.repoUrl);
-                if (!parsed) return (
-                  <a
-                    href={leak.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline flex items-center gap-1 transition-colors duration-75 cursor-pointer break-all sm:break-normal"
-                  >
-                    {leak.repoUrl.split('/').slice(-2).join('/')}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+              {isLocked ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  <span className="text-sm">Sign in to view repository</span>
+                </div>
+              ) : (() => {
+                const parsed = safeRepoUrl ? parseGitHubRepoUrl(safeRepoUrl) : null;
+                if (!parsed || !safeRepoUrl) return (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="text-sm">Repository not available</span>
+                  </div>
                 );
                 return (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
                     <a
-                      href={leak.repoUrl}
+                      href={safeRepoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium text-primary hover:underline flex items-center gap-1 break-all sm:break-normal"
@@ -219,16 +264,22 @@ const LeakCard = React.memo(({
               })()}
             </div>
 
-            {/* Metadata - beautiful, compact, and readable on mobile */}
+            {/* Metadata - BULLETPROOF SECURITY */}
             <div className="space-y-0.5">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-w-0">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/70" />
                 <span className="sm:truncate text-foreground/80 font-semibold">Key added in Repo:</span>
                 <span className="sm:truncate text-foreground/80">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
-                {leak.filePath && (
+                {!isLocked && safeFilePath && (
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3 flex-shrink-0" />
-                    <code className="text-xs break-all sm:truncate sm:max-w-[200px]" title={leak.filePath}>{leak.filePath}</code>
+                    <code className="text-xs break-all sm:truncate sm:max-w-[200px]" title={safeFilePath}>{safeFilePath}</code>
+                  </span>
+                )}
+                {isLocked && (
+                  <span className="flex items-center gap-1">
+                    <Lock className="h-3 w-3 flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground">Sign in to view file path</span>
                   </span>
                 )}
               </div>
@@ -240,13 +291,18 @@ const LeakCard = React.memo(({
             </div>
           </div>
 
-          {/* Copy Button */}
-          <CopyButton leak={leak} copiedKey={copiedKey} onCopy={onCopy} />
+          {/* Copy Button - BULLETPROOF SECURITY */}
+          <CopyButton 
+            leak={{...leak, fullKey: safeFullKey}} 
+            copiedKey={copiedKey} 
+            onCopy={onCopy} 
+          />
         </div>
       </CardContent>
     </Card>
   </div>
-));
+  );
+});
 
 LeakCard.displayName = 'LeakCard';
 

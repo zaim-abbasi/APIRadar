@@ -17,6 +17,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 
+
 // Production constants
 const PAGE_SIZE = 10;
 const INFINITE_SCROLL_MARGIN = '0px 0px 600px 0px';
@@ -189,7 +190,7 @@ const FiltersSection = React.memo(({
           <SelectContent>
             <TooltipProvider>
               {TIME_RANGES.map((range) => {
-                const isDisabled = !isPro && range.value !== '7d';
+                const isDisabled = !isPro && range.value === '30d';
                 return isDisabled ? (
                   <Tooltip key={range.value} delayDuration={100}>
                     <TooltipTrigger asChild>
@@ -270,16 +271,16 @@ const ResultsSection = React.memo(({
     visibleLeaks = filteredLeaks;
     tileLimit = filteredLeaks.length;
   } else if (plan === 'basic') {
-    // Always show up to 4 leaks
-    visibleLeaks = filteredLeaks.slice(0, 4);
-    tileLimit = 4;
+    // Always show up to 6 leaks
+    visibleLeaks = filteredLeaks.slice(0, 6);
+    tileLimit = 6;
   } else {
-    // Always show exactly 3 tiles (fill with nulls if needed)
-    visibleLeaks = filteredLeaks.slice(0, 3);
-    while (visibleLeaks.length < 3) {
+    // For unauthorized users, show exactly 4 tiles (fill with nulls if needed)
+    visibleLeaks = filteredLeaks.slice(0, 4);
+    while (visibleLeaks.length < 4) {
       visibleLeaks.push(null);
     }
-    tileLimit = 3;
+    tileLimit = 4;
   }
 
   // Show error state
@@ -498,12 +499,15 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 // Main ExplorePage component with production-grade features
 const ExplorePage = React.memo(() => {
   const { data: session, status: sessionStatus } = useSession();
-  const { plan, isPro, isBasic, isAuthenticated } = usePlanCheck();
+  const { plan: userPlan, isPro, isBasic, isAuthenticated } = usePlanCheck();
+  
+  // Determine the actual plan - unauthenticated users are 'free'
+  const plan = isAuthenticated ? userPlan : 'free';
   
   // State management with proper typing
   const [filterState, setFilterState] = useState<FilterState>({
     selectedProvider: 'all',
-    timeRange: '7d',
+    timeRange: '15d',
     sortBy: 'newest'
   });
   
@@ -523,7 +527,7 @@ const ExplorePage = React.memo(() => {
   // Use cached leaks for the first page and default filters
   const isDefaultFilters =
     filterState.selectedProvider === 'all' &&
-    filterState.timeRange === '7d' &&
+    filterState.timeRange === '15d' &&
     filterState.sortBy === 'newest' &&
     paginationState.page === 1;
 
@@ -693,6 +697,29 @@ const ExplorePage = React.memo(() => {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      {/* Structured Data for Explore Page */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Explore Leaked Keys",
+            "description": "Real-time feed of API key leaks discovered in public repositories. Track security incidents as they happen with detailed insights.",
+            "url": "https://apiradar.live/explore",
+            "mainEntity": {
+              "@type": "CollectionPage",
+              "name": "API Key Leak Database",
+              "description": "Comprehensive database of API key leaks from public repositories",
+              "provider": {
+                "@type": "Organization",
+                "name": "API Radar"
+              }
+            }
+          })
+        }}
+      />
+      
       {/* Header */}
       <ExploreHeader />
 

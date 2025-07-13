@@ -18,33 +18,45 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       return reply.status(401).send({ error: 'Authentication required' });
     }
 
+    const user = request.user;
+    const isAuthenticated = user.isAuthenticated;
+    const plan = user.plan;
+
     const parsed = querySchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid query', details: parsed.error.errors });
     }
 
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
-    const user = request.user;
-    const planLimits = getPlanLimits(user.plan);
+    const planLimits = getPlanLimits(plan);
 
     // Security: Enforce plan-based limits
-    const enforcedLimit = Math.min(limit, planLimits.maxLeaks);
-    const enforcedPage = planLimits.canInfiniteScroll ? page : 1;
+    let enforcedLimit = Math.min(limit, planLimits.maxLeaks);
+    let enforcedPage = planLimits.canInfiniteScroll ? page : 1;
+    
+    // For unauthorized users, limit to 4 leaks maximum
+    if (!isAuthenticated) {
+      enforcedLimit = Math.min(enforcedLimit, 4);
+      enforcedPage = 1; // No pagination for unauthorized users
+    }
 
     // Security: Enforce time range limits
     let enforcedTimeRange = timeRange;
     if (planLimits.maxTimeRange !== 'all') {
-      if (timeRange && timeRange !== planLimits.maxTimeRange) {
+      // For free and basic users, allow both '7d' and '15d'
+      const allowedTimeRanges = plan === 'pro' ? ['all'] : ['7d', '15d'];
+      
+      if (timeRange && !allowedTimeRanges.includes(timeRange)) {
         // Log potential security violation
         request.log.warn({
           msg: 'Time range violation attempt',
           userId: user.id,
           userPlan: user.plan,
           requestedTimeRange: timeRange,
-          allowedTimeRange: planLimits.maxTimeRange,
+          allowedTimeRanges: allowedTimeRanges,
           ip: request.ip
         });
-        enforcedTimeRange = planLimits.maxTimeRange;
+        enforcedTimeRange = '15d'; // Default to 15d for free/basic users
       }
     }
 
@@ -65,7 +77,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
 
     // Security: For non-pro users, limit to recent leaks only
-    if (user.plan !== 'pro') {
+    if (plan !== 'pro') {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 30); // Last 30 days for non-pro
       filter.leakDetectedAt = { $gte: recentDate };
@@ -80,8 +92,13 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     // Security: Enforce maximum results for non-pro users (for cards only)
     let maxResults = total;
-    if (user.plan !== 'pro') {
+    if (plan !== 'pro') {
       maxResults = Math.min(total, planLimits.maxLeaks);
+    }
+    
+    // For unauthorized users, limit to 4 results maximum
+    if (!isAuthenticated) {
+      maxResults = Math.min(maxResults, 4);
     }
 
     // Calculate pagination with security limits
@@ -96,25 +113,42 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       .limit(actualLimit)
       .lean();
 
-    // Security: Remove sensitive data for non-pro users
+    // Security: Remove sensitive data based on authentication status
     const mappedLeaks = leaks.map((leak: any) => {
-      const mappedLeak = {
+      const baseLeak = {
         id: leak.id || leak._id,
-        redactedKey: leak.redactedKey,
         provider: leak.provider,
-        repoUrl: leak.repoUrl,
-        filePath: leak.filePath,
         leakDetectedAt: leak.leakDetectedAt,
         leakIntroducedAt: leak.leakIntroducedAt,
-        repoCreatedAt: leak.repoCreatedAt,
-        fullKey: leak.fullKey
+        isLocked: !isAuthenticated
       };
-      return mappedLeak;
+
+      if (isAuthenticated) {
+        // Authenticated users get full data (except fullKey for non-pro)
+        return {
+          ...baseLeak,
+          redactedKey: leak.redactedKey,
+          repoUrl: leak.repoUrl,
+          filePath: leak.filePath,
+          repoCreatedAt: leak.repoCreatedAt,
+          fullKey: plan === 'pro' ? leak.fullKey : undefined
+        };
+      } else {
+        // Unauthorized users get minimal data
+        return {
+          ...baseLeak,
+          redactedKey: leak.redactedKey ? `${leak.redactedKey.slice(0, 8)}****` : 'sk-****',
+          repoUrl: null,
+          filePath: null,
+          repoCreatedAt: null,
+          fullKey: null
+        };
+      }
     });
 
     // Calculate hasMore based on plan limits
     let hasMore = false;
-    if (planLimits.canInfiniteScroll) {
+    if (planLimits.canInfiniteScroll && isAuthenticated) {
       hasMore = (enforcedPage * enforcedLimit) < total; // use true total for hasMore
     }
 
@@ -122,8 +156,8 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     request.log.info({
       msg: 'Leaks accessed',
       userId: user.id,
-      userPlan: user.plan,
-      isAuthenticated: user.isAuthenticated,
+      userPlan: plan,
+      isAuthenticated: isAuthenticated,
       requestedLimit: limit,
       enforcedLimit: actualLimit,
       requestedPage: page,

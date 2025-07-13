@@ -1,8 +1,24 @@
 import React, { Suspense } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
 import { LeaderboardData, ProviderStats } from '@/types';
+import type { Metadata } from 'next';
 
 const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
+
+// Page-specific metadata
+export const metadata: Metadata = {
+  title: 'Security Leaderboard - API Radar',
+  description: 'Real-time analytics and trends of API key leaks across different providers. Track security insights as they happen.',
+  openGraph: {
+    title: 'Security Leaderboard - API Radar',
+    description: 'Real-time analytics and trends of API key leaks across different providers.',
+    url: 'https://apiradar.live/leaderboard',
+  },
+  twitter: {
+    title: 'Security Leaderboard - API Radar',
+    description: 'Real-time analytics and trends of API key leaks across different providers.',
+  },
+};
 
 // Types for better type safety
 interface StatsData {
@@ -135,6 +151,29 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Structured Data for Leaderboard */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Security Leaderboard",
+            "description": "Real-time analytics and trends of API key leaks across different providers. Track security insights as they happen.",
+            "url": "https://apiradar.live/leaderboard",
+            "mainEntity": {
+              "@type": "Dataset",
+              "name": "API Key Leak Analytics",
+              "description": "Real-time dataset of API key leaks and security insights",
+              "provider": {
+                "@type": "Organization",
+                "name": "API Radar"
+              }
+            }
+          })
+        }}
+      />
+      
       <div className="container mx-auto px-4 py-6 flex flex-col flex-1">
         {/* Header */}
         <LeaderboardHeader />

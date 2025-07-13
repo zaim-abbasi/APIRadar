@@ -231,3 +231,39 @@ button[aria-expanded] {
 .animate-pulse-slow {
   animation: pulse-slow 2s cubic-bezier(0.4,0,0.6,1) infinite;
 }
+
+/* BULLETPROOF SECURITY: Prevent CSS manipulation of locked content */
+.locked-content {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  pointer-events: none !important;
+  -webkit-touch-callout: none !important;
+  -khtml-user-select: none !important;
+}
+
+.locked-content * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  pointer-events: none !important;
+}
+
+/* Allow hover interactions on copy buttons in locked content */
+.locked-content button {
+  pointer-events: auto !important;
+}
+
+/* Prevent inspection of sensitive data */
+.sensitive-data {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+

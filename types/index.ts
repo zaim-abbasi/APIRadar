@@ -2,12 +2,13 @@ export interface LeakedKey {
   id: string;
   redactedKey: string;
   provider: string;
-  repoUrl: string;
-  filePath?: string;
-  fullKey?: string;
+  repoUrl: string | null;
+  filePath?: string | null;
+  fullKey?: string | null;
   leakDetectedAt: string;
   leakIntroducedAt: string;
-  repoCreatedAt?: string;
+  repoCreatedAt?: string | null;
+  isLocked?: boolean;
 }
 
 export interface ProviderStats {
