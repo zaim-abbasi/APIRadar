@@ -437,7 +437,7 @@ const ActionCard = ({
 
 // Update UpgradeToProCardWithTrialButton to support onlyButton prop
 function UpgradeToProCardWithTrialButton({ session, onlyButton = false }: { session: any; onlyButton?: boolean }) {
-  const { plan, requestedTrial: hookRequestedTrial } = usePlanCheck();
+  const { plan, requestedTrial: hookRequestedTrial, refresh } = usePlanCheck();
   const [requestedTrial, setRequestedTrial] = React.useState<boolean>(!!session?.user?.requestedTrial);
   const isBasic = plan === 'basic';
   const [status, setStatus] = React.useState<'idle'|'submitting'|'success'|'error'>('idle');
@@ -450,10 +450,10 @@ function UpgradeToProCardWithTrialButton({ session, onlyButton = false }: { sess
     try {
       setStatus('submitting');
       const res = await fetch('/api/user/request-trial', { method: 'POST' });
-      
       if (res.ok) {
         setStatus('success');
         setRequestedTrial(true);
+        await refresh(); // refresh plan after upgrade
         // Immediately refresh status from API to ensure UI is up to date
         const statusRes = await fetch('/api/user/trial-status');
         if (statusRes.ok) {

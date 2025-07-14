@@ -1,5 +1,5 @@
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface PlanData {
   plan: string;
@@ -16,32 +16,31 @@ export function usePlanCheck() {
   });
   const [isChecking, setIsChecking] = useState(false);
 
+  const fetchPlan = useCallback(async () => {
+    setIsChecking(true);
+    try {
+      const response = await fetch('/api/user/check-plan');
+      if (response.ok) {
+        const data = await response.json();
+        setPlanData({
+          plan: data.plan,
+          days_remaining_in_premium: data.days_remaining_in_premium,
+          requestedTrial: data.requestedTrial
+        });
+      }
+    } catch (error) {
+      console.error('Error checking plan:', error);
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (status === 'loading' || !session?.user) {
       return;
     }
-
-    const checkPlan = async () => {
-      setIsChecking(true);
-      try {
-        const response = await fetch('/api/user/check-plan');
-        if (response.ok) {
-          const data = await response.json();
-          setPlanData({
-            plan: data.plan,
-            days_remaining_in_premium: data.days_remaining_in_premium,
-            requestedTrial: data.requestedTrial
-          });
-        }
-      } catch (error) {
-        console.error('Error checking plan:', error);
-      } finally {
-        setIsChecking(false);
-      }
-    };
-
-    checkPlan();
-  }, [session?.user?.email, status]);
+    fetchPlan();
+  }, [session?.user?.email, status, fetchPlan]);
 
   return {
     plan: planData.plan,
@@ -50,6 +49,7 @@ export function usePlanCheck() {
     isChecking,
     isPro: planData.plan === 'pro',
     isBasic: planData.plan === 'basic',
-    isAuthenticated: !!session?.user
+    isAuthenticated: !!session?.user,
+    refresh: fetchPlan, // expose refresh method
   };
 } 

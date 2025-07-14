@@ -1,7 +1,7 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { z } from 'zod';
-import { AuthenticatedRequest, getPlanLimits, validatePlanAccess } from '../middleware/auth';
+import { AuthenticatedRequest, getPlanLimits } from '../middleware/auth';
 
 const querySchema = z.object({
   provider: z.string().optional(),
@@ -124,14 +124,14 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       };
 
       if (isAuthenticated) {
-        // Authenticated users get full data (except fullKey for non-pro)
+        // Authenticated users get full data (fullKey for basic and pro)
         return {
           ...baseLeak,
           redactedKey: leak.redactedKey,
           repoUrl: leak.repoUrl,
           filePath: leak.filePath,
           repoCreatedAt: leak.repoCreatedAt,
-          fullKey: plan === 'pro' ? leak.fullKey : undefined
+          fullKey: (plan === 'basic' || plan === 'pro') ? leak.fullKey : undefined
         };
       } else {
         // Unauthorized users get minimal data
