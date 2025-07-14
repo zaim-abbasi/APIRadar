@@ -76,16 +76,12 @@ const HeroHeadline = React.memo(() => (
     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-[0.95] tracking-tight drop-shadow-sm">
       {/* First Line */}
       <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up">
-        <span className="text-foreground">
-          Exposing{' '}
-        </span>
-        <span className="text-red-600 drop-shadow-md">
-          GitHub
-        </span>
+        <span className="text-foreground">Tracking Exposed{' '}</span>
+        <span className="text-red-600 drop-shadow-md">API</span>
       </div>
       {/* Second Line */}
       <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">
-        API Leaks
+        leaks Live
       </div>
     </h1>
   </div>
@@ -96,9 +92,9 @@ HeroHeadline.displayName = 'HeroHeadline';
 // Memoized Feature Tags component
 const FeatureTags = React.memo(() => {
   const features = useMemo(() => [
-    { icon: Zap, text: 'Real-time detection', color: 'text-yellow-500', shouldSpin: true },
-    { icon: Eye, text: 'Instant visibility', color: 'text-green-500', shouldSpin: false },
-    { icon: Globe, text: 'Global coverage', color: 'text-blue-500', shouldSpin: false }
+    { icon: Zap, text: 'Leaks as They Happen', color: 'text-yellow-500', shouldSpin: true },
+    { icon: Eye, text: 'See Everything Exposed', color: 'text-green-500', shouldSpin: false },
+    { icon: Globe, text: 'Global Leak Radar', color: 'text-blue-500', shouldSpin: false }
   ], []);
 
   return (
@@ -122,8 +118,8 @@ FeatureTags.displayName = 'FeatureTags';
 // Memoized Subheading component
 const HeroSubheading = React.memo(() => (
   <p className="text-base md:text-lg text-muted-foreground leading-snug mb-6 sm:mb-8 px-4 animate-fade-in-up">
-    Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
-    Discover leaks as they happen, with unmatched detail and speed.
+    See what’s leaking right now—API keys exposed in real time.<br className="hidden sm:block" />
+    Don’t miss the secrets spilling from public code. Explore the world’s live feed of credential leaks.
   </p>
 ));
 
@@ -159,12 +155,12 @@ export const HeroSection = React.memo(() => {
         <div className="min-h-[80vh] sm:min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full py-4 sm:py-0">
           {/* Main Headline - Optimized Layout */}
           <div className="mb-4 sm:mb-6">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-tight tracking-tight drop-shadow-sm">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-tight tracking-tight drop-shadow-sm">
               <div className="mb-1 sm:mb-3 md:mb-4 animate-fade-in-up">
-                <span className="text-foreground">Exposing{' '}</span>
-                <span className="text-red-600 drop-shadow-md">GitHub</span>
+                <span className="text-foreground">Tracking Exposed{' '}</span>
+                <span className="text-red-600 drop-shadow-md">API</span>
               </div>
-              <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">API Leaks</div>
+              <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">leaks Live</div>
             </h1>
           </div>
 
@@ -176,8 +172,8 @@ export const HeroSection = React.memo(() => {
           {/* Subheading */}
           <div className="mb-5 sm:mb-8 px-2 animate-fade-in-up">
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-snug">
-              Live tracking of exposed API keys from millions of GitHub repositories.<br className="hidden sm:block" />
-              Discover leaks as they happen, with unmatched detail and speed.
+              See what’s leaking right now—API keys exposed in real time.<br className="hidden sm:block" />
+              Don’t miss the secrets spilling from public code. Explore the world’s live feed of credential leaks.
             </p>
           </div>
 

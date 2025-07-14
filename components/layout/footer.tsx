@@ -107,18 +107,30 @@ const FooterComponent = () => {
               href="mailto:zaim.k.abbasi@gmail.com"
               className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150"
             >
-              Email the Dev
+              Contact
             </a>
-            <a
-              href="https://github.com/zaim-abbasi"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Visit Zaim Abbasi on GitHub"
-              className="p-1.5 rounded-md bg-muted/50 text-muted-foreground"
-            >
-              <Github className="h-3.5 w-3.5" />
-              <span className="sr-only">GitHub</span>
-            </a>
+            <div className="flex items-center gap-2 p-1.5 rounded-md bg-muted/50">
+              <a
+                href="https://github.com/zaim-abbasi"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit Zaim Abbasi on GitHub"
+                className="text-muted-foreground hover:text-primary"
+              >
+                <Github className="h-3.5 w-3.5" />
+                <span className="sr-only">GitHub</span>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/zaim-abbasi/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Connect with Zaim Abbasi on LinkedIn"
+                className="text-muted-foreground hover:text-primary"
+              >
+                <Linkedin className="h-3.5 w-3.5" />
+                <span className="sr-only">LinkedIn</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>

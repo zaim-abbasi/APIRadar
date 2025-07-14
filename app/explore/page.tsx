@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, Suspense, useCallback, useEffect, useRef } from 'react';
-import { Filter, SortAsc, RefreshCw, Loader2 } from 'lucide-react';
+import { Filter, SortAsc, RefreshCw, Loader2, LogIn, Rocket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +16,7 @@ import { usePlanCheck } from '@/hooks/use-plan-check';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
 
 
 // Production constants
@@ -60,12 +61,11 @@ class ExplorePageError extends Error {
 const ExploreHeader = React.memo(() => (
   <div className="mb-6 text-center">
     <h1 className="text-3xl md:text-4xl font-semibold mb-2 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight">
-      Explore Leaked Keys
+      Explore Leaked API Keys
     </h1>
     <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
     <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-      Real-time feed of API key leaks discovered in public repositories. 
-      Track security incidents as they happen with detailed insights.
+      Real-time database of API key leaks from public repositories. View detailed leak information and repository context to stay informed about the latest exposures.
     </p>
   </div>
 ));
@@ -356,12 +356,14 @@ const ResultsSection = React.memo(({
     actionCard = (
       <div className="mt-4 w-full sm:w-[calc(50%-0.5rem)] mx-auto">
         <ActionCard
-          title="Sign in to see more leaks"
-          subtitle="Sign in to unlock more API key leaks and advanced features."
+          icon={<LogIn className="h-8 w-8 text-primary" />}
+          title="Sign in to unlock full access"
+          subtitle="Sign in to view all API key leaks, copy full keys, and access advanced features."
+          socialProof="No payment needed. Explore for free."
           button={
             <button
               onClick={() => signIn('github', { callbackUrl: window.location.href })}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm"
+              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full px-5 py-2"
             >
               Sign in with GitHub
             </button>
@@ -373,9 +375,13 @@ const ResultsSection = React.memo(({
     actionCard = (
       <div className="mt-4 w-full sm:w-[calc(50%-0.5rem)] mx-auto">
         <ActionCard
-          title="Request a Free Pro Trial"
-          subtitle="Get Full Access to All API Key Leaks and Advanced Features for a Limited Time."
-          button={<UpgradeToProCardWithTrialButton session={session} onlyButton />}
+          icon={<Rocket className="h-8 w-8 text-yellow-500" />}
+          title="Try Pro — Free Trial"
+          subtitle="Unlock unlimited access to all leaks and advanced analytics. No payment required."
+          socialProof="Limited time offer. Cancel anytime."
+          button={
+            <UpgradeToProCardWithTrialButton session={session} onlyButton buttonClassName="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full px-5 py-2" />
+          }
         />
       </div>
     );
@@ -409,34 +415,42 @@ const LoadingIndicator = React.memo(() => (
 LoadingIndicator.displayName = 'LoadingIndicator';
 
 // Shared ActionCard component for consistent sizing
-const ActionCard = ({
-  title,
-  subtitle,
-  button,
-}: {
+type ActionCardProps = {
   title: React.ReactNode;
   subtitle: React.ReactNode;
   button: React.ReactNode;
-}) => (
-  <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
-    <div className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg h-[120px]">
-      <div className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
-        <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-base sm:text-lg">{title}</span>
-          </div>
-          <span className="text-muted-foreground text-xs sm:text-sm">{subtitle}</span>
-        </div>
-        <div className="flex-shrink-0 flex flex-col items-end">
-          {button}
-        </div>
+  icon: React.ReactNode;
+  socialProof?: React.ReactNode;
+};
+
+const ActionCard = ({ title, subtitle, button, icon, socialProof }: ActionCardProps) => (
+  <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[100px] flex flex-col justify-center">
+    <CardContent className="p-3 flex items-center gap-3 min-h-0 h-full">
+      <div className="flex flex-col items-center justify-center flex-shrink-0">
+        {icon}
       </div>
-    </div>
-  </div>
+      <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+        <span className="font-semibold text-base text-foreground truncate">{title}</span>
+        <span className="text-muted-foreground text-xs leading-tight whitespace-normal">{subtitle}</span>
+        {socialProof && (
+          <span className="block text-xs text-green-700 dark:text-green-400 mt-1 font-medium">{socialProof}</span>
+        )}
+      </div>
+      <div className="flex-shrink-0 flex flex-col items-end">
+        {button}
+      </div>
+    </CardContent>
+  </Card>
 );
 
 // Update UpgradeToProCardWithTrialButton to support onlyButton prop
-function UpgradeToProCardWithTrialButton({ session, onlyButton = false }: { session: any; onlyButton?: boolean }) {
+interface UpgradeToProCardWithTrialButtonProps {
+  session: any;
+  onlyButton?: boolean;
+  buttonClassName?: string;
+}
+
+function UpgradeToProCardWithTrialButton({ session, onlyButton = false, buttonClassName }: UpgradeToProCardWithTrialButtonProps) {
   const { plan, requestedTrial: hookRequestedTrial, refresh } = usePlanCheck();
   const [requestedTrial, setRequestedTrial] = React.useState<boolean>(!!session?.user?.requestedTrial);
   const isBasic = plan === 'basic';
@@ -471,7 +485,7 @@ function UpgradeToProCardWithTrialButton({ session, onlyButton = false }: { sess
 
   const button = isBasic && !requestedTrial ? (
     <button
-      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow hover:bg-primary/90 transition focus:outline-none text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed ${buttonClassName}`}
       onClick={handleRequest}
       disabled={status === 'submitting'}
     >

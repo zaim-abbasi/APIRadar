@@ -120,7 +120,7 @@ const CopyButton = React.memo(({
           className="hidden md:flex items-center gap-2 h-9 px-3 invisible group-hover:visible !bg-transparent !hover:bg-transparent cursor-not-allowed focus:outline-none"
         >
           <Lock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium transition-all duration-75 text-muted-foreground">
+          <span className="text-sm font-semibold transition-all duration-75 text-foreground/80">
             Sign in to copy full key
           </span>
         </Button>
