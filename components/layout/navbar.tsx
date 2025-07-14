@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { UserMenu } from '@/components/auth/user-menu';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { usePlanCheck } from '@/hooks/use-plan-check';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -52,6 +53,7 @@ const NavLinks = () => {
 const MobileMenuDropdown = ({ onLinkClick }: { onLinkClick: () => void }) => {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { plan, daysRemaining } = usePlanCheck();
   let displayLetter = 'U';
   let userName = undefined;
   let userEmail = undefined;
@@ -79,6 +81,11 @@ const MobileMenuDropdown = ({ onLinkClick }: { onLinkClick: () => void }) => {
           )}
           {session && userEmail && (
             <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+          )}
+          {session && plan === 'pro' && daysRemaining > 0 && (
+            <span className="mt-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md">
+              {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
+            </span>
           )}
         </div>
         {session ? (

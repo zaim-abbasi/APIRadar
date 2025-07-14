@@ -83,39 +83,58 @@ export function UserMenu() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-8 w-8 md:h-9 md:w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm"
+          className="h-8 w-8 md:h-9 md:w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm p-0 bg-transparent"
         >
-          <Avatar className="h-8 w-8 md:h-9 md:w-9">
-            <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-medium bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white select-none">
-              {displayLetter}
+          <Avatar className={cn(
+            "h-8 w-8 md:h-9 md:w-9 border border-border/60",
+            theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
+          )}>
+            <AvatarFallback className={cn(
+              "flex items-center justify-center h-full w-full text-base font-semibold select-none transition-colors",
+              theme === 'dark'
+                ? "bg-zinc-800 text-white"
+                : "bg-zinc-100 text-zinc-900"
+            )}>
+              {session && userName
+                ? displayLetter
+                : <UserCircle className="h-5 w-5 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 rounded-xl shadow-xl border-0 bg-gradient-to-br from-background via-background to-muted/40 p-1">
-        {/* If signed in, show user info, else show Unauthorized */}
-        <DropdownMenuLabel className="font-semibold px-3 py-1 rounded-lg bg-primary/5 mb-1">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 bg-background/95 dark:bg-zinc-900/95 p-0.5">
+        {/* If signed in, show user info, else show Guest */}
+        <DropdownMenuLabel className="font-semibold px-3 py-1.5 rounded-lg bg-primary/5 mb-1">
           <div className="flex flex-col space-y-0.5">
             {session && userName ? (
               <>
-                <span className="text-base font-semibold text-primary dark:text-white truncate">{userName}</span>
-                <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+                <span className="text-base font-medium text-primary dark:text-white truncate leading-tight">{userName}</span>
+                <span className="text-xs text-muted-foreground truncate leading-tight">{userEmail}</span>
               </>
             ) : (
-              <span className="text-base font-semibold text-primary dark:text-white">Unauthorized</span>
+                <span className="text-base font-medium text-primary dark:text-white leading-tight">Guest</span>
             )}
           </div>
         </DropdownMenuLabel>
+        {!session && (
+          <DropdownMenuItem onClick={handleSignIn} className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer mb-1">
+            <UserCircle className="h-4 w-4 text-primary" />
+            <span className="font-medium text-sm">Sign in with GitHub</span>
+          </DropdownMenuItem>
+        )}
         {session && (
           <>
-            <DropdownMenuItem className="flex items-center gap-2 px-3 py-1 rounded-lg transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-default mt-0 mb-1">
-              <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                <Crown className={cn(
-                  "h-4 w-4",
-                  plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
-                )} />
-              </span>
-              <span className="font-medium">Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
+            <DropdownMenuItem className="flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-default mt-0 mb-1">
+              <Crown className={cn(
+                "h-4 w-4 mb-0.5",
+                plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
+              )} />
+              <span className="font-medium text-sm leading-tight">Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
+              {plan === 'pro' && daysRemaining > 0 && (
+                <span className="mt-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md">
+                  {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
+                </span>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
@@ -123,37 +142,25 @@ export function UserMenu() {
         {/* Theme toggle inside dropdown */}
         {mounted && (
           <DropdownMenuItem
-            className="flex items-center gap-2 px-3 py-1 rounded-lg transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
-            <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-muted/60">
-              {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
-              ) : (
-                <Moon className="h-4 w-4 text-blue-500" />
-              )}
-            </span>
-            <span className="font-medium">Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+            {theme === 'dark' ? (
+              <Sun className="h-4 w-4 text-yellow-500" />
+            ) : (
+              <Moon className="h-4 w-4 text-blue-500" />
+            )}
+            <span className="font-medium text-sm">Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
           </DropdownMenuItem>
         )}
         {session && (
           <DropdownMenuItem 
             onClick={handleSignOut} 
             disabled={isSigningOut}
-            className="flex items-center gap-2 px-3 py-1 rounded-lg transition-none bg-transparent focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-destructive/10 focus:text-destructive cursor-pointer"
           >
-            <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-destructive/10">
-              <LogOut className="h-4 w-4 text-destructive" />
-            </span>
-            <span className="font-medium">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
-          </DropdownMenuItem>
-        )}
-        {!session && (
-          <DropdownMenuItem onClick={handleSignIn} className="flex items-center gap-2 px-3 py-1 rounded-lg transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer">
-            <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-muted/60">
-              <UserCircle className="h-4 w-4 text-primary" />
-            </span>
-            <span className="font-medium">Sign in with GitHub</span>
+            <LogOut className="h-4 w-4 text-destructive" />
+            <span className="font-medium text-sm">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
