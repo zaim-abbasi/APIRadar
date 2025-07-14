@@ -190,19 +190,28 @@ const FiltersSection = React.memo(({
           <SelectContent>
             <TooltipProvider>
               {TIME_RANGES.map((range) => {
-                const isDisabled = !isPro && range.value === '30d';
+                const is30d = range.value === '30d';
+                const isDisabled = !isPro && is30d;
+                let badge = null;
+                if (isDisabled && is30d) {
+                  if (!isLoggedIn) {
+                    badge = <Badge variant="secondary" className="ml-2 text-xs">Sign in</Badge>;
+                  } else if (isBasic) {
+                    badge = <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>;
+                  }
+                }
                 return isDisabled ? (
                   <Tooltip key={range.value} delayDuration={100}>
                     <TooltipTrigger asChild>
                       <div className="relative">
                         <SelectItem value={range.value} disabled className="opacity-50 cursor-not-allowed flex items-center">
                           {range.label}
-                          <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>
+                          {badge}
                         </SelectItem>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
-                      Upgrade to Pro to access this range
+                      {(!isLoggedIn) ? 'Sign in to access this range' : 'Upgrade to Pro to access this range'}
                     </TooltipContent>
                   </Tooltip>
                 ) : (
@@ -260,7 +269,7 @@ const ResultsSection = React.memo(({
   isLoading: boolean; 
   selectedProvider: Provider; 
   session: any;
-  plan: string;
+  plan: 'free' | 'basic' | 'pro';
   error: string | null;
 }) => {
   let visibleLeaks: (LeakedKey | null)[] = [];
@@ -337,6 +346,7 @@ const ResultsSection = React.memo(({
       leaks={[leak]}
       isLoading={isLoading && !leak}
       selectedProvider={selectedProvider}
+      plan={plan}
     />
   ));
 
@@ -502,7 +512,7 @@ const ExplorePage = React.memo(() => {
   const { plan: userPlan, isPro, isBasic, isAuthenticated } = usePlanCheck();
   
   // Determine the actual plan - unauthenticated users are 'free'
-  const plan = isAuthenticated ? userPlan : 'free';
+  const plan: 'free' | 'basic' | 'pro' = isAuthenticated && (userPlan === 'pro' || userPlan === 'basic') ? userPlan : 'free';
   
   // State management with proper typing
   const [filterState, setFilterState] = useState<FilterState>({

@@ -24,6 +24,7 @@ interface LeakTableProps {
   leaks: (LeakedKey | null)[];
   isLoading?: boolean;
   selectedProvider: Provider;
+  plan: 'free' | 'basic' | 'pro';
 }
 
 const providerColors: Record<string, string> = {
@@ -87,18 +88,19 @@ EmptyState.displayName = 'EmptyState';
 const CopyButton = React.memo(({ 
   leak, 
   copiedKey, 
-  onCopy 
+  onCopy,
+  plan
 }: { 
   leak: LeakedKey; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
+  plan: 'free' | 'basic' | 'pro';
 }) => {
-  // BULLETPROOF SECURITY: Double-check locked status and sensitive data
   const isLocked = leak.isLocked === true;
   const hasSensitiveData = leak.fullKey && !isLocked;
-  
-  // SECURITY: Never allow copy for locked content, even if manipulated
-  if (isLocked || !hasSensitiveData) {
+
+  // Only free users see the lock/copy message
+  if (plan === 'free' || isLocked || !hasSensitiveData) {
     return (
       <>
         {/* Mobile: Lock icon only */}
@@ -110,7 +112,6 @@ const CopyButton = React.memo(({
         >
           <Lock className="h-4 w-4 text-muted-foreground" />
         </Button>
-        
         {/* Desktop: Lock icon + text on hover */}
         <Button
           variant="ghost"
@@ -127,6 +128,7 @@ const CopyButton = React.memo(({
     );
   }
 
+  // Basic and Pro users: show copy button
   return (
     <>
       {/* Mobile: just the icon, always visible */}
@@ -183,28 +185,26 @@ const LeakCard = React.memo(({
   leak, 
   index, 
   copiedKey, 
-  onCopy 
+  onCopy,
+  plan
 }: { 
   leak: LeakedKey; 
   index: number; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
+  plan: 'free' | 'basic' | 'pro';
 }) => {
-  // BULLETPROOF SECURITY: Never render sensitive data for locked content
   const isLocked = leak.isLocked === true;
-  
-  // SECURITY: Ensure sensitive data is never in DOM for locked content
   const safeRepoUrl = isLocked ? null : leak.repoUrl;
   const safeFilePath = isLocked ? null : leak.filePath;
   const safeFullKey = isLocked ? null : leak.fullKey;
-  
-    return (
+  return (
     <div 
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px]">
-      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''}`}>
+      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''}`}> 
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
             {/* Provider & Key */}
@@ -296,6 +296,7 @@ const LeakCard = React.memo(({
             leak={{...leak, fullKey: safeFullKey}} 
             copiedKey={copiedKey} 
             onCopy={onCopy} 
+            plan={plan}
           />
         </div>
       </CardContent>
@@ -306,7 +307,7 @@ const LeakCard = React.memo(({
 
 LeakCard.displayName = 'LeakCard';
 
-const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: LeakTableProps) => {
+const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, plan }: LeakTableProps) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Memoized copy handler
@@ -345,6 +346,7 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider }: L
             index={index}
             copiedKey={copiedKey}
             onCopy={handleCopy}
+            plan={plan}
           />
         ) : (
           <Card key={index} className="animate-pulse">
