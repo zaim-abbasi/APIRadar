@@ -37,9 +37,8 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     // End of day in PKT
     const endOfDayPk = new Date(nowPk);
     endOfDayPk.setHours(23, 59, 59, 999);
-    // Convert PKT start/end to UTC for MongoDB
-    const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
-    const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
+    // const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
+    // const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
 
     const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders] = await Promise.all([
       ScanAttempt.countDocuments().lean(),
