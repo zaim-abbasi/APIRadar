@@ -19,8 +19,8 @@ async function startServer() {
         'https://apiradar.live',
         'https://www.apiradar.live',
         'http://localhost:3000',
-        'http://vps.zaim-abbasi.tech',
-        'https://vps.zaim-abbasi.tech'
+        'http://144.24.115.249',
+        'https://144.24.115.249'
       ],
       credentials: true,
     });
