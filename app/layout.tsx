@@ -111,6 +111,25 @@ export default function RootLayout({
             gtag('config', 'G-M8WZNWWCZL');
           `
         }} />
+        {/* Set screen size cookie for middleware-based mobile/tablet redirect */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              function setScreenCookie() {
+                var width = window.innerWidth;
+                var value = 'desktop';
+                if (width < 768) value = 'mobile';
+                else if (width < 1024) value = 'tablet';
+                var existing = document.cookie.match(/(?:^|; )apiradar_screen=([^;]*)/);
+                if (!existing || existing[1] !== value) {
+                  document.cookie = 'apiradar_screen=' + value + '; path=/; max-age=86400';
+                }
+              }
+              setScreenCookie();
+              window.addEventListener('resize', setScreenCookie);
+            })();
+          `
+        }} />
       </head>
       <body className={inter.className}>
         <AuthProvider>

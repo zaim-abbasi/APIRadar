@@ -1,11 +1,5 @@
-import React from 'react';
-import { HeroSection } from '@/components/home/hero-section';
+import HomePageClient from "@/components/home/homepage-client";
 
-// Main page component
 export default function HomePage() {
-  return (
-    <div className="relative">
-      <HeroSection />
-    </div>
-  );
+  return <HomePageClient />;
 }
