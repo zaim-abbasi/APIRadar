@@ -8,15 +8,15 @@ const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider
 // Page-specific metadata
 export const metadata: Metadata = {
   title: 'Security Leaderboard - API Radar',
-  description: 'Be among the first to explore real-time API key leak trends. Discover which providers are most exposed and gain insights before the rest of the world.',
+  description: 'Explore real-time API key leak trends. Discover which providers are most public and gain insights with our comprehensive analytics.',
   openGraph: {
     title: 'Security Leaderboard - API Radar',
-    description: 'Be among the first to explore real-time API key leak trends. Discover which providers are most exposed and gain insights before the rest of the world.',
+    description: 'Explore real-time API key leak trends. Discover which providers are most public and gain insights with our comprehensive analytics.',
     url: 'https://apiradar.live/leaderboard',
   },
   twitter: {
     title: 'Security Leaderboard - API Radar',
-    description: 'Be among the first to explore real-time API key leak trends. Discover which providers are most exposed and gain insights before the rest of the world.',
+    description: 'Explore real-time API key leak trends. Discover which providers are most public and gain insights with our comprehensive analytics.',
   },
 };
 
@@ -101,7 +101,7 @@ const LeaderboardHeader = React.memo(() => (
     </h1>
     <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
     <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-      Be among the first to explore real-time API key leak trends. Discover which providers are most exposed and gain insights before the rest of the world.
+      Explore real-time API key leak trends. Discover which providers are most public and gain insights with our comprehensive analytics.
     </p>
   </div>
 ));

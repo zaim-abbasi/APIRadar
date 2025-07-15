@@ -76,7 +76,7 @@ const HeroHeadline = React.memo(() => (
     <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-[0.95] tracking-tight drop-shadow-sm">
       {/* First Line */}
       <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up">
-        <span className="text-foreground">Tracking Exposed{' '}</span>
+        <span className="text-foreground">Tracking Public{' '}</span>
         <span className="text-red-600 drop-shadow-md">API</span>
       </div>
       {/* Second Line */}
@@ -157,7 +157,7 @@ export const HeroSection = React.memo(() => {
           <div className="mb-4 sm:mb-6">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-tight tracking-tight drop-shadow-sm">
               <div className="mb-1 sm:mb-3 md:mb-4 animate-fade-in-up">
-                <span className="text-foreground">Tracking Exposed{' '}</span>
+                <span className="text-foreground">Tracking Public{' '}</span>
                 <span className="text-red-600 drop-shadow-md">API</span>
               </div>
               <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">leaks Live</div>
