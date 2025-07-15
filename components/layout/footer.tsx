@@ -9,7 +9,7 @@ import Image from 'next/image';
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center space-x-1">
     <div className="transition-transform duration-200 hover:rotate-180">
-      <Image src="/logo/logo-png.png" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority />
+      <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
     </div>
     <span className="text-base font-medium">
       <span className="text-red-600">API</span>

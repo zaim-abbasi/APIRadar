@@ -156,19 +156,21 @@ export default async function LeaderboardPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "WebPage",
-            "name": "Security Leaderboard",
-            "description": "Be among the first to explore real-time API key leak trends. Discover which providers are most exposed and gain insights before the rest of the world.",
-            "url": "https://apiradar.live/leaderboard",
-            "mainEntity": {
-              "@type": "Dataset",
-              "name": "API Key Leak Analytics",
-              "description": "Real-time dataset of API key leaks and security insights",
-              "provider": {
-                "@type": "Organization",
-                "name": "API Radar"
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://apiradar.live/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Leaderboard",
+                "item": "https://apiradar.live/leaderboard"
               }
-            }
+            ]
           })
         }}
       />

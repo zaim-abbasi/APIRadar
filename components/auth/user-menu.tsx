@@ -124,17 +124,19 @@ export function UserMenu() {
         )}
         {session && (
           <>
-            <DropdownMenuItem className="flex flex-col items-start gap-0.5 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-default mt-0 mb-1">
-              <Crown className={cn(
-                "h-4 w-4 mb-0.5",
-                plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
-              )} />
-              <span className="font-medium text-sm leading-tight">Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
-              {plan === 'pro' && daysRemaining > 0 && (
-                <span className="mt-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md">
-                  {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
-                </span>
-              )}
+            <DropdownMenuItem className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-default mt-0 mb-1">
+              <div className="flex items-center gap-2 w-full">
+                <Crown className={cn(
+                  "h-4 w-4",
+                  plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
+                )} />
+                <span className="font-medium text-sm leading-tight">Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}</span>
+                {plan === 'pro' && daysRemaining > 0 && (
+                  <span className="ml-2 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md whitespace-nowrap">
+                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
+                  </span>
+                )}
+              </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

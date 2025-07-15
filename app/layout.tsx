@@ -7,18 +7,25 @@ import { PlanProvider } from '@/components/providers/plan-provider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from 'sonner';
+import Analytics from '@/components/Analytics';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://apiradar.live'),
   title: 'API Radar',
   description: 'Live tracking of exposed API keys from millions of GitHub repositories. Discover leaks as they happen with unmatched detail and speed.',
-  keywords: 'API keys, security, GitHub, leaks, monitoring, detection',
+  keywords: 'API keys, security, GitHub, leaks, monitoring, detection, OpenAI, Google Cloud, Gemini, API leak detector',
   authors: [{ name: 'Zaim Abbasi' }],
   creator: 'Zaim Abbasi',
   publisher: 'API Radar',
   robots: 'index, follow',
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en': '/',
+    },
+  },
   openGraph: {
     title: 'API Radar - Real-time API Key Leak Detection',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
@@ -57,32 +64,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* SEO Meta Tags */}
-        <title>API Radar - Discover, Monitor, and Analyze Public APIs</title>
-        <meta name="description" content="API Radar helps you discover, monitor, and analyze public APIs and code leaks from GitHub and other sources." />
-        <meta name="keywords" content="apiradar, API Radar, public APIs, API monitoring, code leaks, GitHub APIs, security, leaks, monitoring, detection" />
-        <link rel="canonical" href="https://apiradar.live" />
-
-        {/* Open Graph */}
-        <meta property="og:title" content="API Radar – Discover, Monitor, and Analyze Public APIs" />
-        <meta property="og:description" content="API Radar helps you discover, monitor, and analyze public APIs and code leaks from GitHub and other sources." />
-        <meta property="og:image" content="https://apiradar.live/og-image.png" />
-        <meta property="og:url" content="https://apiradar.live" />
-        <meta property="og:type" content="website" />
-
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="API Radar – Discover, Monitor, and Analyze Public APIs" />
-        <meta name="twitter:description" content="API Radar helps you discover, monitor, and analyze public APIs and code leaks from GitHub and other sources." />
-        <meta name="twitter:image" content="https://apiradar.live/og-image.png" />
-
-        {/* JSON-LD Structured Data */}
+        {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
+        {/* Favicon: fallback to logo-png.png if favicon.ico is missing */}
+        <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
+        {/* Preload critical CSS (correct path) */}
+        <link rel="preload" href="/app/globals.css" as="style" />
+        {/* Open Graph & Twitter handled by Next.js metadata */}
+        {/* JSON-LD Structured Data: WebSite and Organization with social profiles */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "API Radar",
             "url": "https://apiradar.live",
+            "sameAs": [
+              "https://github.com/zaim-abbasi",
+              "https://www.linkedin.com/in/zaim-abbasi/"
+            ],
             "potentialAction": {
               "@type": "SearchAction",
               "target": "https://apiradar.live/search?q={search_term_string}",
@@ -96,36 +94,23 @@ export default function RootLayout({
             "@type": "Organization",
             "name": "API Radar",
             "url": "https://apiradar.live",
-            "logo": "https://apiradar.live/logo/logo-png.png"
+            "logo": "https://apiradar.live/logo/logo-webp.webp",
+            "sameAs": [
+              "https://github.com/zaim-abbasi",
+              "https://www.linkedin.com/in/zaim-abbasi/"
+            ]
           })
         }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebApplication",
-            "name": "API Radar",
-            "description": "API Radar helps you discover, monitor, and analyze public APIs and code leaks from GitHub and other sources.",
-            "applicationCategory": "SecurityApplication",
-            "operatingSystem": "Web Browser",
-            "url": "https://apiradar.live"
-          })
+        {/* Google Analytics 4 (gtag.js) */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8WZNWWCZL"></script>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-M8WZNWWCZL');
+          `
         }} />
-        {/* Preload critical pages for faster navigation */}
-        <link rel="prefetch" href="/explore" />
-        <link rel="prefetch" href="/leaderboard" />
-        
-        {/* Preload critical fonts */}
-        <link rel="preload" href="/logo/logo.ico" as="image" type="image/x-icon" />
-        
-        {/* Favicon */}
-        <link rel="icon" href="/logo/logo-png.png" type="image/png" sizes="446x446" />
-        
-        {/* DNS prefetch for external resources */}
-        <link rel="dns-prefetch" href="//github.com" />
-        <link rel="dns-prefetch" href="//linkedin.com" />
-        
-        {/* Preload critical CSS */}
-        <link rel="preload" href="/globals.css" as="style" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
@@ -147,6 +132,7 @@ export default function RootLayout({
             </ThemeProvider>
           </PlanProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
