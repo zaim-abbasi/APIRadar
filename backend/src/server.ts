@@ -15,12 +15,13 @@ async function startServer() {
   try {
     // Register CORS
     await server.register(cors, {
-	origin: [
-    'http://ec2-3-111-31-253.ap-south-1.compute.amazonaws.com',
-    'https://apiradar.live',
-    'https://www.apiradar.live',
-    'http://localhost:3000'
-  ],
+      origin: [
+        'https://apiradar.live',
+        'https://www.apiradar.live',
+        'http://localhost:3000',
+        'http://vps.zaim-abbasi.tech',
+        'https://vps.zaim-abbasi.tech'
+      ],
       credentials: true,
     });
 
