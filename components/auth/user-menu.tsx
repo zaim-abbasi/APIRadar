@@ -85,21 +85,23 @@ export function UserMenu() {
           size="icon" 
           className="h-8 w-8 md:h-9 md:w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm p-0 bg-transparent"
         >
-          <Avatar className={cn(
-            "h-8 w-8 md:h-9 md:w-9 border border-border/60",
-            theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
-          )}>
-            <AvatarFallback className={cn(
-              "flex items-center justify-center h-full w-full text-base font-semibold select-none transition-colors",
-              theme === 'dark'
-                ? "bg-zinc-800 text-white"
-                : "bg-zinc-100 text-zinc-900"
+          {mounted && (
+            <Avatar className={cn(
+              "h-8 w-8 md:h-9 md:w-9 border border-border/60",
+              theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
             )}>
-              {session && userName
-                ? displayLetter
-                : <UserCircle className="h-5 w-5 text-muted-foreground" />}
-            </AvatarFallback>
-          </Avatar>
+              <AvatarFallback className={cn(
+                "flex items-center justify-center h-full w-full text-base font-semibold select-none transition-colors",
+                theme === 'dark'
+                  ? "bg-zinc-800 text-white"
+                  : "bg-zinc-100 text-zinc-900"
+              )}>
+                {session && userName
+                  ? displayLetter
+                  : <UserCircle className="h-5 w-5 text-muted-foreground" />}
+              </AvatarFallback>
+            </Avatar>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 bg-background/95 dark:bg-zinc-900/95 p-0.5">

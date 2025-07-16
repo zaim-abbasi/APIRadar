@@ -8,7 +8,7 @@ import Image from 'next/image';
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center space-x-1">
-    <div className="transition-transform duration-200 hover:rotate-180">
+    <div>
       <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
     </div>
     <span className="text-base font-medium">
@@ -86,7 +86,7 @@ SocialLinks.displayName = 'SocialLinks';
 
 const FooterComponent = () => {
   return (
-    <footer className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur">
+    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full text-center">
           {/* Left: Logo & Name */}
@@ -96,7 +96,7 @@ const FooterComponent = () => {
 
           {/* Center: Copyright */}
           <div className="w-full md:w-auto flex justify-center mb-2 md:mb-0">
-            <span className="text-xs text-muted-foreground text-center">
+            <span id="footer-label" className="text-xs text-muted-foreground text-center font-semibold">
               © 2025 API Radar. Real-time detection and tracking of API key leaks.
             </span>
           </div>
@@ -105,7 +105,8 @@ const FooterComponent = () => {
           <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 space-x-0 md:space-x-2 w-full md:w-auto justify-center md:justify-end">
             <a
               href="mailto:zaim.k.abbasi@gmail.com"
-              className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150"
+              className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+              tabIndex={0}
             >
               Contact
             </a>
@@ -115,7 +116,8 @@ const FooterComponent = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Visit Zaim Abbasi on GitHub"
-                className="text-muted-foreground hover:text-primary"
+                className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 rounded-md"
+                tabIndex={0}
               >
                 <Github className="h-3.5 w-3.5" />
                 <span className="sr-only">GitHub</span>
@@ -125,7 +127,8 @@ const FooterComponent = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Connect with Zaim Abbasi on LinkedIn"
-                className="text-muted-foreground hover:text-primary"
+                className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 rounded-md"
+                tabIndex={0}
               >
                 <Linkedin className="h-3.5 w-3.5" />
                 <span className="sr-only">LinkedIn</span>

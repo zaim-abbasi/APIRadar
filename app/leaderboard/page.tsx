@@ -2,8 +2,7 @@ import React, { Suspense } from 'react';
 import { StatsCards } from '@/components/leaderboard/stats-cards';
 import { LeaderboardData, ProviderStats } from '@/types';
 import type { Metadata } from 'next';
-
-const ProviderChart = React.lazy(() => import('@/components/leaderboard/provider-chart').then(m => ({ default: m.ProviderChart })));
+import LeaderboardClient from "@/components/leaderboard/leaderboard-client";
 
 // Page-specific metadata
 export const metadata: Metadata = {
@@ -126,7 +125,7 @@ const ChartsSection = React.memo(({ data }: { data: ChartData }) => (
         </div>
       </div>
     }>
-      <ProviderChart data={data.topProviders} totalLeaks={data.totalLeaks} />
+      {/* This section is now handled by LeaderboardClient */}
     </Suspense>
   </div>
 ));
@@ -148,43 +147,5 @@ export default async function LeaderboardPage() {
     totalLeaks: leaderboardData.totalLeaks
   };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Structured Data for Leaderboard */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://apiradar.live/"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "Leaderboard",
-                "item": "https://apiradar.live/leaderboard"
-              }
-            ]
-          })
-        }}
-      />
-      
-      <div className="container mx-auto px-4 py-6 flex flex-col flex-1">
-        {/* Header */}
-        <LeaderboardHeader />
-
-        {/* Stats Cards */}
-        <StatsSection data={statsData} />
-
-        {/* Charts */}
-        <ChartsSection data={chartData} />
-      </div>
-    </div>
-  );
+  return <LeaderboardClient statsData={statsData} chartData={chartData} />;
 }

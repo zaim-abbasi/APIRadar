@@ -13,6 +13,8 @@ import { UserMenu } from '@/components/auth/user-menu';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
 import { memo } from 'react';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -51,8 +53,9 @@ const NavLinks = () => {
   );
 };
 
-const MobileMenuDropdown = memo(({ onLinkClick, compact }: { onLinkClick: () => void; compact?: boolean }) => {
+const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick, compact }: { onLinkClick: () => void; compact?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
   const { plan, daysRemaining } = usePlanCheck();
   const { theme, setTheme } = useTheme();
@@ -70,52 +73,58 @@ const MobileMenuDropdown = memo(({ onLinkClick, compact }: { onLinkClick: () => 
   }
   if (compact) {
     return (
-      <nav className="flex flex-col min-h-[1px] gap-0.5 px-0.5 py-1 w-full">
+      <nav className="flex flex-col min-h-[1px] gap-1 px-0.5 py-1 w-full">
         {/* Profile Section */}
-        <div className="flex items-center gap-0.5 mb-0.5">
-          <div className="flex items-center justify-center h-7 w-7 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white text-[13px] font-semibold">
+        <div className="flex items-center gap-1 mb-1 min-h-[40px]">
+          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white text-[15px] font-semibold">
             {displayLetter}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             {session && userName ? (
-              <span className="text-[11px] font-semibold truncate">{userName}</span>
+              <span className="text-[13px] font-semibold truncate">{userName}</span>
             ) : (
-              <span className="text-[11px] font-semibold text-primary dark:text-white">Unauthorized</span>
+              <span className="text-[13px] font-semibold text-primary dark:text-white">Unauthorized</span>
             )}
             {session && userEmail && (
-              <span className="text-[9px] text-muted-foreground truncate">{userEmail}</span>
+              <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
             )}
             {session && plan === 'pro' && daysRemaining > 0 && (
-              <span className="mt-0.5 text-[9px] font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1 py-0.5 rounded-md">
+              <span className="mt-0.5 text-[11px] font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md">
                 {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
               </span>
             )}
           </div>
           {session ? (
-            <button onClick={() => signOut({ callbackUrl: '/', redirect: true })} className="ml-0.5 p-0.5 rounded-full hover:bg-destructive/10 transition-colors" title="Sign out">
-              <LogOut className="h-3.5 w-3.5 text-destructive" />
+            <button onClick={() => signOut({ callbackUrl: '/', redirect: true })} className="ml-1 p-1.5 rounded-full hover:bg-destructive/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" title="Sign out" aria-label="Sign out" tabIndex={0}>
+              <LogOut className="h-4.5 w-4.5 text-destructive" />
             </button>
           ) : (
-            <button onClick={() => signIn('github', { callbackUrl: '/', redirect: true })} className="ml-0.5 p-0.5 rounded-full hover:bg-primary/10 transition-colors" title="Sign in">
-              <UserCircle className="h-3.5 w-3.5 text-primary" />
+            <button onClick={() => signIn('github', { callbackUrl: '/', redirect: true })} className="ml-1 p-1.5 rounded-full hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" title="Sign in" aria-label="Sign in" tabIndex={0}>
+              <UserCircle className="h-4.5 w-4.5 text-primary" />
             </button>
           )}
         </div>
-        <div className="border-t border-border/40 my-0.5" />
+        <div className="border-t border-border/40 my-1" />
         {/* Nav Links */}
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               prefetch={true}
-              onClick={onLinkClick}
+              onClick={e => {
+                e.preventDefault();
+                router.replace(item.href);
+                onLinkClick();
+              }}
               className={cn(
-                "block px-1.5 py-1 rounded-lg text-[12px] font-medium transition-colors text-left",
+                "flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2",
                 pathname === item.href
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-primary hover:bg-muted/50"
               )}
+              aria-label={item.label}
+              tabIndex={0}
             >
               {item.label}
             </Link>
@@ -124,88 +133,21 @@ const MobileMenuDropdown = memo(({ onLinkClick, compact }: { onLinkClick: () => 
         {/* Spacer to push theme toggle to bottom if needed */}
         <div className="flex-1" />
         {/* Theme Toggle (as a row, consistent with nav items) */}
-        <div className="flex items-center gap-1 px-1.5 py-1 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors cursor-pointer select-none mt-1"
+        <div className="flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors cursor-pointer select-none mt-1 min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
           role="button"
           tabIndex={0}
           aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           <span>Theme</span>
         </div>
       </nav>
     );
   }
-  return (
-    <div className={cn(
-      "w-full max-w-xs mx-auto bg-background rounded-xl shadow-xl border border-border/60 animate-fade-in-up",
-      compact ? "p-2 text-sm gap-1" : "p-4"
-    )}>
-      {/* Profile Section */}
-      <div className={cn("flex items-center", compact ? "gap-1 mb-1" : "gap-3 mb-3")}>
-        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white text-lg font-semibold">
-          {displayLetter}
-        </div>
-        <div className="flex flex-col flex-1 min-w-0">
-          {session && userName ? (
-            <span className="text-sm font-semibold truncate">{userName}</span>
-          ) : (
-            <span className="text-sm font-semibold text-primary dark:text-white">Unauthorized</span>
-          )}
-          {session && userEmail && (
-            <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
-          )}
-          {session && plan === 'pro' && daysRemaining > 0 && (
-            <span className="mt-0.5 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md">
-              {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
-            </span>
-          )}
-        </div>
-        {session ? (
-          <button onClick={() => signOut({ callbackUrl: '/', redirect: true })} className="ml-1 p-1 rounded-full hover:bg-destructive/10 transition-colors" title="Sign out">
-            <LogOut className="h-4 w-4 text-destructive" />
-          </button>
-        ) : (
-          <button onClick={() => signIn('github', { callbackUrl: '/', redirect: true })} className="ml-1 p-1 rounded-full hover:bg-primary/10 transition-colors" title="Sign in">
-            <UserCircle className="h-4 w-4 text-primary" />
-          </button>
-        )}
-      </div>
-      <div className={cn("border-t border-border/40", compact ? "my-1" : "my-2")} />
-      {/* Nav Links */}
-      <div className={cn("flex flex-col", compact ? "gap-0.5" : "gap-1")}>
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            prefetch={true}
-            onClick={onLinkClick}
-            className={cn(
-              "block px-3 py-1 rounded-lg text-sm font-medium transition-colors text-left",
-              pathname === item.href
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-primary hover:bg-muted/50"
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
-      <div className={cn("border-t border-border/40", compact ? "my-1" : "my-2")} />
-      {/* Email the Dev */}
-      <a
-        href="mailto:zaim.k.abbasi@gmail.com"
-        className={cn(
-          "block rounded-lg font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors text-left",
-          compact ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"
-        )}
-        onClick={onLinkClick}
-      >
-        Email the Dev
-      </a>
-    </div>
-  );
+  // ... (non-compact fallback if needed)
+  return null;
 });
 
 const MobileMenuDrawer = ({ isOpen, onClose, anchorTop, children }: { isOpen: boolean; onClose: () => void; anchorTop: number; children: React.ReactNode }) => {
@@ -226,12 +168,12 @@ const MobileMenuDrawer = ({ isOpen, onClose, anchorTop, children }: { isOpen: bo
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 24 }}
-          transition={{ duration: 0.13 }}
+          initial={{ opacity: 0, x: 32, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          exit={{ opacity: 0, x: 32, scale: 0.98 }}
+          transition={{ duration: 0.22, ease: 'easeInOut' }}
           ref={drawerRef}
-          style={{ top: anchorTop, right: 4, position: 'absolute', zIndex: 100 }}
+          style={{ top: anchorTop, right: 4, position: 'absolute', zIndex: 100, willChange: 'transform, opacity' }}
           className="w-[85vw] max-w-[200px] bg-background rounded-md shadow-lg border border-border/60 p-1 mt-0 animate-fade-in-up"
         >
           {children}
@@ -269,13 +211,9 @@ const NavbarComponent = () => {
           {/* Left: Logo */}
           <div className="flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
-              <motion.div
-                whileHover={{ rotate: 180 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="relative"
-              >
+              <div className="relative">
                 <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
-              </motion.div>
+              </div>
               <span className="text-xl font-medium">
                 <span className="text-red-600">API</span>
                 <span className="text-zinc-900 dark:text-white"> Radar</span>
@@ -299,9 +237,12 @@ const NavbarComponent = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-12 w-12"
+              className="md:hidden h-12 w-12 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
+              tabIndex={0}
+              onMouseEnter={() => import('./navbar')}
+              onTouchStart={() => import('./navbar')}
             >
               <motion.div
                 animate={{ rotate: isMenuOpen ? 90 : 0 }}

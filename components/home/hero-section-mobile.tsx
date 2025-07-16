@@ -37,7 +37,7 @@ export const HeroSectionMobile = React.memo(() => {
 
       {/* Subheading */}
       <div className="w-full max-w-md mx-auto mb-8 z-10 px-1">
-        <div className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 px-6 py-4 text-base text-muted-foreground text-center leading-snug shadow-xl border border-primary/10">
+        <div className="rounded-2xl bg-white/95 dark:bg-zinc-900/95 px-6 py-4 text-base text-muted-foreground text-center leading-snug shadow-xl border border-primary/10" style={{ fontSize: '1.08rem' }}>
           Live API key leaks from public code. Track secrets as they happen.
         </div>
       </div>
@@ -68,8 +68,10 @@ export const HeroSectionMobile = React.memo(() => {
         <Link
           href="/explore"
           prefetch={true}
+          aria-label="Explore Leaks"
           className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-150 shadow-xl active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
           style={{ boxShadow: "0 8px 32px 0 rgba(239,68,68,0.13)" }}
+          tabIndex={0}
         >
           <span className="flex items-center justify-center w-full">
             Explore Leaks
@@ -79,7 +81,9 @@ export const HeroSectionMobile = React.memo(() => {
         <Link
           href="/leaderboard"
           prefetch={true}
+          aria-label="Leaderboard"
           className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full border border-primary/20 bg-background text-primary hover:bg-muted transition-colors duration-150 shadow-md focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+          tabIndex={0}
         >
           Leaderboard
         </Link>
@@ -89,16 +93,16 @@ export const HeroSectionMobile = React.memo(() => {
       {/* This section is now moved to the footer */}
 
       {/* Footer (minimal for mobile, now with inline social/contact icons) */}
-      <footer className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
+      <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-9 pb-5 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
-          <span className="font-semibold">API Radar</span>
-          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150" aria-label="Email">
+          <span id="footer-label-mobile" className="font-semibold">API Radar</span>
+          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4" />
           </a>
-          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150" aria-label="GitHub">
+          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4" />
           </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150" aria-label="LinkedIn">
+          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="LinkedIn" tabIndex={0}>
             <Linkedin className="h-4 w-4" />
           </a>
         </div>

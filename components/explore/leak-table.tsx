@@ -336,8 +336,9 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
     return <EmptyState selectedProvider={selectedProvider} />;
   }
 
+  // Render as a 2-column grid on desktop, 1 column on mobile
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {memoizedLeaks.map((leak, index) => (
         leak ? (
           <LeakCard

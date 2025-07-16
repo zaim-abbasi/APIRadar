@@ -2,8 +2,8 @@
 import dynamic from "next/dynamic";
 import { useIsMobile } from "@/components/home/use-is-mobile";
 
-const HeroSection = dynamic(() => import("@/components/home/hero-section").then(m => m.HeroSection), { ssr: false });
-const HeroSectionMobile = dynamic(() => import("@/components/home/hero-section-mobile").then(m => m.HeroSectionMobile), { ssr: false });
+const HeroSection = dynamic(() => import("@/components/home/hero-section").then(m => m.HeroSection), { ssr: false, loading: () => null });
+const HeroSectionMobile = dynamic(() => import("@/components/home/hero-section-mobile").then(m => m.HeroSectionMobile), { ssr: false, loading: () => null });
 
 export default function HomePageClient() {
   const isMobile = useIsMobile();
