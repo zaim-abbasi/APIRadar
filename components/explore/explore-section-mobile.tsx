@@ -1,6 +1,7 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
 import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
@@ -115,7 +116,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
-        <ActionCard onSignIn={() => window.location.href = '/api/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href)} />
+        <ActionCard onSignIn={() => signIn('github', { callbackUrl: window.location.href })} />
       )}
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">

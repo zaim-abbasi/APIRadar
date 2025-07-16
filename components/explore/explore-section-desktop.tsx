@@ -2,6 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { Filter, SortAsc, RefreshCw, LogIn, Rocket } from 'lucide-react';
+import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
@@ -176,7 +177,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
-        <ActionCard onSignIn={() => window.location.href = '/api/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href)} />
+        <ActionCard onSignIn={() => signIn('github', { callbackUrl: window.location.href })} />
       )}
     </div>
   );
