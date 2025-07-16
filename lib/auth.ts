@@ -1,6 +1,24 @@
 import { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "./mongodb";
+
+// Helper function to build user documents with consistent field order
+function buildUserDoc(email: string, name: string, authProvider: string, additionalFields: Record<string, any> = {}) {
+  const now = new Date();
+  return {
+    createdAt: now,
+    email,
+    name,
+    auth_provider: authProvider,
+    plan: 'basic',
+    pro_days_remaining: 0,
+    requestedTrial: false,
+    updatedAt: now,
+    lastProDayUpdate: null,
+    ...additionalFields // Any additional fields will be appended at the end
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,39 +31,43 @@ export const authOptions: NextAuthOptions = {
         },
       },
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "github") {
+      if (account?.provider === "github" || account?.provider === "google") {
         try {
           const client = await clientPromise;
           const db = client.db();
           
-          const userData = {
-            githubId: (profile as any)?.id || user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            plan: 'basic',
-            pro_days_remaining: 0,
-            createdAt: new Date(),
-            requestedTrial: false,
-          };
+          // Only save image for GitHub users
+          const additionalFields = account.provider === 'github' ? { image: user.image } : {};
+          const userData = buildUserDoc(
+            user.email!,
+            user.name!,
+            account.provider,
+            additionalFields
+          );
 
           // Optimized upsert with better error handling
           await db.collection("users").updateOne(
-            { githubId: userData.githubId },
+            { email: userData.email },
             { 
               $setOnInsert: {
-                githubId: userData.githubId,
                 createdAt: userData.createdAt,
                 plan: userData.plan,
                 pro_days_remaining: userData.pro_days_remaining,
-                requestedTrial: userData.requestedTrial
+                requestedTrial: userData.requestedTrial,
+                lastProDayUpdate: userData.lastProDayUpdate
               },
               $set: {
-                email: userData.email,
                 name: userData.name,
+                // Only set image for GitHub users
+                ...(account.provider === 'github' ? { image: user.image } : {}),
+                auth_provider: userData.auth_provider,
                 updatedAt: new Date()
               }
             },
@@ -59,6 +81,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
+
     async session({ session, token }) {
       if (session.user) {
         // Use JWT token data for better performance
@@ -66,45 +89,63 @@ export const authOptions: NextAuthOptions = {
         session.user.plan = token.plan as string;
         session.user.pro_days_remaining = token.pro_days_remaining as number;
         session.user.requestedTrial = token.requestedTrial as boolean;
+        
+        // Pass downgrade flag to frontend
+        if (token.planDowngraded) {
+          session.user.planDowngraded = true;
+        }
       }
       return session;
     },
     async jwt({ token, user, account }) {
       // Optimized JWT callback with caching
-      if (account?.provider === "github") {
+      if (account?.provider === "github" || account?.provider === "google") {
         try {
           const client = await clientPromise;
           const db = client.db();
           
-          // Try to find user by githubId first, then by email as fallback
+          // Clear any existing token data for new sign-in
+          token.id = undefined;
+          token.plan = undefined;
+          token.pro_days_remaining = undefined;
+          token.requestedTrial = undefined;
+          
+          // Try to find user by email
           let userDoc = await db.collection("users").findOne({
-            githubId: account.providerAccountId
+            email: user?.email
           });
 
-          if (!userDoc && user?.email) {
-            userDoc = await db.collection("users").findOne({
-              email: user.email
-            });
-          }
-
-          // If still not found, create the user as fallback
+          // If not found, create the user using the helper function
           if (!userDoc && user) {
-            const userData = {
-              githubId: account.providerAccountId,
-              email: user.email,
-              name: user.name,
-              plan: 'basic',
-              pro_days_remaining: 0,
-              createdAt: new Date(),
-              requestedTrial: false,
-            };
+            // Only save image for GitHub users
+            const additionalFields = account.provider === 'github' ? { image: user.image } : {};
+            const userData = buildUserDoc(
+              user.email!,
+              user.name!,
+              account.provider,
+              additionalFields
+            );
 
             const result = await db.collection("users").insertOne(userData);
             userDoc = { ...userData, _id: result.insertedId };
           }
           
           if (userDoc) {
-            // Check if user is pro based on days remaining and reduce days daily
+            // Update auth_provider to reflect current sign-in method
+            if (userDoc.auth_provider !== account.provider) {
+              await db.collection("users").updateOne(
+                { _id: userDoc._id },
+                { 
+                  $set: { 
+                    auth_provider: account.provider,
+                    updatedAt: new Date()
+                  }
+                }
+              );
+              userDoc.auth_provider = account.provider;
+            }
+
+            // Enhanced pro days decrementing logic
             let plan = userDoc.plan || 'basic';
             let daysRemaining = userDoc.pro_days_remaining || 0;
             let lastUpdated = userDoc.lastProDayUpdate || null;
@@ -120,15 +161,20 @@ export const authOptions: NextAuthOptions = {
               if (lastUpdateDate < today) {
                 const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
                 daysRemaining = Math.max(0, daysRemaining - daysDiff);
+                console.log(`User ${userDoc.email}: Reduced ${daysDiff} days, now ${daysRemaining} days remaining`);
               }
             }
 
-            // If user has days remaining in premium, they are pro
+            // Determine plan based on days remaining
+            const wasPro = plan === 'pro';
             if (daysRemaining > 0) {
               plan = 'pro';
             } else {
               plan = 'basic';
             }
+
+            // Check if user was downgraded from pro to basic
+            const wasDowngraded = wasPro && plan === 'basic';
 
             // Update the user's plan and days in the database
             await db.collection("users").updateOne(
@@ -142,6 +188,11 @@ export const authOptions: NextAuthOptions = {
                 }
               }
             );
+
+            // If user was downgraded, add a flag to trigger frontend refresh
+            if (wasDowngraded) {
+              token.planDowngraded = true;
+            }
 
             token.id = userDoc._id.toString();
             token.plan = plan;
@@ -165,7 +216,7 @@ export const authOptions: NextAuthOptions = {
           });
           
           if (userDoc) {
-            // Check if user is pro based on days remaining and reduce days daily
+            // Enhanced pro days decrementing logic for existing sessions
             let plan = userDoc.plan || 'basic';
             let daysRemaining = userDoc.pro_days_remaining || 0;
             let lastUpdated = userDoc.lastProDayUpdate || null;
@@ -181,15 +232,20 @@ export const authOptions: NextAuthOptions = {
               if (lastUpdateDate < today) {
                 const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
                 daysRemaining = Math.max(0, daysRemaining - daysDiff);
+                console.log(`User ${userDoc.email}: Reduced ${daysDiff} days, now ${daysRemaining} days remaining`);
               }
             }
 
-            // If user has days remaining in premium, they are pro
+            // Determine plan based on days remaining
+            const wasPro = plan === 'pro';
             if (daysRemaining > 0) {
               plan = 'pro';
             } else {
               plan = 'basic';
             }
+
+            // Check if user was downgraded from pro to basic
+            const wasDowngraded = wasPro && plan === 'basic';
 
             // Update the user's plan and days in the database
             await db.collection("users").updateOne(
@@ -204,12 +260,18 @@ export const authOptions: NextAuthOptions = {
               }
             );
 
+            // If user was downgraded, add a flag to trigger frontend refresh
+            if (wasDowngraded) {
+              token.planDowngraded = true;
+            }
+
             token.plan = plan;
             token.pro_days_remaining = daysRemaining;
             token.requestedTrial = userDoc.requestedTrial || false;
           }
         } catch (error) {
           console.error("Error refreshing user data for JWT:", error);
+          // Keep existing token values if database fails
         }
       }
       return token;
@@ -219,12 +281,12 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
   },
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   jwt: {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: false,
 }; 

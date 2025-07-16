@@ -10,6 +10,7 @@ declare module "next-auth" {
       plan?: string;
       pro_days_remaining?: number;
       requestedTrial?: boolean;
+      planDowngraded?: boolean;
     };
   }
 
@@ -27,5 +28,6 @@ declare module "next-auth/jwt" {
     plan?: string;
     pro_days_remaining?: number;
     requestedTrial?: boolean;
+    planDowngraded?: boolean;
   }
 } 
