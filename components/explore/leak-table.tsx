@@ -249,12 +249,12 @@ const LeakCard = React.memo(({
                       {parsed.repo}
                       <ExternalLink className="h-3 w-3" />
                     </a>
-                    <span className="text-muted-foreground">by</span>
+                    <span className="hidden sm:inline text-muted-foreground">by</span>
                     <a
                       href={`https://github.com/${parsed.owner}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary flex items-center gap-1 break-all sm:break-normal"
+                      className="hidden sm:flex text-muted-foreground hover:text-primary items-center gap-1 break-all sm:break-normal"
                     >
                       <User className="h-3 w-3" />
                       {parsed.owner}
