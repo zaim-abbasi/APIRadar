@@ -1,12 +1,14 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
-import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn } from "lucide-react";
+import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn, Rocket } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { Github as GithubIcon } from "lucide-react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { TIME_RANGES, SORT_OPTIONS } from '@/lib/constants';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m => m.LeakTable), {
   ssr: false,
@@ -20,7 +22,6 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
         <LogIn className="h-7 w-7 text-primary mb-1" />
         <span className="font-semibold text-base text-foreground text-center leading-tight">Sign in to unlock full access</span>
         <span className="text-xs text-muted-foreground text-center leading-snug">Sign in to view all API key leaks, copy full keys, and access advanced features.</span>
-        
         {/* Sign-in buttons */}
         <div className="flex flex-col gap-2 w-full mt-2">
           <button
@@ -43,12 +44,14 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
             Continue with Google
           </button>
         </div>
-        
         <span className="block text-xs text-green-700 dark:text-green-400 mt-2 font-medium text-center">No payment needed.<br />Explore for free.</span>
       </CardContent>
     </Card>
   </div>
 ));
+
+// Import the pro trial card button from the main Explore page
+import UpgradeToProCardWithTrialButton from '@/components/explore/UpgradeToProCardWithTrialButton';
 
 const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
   const {
@@ -67,6 +70,10 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     error
   } = props;
   const isUnauthenticated = !session || !session.user;
+  const isBasic = plan === 'basic';
+  const isPro = plan === 'pro';
+  const isLoggedIn = !!session?.user;
+
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-3 py-7 bg-gradient-to-b from-background via-white/90 to-muted/60 dark:from-background dark:via-zinc-900/80 dark:to-muted/60">
       {/* Header */}
@@ -86,11 +93,39 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TIME_RANGES.map((range) => (
-                <SelectItem key={range.value} value={range.value} aria-label={range.label}>
-                  {range.label}
-                </SelectItem>
-              ))}
+              <TooltipProvider>
+                {TIME_RANGES.map((range) => {
+                  const is30d = range.value === '30d';
+                  const isDisabled = !isPro && is30d;
+                  let badge = null;
+                  if (isDisabled && is30d) {
+                    if (!isLoggedIn) {
+                      badge = <Badge variant="secondary" className="ml-2 text-xs">Sign in</Badge>;
+                    } else if (isBasic) {
+                      badge = <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>;
+                    }
+                  }
+                  return isDisabled ? (
+                    <Tooltip key={range.value} delayDuration={100}>
+                      <TooltipTrigger asChild>
+                        <div className="relative">
+                          <SelectItem value={range.value} disabled className="opacity-50 cursor-not-allowed flex items-center">
+                            {range.label}
+                            {badge}
+                          </SelectItem>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
+                        {(!isLoggedIn) ? 'Sign in to access this range' : 'Upgrade to Pro to access this range'}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <SelectItem key={range.value} value={range.value} aria-label={range.label}>
+                      {range.label}
+                    </SelectItem>
+                  );
+                })}
+              </TooltipProvider>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -136,6 +171,12 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
         <ActionCard onSignIn={() => signIn('github', { callbackUrl: window.location.href })} />
+      )}
+      {/* Pro Trial Card for basic users */}
+      {isBasic && !isUnauthenticated && (
+        <div className="mt-4 w-full max-w-xs mx-auto">
+          <UpgradeToProCardWithTrialButton session={session} />
+        </div>
       )}
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
