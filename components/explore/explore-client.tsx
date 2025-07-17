@@ -123,9 +123,21 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }
   }, [filterState, paginationState.page, paginationState.refreshIndex, session, isDefaultFilters]);
 
+  // Track plan to refresh leaks if plan changes (e.g., upgrade to pro)
+  const lastPlanRef = useRef(plan);
+  useEffect(() => {
+    if (lastPlanRef.current !== plan) {
+      // Plan changed (e.g., basic -> pro), refresh leaks
+      handleRefresh();
+      lastPlanRef.current = plan;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan]);
+
   useEffect(() => {
     fetchAndSetLeaks();
-  }, [fetchAndSetLeaks, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchAndSetLeaks]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
