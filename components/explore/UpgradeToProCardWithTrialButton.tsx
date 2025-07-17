@@ -42,7 +42,7 @@ export default function UpgradeToProCardWithTrialButton({ session, onlyButton = 
 
   const button = isBasic && !requestedTrial ? (
     <button
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow focus:outline-none text-sm disabled:opacity-50 disabled:cursor-not-allowed ${buttonClassName}`}
+      className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded bg-primary text-primary-foreground font-semibold shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-75 hover:bg-primary/90 ${buttonClassName}`}
       onClick={handleRequest}
       disabled={status === 'submitting'}
     >

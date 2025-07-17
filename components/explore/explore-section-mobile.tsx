@@ -25,13 +25,6 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
         {/* Sign-in buttons */}
         <div className="flex flex-col gap-2 w-full mt-2">
           <button
-            onClick={() => signIn('github', { callbackUrl: window.location.href })}
-            className="w-full text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-0 py-2 min-h-[36px]"
-          >
-            <GithubIcon className="h-4 w-4" />
-            Continue with GitHub
-          </button>
-          <button
             onClick={() => signIn('google', { callbackUrl: window.location.href })}
             className="w-full text-sm font-medium text-foreground bg-background border border-border hover:bg-muted rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-0 py-2 min-h-[36px]"
           >
@@ -42,6 +35,13 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Continue with Google
+          </button>
+          <button
+            onClick={() => signIn('github', { callbackUrl: window.location.href })}
+            className="w-full text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-0 py-2 min-h-[36px]"
+          >
+            <GithubIcon className="h-4 w-4" />
+            Continue with GitHub
           </button>
         </div>
         <span className="block text-xs text-green-700 dark:text-green-400 mt-2 font-medium text-center">No payment needed.<br />Explore for free.</span>
