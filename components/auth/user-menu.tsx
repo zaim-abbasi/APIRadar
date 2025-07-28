@@ -147,12 +147,12 @@ export function UserMenu() {
                   "h-4 w-4",
                   plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
                 )} />
-                <span className="font-medium text-sm leading-tight whitespace-nowrap">
+                <span className="font-medium text-xs leading-tight whitespace-nowrap">
                   Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
                 </span>
                 {plan === 'pro' && daysRemaining > 0 && (
-                  <span className="ml-2 text-xs font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded-md whitespace-nowrap">
-                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
+                  <span className="ml-2 text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
                   </span>
                 )}
               </div>
