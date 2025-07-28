@@ -89,10 +89,18 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
             )}
-            {session && plan === 'pro' && daysRemaining > 0 && (
-              <span className="mt-0.5 text-[11px] font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md">
-                {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in Pro trial
-              </span>
+            {/* Plan display with proper styling */}
+            {session && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
+                </span>
+                {plan === 'pro' && daysRemaining > 0 && (
+                  <span className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
+                  </span>
+                )}
+              </div>
             )}
           </div>
           {session ? (

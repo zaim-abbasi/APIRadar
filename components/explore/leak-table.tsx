@@ -42,26 +42,46 @@ const providerColors: Record<string, string> = {
 
 // Memoized Loading Skeleton component
 const LoadingSkeleton = React.memo(() => (
-  <div className="space-y-4">
-    {Array.from({ length: 5 }).map((_, i) => (
-      <Card key={i} className="animate-pulse">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-3">
-                <div className="h-6 w-20 bg-muted rounded-full" />
-                <div className="h-4 w-32 bg-muted rounded" />
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <div 
+        key={`skeleton-${i}`}
+        className="group animate-fade-in-up opacity-0"
+        style={{ animationDelay: `${i * 30}ms` }}
+      >
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px]">
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
+              {/* Provider & Key skeleton */}
+              <div className="flex flex-row items-center gap-2 min-w-[180px]">
+                <div className="h-6 w-[180px] bg-muted rounded text-muted-foreground" />
+                <div className="h-5 w-16 bg-muted rounded-full" />
               </div>
-              <div className="h-4 w-3/4 bg-muted rounded" />
-              <div className="flex gap-4">
-                <div className="h-3 w-24 bg-muted rounded" />
-                <div className="h-3 w-32 bg-muted rounded" />
+
+              {/* Repository Info skeleton */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-4 w-24 bg-muted rounded" />
+              </div>
+
+              {/* Metadata skeleton */}
+              <div className="space-y-0.5">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <div className="h-3 w-3 bg-muted rounded" />
+                  <div className="h-3 w-20 bg-muted rounded" />
+                  <div className="h-3 w-16 bg-muted rounded" />
+                  <div className="h-3 w-24 bg-muted rounded" />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <div className="h-3 w-3 bg-muted rounded" />
+                  <div className="h-3 w-20 bg-muted rounded" />
+                  <div className="h-3 w-16 bg-muted rounded" />
+                </div>
               </div>
             </div>
-            <div className="h-9 w-9 bg-muted rounded" />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     ))}
   </div>
 ));

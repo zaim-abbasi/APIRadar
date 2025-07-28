@@ -1,14 +1,18 @@
 "use client";
 
 import { useSession } from 'next-auth/react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 export function usePlanDowngrade() {
   const { data: session, update } = useSession();
+  const hasShownToast = useRef(false);
 
   useEffect(() => {
-    if (session?.user?.planDowngraded) {
+    if (session?.user?.planDowngraded && !hasShownToast.current) {
+      // Mark that we've shown the toast
+      hasShownToast.current = true;
+      
       // Show notification to user
       toast.info(
         "Your Pro trial has expired. You've been switched to Basic plan.",
@@ -35,7 +39,7 @@ export function usePlanDowngrade() {
         window.location.reload();
       }, 2000);
     }
-  }, [session?.user?.planDowngraded, update]);
+  }, [session?.user?.planDowngraded]);
 
   return null;
 } 

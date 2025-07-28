@@ -55,6 +55,9 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   );
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  
+  // Add a ref to track if we've already fetched data to prevent unnecessary re-fetches
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     if (!paginationState.hasMore || loadingState.isLoading) return;
@@ -122,7 +125,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     } finally {
       setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
     }
-  }, [filterState, paginationState.page, paginationState.refreshIndex, session, isDefaultFilters, plan]);
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page, paginationState.refreshIndex, plan]);
 
   // Track plan to refresh leaks if plan changes (e.g., upgrade to pro)
   const lastPlanRef = useRef(plan);
@@ -135,10 +138,27 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan]);
 
+  // Only fetch on mount and when filters change, not on every re-render
   useEffect(() => {
-    fetchAndSetLeaks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchAndSetLeaks]);
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      fetchAndSetLeaks();
+    }
+  }, []);
+
+  // Fetch when filters change
+  useEffect(() => {
+    if (hasInitializedRef.current) {
+      fetchAndSetLeaks();
+    }
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex]);
+
+  // Fetch when page changes (for infinite scroll)
+  useEffect(() => {
+    if (hasInitializedRef.current && paginationState.page > 1) {
+      fetchAndSetLeaks();
+    }
+  }, [paginationState.page]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
