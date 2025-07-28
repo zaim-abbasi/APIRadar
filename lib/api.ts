@@ -6,7 +6,7 @@ export interface ApiResponse<T> {
 }
 
 // Helper function to create authenticated headers
-function createAuthHeaders(session?: any) {
+function createAuthHeaders(session?: any, planOverride?: 'free' | 'basic' | 'pro') {
   let userId = 'anonymous';
   let userEmail = 'anonymous@example.com';
   let userPlan: 'free' | 'basic' | 'pro' = 'free';
@@ -17,6 +17,9 @@ function createAuthHeaders(session?: any) {
     userEmail = session.user.email || 'authenticated@example.com';
     userPlan = session.user.plan || 'basic';
     isAuthenticated = 'true';
+  }
+  if (planOverride) {
+    userPlan = planOverride;
   }
 
   return {
@@ -161,7 +164,8 @@ export async function fetchLeaks({
   sortBy, 
   page = 1, 
   limit = 10,
-  session
+  session,
+  planOverride
 }: {
   provider?: string;
   timeRange?: string;
@@ -169,6 +173,7 @@ export async function fetchLeaks({
   page?: number;
   limit?: number;
   session?: any;
+  planOverride?: 'free' | 'basic' | 'pro';
 }): Promise<ApiResponse<{ 
   leaks: any[]; 
   total: number; 
@@ -180,7 +185,7 @@ export async function fetchLeaks({
   };
 }>> {
   try {
-    const headers = createAuthHeaders(session);
+    const headers = createAuthHeaders(session, planOverride);
     const params = new URLSearchParams();
     if (provider) params.append('provider', provider);
     if (timeRange) params.append('timeRange', timeRange);

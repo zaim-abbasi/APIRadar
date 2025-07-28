@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) {
-    return NextResponse.json({ plan: 'basic', pro_days_remaining: 0 });
+    return NextResponse.json({ plan: 'basic', days_remaining_in_premium: 0 });
   }
 
   try {
@@ -17,7 +17,7 @@ export async function GET() {
     const user = await db.collection('users').findOne({ email: session.user.email });
     
     if (!user) {
-      return NextResponse.json({ plan: 'basic', pro_days_remaining: 0 });
+      return NextResponse.json({ plan: 'basic', days_remaining_in_premium: 0 });
     }
 
     // Check if user is pro and reduce days daily
@@ -61,7 +61,7 @@ export async function GET() {
 
     return NextResponse.json({ 
       plan: plan, 
-      pro_days_remaining: daysRemaining,
+      days_remaining_in_premium: daysRemaining,
       requestedTrial: !!user.requestedTrial
     });
   } catch (error) {
@@ -128,7 +128,7 @@ export async function POST() {
 
     return NextResponse.json({ 
       plan: plan, 
-      pro_days_remaining: daysRemaining,
+      days_remaining_in_premium: daysRemaining,
       requestedTrial: !!user.requestedTrial
     });
   } catch (error) {

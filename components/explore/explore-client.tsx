@@ -90,6 +90,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         page: paginationState.page,
         limit: PAGE_SIZE,
         session,
+        planOverride: plan,
       });
       if (error) {
         throw new Error(error);
@@ -121,7 +122,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     } finally {
       setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
     }
-  }, [filterState, paginationState.page, paginationState.refreshIndex, session, isDefaultFilters]);
+  }, [filterState, paginationState.page, paginationState.refreshIndex, session, isDefaultFilters, plan]);
 
   // Track plan to refresh leaks if plan changes (e.g., upgrade to pro)
   const lastPlanRef = useRef(plan);
