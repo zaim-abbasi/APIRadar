@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
 import { UserCircle, LogOut, Crown, Sun, Moon } from 'lucide-react';
-import { Github as GithubIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,9 +28,9 @@ export function UserMenu() {
   }, []);
 
   // Optimized sign-in handler with immediate redirect
-  const handleSignIn = useCallback(async (provider: 'github' | 'google') => {
+  const handleSignIn = useCallback(async () => {
     try {
-      await signIn(provider, { 
+      await signIn('google', { 
         callbackUrl: '/',
         redirect: true 
       });
@@ -62,32 +61,26 @@ export function UserMenu() {
   let displayLetter = 'U';
   let userName: string | undefined = undefined;
   let userEmail: string | undefined = undefined;
-  let userPlan = undefined;
-  let userImage = '';
+
   if (session && session.user) {
-    userName = session.user.name ?? undefined;
-    userEmail = session.user.email ?? undefined;
-    userPlan = plan;
-    userImage = session.user.image || '';
+    userName = session.user.name || undefined;
+    userEmail = session.user.email || undefined;
     if (userName && typeof userName === 'string' && userName.length > 0) {
       displayLetter = userName.charAt(0).toUpperCase();
-    } else if (typeof userEmail === 'string' && (userEmail as string).length > 0) {
-      displayLetter = (userEmail as string).charAt(0).toUpperCase();
-    }
-  } else if (status === 'loading' && typeof session === 'undefined') {
-    // If loading, try to use email from previous session (if available)
-    if (typeof userEmail === 'string' && (userEmail as string).length > 0) {
-      displayLetter = (userEmail as string).charAt(0).toUpperCase();
+    } else if (userEmail && typeof userEmail === 'string' && userEmail.length > 0) {
+      displayLetter = userEmail.charAt(0).toUpperCase();
     }
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 md:h-9 md:w-9 rounded-full focus:ring-2 focus:ring-primary/60 focus:outline-none shadow-sm p-0 bg-transparent"
+        <Button
+          variant="ghost"
+          className={cn(
+            "relative h-8 w-8 md:h-9 md:w-9 rounded-full",
+            theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
+          )}
         >
           {mounted && (
             <Avatar className={cn(
@@ -116,6 +109,17 @@ export function UserMenu() {
               <>
                 <span className="text-base font-medium text-primary dark:text-white truncate leading-tight">{userName}</span>
                 <span className="text-xs text-muted-foreground truncate leading-tight">{userEmail}</span>
+                {/* Plan display integrated into user info */}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
+                  </span>
+                  {plan === 'pro' && daysRemaining > 0 && (
+                    <span className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
+                      {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
+                    </span>
+                  )}
+                </div>
               </>
             ) : (
                 <span className="text-base font-medium text-primary dark:text-white leading-tight">Sign in</span>
@@ -124,7 +128,7 @@ export function UserMenu() {
         </DropdownMenuLabel>
         {!session && (
           <>
-            <DropdownMenuItem onClick={() => handleSignIn('google')} className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer mb-1">
+            <DropdownMenuItem onClick={() => handleSignIn()} className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer mb-1">
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -133,30 +137,10 @@ export function UserMenu() {
               </svg>
               <span className="font-medium text-sm">Continue with Google</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleSignIn('github')} className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer mb-1">
-              <GithubIcon className="h-4 w-4 text-primary" />
-              <span className="font-medium text-sm">Continue with GitHub</span>
-            </DropdownMenuItem>
           </>
         )}
         {session && (
           <>
-            <DropdownMenuItem className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-default mt-0 mb-1">
-              <div className="flex items-center gap-2 w-full flex-nowrap">
-                <Crown className={cn(
-                  "h-4 w-4",
-                  plan === 'pro' ? "text-yellow-500" : "text-muted-foreground"
-                )} />
-                <span className="font-medium text-xs leading-tight whitespace-nowrap">
-                  Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                </span>
-                {plan === 'pro' && daysRemaining > 0 && (
-                  <span className="ml-2 text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
-                  </span>
-                )}
-              </div>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}

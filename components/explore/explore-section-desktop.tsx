@@ -3,7 +3,6 @@
 import React, { Suspense } from 'react';
 import { Filter, SortAsc, RefreshCw, LogIn, Rocket } from 'lucide-react';
 import { signIn } from "next-auth/react";
-import { Github as GithubIcon } from "lucide-react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -52,13 +51,6 @@ const ActionCard = ({ onSignIn }: { onSignIn: () => void }) => (
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             <span className="truncate">Continue with Google</span>
-          </button>
-          <button
-            onClick={() => signIn('github', { callbackUrl: window.location.href })}
-            className="text-sm font-semibold text-primary-foreground bg-primary border-none rounded-md shadow-sm flex justify-center items-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full px-4 py-2 min-w-[140px] whitespace-nowrap"
-          >
-            <GithubIcon className="h-4 w-4" />
-            <span className="truncate">Continue with GitHub</span>
           </button>
         </div>
       </CardContent>
@@ -234,7 +226,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
-        <ActionCard onSignIn={() => signIn('github', { callbackUrl: window.location.href })} />
+        <ActionCard onSignIn={() => signIn('google', { callbackUrl: window.location.href })} />
       )}
       {/* Pro Trial Card for basic users */}
       {isBasic && !isUnauthenticated && (

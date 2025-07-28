@@ -1,16 +1,14 @@
 import { NextAuthOptions } from "next-auth";
-import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "./mongodb";
 
 // Helper function to build user documents with consistent field order
-function buildUserDoc(email: string, name: string, authProvider: string, additionalFields: Record<string, any> = {}) {
+function buildUserDoc(email: string, name: string, additionalFields: Record<string, any> = {}) {
   const now = new Date();
   return {
     createdAt: now,
     email,
     name,
-    auth_provider: authProvider,
     plan: 'basic',
     pro_days_remaining: 0,
     requestedTrial: false,
@@ -22,15 +20,6 @@ function buildUserDoc(email: string, name: string, authProvider: string, additio
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-      authorization: {
-        params: {
-          scope: 'read:user user:email',
-        },
-      },
-    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -38,18 +27,14 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "github" || account?.provider === "google") {
+      if (account?.provider === "google") {
         try {
           const client = await clientPromise;
           const db = client.db();
           
-          // Only save image for GitHub users
-          const additionalFields = account.provider === 'github' ? { image: user.image } : {};
           const userData = buildUserDoc(
             user.email!,
-            user.name!,
-            account.provider,
-            additionalFields
+            user.name!
           );
 
           // Optimized upsert with better error handling
@@ -65,9 +50,6 @@ export const authOptions: NextAuthOptions = {
               },
               $set: {
                 name: userData.name,
-                // Only set image for GitHub users
-                ...(account.provider === 'github' ? { image: user.image } : {}),
-                auth_provider: userData.auth_provider,
                 updatedAt: new Date()
               }
             },
@@ -99,31 +81,20 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, account }) {
       // Optimized JWT callback with caching
-      if (account?.provider === "github" || account?.provider === "google") {
+      if (account?.provider === "google") {
         try {
           const client = await clientPromise;
           const db = client.db();
           
-          // Clear any existing token data for new sign-in
-          token.id = undefined;
-          token.plan = undefined;
-          token.pro_days_remaining = undefined;
-          token.requestedTrial = undefined;
-          
-          // Try to find user by email
           let userDoc = await db.collection("users").findOne({
             email: user?.email
           });
-
+          
           // If not found, create the user using the helper function
           if (!userDoc && user) {
-            // Only save image for GitHub users
-            const additionalFields = account.provider === 'github' ? { image: user.image } : {};
             const userData = buildUserDoc(
               user.email!,
-              user.name!,
-              account.provider,
-              additionalFields
+              user.name!
             );
 
             const result = await db.collection("users").insertOne(userData);
@@ -131,20 +102,6 @@ export const authOptions: NextAuthOptions = {
           }
           
           if (userDoc) {
-            // Update auth_provider to reflect current sign-in method
-            if (userDoc.auth_provider !== account.provider) {
-              await db.collection("users").updateOne(
-                { _id: userDoc._id },
-                { 
-                  $set: { 
-                    auth_provider: account.provider,
-                    updatedAt: new Date()
-                  }
-                }
-              );
-              userDoc.auth_provider = account.provider;
-            }
-
             // Enhanced pro days decrementing logic
             let plan = userDoc.plan || 'basic';
             let daysRemaining = userDoc.pro_days_remaining || 0;

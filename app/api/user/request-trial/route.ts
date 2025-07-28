@@ -25,7 +25,7 @@ export async function POST() {
   );
 
   // Prepare a beautiful message for Formspree
-  const message = `A user has requested a Pro trial.\n\n---\nGitHub ID: ${user.githubId || 'N/A'}\nName: ${user.name || 'N/A'}\nImage: ${user.image || 'N/A'}\n---`;
+  const message = `A user has requested a Pro trial.\n\n---\nName: ${user.name || 'N/A'}\nEmail: ${user.email || 'N/A'}\n---`;
 
   // Send to Formspree
   const formspreeRes = await fetch('https://formspree.io/f/movwbonq', {

@@ -364,10 +364,10 @@ const ResultsSection = React.memo(({
           socialProof="No payment needed. Explore for free."
           button={
             <button
-              onClick={() => signIn('github', { callbackUrl: window.location.href })}
+              onClick={() => signIn('google', { callbackUrl: window.location.href })}
               className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full px-5 py-2"
             >
-              Sign in with GitHub
+              Sign in with Google
             </button>
           }
         />

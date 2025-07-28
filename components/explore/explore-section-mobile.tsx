@@ -2,7 +2,6 @@ import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
 import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn, Rocket } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { Github as GithubIcon } from "lucide-react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,18 +14,22 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
   loading: () => <div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse">Loading…</div>
 });
 
+// Memoized Action Card component
 const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
-  <div className="mt-4 w-full max-w-xs mx-auto">
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm rounded-xl shadow-md flex flex-col items-center justify-center">
-      <CardContent className="p-4 flex flex-col items-center gap-3 min-h-0 w-full">
-        <LogIn className="h-7 w-7 text-primary mb-1" />
-        <span className="font-semibold text-base text-foreground text-center leading-tight">Sign in to unlock full access</span>
-        <span className="text-xs text-muted-foreground text-center leading-snug">Sign in to view all API key leaks, copy full keys, and access advanced features.</span>
-        {/* Sign-in buttons */}
-        <div className="flex flex-col gap-2 w-full mt-2">
+  <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
+    <Card className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
+      <CardContent className="p-4 sm:p-6 flex items-center justify-between gap-3 sm:gap-4 min-h-[80px]">
+        <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-2 mb-1">
+            <LogIn className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-base sm:text-lg">Sign in to unlock full access</span>
+          </div>
+          <span className="text-muted-foreground text-xs sm:text-sm">Sign in to view all API key leaks, copy full keys, and access advanced features.</span>
+        </div>
+        <div className="flex-shrink-0 flex flex-col items-end">
           <button
-            onClick={() => signIn('google', { callbackUrl: window.location.href })}
-            className="w-full text-sm font-medium text-foreground bg-background border border-border hover:bg-muted rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-0 py-2 min-h-[36px]"
+            onClick={onSignIn}
+            className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 min-w-[140px] whitespace-nowrap"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -34,21 +37,15 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
-          </button>
-          <button
-            onClick={() => signIn('github', { callbackUrl: window.location.href })}
-            className="w-full text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-0 py-2 min-h-[36px]"
-          >
-            <GithubIcon className="h-4 w-4" />
-            Continue with GitHub
+            <span className="truncate">Continue with Google</span>
           </button>
         </div>
-        <span className="block text-xs text-green-700 dark:text-green-400 mt-2 font-medium text-center">No payment needed.<br />Explore for free.</span>
       </CardContent>
     </Card>
   </div>
 ));
+
+ActionCard.displayName = 'ActionCard';
 
 // Import the pro trial card button from the main Explore page
 import UpgradeToProCardWithTrialButton from '@/components/explore/UpgradeToProCardWithTrialButton';
@@ -176,7 +173,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
-        <ActionCard onSignIn={() => signIn('github', { callbackUrl: window.location.href })} />
+        <ActionCard onSignIn={() => signIn('google', { callbackUrl: window.location.href })} />
       )}
       {/* Pro Trial Card for basic users */}
       {isBasic && !isUnauthenticated && (

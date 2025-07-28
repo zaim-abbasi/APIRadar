@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { Shield, Moon, Sun, Menu, X, UserCircle, LogOut } from 'lucide-react';
-import { Github as GithubIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -89,9 +88,9 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
             )}
-            {/* Plan display with proper styling */}
+            {/* Plan display integrated into user info - matching desktop structure */}
             {session && (
-              <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px] font-medium text-muted-foreground">
                   Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
                 </span>
