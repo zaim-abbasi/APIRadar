@@ -67,7 +67,9 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     setSortBy,
     onRefresh,
     total,
-    error
+    error,
+    loadingRef,
+    hasMore
   } = props;
   const isUnauthenticated = !session || !session.user;
   const isBasic = plan === 'basic';
@@ -167,6 +169,10 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <Suspense fallback={<div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse" aria-busy="true" aria-live="polite">Loading…</div>}>
           <LeakTable leaks={leaks} isLoading={isLoading} selectedProvider={selectedProvider} plan={plan} />
         </Suspense>
+        {/* Infinite scroll sentinel for pro users */}
+        {plan === 'pro' && hasMore && (
+          <div ref={loadingRef} style={{ height: 1 }} />
+        )}
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (

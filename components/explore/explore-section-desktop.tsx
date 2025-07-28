@@ -79,7 +79,9 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   setSortBy,
   onRefresh,
   total,
-  error
+  error,
+  loadingRef,
+  hasMore
 }: {
   leaks: any[];
   isLoading: boolean;
@@ -94,6 +96,8 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   onRefresh: () => void;
   total: number;
   error: string | null;
+  loadingRef: React.RefObject<HTMLDivElement>;
+  hasMore: boolean;
 }) {
   const isUnauthenticated = !session || !session.user;
   const isBasic = plan === 'basic';
@@ -223,6 +227,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             plan={plan}
           />
         </Suspense>
+        {/* Infinite scroll sentinel for pro users */}
+        {plan === 'pro' && hasMore && (
+          <div ref={loadingRef} style={{ height: 1 }} />
+        )}
       </div>
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (

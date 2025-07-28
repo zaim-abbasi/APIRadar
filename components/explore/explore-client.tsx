@@ -173,7 +173,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   };
 
   if (isMobile) {
-    return <ExploreSectionMobile {...sharedProps} />;
+    return <ExploreSectionMobile {...sharedProps} loadingRef={loadingRef} hasMore={paginationState.hasMore} />;
   }
-  return <ExploreSectionDesktop {...sharedProps} />;
+  return <ExploreSectionDesktop {...sharedProps} loadingRef={loadingRef} hasMore={paginationState.hasMore} />;
 }); 
