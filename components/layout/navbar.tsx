@@ -97,7 +97,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
                 {plan === 'pro' && daysRemaining > 0 && (
                   <span className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                     {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
-                  </span>
+              </span>
                 )}
               </div>
             )}

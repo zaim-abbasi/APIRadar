@@ -75,8 +75,8 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
+        <Button 
+          variant="ghost" 
           className={cn(
             "relative h-8 w-8 md:h-9 md:w-9 rounded-full",
             theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"

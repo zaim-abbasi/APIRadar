@@ -1,5 +1,75 @@
 # API Radar Backend
 
+## GitHub Issue Creation for New Leaks
+
+The backend now automatically creates GitHub issues in repositories where new API key leaks are detected. This feature helps repository owners become aware of potential security issues.
+
+### How It Works
+
+- **Automatic Detection**: When a new leak is detected (not an update to an existing leak), the system creates a GitHub issue
+- **Smart Deduplication**: Only creates one issue per repository per provider to avoid spam
+- **Friendly Messages**: Uses randomized, human-like messages that mention API Radar as the detection tool
+- **Error Handling**: Gracefully handles cases where issues are disabled, repos are archived, or permissions are denied
+
+### Configuration
+
+Add the following environment variable to your `.env` file:
+
+```bash
+# GitHub token for creating issues (different from scanning token)
+ISSUE_GITHUB_TOKEN=ghp_your_personal_github_token_here
+```
+
+**Important Notes:**
+- This should be a **different token** from your main `GITHUB_TOKEN` used for scanning
+- Use your **personal GitHub account** token, not a bot account
+- The token needs `public_repo` scope for public repositories
+- If not set, the feature will be disabled (no issues created)
+
+### Message Templates
+
+The system uses 6 randomized templates to keep messages natural and varied:
+
+1. **Friendly**: "Hey there! 👋 We noticed what looks like a leaked [provider] API key..."
+2. **Alert**: "Hi! 🚨 We detected a potential [provider] API key leak..."
+3. **Casual**: "Hello! 👀 Quick heads-up: we found what appears to be a [provider] API key..."
+4. **Security-focused**: "Hi! 🔍 We spotted a [provider] API key that looks like it might be exposed..."
+5. **Warning**: "Hey! ⚠️ Just wanted to let you know we found a [provider] API key..."
+6. **Professional**: "Hello there! 🎯 We detected a [provider] API key that looks like it might be accidentally exposed..."
+
+All messages:
+- Mention the specific provider (OpenAI, Anthropic, etc.)
+- Include the file path if available
+- Include the API Radar website link (https://apiradar.live)
+- Provide contact email (zaim.k.abbasi@gmail.com) for questions
+- Include the `api-radar-alert` label
+- Use friendly, helpful tone without being spammy
+
+### Error Handling
+
+The system gracefully handles various scenarios:
+- **Issues Disabled**: Repository has issues disabled → No issue created, no error
+- **Archived Repo**: Repository is archived → No issue created, no error  
+- **Permission Denied**: No access to create issues → No issue created, no error
+- **Private Repos**: Private repositories → No issue created (requires different permissions)
+- **Rate Limits**: GitHub API rate limits → Handled automatically
+
+### Database Schema
+
+The `Leak` model remains unchanged - no additional fields were added for this feature:
+
+```typescript
+interface ILeak {
+  // ... existing fields (no commitHash field)
+}
+```
+
+### Logging
+
+You'll see these messages in the logs:
+- `Created issue in owner/repo for provider` - Issue created successfully
+- `Failed to create issue in owner/repo: [error]` - Issue creation failed (logged but doesn't stop scanning)
+
 ## Scan State Persistence
 
 The scanning service now automatically saves its progress to the database (`configurations` collection). This ensures that scanning progress is preserved even when the service is stopped with Ctrl+C or crashes.

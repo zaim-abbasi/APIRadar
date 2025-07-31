@@ -6,6 +6,7 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
+import { createLeakIssue } from '../utils/github-issue';
 
 // Search patterns with provider names
 const SEARCH_PATTERNS = [
@@ -486,7 +487,47 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
       }
     }));
     
-    await Leak.bulkWrite(ops, { ordered: false });
+    const result = await Leak.bulkWrite(ops, { ordered: false });
+    
+    // Check which leaks were actually inserted (new) vs updated
+    const newLeaks: Partial<ILeak>[] = [];
+    if (result.upsertedIds && Object.keys(result.upsertedIds).length > 0) {
+      // Some leaks were inserted (new)
+      for (let i = 0; i < leaks.length; i++) {
+        const leak = leaks[i];
+        if (result.upsertedIds[i] && leak) {
+          newLeaks.push(leak);
+        }
+      }
+    }
+    
+    // Create GitHub issues for new leaks
+    if (newLeaks.length > 0 && process.env['ISSUE_GITHUB_TOKEN']) {
+      for (const leak of newLeaks) {
+        try {
+          // Extract repo name from repoUrl (e.g., "https://github.com/owner/repo" -> "owner/repo")
+          const repoUrlParts = leak.repoUrl?.split('/');
+          if (repoUrlParts && repoUrlParts.length >= 5) {
+            const repo = `${repoUrlParts[3]}/${repoUrlParts[4]}`;
+            
+            const issueParams = {
+              repo,
+              provider: leak.provider || '',
+              token: process.env['ISSUE_GITHUB_TOKEN'] || '',
+            };
+            
+            if (leak.filePath) {
+              (issueParams as any).filePath = leak.filePath;
+            }
+            
+            await createLeakIssue(issueParams);
+          }
+        } catch (error) {
+          // Log error but don't fail the entire operation
+          logger.error(`[FARM] Failed to create GitHub issue for leak: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+    }
   } catch (error: any) {
     // Handle duplicate key errors gracefully
     if (error.code === 11000) {

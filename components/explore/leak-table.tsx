@@ -70,7 +70,7 @@ const LoadingSkeleton = React.memo(() => (
                   <div className="h-3 w-3 bg-muted rounded" />
                   <div className="h-3 w-20 bg-muted rounded" />
                   <div className="h-3 w-16 bg-muted rounded" />
-                  <div className="h-3 w-24 bg-muted rounded" />
+                <div className="h-3 w-24 bg-muted rounded" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <div className="h-3 w-3 bg-muted rounded" />
@@ -78,9 +78,9 @@ const LoadingSkeleton = React.memo(() => (
                   <div className="h-3 w-16 bg-muted rounded" />
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
       </div>
     ))}
   </div>

@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
           let userDoc = await db.collection("users").findOne({
             email: user?.email
           });
-          
+
           // If not found, create the user using the helper function
           if (!userDoc && user) {
             const userData = buildUserDoc(

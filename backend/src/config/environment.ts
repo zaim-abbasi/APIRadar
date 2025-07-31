@@ -68,6 +68,12 @@ const envSchema = z.object({
       return delay;
     })
     .default('1000'),
+  ISSUE_GITHUB_TOKEN: z.string().optional().refine((token) => {
+    if (!token) return true; // Optional
+    return token.startsWith('ghp_') || token.startsWith('github_pat_');
+  }, {
+    message: 'ISSUE_GITHUB_TOKEN must be a valid GitHub personal access token'
+  }),
 });
 
 // Parse and validate environment variables

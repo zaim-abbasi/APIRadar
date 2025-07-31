@@ -55,7 +55,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   );
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  
+
   // Add a ref to track if we've already fetched data to prevent unnecessary re-fetches
   const hasInitializedRef = useRef(false);
 
@@ -156,7 +156,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Fetch when page changes (for infinite scroll)
   useEffect(() => {
     if (hasInitializedRef.current && paginationState.page > 1) {
-      fetchAndSetLeaks();
+    fetchAndSetLeaks();
     }
   }, [paginationState.page]);
 
