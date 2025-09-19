@@ -23,7 +23,7 @@ export interface LeaderboardData {
   totalLeaks: number;
   todayLeaks: number;
   weeklyGrowth: number;
-  repositoryCutoff: string | null;
+  leaksFoundToday: number;
 }
 
 export interface FilterOptions {

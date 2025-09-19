@@ -7,6 +7,7 @@ import { ConfigurationService } from '../services/ConfigurationService';
 interface LeaderboardResponse {
   totalReposScanned: number;
   totalLeaksFound: number;
+  leaksFoundToday: number;
   repositoryAgeCutoff: string | null;
   topProviders: { provider: string; count: number; percentage: number }[];
 }
@@ -40,10 +41,10 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     // const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
     // const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMinutes * 60 * 1000);
 
-    const [totalReposScanned, totalLeaksFound, repositoryAgeCutoff, topProviders] = await Promise.all([
+    const [totalReposScanned, totalLeaksFound, /*repositoryAgeCutoff*/, topProviders] = await Promise.all([
       ScanAttempt.countDocuments().lean(),
       Leak.countDocuments().lean(),
-      ConfigurationService.getRepositoryAgeCutoff(),
+      // ConfigurationService.getRepositoryAgeCutoff(),
       Leak.aggregate([
         { $group: { _id: '$provider', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
@@ -58,10 +59,20 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       percentage: totalLeaksFound > 0 ? (provider.count / totalLeaksFound) * 100 : 0
     }));
 
+    // Calculate leaks found today in PKT
+    const leaksFoundToday = await Leak.countDocuments({
+      leakDetectedAt: {
+        $gte: startOfDayPk,
+        $lte: endOfDayPk
+      }
+    });
+
+    // Comment out repositoryAgeCutoff in response
     const response: LeaderboardResponse = {
       totalReposScanned,
       totalLeaksFound,
-      repositoryAgeCutoff: repositoryAgeCutoff?.toISOString() ?? null,
+      leaksFoundToday,
+      // repositoryAgeCutoff,
       topProviders: providersWithPercentage
     };
 

@@ -41,6 +41,7 @@ export async function configurationRoutes(server: FastifyInstance) {
   // Get all configuration
   server.get('/api/config', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      /*
       const [repositoryAgeCutoff, scanState] = await Promise.all([
         ConfigurationService.getRepositoryAgeCutoff(),
         ConfigurationService.getScanState()
@@ -50,6 +51,10 @@ export async function configurationRoutes(server: FastifyInstance) {
         repositoryAgeCutoff: repositoryAgeCutoff?.toISOString(),
         scanState
       });
+      */
+      // Only return scanState for now
+      const scanState = await ConfigurationService.getScanState();
+      return reply.send({ scanState });
     } catch (error) {
       request.log.error(error);
       return reply.status(500).send({ error: 'Failed to fetch configuration' });

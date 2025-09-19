@@ -35,6 +35,7 @@ export class ConfigurationService {
   /**
    * Get repository age cutoff date
    */
+  /*
   static async getRepositoryAgeCutoff(): Promise<Date | null> {
     const cutoff = await this.getConfig('repository_age_cutoff');
     if (!cutoff) {
@@ -43,10 +44,12 @@ export class ConfigurationService {
     }
     return new Date(cutoff);
   }
+  */
 
   /**
    * Set repository age cutoff date
    */
+  /*
   static async setRepositoryAgeCutoff(cutoffDate: Date): Promise<boolean> {
     const success = await this.setConfig('repository_age_cutoff', cutoffDate.toISOString());
     if (success) {
@@ -56,6 +59,7 @@ export class ConfigurationService {
     }
     return success;
   }
+  */
 
   /**
    * Get scan state
@@ -81,22 +85,25 @@ export class ConfigurationService {
   static async checkAndReinitialize(): Promise<boolean> {
     try {
       console.log('Checking configurations...');
-      
       // Check if both required configurations exist
-      const cutoff = await this.getRepositoryAgeCutoff();
+      // const cutoff = await this.getRepositoryAgeCutoff();
       const scanState = await this.getScanState();
-      
+      /*
       console.log('Configuration check results:', {
         cutoff: cutoff ? cutoff.toISOString() : 'null',
         scanState: scanState ? 'exists' : 'null'
       });
-      
       if (!cutoff || !scanState) {
         console.log('Configuration missing detected, reinitializing...');
         await this.forceReinitialize();
         return true; // Reinitialized
       }
-      
+      */
+      if (!scanState) {
+        console.log('Configuration missing detected, reinitializing...');
+        await this.forceReinitialize();
+        return true; // Reinitialized
+      }
       console.log('All configurations exist, no reinitialization needed');
       return false; // No reinitialization needed
     } catch (error) {
@@ -153,8 +160,8 @@ export class ConfigurationService {
   static async initializeDefaults(): Promise<void> {
     try {
       console.log('Initializing default configurations...');
-      
       // Check if repository_age_cutoff exists, if not set default
+      /*
       const cutoff = await this.getRepositoryAgeCutoff();
       if (!cutoff) {
         // Set cutoff date to 15 days before today
@@ -169,7 +176,7 @@ export class ConfigurationService {
       } else {
         console.log('Repository age cutoff already exists:', cutoff.toISOString());
       }
-
+      */
       // Check if scan_state exists, if not set default
       const scanState = await this.getScanState();
       if (!scanState) {
@@ -194,7 +201,6 @@ export class ConfigurationService {
       } else {
         console.log('Scan state already exists');
       }
-      
       console.log('Default configuration initialization completed');
     } catch (error) {
       console.error('Error initializing default configuration:', error);

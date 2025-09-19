@@ -6,7 +6,6 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
-import { createLeakIssue } from '../utils/github-issue';
 
 // Search patterns with provider names
 const SEARCH_PATTERNS = [
@@ -500,34 +499,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
         }
       }
     }
-    
-    // Create GitHub issues for new leaks
-    if (newLeaks.length > 0 && process.env['ISSUE_GITHUB_TOKEN']) {
-      for (const leak of newLeaks) {
-        try {
-          // Extract repo name from repoUrl (e.g., "https://github.com/owner/repo" -> "owner/repo")
-          const repoUrlParts = leak.repoUrl?.split('/');
-          if (repoUrlParts && repoUrlParts.length >= 5) {
-            const repo = `${repoUrlParts[3]}/${repoUrlParts[4]}`;
-            
-            const issueParams = {
-              repo,
-              provider: leak.provider || '',
-              token: process.env['ISSUE_GITHUB_TOKEN'] || '',
-            };
-            
-            if (leak.filePath) {
-              (issueParams as any).filePath = leak.filePath;
-            }
-            
-            await createLeakIssue(issueParams);
-          }
-        } catch (error) {
-          // Log error but don't fail the entire operation
-          logger.error(`[FARM] Failed to create GitHub issue for leak: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
-    }
+    // Removed: GitHub issue creation for new leaks
   } catch (error: any) {
     // Handle duplicate key errors gracefully
     if (error.code === 11000) {
@@ -1042,6 +1014,7 @@ export class GitHubCodeLeakFarmService {
     }
 
     // Get repository age cutoff from database
+    /*
     let repositoryAgeCutoff: Date;
     try {
       const cutoff = await ConfigurationService.getRepositoryAgeCutoff();
@@ -1060,38 +1033,35 @@ export class GitHubCodeLeakFarmService {
       await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
       return;
     }
-  
-    if (repoCreatedAt >= repositoryAgeCutoff) {
-      for (const { key, provider } of leaks) {
-        try {
-          const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));
-          
-          // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
-          const leakData: Partial<ILeak> = {
-            redactedKey: redactKey(key),
-            fullKey: key,
-            provider,
-            repoUrl,
-            filePath,
-            leakIntroducedAt,
-            leakDetectedAt: new Date(),
-            repoCreatedAt
-          };
-          // Blue log for new leak found
-          logger.leak(
-            provider,
-            `${repoName} | ${filePath} | ${redactKey(key)}`
-          );
-          foundLeaks.push(leakData);
-        } catch (error) {
-          logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
-        }
+    */
+    // Commented out repository cutoff logic. Always process all repos regardless of age.
+    for (const { key, provider } of leaks) {
+      try {
+        const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));
+        // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
+        const leakData: Partial<ILeak> = {
+          redactedKey: redactKey(key),
+          fullKey: key,
+          provider,
+          repoUrl,
+          filePath,
+          leakIntroducedAt,
+          leakDetectedAt: new Date(),
+          repoCreatedAt
+        };
+        // Blue log for new leak found
+        logger.leak(
+          provider,
+          `${repoName} | ${filePath} | ${redactKey(key)}`
+        );
+        foundLeaks.push(leakData);
+      } catch (error) {
+        logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
       }
-      
-      // Save leaks for repositories less than 12 months old
-      if (foundLeaks.length > 0) {
-        await batchUpsertLeaks(foundLeaks);
-      }
+    }
+    // Save leaks for all repositories (no cutoff)
+    if (foundLeaks.length > 0) {
+      await batchUpsertLeaks(foundLeaks);
     }
     
     // Always save scan attempt for all repositories (since we scan everything)

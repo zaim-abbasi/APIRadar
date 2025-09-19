@@ -299,21 +299,23 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   const {
     totalLeaks,
     todayLeaks,
-    repositoryCutoff
+    leaksFoundToday
+    // repositoryCutoff
   } = data;
 
   // Defensive: fallback for all stats
   const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
   const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;
-  const safeRepositoryCutoff = typeof repositoryCutoff === 'string' ? repositoryCutoff : null;
+  const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
+  // const safeRepositoryCutoff = typeof repositoryCutoff === 'string' ? repositoryCutoff : null;
 
   const stats = useMemo(() => [
     {
-      title: 'Total Repos Scanned',
-      value: safeTotalLeaks,
-      icon: Search,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10'
+      title: 'Leaks Found Today',
+      value: safeLeaksFoundToday,
+      icon: Eye,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-600/10'
     },
     {
       title: 'Total Leaks Found',
@@ -323,14 +325,13 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
       bgColor: 'bg-orange-500/10'
     },
     {
-      title: 'Repository Cutoff',
-      value: safeRepositoryCutoff,
-      icon: Calendar,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-      isDate: true
+      title: 'Total Repos Scanned',
+      value: safeTotalLeaks,
+      icon: Search,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-500/10'
     }
-  ], [safeTotalLeaks, safeTodayLeaks, safeRepositoryCutoff]);
+  ], [safeTotalLeaks, safeTodayLeaks, safeLeaksFoundToday]);
 
   return (
     <div

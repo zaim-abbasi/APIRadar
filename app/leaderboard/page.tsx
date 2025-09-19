@@ -20,11 +20,11 @@ export const metadata: Metadata = {
 };
 
 // Types for better type safety
-interface StatsData {
-  totalLeaks: number;
-  todayLeaks: number;
-  repositoryCutoff: string | null;
-}
+// interface StatsData {
+//   totalLeaks: number;
+//   todayLeaks: number;
+//   repositoryCutoff: string | null;
+// }
 
 interface ChartData {
   topProviders: ProviderStats[];
@@ -70,7 +70,7 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
       totalLeaks: Number(data.totalReposScanned) || 0, // map to totalReposScanned
       todayLeaks: Number(data.totalLeaksFound) || 0,  // map to totalLeaksFound
       weeklyGrowth: Number(data.weeklyGrowth) || 0,
-      repositoryCutoff: data.repositoryAgeCutoff || null, // map to repositoryAgeCutoff
+      leaksFoundToday: Number(data.leaksFoundToday) || 0,
     };
     
   } catch (error) {
@@ -87,7 +87,7 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
       totalLeaks: 0,
       todayLeaks: 0,
       weeklyGrowth: 0,
-      repositoryCutoff: null,
+      leaksFoundToday: 0,
     };
   }
 }

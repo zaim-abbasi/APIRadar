@@ -11,7 +11,8 @@ const ConfigurationSchema = new Schema<IConfiguration>({
     type: String,
     required: true,
     unique: true,
-    enum: ['repository_age_cutoff', 'scan_state']
+    // enum: ['repository_age_cutoff', 'scan_state']
+    enum: ['scan_state'] // repository_age_cutoff commented out
   },
   value: {
     type: Schema.Types.Mixed,
