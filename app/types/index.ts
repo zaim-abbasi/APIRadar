@@ -1,3 +1,10 @@
+export interface ProviderStats {
+  provider: string;
+  count: number;
+  percentage: number;
+  trend: 'up' | 'down' | 'stable';
+}
+
 export interface LeaderboardData {
   topProviders: ProviderStats[];
   totalLeaks: number;
