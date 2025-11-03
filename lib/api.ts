@@ -1,5 +1,39 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+// Request deduplication cache to prevent duplicate API calls
+const requestCache = new Map<string, { promise: Promise<any>; timestamp: number }>();
+const CACHE_DURATION = 1000; // 1 second deduplication window
+
+// Helper to deduplicate requests
+function deduplicateRequest<T>(
+  key: string,
+  requestFn: () => Promise<T>
+): Promise<T> {
+  const cached = requestCache.get(key);
+  const now = Date.now();
+  
+  // Clear expired cache entries periodically
+  if (now % 10000 < 100) { // Cleanup every ~10 seconds
+    for (const [k, v] of requestCache.entries()) {
+      if (now - v.timestamp > CACHE_DURATION * 2) {
+        requestCache.delete(k);
+      }
+    }
+  }
+  
+  if (cached && now - cached.timestamp < CACHE_DURATION) {
+    return cached.promise;
+  }
+  
+  const promise = requestFn().finally(() => {
+    // Remove from cache after completion
+    setTimeout(() => requestCache.delete(key), CACHE_DURATION);
+  });
+  
+  requestCache.set(key, { promise, timestamp: now });
+  return promise;
+}
+
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -176,39 +210,46 @@ export async function fetchLeaks({
     maxTimeRange: string;
   };
 }>> {
-  try {
-    const headers = createAuthHeaders(session);
-    const params = new URLSearchParams();
-    if (provider) params.append('provider', provider);
-    if (timeRange) params.append('timeRange', timeRange);
-    if (sortBy) params.append('sortBy', sortBy);
-    params.append('page', String(page));
-    params.append('limit', String(limit));
+  // Create cache key for request deduplication
+  const cacheKey = `leaks:${provider || 'all'}:${timeRange || '15d'}:${sortBy || 'newest'}:${page}:${limit}:${session?.user?.id || 'anonymous'}`;
+  
+  return deduplicateRequest(cacheKey, async () => {
+    try {
+      const headers = createAuthHeaders(session);
+      const params = new URLSearchParams();
+      if (provider) params.append('provider', provider);
+      if (timeRange) params.append('timeRange', timeRange);
+      if (sortBy) params.append('sortBy', sortBy);
+      params.append('page', String(page));
+      params.append('limit', String(limit));
+      
+      const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
+        method: 'GET',
+        headers,
+        // Add cache control for better performance
+        cache: page === 1 ? 'default' : 'no-store' as RequestCache
+      });
     
-    const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
-      method: 'GET',
-      headers,
-    });
-    
-    if (response.status === 401) {
-      return { error: 'Authentication required' };
-    }
-    
-    if (response.status === 429) {
+      if (response.status === 401) {
+        return { error: 'Authentication required' };
+      }
+      
+      if (response.status === 429) {
+        const data = await response.json();
+        return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
       const data = await response.json();
-      return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
+      return { data };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
     }
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-    }
-    
-    const data = await response.json();
-    return { data };
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
-  }
+  });
 }
 
 export async function fetchLeakFullKey(leakId: string, session?: any): Promise<ApiResponse<{ fullKey: string }>> {

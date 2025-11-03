@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
-import { Shield, Moon, Sun, Menu, X, UserCircle, LogOut } from 'lucide-react';
+// Optimize icon imports - only import what's needed
+import { Moon, Sun, Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -22,7 +23,8 @@ const navItems = [
   { href: '/leaderboard', label: 'Leaderboard' },
 ];
 
-const NavLinks = () => {
+// Memoize NavLinks to prevent unnecessary re-renders
+const NavLinks = React.memo(() => {
   const pathname = usePathname();
   return (
     <>
@@ -51,7 +53,8 @@ const NavLinks = () => {
       ))}
     </>
   );
-};
+});
+NavLinks.displayName = 'NavLinks';
 
 const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick, compact }: { onLinkClick: () => void; compact?: boolean }) {
   const pathname = usePathname();
@@ -210,7 +213,7 @@ const NavbarComponent = () => {
   };
 
   return (
-    <nav ref={navRef} className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav ref={navRef} className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex h-16 items-center w-full">
           {/* Left: Logo */}
@@ -246,8 +249,7 @@ const NavbarComponent = () => {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
               tabIndex={0}
-              onMouseEnter={() => import('./navbar')}
-              onTouchStart={() => import('./navbar')}
+              // Removed unused dynamic imports that cause unnecessary chunks
             >
               <motion.div
                 animate={{ rotate: isMenuOpen ? 90 : 0 }}

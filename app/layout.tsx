@@ -8,7 +8,14 @@ import { Footer } from '@/components/layout/footer';
 import { Toaster } from 'sonner';
 import Analytics from '@/components/Analytics';
 
-const inter = Inter({ subsets: ['latin'], display: 'swap' });
+// Optimize font loading with subset and display swap
+const inter = Inter({ 
+  subsets: ['latin'], 
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter',
+  fallback: ['system-ui', 'arial']
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://apiradar.live'),

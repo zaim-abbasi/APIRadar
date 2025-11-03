@@ -74,6 +74,26 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Performance optimizations */
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1;
+  }
+  
+  /* Optimize rendering performance */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  
+  /* Reduce repaints/reflows */
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
   }
 }
 
@@ -99,11 +119,18 @@
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.4s ease-out forwards;
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-spin-slow {
   animation: spin-slow 8s linear infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
 
 /* Animation delays */

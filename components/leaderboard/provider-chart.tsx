@@ -69,7 +69,7 @@ const ProviderListItem = React.memo(({
 
   return (
     <div 
-      className="flex items-center justify-between p-2.5 rounded-md bg-muted/20 hover:bg-muted/40 transition-all duration-150 group border border-border/30 hover:border-border/50"
+      className="flex items-center justify-between p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 group border border-border/30 hover:border-border/50 hover:shadow-sm"
     >
       <div className="flex items-center gap-3">
         <div 
@@ -136,10 +136,10 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
       {/* Chart */}
       <div className="lg:col-span-2 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm" aria-label="Leaks by Provider">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Leaks by Provider</CardTitle>
-            <CardDescription className="text-xs">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm hover:shadow-md hover:border-border/70 transition-all duration-200" aria-label="Leaks by Provider">
+          <CardHeader className="pb-3 px-5 pt-5">
+            <CardTitle className="text-lg font-semibold tracking-tight">Leaks by Provider</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground/80 mt-1">
               Distribution of leaked API keys across different providers
             </CardDescription>
           </CardHeader>
@@ -175,14 +175,14 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
       {/* Provider List */}
       <div className="w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm" aria-label="Top Providers">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Top Providers</CardTitle>
-            <CardDescription className="text-xs">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm hover:shadow-md hover:border-border/70 transition-all duration-200" aria-label="Top Providers">
+          <CardHeader className="pb-3 px-5 pt-5">
+            <CardTitle className="text-lg font-semibold tracking-tight">Top Providers</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground/80 mt-1">
               Most frequently leaked API providers
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-0 space-y-2">
+          <CardContent className="pt-0 px-5 pb-5 space-y-2">
             {topProviders.length ? (
               topProviders.map((provider, index) => (
                 <ProviderListItem key={provider.provider} provider={provider} index={index} />

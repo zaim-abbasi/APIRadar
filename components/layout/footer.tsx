@@ -86,40 +86,41 @@ SocialLinks.displayName = 'SocialLinks';
 
 const FooterComponent = () => {
   return (
-    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur">
-      <div className="container mx-auto px-4 py-4">
+    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur-md shadow-sm">
+      <div className="container mx-auto px-4 py-5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full text-center">
           {/* Left: Logo & Name */}
-          <div className="flex items-center space-x-1 w-full md:w-auto justify-center md:justify-start mb-2 md:mb-0">
+          <div className="flex items-center space-x-1.5 w-full md:w-auto justify-center md:justify-start mb-2 md:mb-0">
             <FooterLogo />
           </div>
 
           {/* Center: Copyright */}
           <div className="w-full md:w-auto flex justify-center mb-2 md:mb-0">
-            <span id="footer-label" className="text-xs text-muted-foreground text-center font-semibold">
+            <span id="footer-label" className="text-xs text-muted-foreground/80 text-center font-medium">
               © 2025 API Radar. Real-time detection and tracking of API key leaks.
             </span>
           </div>
 
           {/* Right: GitHub & Email */}
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 space-x-0 md:space-x-2 w-full md:w-auto justify-center md:justify-end">
+          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 space-x-0 md:space-x-3 w-full md:w-auto justify-center md:justify-end">
             <a
               href="mailto:zaim.k.abbasi@gmail.com"
-              className="text-sm text-muted-foreground hover:text-primary underline transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+              className="text-sm text-muted-foreground/80 hover:text-primary underline transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
               tabIndex={0}
+              aria-label="Contact via email"
             >
               Contact
             </a>
-            <div className="flex items-center gap-2 p-1.5 rounded-md bg-muted/50">
+            <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors duration-200">
               <a
                 href="https://github.com/zaim-abbasi"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Visit Zaim Abbasi on GitHub"
-                className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 rounded-md"
+                className="text-muted-foreground/80 hover:text-primary transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded-md p-1 hover:bg-muted/50"
                 tabIndex={0}
               >
-                <Github className="h-3.5 w-3.5" />
+                <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
                 <span className="sr-only">GitHub</span>
               </a>
               <a
@@ -127,10 +128,10 @@ const FooterComponent = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Connect with Zaim Abbasi on LinkedIn"
-                className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 rounded-md"
+                className="text-muted-foreground/80 hover:text-primary transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded-md p-1 hover:bg-muted/50"
                 tabIndex={0}
               >
-                <Linkedin className="h-3.5 w-3.5" />
+                <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
                 <span className="sr-only">LinkedIn</span>
               </a>
             </div>

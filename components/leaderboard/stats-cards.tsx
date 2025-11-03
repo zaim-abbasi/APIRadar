@@ -250,15 +250,17 @@ const StatCard = React.memo(({
     <div 
       className="group"
     >
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-200 hover:shadow-sm shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-          <CardTitle className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors tracking-tight">
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-border/70 transition-all duration-200 hover:shadow-md hover:shadow-primary/5 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-5">
+          <CardTitle className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors duration-200 tracking-tight">
             {stat.title}
           </CardTitle>
-          <IconComponent className={`${stat.color} h-8 w-8`} />
+          <div className="p-1.5 rounded-lg bg-muted/30 group-hover:bg-muted/50 transition-colors duration-200">
+            <IconComponent className={`${stat.color} h-6 w-6 transition-transform duration-200 group-hover:scale-110`} />
+          </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="text-xl font-medium text-foreground">
+        <CardContent className="p-4 sm:p-5 pt-0">
+          <div className="text-2xl font-semibold text-foreground">
             {typeof stat.value === 'number' && stat.value !== null ? (
               stat.isPercentage ? (
                 <span>{stat.value.toFixed(1)}%</span>
@@ -336,7 +338,7 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   return (
     <div
       id="stats-container"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-8"
     >
       {stats.map((stat, index) => (
         <StatCard key={stat.title} stat={stat} index={index} />

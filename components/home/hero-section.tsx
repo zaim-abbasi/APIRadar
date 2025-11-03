@@ -54,10 +54,10 @@ const CTAButton = React.memo(({
     href={href} 
     prefetch={true}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 animate-fade-in-up",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 animate-fade-in-up active:scale-[0.98]",
       variant === "default" 
-        ? "bg-primary text-primary-foreground border-primary/80 hover:bg-primary/90 hover:border-primary shadow-sm"
-        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-primary/60 shadow-sm"
+        ? "bg-primary text-primary-foreground border-primary/80 hover:bg-primary/90 hover:border-primary shadow-sm hover:shadow-md"
+        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-primary/60 shadow-sm hover:shadow-md"
     )}
   >
     {Icon && <Icon className="mr-2 h-5 w-5" />}
@@ -154,41 +154,18 @@ export const HeroSection = React.memo(() => {
       <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-3 sm:px-0">
         <div className="min-h-[80vh] sm:min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full py-4 sm:py-0">
           {/* Main Headline - Optimized Layout */}
-          <div className="mb-4 sm:mb-6">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-tight tracking-tight drop-shadow-sm">
-              <div className="mb-1 sm:mb-3 md:mb-4 animate-fade-in-up">
-                <span className="text-foreground">Tracking Public{' '}</span>
-                <span className="text-red-600 drop-shadow-md">API</span>
-              </div>
-              <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">leaks Live</div>
-            </h1>
-          </div>
+          <HeroHeadline />
 
           {/* Feature Tags */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-6 animate-fade-in-up">
-          <FeatureTags />
+            <FeatureTags />
           </div>
 
           {/* Subheading */}
-          <div className="mb-5 sm:mb-8 px-2 animate-fade-in-up">
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-snug">
-              See what’s leaking right now—API keys exposed in real time.<br className="hidden sm:block" />
-              Don’t miss the secrets spilling from public code. Explore the world’s live feed of credential leaks.
-            </p>
-          </div>
+          <HeroSubheading />
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 justify-center items-center mb-4 sm:mb-12">
-            <CTAButton href="/leaderboard" variant="outline">
-              Leaderboard
-            </CTAButton>
-            <CTAButton href="/explore">
-              <span className="flex items-center justify-center w-full">
-                Explore Leaks
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
-              </span>
-            </CTAButton>
-          </div>
+          <CTAButtons />
         </div>
       </div>
     </section>

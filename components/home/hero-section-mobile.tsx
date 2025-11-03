@@ -6,13 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-const features = [
-  { icon: Zap, text: "Leaks as They Happen", color: "text-yellow-500", accent: "bg-yellow-400/80" },
-  { icon: Eye, text: "See Everything Exposed", color: "text-green-500", accent: "bg-green-400/80" },
-  { icon: Globe, text: "Global Leak Radar", color: "text-blue-500", accent: "bg-blue-400/80" },
-];
-
 export const HeroSectionMobile = React.memo(() => {
+  // Memoize features array to prevent recreation on every render
+  const features = React.useMemo(() => [
+    { icon: Zap, text: "Live Leaks", color: "text-yellow-500", accent: "bg-yellow-400/80" },
+    { icon: Eye, text: "All Exposed", color: "text-green-500", accent: "bg-green-400/80" },
+    { icon: Globe, text: "Global Radar", color: "text-blue-500", accent: "bg-blue-400/80" },
+  ], []);
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-7 bg-gradient-to-b from-background via-white/90 to-muted/60 dark:from-background dark:via-zinc-900/80 dark:to-muted/60">
       {/* Soft background tint for depth */}
@@ -44,11 +44,7 @@ export const HeroSectionMobile = React.memo(() => {
 
       {/* Feature Tags - premium vertical stack */}
       <div className="w-full max-w-xs mx-auto mb-8 flex flex-col gap-2 z-10">
-        {[
-          { icon: Zap, text: "Live Leaks", color: "text-yellow-500", accent: "bg-yellow-400/80" },
-          { icon: Eye, text: "All Exposed", color: "text-green-500", accent: "bg-green-400/80" },
-          { icon: Globe, text: "Global Radar", color: "text-blue-500", accent: "bg-blue-400/80" },
-        ].map((feature, idx) => (
+        {features.map((feature, idx) => (
           <div
             key={idx}
             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/100 dark:bg-zinc-900/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group"
@@ -69,7 +65,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/explore"
           prefetch={true}
           aria-label="Explore Leaks"
-          className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-150 shadow-xl active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+          className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-xl hover:shadow-2xl active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
           style={{ boxShadow: "0 8px 32px 0 rgba(239,68,68,0.13)" }}
           tabIndex={0}
         >
@@ -82,7 +78,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/leaderboard"
           prefetch={true}
           aria-label="Leaderboard"
-          className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full border border-primary/20 bg-background text-primary hover:bg-muted transition-colors duration-150 shadow-md focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+          className="flex items-center justify-center rounded-full h-14 px-7 text-lg font-semibold w-full border border-primary/20 bg-background text-primary hover:bg-muted/80 hover:border-primary/30 transition-all duration-200 shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 active:scale-[0.98]"
           tabIndex={0}
         >
           Leaderboard
@@ -96,14 +92,14 @@ export const HeroSectionMobile = React.memo(() => {
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-9 pb-5 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">API Radar</span>
-          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="Email" tabIndex={0}>
-            <Mail className="h-4 w-4" />
+          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
+            <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="GitHub" tabIndex={0}>
-            <Github className="h-4 w-4" />
+          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
+            <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" aria-label="LinkedIn" tabIndex={0}>
-            <Linkedin className="h-4 w-4" />
+          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+            <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>
       </footer>

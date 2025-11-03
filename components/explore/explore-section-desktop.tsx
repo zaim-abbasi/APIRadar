@@ -26,27 +26,33 @@ const ExploreHeader = React.memo(() => (
 
 ExploreHeader.displayName = 'ExploreHeader';
 
-const ActionCard = ({ onSignIn }: { onSignIn: () => void }) => (
+// Memoize ActionCard to prevent unnecessary re-renders
+const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
   <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `150ms` }}>
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <Card className="border-border/50 bg-card/60 backdrop-blur-sm">
+      <CardContent className="p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-5">
           {/* Left section: Content */}
-          <div className="flex-1 space-y-2 min-w-0">
+          <div className="flex-1 space-y-2.5 min-w-0">
             {/* Icon and Title */}
-            <div className="flex flex-row items-center gap-2">
-              <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+            <div className="flex flex-row items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">Sign in to unlock full access</span>
             </div>
             
             {/* Description */}
-            <div className="text-sm text-muted-foreground leading-relaxed">
+            <div className="text-sm text-muted-foreground/90 leading-relaxed">
               Sign in to view all API key leaks, copy full keys, and access advanced features.
             </div>
             
             {/* Benefit text */}
-            <div className="text-xs text-green-700 dark:text-green-400 font-medium">
-              No payment needed. Explore for free.
+            <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400 font-medium">
+              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span>No payment needed. Explore for free.</span>
             </div>
           </div>
           
@@ -54,7 +60,8 @@ const ActionCard = ({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2 whitespace-nowrap w-full sm:w-auto"
+              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              aria-label="Sign in with Google"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -69,7 +76,8 @@ const ActionCard = ({ onSignIn }: { onSignIn: () => void }) => (
       </CardContent>
     </Card>
   </div>
-);
+));
+ActionCard.displayName = 'ActionCard';
 
 const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   leaks,
@@ -132,13 +140,13 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       {/* Header */}
       <ExploreHeader />
       {/* Filters */}
-      <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-6 animate-fade-in-up opacity-0 animate-delay-10">
-        <div className="flex flex-col lg:flex-row gap-3">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-5 mb-6 animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
           <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
           {/* Time Range */}
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 transition-all duration-200 hover:bg-card/80 hover:border-border focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 shadow-sm">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground/70" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +172,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                           </SelectItem>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
+                      <TooltipContent side="right" className="bg-background/95 backdrop-blur-sm text-foreground rounded-md px-3 py-2 text-xs shadow-lg border border-border/50">
                         Sign in to access this range
                       </TooltipContent>
                     </Tooltip>
@@ -179,8 +187,8 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           </Select>
           {/* Sort */}
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-              <SortAsc className="h-4 w-4 mr-2" />
+            <SelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 transition-all duration-200 hover:bg-card/80 hover:border-border focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 shadow-sm">
+              <SortAsc className="h-4 w-4 mr-2 text-muted-foreground/70" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -193,8 +201,8 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           </Select>
         </div>
         {/* Results Count and Refresh */}
-        <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-10">
-          <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
+          <div className="flex flex-1 items-center gap-2.5">
             <div className="flex-1 text-sm text-muted-foreground truncate">
               <span className="hidden sm:inline">
                 {total} leak{total !== 1 ? 's' : ''} found
@@ -206,9 +214,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             <button
               onClick={onRefresh}
               disabled={isLoading}
-              className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 pl-2.5 pr-2.5 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm hover:shadow-md flex items-center gap-1.5 transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+              aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
@@ -232,21 +241,21 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             
             {/* Fade-out blur effect for unauthenticated users - suggests more content */}
             {isUnauthenticated && total > 6 && (
-              <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-10">
+              <div className="absolute bottom-0 left-0 right-0 h-36 pointer-events-none z-10">
                 {/* Gradient fade */}
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/98 to-transparent" />
                 {/* Blur overlay for depth */}
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/70 to-transparent backdrop-blur-md" />
                  {/* Subtle pulsing animation hint */}
-                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
-                   <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                     <span>Sign in to View all</span>
-                     <svg className="w-4 h-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                 <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5">
+                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
+                     <span className="text-xs text-muted-foreground font-medium animate-pulse">Sign in to View all</span>
+                     <svg className="w-3.5 h-3.5 text-primary animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                      </svg>
                    </div>
                  </div>
-              </div>
+               </div>
             )}
           </div>
         </Suspense>

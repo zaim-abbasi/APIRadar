@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
-import { UserCircle, LogOut, Crown, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { UserCircle, LogOut, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,7 +21,8 @@ export function UserMenu() {
   const { data: session, status } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { isAuthenticated } = usePlanCheck();
-  const { theme, setTheme } = require('next-themes').useTheme();
+  // Optimize theme import
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -57,68 +59,77 @@ export function UserMenu() {
     }
   }, [isSigningOut]);
 
-  // Always show the profile icon (Avatar)
-  let displayLetter = 'U';
-  let userName: string | undefined = undefined;
-  let userEmail: string | undefined = undefined;
+  // Memoize user display data to prevent unnecessary recalculations
+  const { displayLetter, userName, userEmail } = useMemo(() => {
+    let letter = 'U';
+    let name: string | undefined = undefined;
+    let email: string | undefined = undefined;
 
-  if (session && session.user) {
-    userName = session.user.name || undefined;
-    userEmail = session.user.email || undefined;
-    if (userName && typeof userName === 'string' && userName.length > 0) {
-      displayLetter = userName.charAt(0).toUpperCase();
-    } else if (userEmail && typeof userEmail === 'string' && userEmail.length > 0) {
-      displayLetter = userEmail.charAt(0).toUpperCase();
+    if (session && session.user) {
+      name = session.user.name || undefined;
+      email = session.user.email || undefined;
+      if (name && typeof name === 'string' && name.length > 0) {
+        letter = name.charAt(0).toUpperCase();
+      } else if (email && typeof email === 'string' && email.length > 0) {
+        letter = email.charAt(0).toUpperCase();
+      }
     }
-  }
+    return { displayLetter: letter, userName: name, userEmail: email };
+  }, [session]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className={cn(
-            "relative h-8 w-8 md:h-9 md:w-9 rounded-full",
-            theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
-          )}
+          className="relative h-8 w-8 md:h-9 md:w-9 rounded-full focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
         >
-          {mounted && (
+          {mounted ? (
             <Avatar className={cn(
               "h-8 w-8 md:h-9 md:w-9 border border-border/60",
               theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
             )}>
               <AvatarFallback className={cn(
-                "flex items-center justify-center h-full w-full text-base font-semibold select-none transition-colors",
+                "flex items-center justify-center h-full w-full text-base font-semibold select-none",
                 theme === 'dark'
                   ? "bg-zinc-800 text-white"
                   : "bg-zinc-100 text-zinc-900"
               )}>
                 {session && userName
                   ? displayLetter
-                  : <UserCircle className="h-5 w-5 text-muted-foreground" />}
+                  : <UserCircle className="h-5 w-5 text-muted-foreground/70" />}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-border/60 bg-white text-zinc-900">
+              <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-semibold select-none bg-zinc-100 text-zinc-900">
+                <UserCircle className="h-5 w-5 text-muted-foreground/70" />
               </AvatarFallback>
             </Avatar>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 bg-background/95 dark:bg-zinc-900/95 p-0.5">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-xl shadow-lg border border-border/60 bg-background/95 backdrop-blur-md dark:bg-zinc-900/95 p-1">
         {/* If signed in, show user info, else show Guest */}
-        <DropdownMenuLabel className="font-semibold px-3 py-1.5 rounded-lg bg-primary/5 mb-1">
+        <DropdownMenuLabel className="font-semibold px-3 py-2 rounded-lg bg-primary/5 mb-1 transition-colors duration-200">
           <div className="flex flex-col space-y-0.5">
             {session && userName ? (
               <>
-                <span className="text-base font-medium text-primary dark:text-white truncate leading-tight">{userName}</span>
-                <span className="text-xs text-muted-foreground truncate leading-tight">{userEmail}</span>
+                <span className="text-base font-semibold text-primary dark:text-white truncate leading-tight">{userName}</span>
+                <span className="text-xs text-muted-foreground/80 truncate leading-tight">{userEmail}</span>
               </>
             ) : (
-                <span className="text-base font-medium text-primary dark:text-white leading-tight">Sign in</span>
+                <span className="text-base font-semibold text-primary dark:text-white leading-tight">Sign in</span>
             )}
           </div>
         </DropdownMenuLabel>
         {!session && (
           <>
-            <DropdownMenuItem onClick={() => handleSignIn()} className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer mb-1">
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
+            <DropdownMenuItem 
+              onClick={() => handleSignIn()} 
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer mb-1 active:scale-[0.98]"
+            >
+              <svg className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -130,20 +141,22 @@ export function UserMenu() {
         )}
         {session && (
           <>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="my-1" />
           </>
         )}
         {/* Theme toggle inside dropdown */}
         {mounted && (
           <DropdownMenuItem
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-primary/10 focus:text-primary cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer active:scale-[0.98]"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
-            {theme === 'dark' ? (
-              <Sun className="h-4 w-4 text-yellow-500" />
-            ) : (
-              <Moon className="h-4 w-4 text-blue-500" />
-            )}
+            <div className="transition-transform duration-200 group-hover:scale-110">
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-500" />
+              )}
+            </div>
             <span className="font-medium text-sm">Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
           </DropdownMenuItem>
         )}
@@ -151,9 +164,9 @@ export function UserMenu() {
           <DropdownMenuItem 
             onClick={handleSignOut} 
             disabled={isSigningOut}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md transition-none bg-transparent focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
           >
-            <LogOut className="h-4 w-4 text-destructive" />
+            <LogOut className="h-4 w-4 text-destructive transition-transform duration-200 group-hover:scale-110" />
             <span className="font-medium text-sm">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
           </DropdownMenuItem>
         )}

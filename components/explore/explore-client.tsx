@@ -8,8 +8,21 @@ import { PROVIDER_API_MAP } from '@/lib/constants';
 import { fetchLeaks } from '@/lib/api';
 import { LeakedKey, Provider } from '@/types';
 
-const ExploreSectionMobile = dynamic(() => import("@/components/explore/explore-section-mobile"), { ssr: false });
-const ExploreSectionDesktop = dynamic(() => import("@/components/explore/explore-section-desktop"), { ssr: false });
+// Optimize dynamic imports with loading states and proper chunking
+const ExploreSectionMobile = dynamic(
+  () => import("@/components/explore/explore-section-mobile"),
+  { 
+    ssr: false,
+    loading: () => <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+  }
+);
+const ExploreSectionDesktop = dynamic(
+  () => import("@/components/explore/explore-section-desktop"),
+  { 
+    ssr: false,
+    loading: () => <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+  }
+);
 
 const PAGE_SIZE = 10;
 const INFINITE_SCROLL_MARGIN = '0px 0px 600px 0px';
@@ -43,16 +56,23 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     total: 0,
     refreshIndex: 0
   });
-  const isDefaultFilters =
-    filterState.selectedProvider === 'all' &&
-    filterState.timeRange === '15d' &&
-    filterState.sortBy === 'newest' &&
-    paginationState.page === 1;
-  const [leaks, setLeaks] = useState<LeakedKey[]>(
-    isDefaultFilters && firstPageCache.leaks.length > 0 && Date.now() - firstPageCache.timestamp < CACHE_TTL
-      ? firstPageCache.leaks
-      : []
+  // Memoize default filters check to prevent unnecessary recalculations
+  const isDefaultFilters = useMemo(
+    () =>
+      filterState.selectedProvider === 'all' &&
+      filterState.timeRange === '15d' &&
+      filterState.sortBy === 'newest' &&
+      paginationState.page === 1,
+    [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page]
   );
+
+  // Initialize leaks from cache if available
+  const [leaks, setLeaks] = useState<LeakedKey[]>(() => {
+    if (isDefaultFilters && firstPageCache.leaks.length > 0 && Date.now() - firstPageCache.timestamp < CACHE_TTL) {
+      return firstPageCache.leaks;
+    }
+    return [];
+  });
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -172,6 +192,9 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     const authChanged = prevAuthenticatedRef.current !== isAuthenticated;
     if (authChanged && hasInitializedRef.current) {
       prevAuthenticatedRef.current = isAuthenticated;
+      // Clear cache when authentication changes
+      firstPageCache.leaks = [];
+      firstPageCache.timestamp = 0;
       // Reset to page 1 and trigger refresh to get updated hasMore value
       // This ensures infinite scroll is enabled immediately after sign-in
       // and works for all filter categories (15d, 30d, all providers, all sort options)
@@ -180,10 +203,14 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         page: 1, 
         refreshIndex: prev.refreshIndex + 1 
       }));
+      // Clear leaks state to force fresh data fetch
+      setLeaks([]);
+      // Trigger immediate refetch
+      fetchAndSetLeaks();
     } else {
       prevAuthenticatedRef.current = isAuthenticated;
     }
-  }, [isAuthenticated, session]);
+  }, [isAuthenticated, session, fetchAndSetLeaks]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
@@ -200,22 +227,39 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     setLoadingState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Props for children
-  const sharedProps = {
-    leaks,
-    isLoading: loadingState.isLoading,
-    selectedProvider: filterState.selectedProvider,
-    plan,
-    session,
-    onProviderChange: handleProviderChange,
-    timeRange: filterState.timeRange,
-    setTimeRange: handleTimeRangeChange,
-    sortBy: filterState.sortBy,
-    setSortBy: handleSortByChange,
-    onRefresh: handleRefresh,
-    total: paginationState.total,
-    error: loadingState.error,
-  };
+  // Memoize shared props to prevent unnecessary re-renders of child components
+  const sharedProps = useMemo(
+    () => ({
+      leaks,
+      isLoading: loadingState.isLoading,
+      selectedProvider: filterState.selectedProvider,
+      plan,
+      session,
+      onProviderChange: handleProviderChange,
+      timeRange: filterState.timeRange,
+      setTimeRange: handleTimeRangeChange,
+      sortBy: filterState.sortBy,
+      setSortBy: handleSortByChange,
+      onRefresh: handleRefresh,
+      total: paginationState.total,
+      error: loadingState.error,
+    }),
+    [
+      leaks,
+      loadingState.isLoading,
+      filterState.selectedProvider,
+      filterState.timeRange,
+      filterState.sortBy,
+      plan,
+      session,
+      paginationState.total,
+      loadingState.error,
+      handleProviderChange,
+      handleTimeRangeChange,
+      handleSortByChange,
+      handleRefresh,
+    ]
+  );
 
   if (isMobile) {
     return <ExploreSectionMobile {...sharedProps} loadingRef={loadingRef} hasMore={paginationState.hasMore} />;

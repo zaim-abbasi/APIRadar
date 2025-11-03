@@ -1,7 +1,10 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import React from "react";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+// Memoize provider to prevent unnecessary re-renders
+export const AuthProvider = React.memo(function AuthProvider({ children }: { children: React.ReactNode }) {
   return <SessionProvider>{children}</SessionProvider>;
-} 
+});
+AuthProvider.displayName = 'AuthProvider'; 

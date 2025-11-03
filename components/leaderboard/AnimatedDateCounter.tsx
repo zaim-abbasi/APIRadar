@@ -11,7 +11,9 @@ export interface AnimatedDateCounterProps {
   dateString: string | null;
 }
 
-export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = ({ dateString }) => {
+// Memoize component to prevent unnecessary re-renders
+export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = React.memo(({ dateString }) => {
+  // Early return optimization
   if (!dateString || isNaN(new Date(dateString).getTime())) return null;
 
   const targetDate = new Date(dateString);
@@ -37,7 +39,9 @@ export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = ({ dateSt
       }
     };
     frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, [dateString, targetDay, targetMonth, targetYear]);
 
   return (
@@ -45,4 +49,5 @@ export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = ({ dateSt
       {day} {monthNames[month]}, {year}
     </span>
   );
-}; 
+});
+AnimatedDateCounter.displayName = 'AnimatedDateCounter'; 
