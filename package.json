@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "dev": "next dev",
+    "dev:full": "concurrently \"npm run dev\" \"cd backend && npm run dev\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -77,5 +78,8 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
