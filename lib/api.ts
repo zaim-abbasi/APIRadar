@@ -6,27 +6,21 @@ export interface ApiResponse<T> {
 }
 
 // Helper function to create authenticated headers
-function createAuthHeaders(session?: any, planOverride?: 'free' | 'basic' | 'pro') {
+function createAuthHeaders(session?: any) {
   let userId = 'anonymous';
   let userEmail = 'anonymous@example.com';
-  let userPlan: 'free' | 'basic' | 'pro' = 'free';
   let isAuthenticated = 'false';
 
   if (session?.user) {
     userId = session.user.id || session.user.email || 'authenticated';
     userEmail = session.user.email || 'authenticated@example.com';
-    userPlan = session.user.plan || 'basic';
     isAuthenticated = 'true';
-  }
-  if (planOverride) {
-    userPlan = planOverride;
   }
 
   return {
     'Content-Type': 'application/json',
     'x-user-id': userId,
     'x-user-email': userEmail,
-    'x-user-plan': userPlan,
     'x-user-authenticated': isAuthenticated,
   };
 }
@@ -164,8 +158,7 @@ export async function fetchLeaks({
   sortBy, 
   page = 1, 
   limit = 10,
-  session,
-  planOverride
+  session
 }: {
   provider?: string;
   timeRange?: string;
@@ -173,7 +166,6 @@ export async function fetchLeaks({
   page?: number;
   limit?: number;
   session?: any;
-  planOverride?: 'free' | 'basic' | 'pro';
 }): Promise<ApiResponse<{ 
   leaks: any[]; 
   total: number; 
@@ -185,7 +177,7 @@ export async function fetchLeaks({
   };
 }>> {
   try {
-    const headers = createAuthHeaders(session, planOverride);
+    const headers = createAuthHeaders(session);
     const params = new URLSearchParams();
     if (provider) params.append('provider', provider);
     if (timeRange) params.append('timeRange', timeRange);
@@ -232,7 +224,7 @@ export async function fetchLeakFullKey(leakId: string, session?: any): Promise<A
     }
     
     if (response.status === 403) {
-      return { error: 'Full key access requires Pro plan' };
+      return { error: 'Full key access requires login' };
     }
     
     if (!response.ok) {

@@ -3,6 +3,7 @@ import { StatsCards } from '@/components/leaderboard/stats-cards';
 import { LeaderboardData, ProviderStats } from '@/types';
 import type { Metadata } from 'next';
 import LeaderboardClient from "@/components/leaderboard/leaderboard-client";
+import { headers } from 'next/headers';
 
 // Page-specific metadata
 export const metadata: Metadata = {
@@ -33,24 +34,45 @@ interface ChartData {
 
 // Production-grade data fetching with proper error handling
 async function fetchLeaderboardData(): Promise<LeaderboardData> {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  // Use Next.js API route as proxy (similar to leaks)
+  // Get the base URL for server-side requests
+  let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+  
+  // If not set, try to get from headers (works in server components)
+  if (!baseUrl) {
+    try {
+      const headersList = await headers();
+      const host = headersList.get('host');
+      const protocol = headersList.get('x-forwarded-proto') || 'http';
+      baseUrl = `${protocol}://${host}`;
+    } catch {
+      // Fallback to localhost if headers() fails
+      baseUrl = 'http://localhost:3000';
+    }
+  }
   
   try {
-    const response = await fetch(`${backendUrl}/api/leaderboard-data`, {
+    const response = await fetch(`${baseUrl}/api/leaderboard`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-user-id': 'anonymous',
-        'x-user-email': 'anonymous@example.com',
-        'x-user-plan': 'free',
-        'x-user-authenticated': 'false',
       },
       // Production caching - 5 minutes
       next: { revalidate: 300 }
     });
 
     if (!response.ok) {
-      throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { error: await response.text().catch(() => 'Unable to parse error') };
+      }
+      
+      const errorMessage = errorData.error || `API route error: ${response.status} ${response.statusText}`;
+      const errorDetails = errorData.details ? ` Details: ${errorData.details}` : '';
+      
+      throw new Error(`${errorMessage}${errorDetails}`);
     }
 
     const data = await response.json();
@@ -74,12 +96,16 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
     };
     
   } catch (error) {
-    // Log error for monitoring in production
-    console.error('Leaderboard data fetch failed:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+    // Enhanced error logging
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
-      backendUrl
-    });
+      baseUrl
+    };
+    
+    console.error('Leaderboard data fetch failed:', errorDetails);
 
     // Return safe fallback data
     return {

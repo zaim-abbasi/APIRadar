@@ -16,27 +16,34 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
 
 // Memoized Action Card component
 const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
-  <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `100ms` }}>
-    <Card className="border border-border/50 bg-card/50 backdrop-blur-sm rounded-lg">
+  <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `150ms` }}>
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
       <CardContent className="p-4 sm:p-6">
-        {/* Mobile: Stacked layout, Desktop: Horizontal layout */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-h-[80px]">
-          {/* Text content */}
-          <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
-            <div className="flex items-center gap-2 mb-1">
-              <LogIn className="h-5 w-5 text-primary" />
-              <span className="font-semibold text-base sm:text-lg">Sign in to unlock full access</span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Left section: Content */}
+          <div className="flex-1 space-y-2 min-w-0">
+            {/* Icon and Title */}
+            <div className="flex flex-row items-center gap-2">
+              <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <span className="text-base sm:text-lg font-semibold text-foreground">Sign in to unlock full access</span>
             </div>
-            <span className="text-muted-foreground text-xs sm:text-sm">
+            
+            {/* Description */}
+            <div className="text-sm text-muted-foreground leading-relaxed">
               Sign in to view all API key leaks, copy full keys, and access advanced features.
-            </span>
+            </div>
+            
+            {/* Benefit text */}
+            <div className="text-xs text-green-700 dark:text-green-400 font-medium">
+              No payment needed. Explore for free.
+            </div>
           </div>
           
-          {/* Button */}
-          <div className="flex-shrink-0 flex justify-center sm:justify-end">
+          {/* Right section: Button - vertically centered */}
+          <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 w-full sm:w-auto sm:min-w-[140px] whitespace-nowrap"
+              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center justify-center gap-2 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2 whitespace-nowrap w-full sm:w-auto"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -44,7 +51,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              <span className="truncate">Continue with Google</span>
+              <span>Continue with Google</span>
             </button>
           </div>
         </div>
@@ -56,7 +63,6 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
 ActionCard.displayName = 'ActionCard';
 
 // Import the pro trial card button from the main Explore page
-import UpgradeToProCardWithTrialButton from '@/components/explore/UpgradeToProCardWithTrialButton';
 
 const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
   const {
@@ -77,7 +83,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     hasMore
   } = props;
   const isUnauthenticated = !session || !session.user;
-  const isBasic = plan === 'basic';
   const isPro = plan === 'pro';
   const isLoggedIn = !!session?.user;
 
@@ -108,8 +113,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
                   if (isDisabled && is30d) {
                     if (!isLoggedIn) {
                       badge = <Badge variant="secondary" className="ml-2 text-xs">Sign in</Badge>;
-                    } else if (isBasic) {
-                      badge = <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>;
                     }
                   }
                   return isDisabled ? (
@@ -123,7 +126,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
-                        {(!isLoggedIn) ? 'Sign in to access this range' : 'Upgrade to Pro to access this range'}
+                        Sign in to access this range
                       </TooltipContent>
                     </Tooltip>
                   ) : (
@@ -172,7 +175,29 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       {/* Leak Table */}
       <div className="w-full max-w-md mx-auto mb-10 z-10">
         <Suspense fallback={<div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse" aria-busy="true" aria-live="polite">Loading…</div>}>
-          <LeakTable leaks={leaks} isLoading={isLoading} selectedProvider={selectedProvider} plan={plan} />
+          {/* Wrap in relative container for fade effect */}
+          <div className="relative">
+            <LeakTable leaks={leaks} isLoading={isLoading} selectedProvider={selectedProvider} plan={plan} />
+            
+            {/* Fade-out blur effect for unauthenticated users - suggests more content */}
+            {isUnauthenticated && total > 6 && (
+              <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-10">
+                {/* Gradient fade */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent" />
+                {/* Blur overlay for depth */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent backdrop-blur-sm" />
+                 {/* Subtle pulsing animation hint */}
+                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
+                   <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                     <span>Sign in to View all</span>
+                     <svg className="w-4 h-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                     </svg>
+                   </div>
+                 </div>
+              </div>
+            )}
+          </div>
         </Suspense>
         {/* Infinite scroll sentinel for pro users */}
         {plan === 'pro' && hasMore && (
@@ -182,12 +207,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       {/* Action Card for unauthenticated users */}
       {isUnauthenticated && (
         <ActionCard onSignIn={() => signIn('google', { callbackUrl: window.location.href })} />
-      )}
-      {/* Pro Trial Card for basic users */}
-      {isBasic && !isUnauthenticated && (
-        <div className="mt-4 w-full max-w-xs mx-auto">
-          <UpgradeToProCardWithTrialButton session={session} />
-        </div>
       )}
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">

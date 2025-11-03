@@ -24,7 +24,7 @@ interface LeakTableProps {
   leaks: (LeakedKey | null)[];
   isLoading?: boolean;
   selectedProvider: Provider;
-  plan: 'free' | 'basic' | 'pro';
+  plan: 'free' | 'pro';
 }
 
 const providerColors: Record<string, string> = {
@@ -114,12 +114,12 @@ const CopyButton = React.memo(({
   leak: LeakedKey; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
-  plan: 'free' | 'basic' | 'pro';
+  plan: 'free' | 'pro';
 }) => {
   const isLocked = leak.isLocked === true;
   const hasSensitiveData = leak.fullKey && !isLocked;
 
-  // Only free users see the lock/copy message
+  // Only free (unauthenticated) users see the lock/copy message
   if (plan === 'free' || isLocked || !hasSensitiveData) {
     return (
       <>
@@ -212,7 +212,7 @@ const LeakCard = React.memo(({
   index: number; 
   copiedKey: string | null; 
   onCopy: (text: string, keyId: string) => void; 
-  plan: 'free' | 'basic' | 'pro';
+  plan: 'free' | 'pro';
 }) => {
   const isLocked = leak.isLocked === true;
   const safeRepoUrl = isLocked ? null : leak.repoUrl;

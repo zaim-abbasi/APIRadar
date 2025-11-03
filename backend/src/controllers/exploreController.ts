@@ -1,7 +1,7 @@
 import { FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { z } from 'zod';
-import { AuthenticatedRequest, getPlanLimits } from '../middleware/auth';
+import { AuthenticatedRequest, getAccessLimits } from '../middleware/auth';
 
 const querySchema = z.object({
   provider: z.string().optional(),
@@ -20,7 +20,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     const user = request.user;
     const isAuthenticated = user.isAuthenticated;
-    const plan = user.plan;
 
     const parsed = querySchema.safeParse(request.query);
     if (!parsed.success) {
@@ -28,35 +27,34 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
 
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
-    const planLimits = getPlanLimits(plan);
+    const accessLimits = getAccessLimits(isAuthenticated);
 
-    // Security: Enforce plan-based limits
-    let enforcedLimit = Math.min(limit, planLimits.maxLeaks);
-    let enforcedPage = planLimits.canInfiniteScroll ? page : 1;
+    // Security: Enforce access-based limits
+    let enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
+    let enforcedPage = accessLimits.canInfiniteScroll ? page : 1;
     
-    // For unauthorized users, limit to 4 leaks maximum
+    // For unauthorized users, limit to 6 leaks maximum
     if (!isAuthenticated) {
-      enforcedLimit = Math.min(enforcedLimit, 4);
+      enforcedLimit = Math.min(enforcedLimit, 6);
       enforcedPage = 1; // No pagination for unauthorized users
     }
 
     // Security: Enforce time range limits
     let enforcedTimeRange = timeRange;
-    if (planLimits.maxTimeRange !== 'all') {
-      // For free and basic users, allow both '7d' and '15d'
-      const allowedTimeRanges = plan === 'pro' ? ['all'] : ['7d', '15d'];
+    if (accessLimits.maxTimeRange !== 'all') {
+      // For unauthenticated users, only allow '7d' and '15d'
+      const allowedTimeRanges = ['7d', '15d'];
       
       if (timeRange && !allowedTimeRanges.includes(timeRange)) {
         // Log potential security violation
         request.log.warn({
           msg: 'Time range violation attempt',
           userId: user.id,
-          userPlan: user.plan,
           requestedTimeRange: timeRange,
           allowedTimeRanges: allowedTimeRanges,
           ip: request.ip
         });
-        enforcedTimeRange = '15d'; // Default to 15d for free/basic users
+        enforcedTimeRange = '15d'; // Default to 15d for unauthenticated users
       }
     }
 
@@ -76,10 +74,10 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       }
     }
 
-    // Security: For non-pro users, limit to recent leaks only
-    if (plan !== 'pro') {
+    // Security: For unauthenticated users, limit to recent leaks only
+    if (!isAuthenticated) {
       const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 30); // Last 30 days for non-pro
+      recentDate.setDate(recentDate.getDate() - 30); // Last 30 days for unauthenticated
       filter.leakDetectedAt = { $gte: recentDate };
     }
 
@@ -90,20 +88,15 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     // Get total count for pagination (for summary)
     const total = await Leak.countDocuments(filter);
 
-    // Security: Enforce maximum results for non-pro users (for cards only)
+    // Security: Enforce maximum results for unauthenticated users (for cards only)
     let maxResults = total;
-    if (plan !== 'pro') {
-      maxResults = Math.min(total, planLimits.maxLeaks);
-    }
-    
-    // For unauthorized users, limit to 4 results maximum
     if (!isAuthenticated) {
-      maxResults = Math.min(maxResults, 4);
+      maxResults = Math.min(total, accessLimits.maxLeaks); // 6 for unauthenticated
     }
 
     // Calculate pagination with security limits
-    const skip = planLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
-    const actualLimit = planLimits.canInfiniteScroll ? enforcedLimit : planLimits.maxLeaks;
+    const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
+    const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
 
     // Fetch leaks with security constraints
     const leaks = await Leak.find(filter)
@@ -124,17 +117,17 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       };
 
       if (isAuthenticated) {
-        // Authenticated users get full data (fullKey for basic and pro)
+        // Authenticated users (Pro) get full data including fullKey
         return {
           ...baseLeak,
           redactedKey: leak.redactedKey,
           repoUrl: leak.repoUrl,
           filePath: leak.filePath,
           repoCreatedAt: leak.repoCreatedAt,
-          fullKey: (plan === 'basic' || plan === 'pro') ? leak.fullKey : undefined
+          fullKey: leak.fullKey
         };
       } else {
-        // Unauthorized users get minimal data
+        // Unauthenticated users (Free) get minimal data
         return {
           ...baseLeak,
           redactedKey: leak.redactedKey ? `${leak.redactedKey.slice(0, 8)}****` : 'sk-****',
@@ -146,9 +139,9 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       }
     });
 
-    // Calculate hasMore based on plan limits
+    // Calculate hasMore based on access limits
     let hasMore = false;
-    if (planLimits.canInfiniteScroll && isAuthenticated) {
+    if (accessLimits.canInfiniteScroll && isAuthenticated) {
       hasMore = (enforcedPage * enforcedLimit) < total; // use true total for hasMore
     }
 
@@ -156,7 +149,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     request.log.info({
       msg: 'Leaks accessed',
       userId: user.id,
-      userPlan: plan,
       isAuthenticated: isAuthenticated,
       requestedLimit: limit,
       enforcedLimit: actualLimit,
@@ -173,9 +165,9 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       total, // always return the true total for summary
       hasMore,
       planLimits: {
-        maxLeaks: planLimits.maxLeaks,
-        canInfiniteScroll: planLimits.canInfiniteScroll,
-        maxTimeRange: planLimits.maxTimeRange
+        maxLeaks: accessLimits.maxLeaks,
+        canInfiniteScroll: accessLimits.canInfiniteScroll,
+        maxTimeRange: accessLimits.maxTimeRange
       }
     });
 
@@ -194,20 +186,19 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
 
     const { id } = request.params as { id: string };
     const user = request.user;
-    const planLimits = getPlanLimits(user.plan);
+    const accessLimits = getAccessLimits(user.isAuthenticated);
 
-    // Security: Only pro users can access full keys
-    if (!planLimits.canAccessFullKey) {
+    // Security: Only authenticated users (Pro) can access full keys
+    if (!accessLimits.canAccessFullKey || !user.isAuthenticated) {
       request.log.warn({
         msg: 'Unauthorized full key access attempt',
         userId: user.id,
-        userPlan: user.plan,
         leakId: id,
         ip: request.ip
       });
       return reply.status(403).send({ 
-        error: 'Full key access requires Pro plan',
-        upgradeRequired: true
+        error: 'Full key access requires login',
+        loginRequired: true
       });
     }
 
@@ -220,7 +211,6 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     request.log.info({
       msg: 'Full key accessed',
       userId: user.id,
-      userPlan: user.plan,
       leakId: id,
       ip: request.ip
     });

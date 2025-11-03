@@ -19,8 +19,8 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const isMobile = useIsMobile();
   const { data: session } = useSession();
-  const { plan: userPlan, isPro, isBasic, isAuthenticated } = usePlanCheck();
-  const plan: 'free' | 'basic' | 'pro' = isAuthenticated && (userPlan === 'pro' || userPlan === 'basic') ? userPlan : 'free';
+  const { isAuthenticated } = usePlanCheck();
+  const plan: 'free' | 'pro' = isAuthenticated ? 'pro' : 'free';
 
   // State management
   const [filterState, setFilterState] = useState<{
@@ -58,20 +58,39 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
 
   // Add a ref to track if we've already fetched data to prevent unnecessary re-fetches
   const hasInitializedRef = useRef(false);
+  const prevAuthenticatedRef = useRef(isAuthenticated);
 
+  // Set up IntersectionObserver for infinite scroll
   useEffect(() => {
-    if (!paginationState.hasMore || loadingState.isLoading) return;
+    // Only observe if user can scroll infinitely (authenticated) and hasMore is true
+    if (!isAuthenticated || !paginationState.hasMore || loadingState.isLoading) {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+      return;
+    }
+    
+    // Disconnect existing observer
     if (observerRef.current) observerRef.current.disconnect();
+    
+    // Create new observer
     observerRef.current = new window.IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
+      if (entries[0].isIntersecting && !loadingState.isLoading && !loadingState.isLoadingMore) {
         setPaginationState(prev => ({ ...prev, page: prev.page + 1 }));
       }
     }, { rootMargin: INFINITE_SCROLL_MARGIN });
+    
+    // Observe the loading element
     if (loadingRef.current) {
       observerRef.current.observe(loadingRef.current);
     }
-    return () => observerRef.current?.disconnect();
-  }, [paginationState.hasMore, loadingState.isLoading]);
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [paginationState.hasMore, loadingState.isLoading, loadingState.isLoadingMore, isAuthenticated]);
 
   useEffect(() => {
     setPaginationState(prev => ({ ...prev, page: 1 }));
@@ -93,7 +112,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         page: paginationState.page,
         limit: PAGE_SIZE,
         session,
-        planOverride: plan,
       });
       if (error) {
         throw new Error(error);
@@ -125,18 +143,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     } finally {
       setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
     }
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page, paginationState.refreshIndex, plan]);
-
-  // Track plan to refresh leaks if plan changes (e.g., upgrade to pro)
-  const lastPlanRef = useRef(plan);
-  useEffect(() => {
-    if (lastPlanRef.current !== plan) {
-      // Plan changed (e.g., basic -> pro), refresh leaks
-      handleRefresh();
-      lastPlanRef.current = plan;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page, paginationState.refreshIndex, session]);
 
   // Only fetch on mount and when filters change, not on every re-render
   useEffect(() => {
@@ -156,9 +163,27 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Fetch when page changes (for infinite scroll)
   useEffect(() => {
     if (hasInitializedRef.current && paginationState.page > 1) {
-    fetchAndSetLeaks();
+      fetchAndSetLeaks();
     }
   }, [paginationState.page]);
+
+  // Re-fetch when authentication status changes to update hasMore and enable infinite scroll
+  useEffect(() => {
+    const authChanged = prevAuthenticatedRef.current !== isAuthenticated;
+    if (authChanged && hasInitializedRef.current) {
+      prevAuthenticatedRef.current = isAuthenticated;
+      // Reset to page 1 and trigger refresh to get updated hasMore value
+      // This ensures infinite scroll is enabled immediately after sign-in
+      // and works for all filter categories (15d, 30d, all providers, all sort options)
+      setPaginationState(prev => ({ 
+        ...prev, 
+        page: 1, 
+        refreshIndex: prev.refreshIndex + 1 
+      }));
+    } else {
+      prevAuthenticatedRef.current = isAuthenticated;
+    }
+  }, [isAuthenticated, session]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {

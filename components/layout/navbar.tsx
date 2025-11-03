@@ -57,7 +57,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { plan, daysRemaining } = usePlanCheck();
+  const { isAuthenticated } = usePlanCheck();
   const { theme, setTheme } = useTheme();
   let displayLetter = 'U';
   let userName = undefined;
@@ -87,19 +87,6 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             )}
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
-            )}
-            {/* Plan display integrated into user info - matching desktop structure */}
-            {session && (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                </span>
-                {plan === 'pro' && daysRemaining > 0 && (
-                  <span className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                    {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
-              </span>
-                )}
-              </div>
             )}
           </div>
           {session ? (

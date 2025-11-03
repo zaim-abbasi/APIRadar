@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 export function UserMenu() {
   const { data: session, status } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { plan, daysRemaining } = usePlanCheck();
+  const { isAuthenticated } = usePlanCheck();
   const { theme, setTheme } = require('next-themes').useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -109,17 +109,6 @@ export function UserMenu() {
               <>
                 <span className="text-base font-medium text-primary dark:text-white truncate leading-tight">{userName}</span>
                 <span className="text-xs text-muted-foreground truncate leading-tight">{userEmail}</span>
-                {/* Plan display integrated into user info */}
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Plan: {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                  </span>
-                  {plan === 'pro' && daysRemaining > 0 && (
-                    <span className="text-[10px] font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-md whitespace-nowrap">
-                      {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
-                    </span>
-                  )}
-                </div>
               </>
             ) : (
                 <span className="text-base font-medium text-primary dark:text-white leading-tight">Sign in</span>

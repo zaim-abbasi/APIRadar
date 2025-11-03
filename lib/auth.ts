@@ -2,22 +2,6 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import clientPromise from "./mongodb";
 
-// Helper function to build user documents with consistent field order
-function buildUserDoc(email: string, name: string, additionalFields: Record<string, any> = {}) {
-  const now = new Date();
-  return {
-    createdAt: now,
-    email,
-    name,
-    plan: 'basic',
-    pro_days_remaining: 0,
-    requestedTrial: false,
-    updatedAt: now,
-    lastProDayUpdate: null,
-    ...additionalFields // Any additional fields will be appended at the end
-  };
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -31,26 +15,19 @@ export const authOptions: NextAuthOptions = {
         try {
           const client = await clientPromise;
           const db = client.db();
-          
-          const userData = buildUserDoc(
-            user.email!,
-            user.name!
-          );
+          const now = new Date();
 
-          // Optimized upsert with better error handling
+          // Simple upsert - just create/update user with basic fields
           await db.collection("users").updateOne(
-            { email: userData.email },
+            { email: user.email! },
             { 
               $setOnInsert: {
-                createdAt: userData.createdAt,
-                plan: userData.plan,
-                pro_days_remaining: userData.pro_days_remaining,
-                requestedTrial: userData.requestedTrial,
-                lastProDayUpdate: userData.lastProDayUpdate
+                createdAt: now,
+                email: user.email!,
               },
               $set: {
-                name: userData.name,
-                updatedAt: new Date()
+                name: user.name || '',
+                updatedAt: now
               }
             },
             { upsert: true }
@@ -66,104 +43,43 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        // Use JWT token data for better performance
+        // Just pass the user ID
         session.user.id = token.id as string;
-        session.user.plan = token.plan as string;
-        session.user.pro_days_remaining = token.pro_days_remaining as number;
-        session.user.requestedTrial = token.requestedTrial as boolean;
-        
-        // Pass downgrade flag to frontend
-        if (token.planDowngraded) {
-          session.user.planDowngraded = true;
-        }
       }
       return session;
     },
     async jwt({ token, user, account }) {
-      // Optimized JWT callback with caching
-      if (account?.provider === "google") {
+      if (account?.provider === "google" && user?.email) {
         try {
           const client = await clientPromise;
           const db = client.db();
           
           let userDoc = await db.collection("users").findOne({
-            email: user?.email
+            email: user.email
           });
 
-          // If not found, create the user using the helper function
-          if (!userDoc && user) {
-            const userData = buildUserDoc(
-              user.email!,
-              user.name!
-            );
+          // If not found, create the user
+          if (!userDoc) {
+            const now = new Date();
+            const userData = {
+              email: user.email,
+              name: user.name || '',
+              createdAt: now,
+              updatedAt: now
+            };
 
             const result = await db.collection("users").insertOne(userData);
             userDoc = { ...userData, _id: result.insertedId };
           }
           
           if (userDoc) {
-            // Enhanced pro days decrementing logic
-            let plan = userDoc.plan || 'basic';
-            let daysRemaining = userDoc.pro_days_remaining || 0;
-            let lastUpdated = userDoc.lastProDayUpdate || null;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Start of today
-
-            // Check if we need to reduce days (once per day)
-            if (daysRemaining > 0 && lastUpdated) {
-              const lastUpdateDate = new Date(lastUpdated);
-              lastUpdateDate.setHours(0, 0, 0, 0);
-              
-              // If last update was before today, reduce days
-              if (lastUpdateDate < today) {
-                const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
-                daysRemaining = Math.max(0, daysRemaining - daysDiff);
-                console.log(`User ${userDoc.email}: Reduced ${daysDiff} days, now ${daysRemaining} days remaining`);
-              }
-            }
-
-            // Determine plan based on days remaining
-            const wasPro = plan === 'pro';
-            if (daysRemaining > 0) {
-              plan = 'pro';
-            } else {
-              plan = 'basic';
-            }
-
-            // Check if user was downgraded from pro to basic
-            const wasDowngraded = wasPro && plan === 'basic';
-
-            // Update the user's plan and days in the database
-            await db.collection("users").updateOne(
-              { _id: userDoc._id },
-              { 
-                $set: { 
-                  plan: plan,
-                  pro_days_remaining: daysRemaining,
-                  lastProDayUpdate: today,
-                  updatedAt: new Date()
-                }
-              }
-            );
-
-            // If user was downgraded, add a flag to trigger frontend refresh
-            if (wasDowngraded) {
-              token.planDowngraded = true;
-            }
-
             token.id = userDoc._id.toString();
-            token.plan = plan;
-            token.pro_days_remaining = daysRemaining;
-            token.requestedTrial = userDoc.requestedTrial || false;
           }
         } catch (error) {
           console.error("Error fetching user data for JWT:", error);
-          // Set default values if database fails
-          token.plan = 'basic';
-          token.pro_days_remaining = 0;
         }
       } else if (token.id) {
-        // For existing sessions, refresh the plan data
+        // For existing sessions, just verify user still exists
         try {
           const client = await clientPromise;
           const db = client.db();
@@ -172,63 +88,12 @@ export const authOptions: NextAuthOptions = {
             _id: token.id as any
           });
           
-          if (userDoc) {
-            // Enhanced pro days decrementing logic for existing sessions
-            let plan = userDoc.plan || 'basic';
-            let daysRemaining = userDoc.pro_days_remaining || 0;
-            let lastUpdated = userDoc.lastProDayUpdate || null;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Start of today
-
-            // Check if we need to reduce days (once per day)
-            if (daysRemaining > 0 && lastUpdated) {
-              const lastUpdateDate = new Date(lastUpdated);
-              lastUpdateDate.setHours(0, 0, 0, 0);
-              
-              // If last update was before today, reduce days
-              if (lastUpdateDate < today) {
-                const daysDiff = Math.floor((today.getTime() - lastUpdateDate.getTime()) / (1000 * 60 * 60 * 24));
-                daysRemaining = Math.max(0, daysRemaining - daysDiff);
-                console.log(`User ${userDoc.email}: Reduced ${daysDiff} days, now ${daysRemaining} days remaining`);
-              }
-            }
-
-            // Determine plan based on days remaining
-            const wasPro = plan === 'pro';
-            if (daysRemaining > 0) {
-              plan = 'pro';
-            } else {
-              plan = 'basic';
-            }
-
-            // Check if user was downgraded from pro to basic
-            const wasDowngraded = wasPro && plan === 'basic';
-
-            // Update the user's plan and days in the database
-            await db.collection("users").updateOne(
-              { _id: userDoc._id },
-              { 
-                $set: { 
-                  plan: plan,
-                  pro_days_remaining: daysRemaining,
-                  lastProDayUpdate: today,
-                  updatedAt: new Date()
-                }
-              }
-            );
-
-            // If user was downgraded, add a flag to trigger frontend refresh
-            if (wasDowngraded) {
-              token.planDowngraded = true;
-            }
-
-            token.plan = plan;
-            token.pro_days_remaining = daysRemaining;
-            token.requestedTrial = userDoc.requestedTrial || false;
+          if (!userDoc) {
+            // User deleted? Clear token
+            token.id = undefined;
           }
         } catch (error) {
           console.error("Error refreshing user data for JWT:", error);
-          // Keep existing token values if database fails
         }
       }
       return token;
