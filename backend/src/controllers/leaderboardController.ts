@@ -47,7 +47,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       ScanAttempt.countDocuments(),
       Leak.countDocuments(),
       Leak.aggregate([
-        { $match: { provider: { $exists: true, $ne: null, $ne: '' } } }, // Only count leaks with valid providers
+        { $match: { $and: [{ provider: { $exists: true } }, { provider: { $ne: null } }, { provider: { $ne: '' } }] } }, // Only count leaks with valid providers
         { $group: { _id: '$provider', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 10 }
@@ -111,7 +111,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     
     return reply.status(500).send({ 
       error: 'Failed to fetch leaderboard data',
-      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined
     });
   }
 } 

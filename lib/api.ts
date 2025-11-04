@@ -14,7 +14,7 @@ function deduplicateRequest<T>(
   
   // Clear expired cache entries periodically
   if (now % 10000 < 100) { // Cleanup every ~10 seconds
-    for (const [k, v] of requestCache.entries()) {
+    for (const [k, v] of Array.from(requestCache.entries())) {
       if (now - v.timestamp > CACHE_DURATION * 2) {
         requestCache.delete(k);
       }

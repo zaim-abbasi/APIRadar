@@ -440,11 +440,11 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
   if (prevProps.leaks.length !== nextProps.leaks.length) return false;
   
   // Quick ID comparison instead of deep equality
-  const prevIds = new Set(prevProps.leaks.map(l => l?.id).filter(Boolean));
-  const nextIds = new Set(nextProps.leaks.map(l => l?.id).filter(Boolean));
+  const prevIds = new Set(prevProps.leaks.map(l => l?.id).filter((id): id is string => Boolean(id)));
+  const nextIds = new Set(nextProps.leaks.map(l => l?.id).filter((id): id is string => Boolean(id)));
   if (prevIds.size !== nextIds.size) return false;
   
-  for (const id of prevIds) {
+  for (const id of Array.from(prevIds)) {
     if (!nextIds.has(id)) return false;
   }
   

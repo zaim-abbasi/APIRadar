@@ -88,12 +88,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     // Get total count for pagination (for summary)
     const total = await Leak.countDocuments(filter);
 
-    // Security: Enforce maximum results for unauthenticated users (for cards only)
-    let maxResults = total;
-    if (!isAuthenticated) {
-      maxResults = Math.min(total, accessLimits.maxLeaks); // 6 for unauthenticated
-    }
-
     // Calculate pagination with security limits
     const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
     const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;

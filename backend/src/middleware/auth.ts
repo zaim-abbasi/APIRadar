@@ -63,7 +63,7 @@ export async function authenticateUser(request: AuthenticatedRequest, reply: Fas
     const { 'x-user-id': userId, 'x-user-email': userEmail, 'x-user-authenticated': isAuthenticated } = authData.data;
 
     // Determine authentication status - simple: logged in or not
-    const isUserAuthenticated = isAuthenticated === 'true' && userId && userEmail;
+    const isUserAuthenticated: boolean = isAuthenticated === 'true' && !!userId && !!userEmail;
 
     // Rate limiting check
     const clientId = userId || request.ip || 'anonymous';
@@ -88,18 +88,19 @@ export async function authenticateUser(request: AuthenticatedRequest, reply: Fas
     }
 
     // Set user context
-    request.user = {
+    const user = {
       id: userId || 'anonymous',
       email: userEmail || 'anonymous@example.com',
       isAuthenticated: isUserAuthenticated
     };
+    request.user = user;
 
     // Log authentication for security monitoring
     request.log.info({
       msg: 'User authenticated',
-      userId: request.user.id,
-      userEmail: request.user.email,
-      isAuthenticated: request.user.isAuthenticated,
+      userId: user.id,
+      userEmail: user.email,
+      isAuthenticated: user.isAuthenticated,
       ip: request.ip,
       userAgent: request.headers['user-agent']
     });
