@@ -2,10 +2,10 @@ import axios, { AxiosInstance } from 'axios';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 import { waitForRateLimitIfNeeded, setRateLimit, clearRateLimit } from './rateLimitManager';
+import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export class GitHubService {
   private readonly clients: AxiosInstance[];
-  private currentTokenIndex: number = 0;
   
   constructor() {
     // Support GITHUB_TOKEN as a single token or comma-separated list
@@ -33,7 +33,8 @@ export class GitHubService {
     client.interceptors.response.use(
       (response: any) => response,
       async (error: any) => {
-        if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
+        // Handle both 403 and 429 rate limit errors
+        if ((error.response?.status === 403 || error.response?.status === 429) && error.response?.headers['x-ratelimit-remaining'] === '0') {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
           const now = Date.now();
           
@@ -54,26 +55,61 @@ export class GitHubService {
     return client;
   }
 
-  private getCurrentClient(): AxiosInstance {
-    // Always return a valid client (defensive)
-    return this.clients[this.currentTokenIndex % this.clients.length]!;
-  }
-
-  private rotateToken(): void {
-    this.currentTokenIndex = (this.currentTokenIndex + 1) % this.clients.length;
-    logger.debug('github', 'Rotated to token ' + (this.currentTokenIndex + 1) + '/' + this.clients.length);
-  }
 
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    // Try with current token first
+    // Priority 2: Use best available token (proactive load balancing)
+    if (rateLimitOptimizer.shouldRotateToken()) {
+      rateLimitOptimizer.rotateToBestToken();
+    }
+
+    // Get client for current token (aligned with optimizer)
+    const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+    const client = this.clients[tokenIndex % this.clients.length]!;
+
     try {
-      return await requestFn(this.getCurrentClient());
+      const response = await requestFn(client);
+      
+      // Priority 2: Update rate limit info from response headers
+      if (response && (response as any).headers) {
+        rateLimitOptimizer.updateFromHeaders((response as any).headers, tokenIndex);
+      }
+      
+      return response;
     } catch (error: any) {
-      // If rate limited and we have multiple tokens, try the next one
-      if (error.response?.status === 403 && this.clients.length > 1) {
-        this.rotateToken();
-        logger.warn('Retrying with next token due to rate limit');
-        return await requestFn(this.getCurrentClient());
+      // Priority 2: Update rate limit info from error response headers
+      if (error.response?.headers) {
+        rateLimitOptimizer.updateFromHeaders(error.response.headers, tokenIndex);
+      }
+
+      // Priority 2: Handle 401 (invalid token) - rotate to next token
+      if (error.response?.status === 401 && this.clients.length > 1) {
+        rateLimitOptimizer.rotateToBestToken();
+        const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+        const newClient = this.clients[newTokenIndex % this.clients.length]!;
+        logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1} (previous token may be invalid)`);
+        // Retry with new token
+        try {
+          return await requestFn(newClient);
+        } catch (retryError: any) {
+          // If new token also fails with 401, mark it as invalid and try next
+          if (retryError.response?.status === 401 && this.clients.length > 1) {
+            rateLimitOptimizer.rotateToBestToken();
+            const nextTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+            const nextClient = this.clients[nextTokenIndex % this.clients.length]!;
+            logger.warn(`[GITHUB] Token ${newTokenIndex + 1} also invalid, trying token ${nextTokenIndex + 1}`);
+            return await requestFn(nextClient);
+          }
+          throw retryError;
+        }
+      }
+
+      // If rate limited (403 or 429) and we have multiple tokens, try the next one
+      if ((error.response?.status === 403 || error.response?.status === 429) && this.clients.length > 1) {
+        rateLimitOptimizer.rotateToBestToken();
+        const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+        const newClient = this.clients[newTokenIndex % this.clients.length]!;
+        logger.warn(`[GITHUB] Rotated to token ${newTokenIndex + 1} due to rate limit`);
+        return await requestFn(newClient);
       }
       throw error;
     }
@@ -201,6 +237,17 @@ export class GitHubService {
     }
   }
 
+  /**
+   * Priority 2: Search code using GitHub API with token rotation
+   */
+  async searchCode(query: string, page: number = 1, perPage: number = 10): Promise<any> {
+    return await this.makeRequest(client =>
+      client.get('/search/code', {
+        params: { q: query, per_page: perPage, page }
+      })
+    );
+  }
+
   private async getCommitCount(repoName: string): Promise<number> {
     try {
       // Fetch repo metadata for default_branch
@@ -256,6 +303,29 @@ export class GitHubService {
       return commit?.sha || '';
     } catch (error) {
       logger.error(`Commit hash error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
+      return '';
+    }
+  }
+
+  /**
+   * Priority 4: Get repository's latest commit hash (HEAD of default branch)
+   * Used for repo-level incremental scanning
+   */
+  async getRepoLatestCommitHash(repoName: string): Promise<string> {
+    try {
+      // Get repo info to find default branch
+      const repoInfo = await this.makeRequest(client =>
+        client.get(`/repos/${repoName}`)
+      );
+      const defaultBranch = repoInfo.data?.default_branch || 'main';
+      
+      // Get latest commit from default branch
+      const response = await this.makeRequest(client =>
+        client.get(`/repos/${repoName}/commits/${defaultBranch}`)
+      );
+      return response.data?.sha || '';
+    } catch (error) {
+      logger.error(`Repo commit hash error: ${repoName} - ${error instanceof Error ? error.message : String(error)}`);
       return '';
     }
   }

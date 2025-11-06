@@ -1,11 +1,21 @@
 import { logger } from '../utils/logger';
-import { config } from '../config/environment';
 import { githubService } from './github';
 import { ILeak, Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
+// Priority 1: Critical Error Handling & Recovery
+import { CircuitBreaker } from '../utils/circuitBreaker';
+import { retryWithBackoff } from '../utils/retryWithBackoff';
+import { dbResilienceManager } from '../utils/dbResilience';
+import { FatalErrorRecoveryManager } from '../utils/fatalErrorRecovery';
+// Priority 2: Rate Limit Optimization
+import { rateLimitOptimizer } from './rateLimitOptimizer';
+// Priority 3: Performance & Efficiency
+import { ConcurrencyManager } from '../utils/concurrencyManager';
+import { LRUCache } from '../utils/lruCache';
+import { queryPrioritizer } from '../utils/queryPrioritizer';
 
 // Search patterns with provider names
 const SEARCH_PATTERNS = [
@@ -72,7 +82,25 @@ const PROVIDER_QUERIES = {
 
 // Configuration constants with fallback defaults
 const MAX_RETRIES = 2;
-const RETRY_BASE_DELAY = 100;
+
+// Priority 1: Circuit Breakers for critical services
+const githubApiCircuitBreaker = new CircuitBreaker('github-api', {
+  failureThreshold: 5,
+  successThreshold: 2,
+  timeout: 60000,
+  resetTimeout: 120000,
+  monitoringPeriod: 60000
+});
+
+// Priority 1: Fatal Error Recovery Manager
+const fatalErrorRecovery = new FatalErrorRecoveryManager({
+  maxRestartAttempts: 5,
+  restartBackoffBase: 10000,
+  restartBackoffMax: 300000,
+  fatalErrorWindow: 3600000,
+  maxFatalErrorsInWindow: 10,
+  statePreservationEnabled: true
+});
 
 // Type definitions for better type safety
 interface GitHubSearchItem {
@@ -164,16 +192,70 @@ async function fetchRawFileContent(repoFullName: string, filePath: string, ref: 
   }
 }
 
+/**
+ * Priority 1: Root Fix - Database query with resilience
+ */
 async function alreadyScanned(repoUrl: string, filePath: string, commitHash: string): Promise<boolean> {
   try {
-    const recentScan = await ScanAttempt.findOne({
-      repoUrl,
-      filePath,
-      commitHash
-    }).lean();
+    const recentScan = await dbResilienceManager.execute(async () => {
+      return await ScanAttempt.findOne({
+        repoUrl,
+        filePath,
+        commitHash
+      }).lean();
+    }, {
+      queueOnFailure: false, // Don't queue read operations
+      timeout: 10000
+    });
     return !!recentScan;
   } catch (error) {
+    // On DB failure, assume not scanned (conservative approach - may re-scan)
     logger.warn(`[FARM] Database query failed for duplicate check: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
+}
+
+/**
+ * Priority 4: Check if repo was already scanned with current commit hash
+ * Uses LRU cache for fast lookups, falls back to database query
+ */
+async function repoAlreadyScannedWithCommit(repoUrl: string, currentCommitHash: string): Promise<boolean> {
+  try {
+    // Check cache first (fast path)
+    const cachedCommit = repoLastCommitCache.get(repoUrl);
+    if (cachedCommit === currentCommitHash) {
+      return true; // Repo unchanged, skip it
+    }
+    
+    // If not in cache or different commit, check database
+    // Find the latest commit hash we scanned for this repo
+    const latestScan = await dbResilienceManager.execute(async () => {
+      return await ScanAttempt.findOne({
+        repoUrl
+      })
+      .sort({ scannedAt: -1 }) // Most recent first
+      .select('commitHash')
+      .lean();
+    }, {
+      queueOnFailure: false,
+      timeout: 10000
+    });
+    
+    if (latestScan && latestScan.commitHash === currentCommitHash) {
+      // Update cache and return true (repo unchanged)
+      repoLastCommitCache.set(repoUrl, currentCommitHash);
+      return true;
+    }
+    
+    // Repo has changes or never scanned - update cache with current commit
+    if (currentCommitHash) {
+      repoLastCommitCache.set(repoUrl, currentCommitHash);
+    }
+    
+    return false; // Repo needs scanning
+  } catch (error) {
+    // On DB failure, assume not scanned (conservative approach)
+    logger.warn(`[FARM] Database query failed for repo-level check: ${error instanceof Error ? error.message : String(error)}`);
     return false;
   }
 }
@@ -214,8 +296,16 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
   return results;
 }
 
-// --- In-memory cache for already scanned (repo, file, commit) ---
-const scannedCache = new Set<string>();
+// Priority 3: LRU Cache for already scanned (repo, file, commit)
+// Replaces unbounded Set with size-limited LRU cache
+const scannedCache = new LRUCache<string, boolean>(10000, 24 * 60 * 60 * 1000); // 10K entries, 24h TTL
+
+// Priority 4: LRU Cache for repo-level incremental scanning
+// Tracks latest commit hash per repo to skip unchanged repos
+const repoLastCommitCache = new LRUCache<string, string>(5000, 24 * 60 * 60 * 1000); // 5K repos, 24h TTL
+
+// Priority 3: Concurrency Manager for parallel processing
+const concurrencyManager = new ConcurrencyManager(5); // Process 5 files concurrently
 
 // --- Resume tracking with provider rotation ---
 interface ScanResumeState {
@@ -224,9 +314,14 @@ interface ScanResumeState {
   currentPage: number;
   lastProcessedTime: number;
   providerStates: {
-    openai: { queryIndex: number; page: number };
-    google_gemini: { queryIndex: number; page: number };
-    anthropic: { queryIndex: number; page: number };
+    [provider: string]: {
+      queryIndex: number;
+      page: number;
+      // Priority 4: Track consecutive empty pages per query for smart skipping
+      queryEmptyPages?: {
+        [query: string]: number; // query -> consecutive empty pages count
+      };
+    };
   };
 }
 
@@ -236,9 +331,9 @@ let scanResumeState: ScanResumeState = {
   currentPage: 1,
   lastProcessedTime: Date.now(),
   providerStates: {
-    openai: { queryIndex: 0, page: 1 },
-    google_gemini: { queryIndex: 0, page: 1 },
-    anthropic: { queryIndex: 0, page: 1 }
+    openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+    google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+    anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
   }
 };
 
@@ -274,19 +369,35 @@ async function loadResumeState(): Promise<ScanResumeState> {
     // Try to load from database first
     const saved = await ConfigurationService.getScanState();
     
-    // Validate the saved state
-    if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
-      scanResumeState = {
-        currentProviderIndex: saved.currentProviderIndex || 0,
-        currentQueryIndex: saved.currentQueryIndex || 0,
-        currentPage: saved.currentPage || 1,
-        lastProcessedTime: saved.lastProcessedTime || Date.now(),
-        providerStates: saved.providerStates || {
-          openai: { queryIndex: 0, page: 1 },
-          google_gemini: { queryIndex: 0, page: 1 },
-          anthropic: { queryIndex: 0, page: 1 }
+      // Validate the saved state
+      if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
+        // Priority 4: Initialize provider states with queryEmptyPages tracking
+        const defaultProviderStates = {
+          openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+          google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+          anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        };
+        
+        // Merge saved states with defaults, ensuring queryEmptyPages exists
+        const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
+        if (saved.providerStates) {
+          for (const [provider, state] of Object.entries(saved.providerStates)) {
+            const stateObj = state as { queryIndex?: number; page?: number; queryEmptyPages?: { [query: string]: number } };
+            mergedProviderStates[provider] = {
+              queryIndex: stateObj.queryIndex ?? 0,
+              page: stateObj.page ?? 1,
+              queryEmptyPages: stateObj.queryEmptyPages || {}
+            };
+          }
         }
-      };
+        
+        scanResumeState = {
+          currentProviderIndex: saved.currentProviderIndex || 0,
+          currentQueryIndex: saved.currentQueryIndex || 0,
+          currentPage: saved.currentPage || 1,
+          lastProcessedTime: saved.lastProcessedTime || Date.now(),
+          providerStates: mergedProviderStates
+        };
       
       // Also set in memory
       (global as any).scanResumeState = scanResumeState;
@@ -303,16 +414,32 @@ async function loadResumeState(): Promise<ScanResumeState> {
     // Fallback to memory state if database doesn't have valid state
     if ((global as any).scanResumeState) {
       const saved = (global as any).scanResumeState as any;
+      // Priority 4: Initialize provider states with queryEmptyPages tracking
+      const defaultProviderStates = {
+        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+      };
+      
+      // Merge saved states with defaults, ensuring queryEmptyPages exists
+      const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
+      if (saved.providerStates) {
+        for (const [provider, state] of Object.entries(saved.providerStates)) {
+          const stateObj = state as { queryIndex?: number; page?: number; queryEmptyPages?: { [query: string]: number } };
+          mergedProviderStates[provider] = {
+            queryIndex: stateObj.queryIndex ?? 0,
+            page: stateObj.page ?? 1,
+            queryEmptyPages: stateObj.queryEmptyPages || {}
+          };
+        }
+      }
+      
       scanResumeState = {
         currentProviderIndex: saved.currentProviderIndex || 0,
         currentQueryIndex: saved.currentQueryIndex || 0,
         currentPage: saved.currentPage || 1,
         lastProcessedTime: saved.lastProcessedTime || Date.now(),
-        providerStates: saved.providerStates || {
-          openai: { queryIndex: 0, page: 1 },
-          google_gemini: { queryIndex: 0, page: 1 },
-          anthropic: { queryIndex: 0, page: 1 }
-        }
+        providerStates: mergedProviderStates
       };
       return scanResumeState;
     }
@@ -321,15 +448,16 @@ async function loadResumeState(): Promise<ScanResumeState> {
   }
   
   // Reset to beginning only if no saved state exists
+  // Priority 4: Initialize with queryEmptyPages tracking
   scanResumeState = {
     currentProviderIndex: 0,
     currentQueryIndex: 0,
     currentPage: 1,
     lastProcessedTime: Date.now(),
     providerStates: {
-      openai: { queryIndex: 0, page: 1 },
-      google_gemini: { queryIndex: 0, page: 1 },
-      anthropic: { queryIndex: 0, page: 1 }
+      openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+      google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+      anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
     }
   };
   return scanResumeState;
@@ -339,15 +467,16 @@ async function loadResumeState(): Promise<ScanResumeState> {
 async function clearScanState(): Promise<void> {
   try {
     // Clear the state from database
+    // Priority 4: Initialize with queryEmptyPages tracking
     const success = await ConfigurationService.setScanState({
       currentProviderIndex: 0,
       currentQueryIndex: 0,
       currentPage: 1,
       lastProcessedTime: Date.now(),
       providerStates: {
-        openai: { queryIndex: 0, page: 1 },
-        google_gemini: { queryIndex: 0, page: 1 },
-        anthropic: { queryIndex: 0, page: 1 }
+        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     });
     
@@ -358,15 +487,16 @@ async function clearScanState(): Promise<void> {
     }
     
     // Reset in-memory state
+    // Priority 4: Initialize with queryEmptyPages tracking
     scanResumeState = {
       currentProviderIndex: 0,
       currentQueryIndex: 0,
       currentPage: 1,
       lastProcessedTime: Date.now(),
       providerStates: {
-        openai: { queryIndex: 0, page: 1 },
-        google_gemini: { queryIndex: 0, page: 1 },
-        anthropic: { queryIndex: 0, page: 1 }
+        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     };
     
@@ -379,34 +509,77 @@ async function clearScanState(): Promise<void> {
   }
 }
 
-// Patch retry wrapper to call waitForRateLimitIfNeeded before each attempt
-async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise<T> {
-  let lastErr: any;
-  let attempt = 0;
-  
-  while (attempt < maxRetries) {
-    try {
+/**
+ * Priority 1: Root Fix - Retry wrapper with exponential backoff, jitter, and rate limit handling
+ * 
+ * Replaces old retry() function with:
+ * - Exponential backoff with jitter (prevents thundering herd)
+ * - Circuit breaker integration (prevents cascading failures)
+ * - Proper rate limit handling (429/403)
+ * - Timeout protection
+ */
+async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
+  // Wait for rate limit before attempting
+  await waitForRateLimitIfNeeded();
+
+  try {
+    // Use circuit breaker for GitHub API calls
+    return await githubApiCircuitBreaker.execute(async () => {
       // Add timeout to prevent infinite hanging
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
+        setTimeout(() => reject(new Error('Request timeout')), 30000);
       });
-      
+
       const resultPromise = fn();
       return await Promise.race([resultPromise, timeoutPromise]);
-    } catch (err: any) {
-      // Always set lastErr to ensure we have a valid error to throw
-      lastErr = err;
-      
-      // Detect GitHub rate limit error with better validation
-      if (err.response && err.response.status === 403 && err.response.headers) {
-        const remaining = err.response.headers['x-ratelimit-remaining'];
-        const reset = err.response.headers['x-ratelimit-reset'];
-        const limit = err.response.headers['x-ratelimit-limit'];
-        const message = err.response.data?.message || '';
-        
-        const shortLog = `[GITHUB] 403: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
-        logger.warn(shortLog);
+    });
+  } catch (err: any) {
+    // Priority 1: Don't count 401 errors as circuit breaker failures
+    // They should trigger token rotation, not open the circuit
+    if (err.response && err.response.status === 401) {
+      // Reset circuit breaker failure count for 401 errors
+      // (They're handled by token rotation, not circuit breaker)
+      if (githubApiCircuitBreaker.getFailureCount() > 0) {
+        githubApiCircuitBreaker.reset();
+      }
+    }
+    // Priority 2: Handle 401 errors (invalid/expired token) - trigger token rotation
+    if (err.response && err.response.status === 401) {
+      logger.error(`[GITHUB] 401 Unauthorized - Token may be invalid or expired. Rotating to next token...`);
+      // Rotate to next token
+      rateLimitOptimizer.rotateToBestToken();
+      // Don't retry immediately - let the next request use the new token
+      throw err;
+    }
 
+    // Handle rate limit errors (don't use retryWithBackoff for these)
+    if (err.response && (err.response.status === 403 || err.response.status === 429)) {
+      const statusCode = err.response.status;
+      const headers = err.response.headers || {};
+      const remaining = headers['x-ratelimit-remaining'];
+      const reset = headers['x-ratelimit-reset'];
+      const limit = headers['x-ratelimit-limit'];
+      const message = err.response.data?.message || '';
+      
+      const shortLog = `[GITHUB] ${statusCode}: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
+      logger.warn(shortLog);
+
+      // Handle 429 errors FIRST - they are ALWAYS rate limits
+      if (statusCode === 429) {
+        if (reset && Number(reset) * 1000 > Date.now()) {
+          const resetTime = parseInt(reset, 10) * 1000;
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          throw err; // Re-throw to be handled by caller
+        } else {
+          logger.warn('[GITHUB] 429 rate limit error (no reset time). Waiting 60s...');
+          await new Promise(res => setTimeout(res, 60000));
+          throw err;
+        }
+      }
+
+      // Handle 403 errors - treat as rate limit if remaining === '0' OR if it's a secondary rate limit
+      if (statusCode === 403) {
         // Handle code search rate limit (10 requests per minute)
         if (
           remaining === '0' &&
@@ -417,8 +590,7 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
           const resetTime = parseInt(reset, 10) * 1000;
           setRateLimit(resetTime);
           await waitForRateLimitIfNeeded();
-          attempt++;
-          continue;
+          throw err;
         }
 
         // Handle core API rate limit (5000 requests per hour)
@@ -431,53 +603,74 @@ async function retry<T>(fn: () => Promise<T>, maxRetries = MAX_RETRIES): Promise
           const resetTime = parseInt(reset, 10) * 1000;
           setRateLimit(resetTime);
           await waitForRateLimitIfNeeded();
-          attempt++;
-          continue;
+          throw err;
         }
 
-        // Handle secondary/abuse rate limits (message contains 'abuse' or 'secondary')
+        // Handle secondary/abuse rate limits
         if (message.toLowerCase().includes('abuse') || message.toLowerCase().includes('secondary')) {
-          logger.warn('[GITHUB] Secondary or abuse rate limit detected. Retrying after backoff...');
-          await new Promise(res => setTimeout(res, 60000)); // Wait 1 minute before retry
-          attempt++;
-          continue;
+          logger.warn('[GITHUB] Secondary or abuse rate limit detected. Waiting 60s...');
+          await new Promise(res => setTimeout(res, 60000));
+          throw err;
         }
 
-        // If we have rate limit headers but they don't match known patterns, still treat as rate limit
+        // Handle secondary rate limits that come as 403 with remaining > 0
+        if (reset && Number(reset) * 1000 > Date.now() && remaining !== '0') {
+          logger.warn('[GITHUB] Secondary rate limit detected (403 with remaining > 0). Waiting for reset...');
+          const resetTime = parseInt(reset, 10) * 1000;
+          setRateLimit(resetTime);
+          await waitForRateLimitIfNeeded();
+          throw err;
+        }
+
+        // Unknown rate limit pattern
         if (remaining === '0' && reset && Number(reset) * 1000 > Date.now()) {
           logger.warn('[GITHUB] Unknown rate limit pattern detected, treating as rate limit...');
           const resetTime = parseInt(reset, 10) * 1000;
           setRateLimit(resetTime);
           await waitForRateLimitIfNeeded();
-          attempt++;
-          continue;
+          throw err;
         }
-
-        // If not a real rate limit, treat as a generic 403 and retry after a short delay
-        logger.warn('[GITHUB] 403 received but not a real rate limit. Retrying after short delay...');
-        await new Promise(res => setTimeout(res, 5000));
-        attempt++;
-        continue;
       }
-      
-      // For non-403 errors, wait before retry
-      await new Promise(res => setTimeout(res, RETRY_BASE_DELAY));
-      attempt++;
     }
+
+    // Priority 1: Don't retry 401 errors (invalid token) - they're not retryable
+    if (err.response && err.response.status === 401) {
+      logger.error(`[GITHUB] 401 Unauthorized - Token authentication failed. This is not retryable.`);
+      throw err;
+    }
+
+    // For non-rate-limit, non-401 errors, use retryWithBackoff with exponential backoff and jitter
+    return await retryWithBackoff(
+      async () => {
+        await waitForRateLimitIfNeeded();
+        return await githubApiCircuitBreaker.execute(fn);
+      },
+      {
+        maxRetries: MAX_RETRIES,
+        baseDelay: 1000, // Start with 1 second
+        maxDelay: 30000, // Max 30 seconds
+        exponentialBase: 2,
+        jitter: true,
+        jitterFactor: 0.3
+      },
+      context || 'RETRY'
+    );
   }
-  
-  // Ensure we always throw a valid error
-  if (!lastErr) {
-    lastErr = new Error('Retry failed after maximum attempts');
-  }
-  throw lastErr;
 }
 
-// --- Batched upsert for leaks and scan attempts ---
+/**
+ * Priority 1: Root Fix - Batched upsert with database resilience
+ * 
+ * Uses dbResilienceManager for:
+ * - Automatic retry on transient failures
+ * - Queue operations when DB unavailable
+ * - Circuit breaker protection
+ * - Graceful degradation
+ */
 async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
   if (!leaks.length) return;
   
-  try {
+  await dbResilienceManager.execute(async () => {
     const ops = leaks.map(leak => ({
       updateOne: {
         filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider, filePath: leak.filePath },
@@ -491,7 +684,6 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
     // Check which leaks were actually inserted (new) vs updated
     const newLeaks: Partial<ILeak>[] = [];
     if (result.upsertedIds && Object.keys(result.upsertedIds).length > 0) {
-      // Some leaks were inserted (new)
       for (let i = 0; i < leaks.length; i++) {
         const leak = leaks[i];
         if (result.upsertedIds[i] && leak) {
@@ -499,39 +691,41 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
         }
       }
     }
-    // Removed: GitHub issue creation for new leaks
-  } catch (error: any) {
+  }, {
+    queueOnFailure: true, // Queue if DB unavailable
+    timeout: 30000
+  }).catch((error: any) => {
     // Handle duplicate key errors gracefully
     if (error.code === 11000) {
-      // Check if it's a fullKey duplicate (which we want to prevent)
       if (error.message && error.message.includes('fullKey')) {
         logger.warn(`[FARM] Duplicate API key detected (fullKey): ${error.message}`);
-        // For fullKey duplicates, we should not save the duplicate
         return;
       }
-      // This is a duplicate key error for the compound index, which is expected when the same leak is found multiple times
-      // We can safely ignore this as the upsert should have handled it
       logger.warn(`[FARM] Duplicate leak detected (expected): ${error.message}`);
     } else {
-      // Log other errors
       logger.error(`[FARM] Failed to save leaks: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }
+  });
 }
 
+/**
+ * Priority 1: Root Fix - Batch insert with database resilience
+ */
 async function batchInsertScanAttempts(attempts: any[]) {
   if (!attempts.length) return;
   
-  try {
+  await dbResilienceManager.execute(async () => {
     await ScanAttempt.insertMany(attempts, { ordered: false });
-  } catch (error: any) {
-    // Handle duplicate key errors gracefully for scan attempts too
+  }, {
+    queueOnFailure: true,
+    timeout: 30000
+  }).catch((error: any) => {
     if (error.code === 11000) {
       logger.warn(`[FARM] Duplicate scan attempt detected (expected): ${error.message}`);
     } else {
       logger.error(`[FARM] Failed to save scan attempts: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }
+  });
 }
 
 // --- Main Service ---
@@ -587,17 +781,65 @@ export class GitHubCodeLeakFarmService {
     clearScanState();
   }
 
+  /**
+   * Priority 1: Root Fix - Scan loop with fatal error recovery
+   * 
+   * Wraps entire scan loop in fatal error recovery:
+   * - Max restart attempts with exponential backoff
+   * - State preservation on fatal errors
+   * - Prevents infinite restart loops
+   */
   private async scanLoop(): Promise<void> {
+    // Reset restart attempts on successful start
+    fatalErrorRecovery.resetRestartAttempts();
+
     try {
-      let lastStatusLog = Date.now();
-      let lastRateLimitCheck = Date.now();
-      let lastConfigCheck = Date.now();
-      const STATUS_LOG_INTERVAL = 1 * 60 * 1000; // 1 minute
-      const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
-      const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
-      let firstCycle = true;
-      let scanCompleted = false;
-      while (this.running) {
+      await this.scanLoopInternal();
+    } catch (fatalError) {
+      logger.error(
+        `[FARM] FATAL: Unhandled error in scanLoop: ${fatalError instanceof Error ? fatalError.stack : String(fatalError)}`
+      );
+
+      // Handle fatal error with recovery
+      await fatalErrorRecovery.handleFatalError(
+        fatalError instanceof Error ? fatalError : new Error(String(fatalError)),
+        async () => {
+          // Recovery function: restart scan loop
+          logger.warn('[FARM] Attempting to recover from fatal error...');
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          this.scanLoop();
+        },
+        async () => {
+          // State preservation function
+          await saveResumeState();
+          logger.warn('[FARM] State preserved before recovery attempt');
+        }
+      );
+    }
+  }
+
+  private async scanLoopInternal(): Promise<void> {
+    let lastStatusLog = Date.now();
+    let lastRateLimitCheck = Date.now();
+    let lastConfigCheck = Date.now();
+    let lastTokenRefresh = Date.now();
+    const STATUS_LOG_INTERVAL = 1 * 60 * 1000; // 1 minute
+    const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000; // 10 seconds
+    const CONFIG_CHECK_INTERVAL = 30 * 1000; // 30 seconds
+    const TOKEN_REFRESH_INTERVAL = 60 * 1000; // 1 minute - Priority 2: Refresh token statuses
+    let firstCycle = true;
+    let scanCompleted = false;
+    
+    while (this.running) {
+        // Priority 2: Refresh token statuses periodically
+        if (Date.now() - lastTokenRefresh > TOKEN_REFRESH_INTERVAL) {
+          lastTokenRefresh = Date.now();
+          try {
+            await rateLimitOptimizer.refreshAllTokenStatuses();
+          } catch (error) {
+            logger.warn(`[FARM] Failed to refresh token statuses: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
         // Check configurations every 30 seconds
         if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
           lastConfigCheck = Date.now();
@@ -647,6 +889,14 @@ export class GitHubCodeLeakFarmService {
         if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
           logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
           clearRateLimit();
+        }
+        
+        // Priority 3: Clean expired cache entries periodically
+        if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
+          const cleaned = scannedCache.cleanExpired();
+          if (cleaned > 0) {
+            logger.warn(`[FARM] Cleaned ${cleaned} expired cache entries`);
+          }
         }
         
         // If scan is completed, don't continue scanning
@@ -710,10 +960,6 @@ export class GitHubCodeLeakFarmService {
           }
         }
       }
-    } catch (fatalError) {
-      logger.error('[FARM] FATAL: Unhandled error in scanLoop: ' + (fatalError instanceof Error ? fatalError.stack : String(fatalError)));
-      setTimeout(() => this.scanLoop(), 10000);
-    }
   }
 
   private isScanStateComplete(state: ScanResumeState): boolean {
@@ -751,10 +997,31 @@ export class GitHubCodeLeakFarmService {
       
       // Type assertion since we've verified currentProvider exists
       const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
-      const providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
+      let providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
+      
+      // Priority 3: Prioritize queries based on performance
+      const rateLimitLow = rateLimitOptimizer.shouldSlowDown();
+      providerQueries = queryPrioritizer.prioritizeQueries(providerQueries);
+      
+      // Filter out low-value queries if rate limits are low
+      if (rateLimitLow) {
+        const originalLength = providerQueries.length;
+        providerQueries = providerQueries.filter(query => 
+          !queryPrioritizer.shouldSkipQuery(query, true)
+        );
+        if (providerQueries.length < originalLength) {
+          logger.warn(`[FARM] Skipped ${originalLength - providerQueries.length} low-value queries due to low rate limits`);
+        }
+      }
       
       // Get current provider state and ensure it exists
-      const providerState = resumeState.providerStates[typedCurrentProvider] || { queryIndex: 0, page: 1 };
+      // Priority 4: Initialize with queryEmptyPages if missing
+      const defaultProviderState = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+      const providerState = resumeState.providerStates[typedCurrentProvider] || defaultProviderState;
+      // Ensure queryEmptyPages exists
+      if (!providerState.queryEmptyPages) {
+        providerState.queryEmptyPages = {};
+      }
       let queryIndex = providerState.queryIndex;
       let page = providerState.page;
       
@@ -764,21 +1031,80 @@ export class GitHubCodeLeakFarmService {
       scanResumeState.currentPage = page;
       
       try {
-        // Process current provider's current query (one page only)
+        // Priority 3: Process current provider's current query (one page only)
         const query = providerQueries[queryIndex];
         if (query) {
-          await this.processOnePageForQuery(query, page);
-          scannedAnything = true;
-          
-          // Only log when there's actual scanning activity
-          logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+          const startTime = Date.now();
+          try {
+            // Priority 4: Get result status for smart page skipping
+            const result = await this.processOnePageForQuery(query, page);
+            
+            if (result.hadResults) {
+              scannedAnything = true;
+              
+              // Priority 4: Reset consecutive empty pages counter when we find results
+              if (!scanResumeState.providerStates[typedCurrentProvider]) {
+                scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+              }
+              if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
+                scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
+              }
+              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = 0;
+              
+              // Priority 3: Record successful query execution
+              const responseTime = Date.now() - startTime;
+              queryPrioritizer.recordExecution(query, true, result.itemCount, responseTime);
+              
+              // Only log when there's actual scanning activity
+              logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+            } else {
+              // Priority 4: Track consecutive empty pages for this query
+              if (!scanResumeState.providerStates[typedCurrentProvider]) {
+                scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+              }
+              if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
+                scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
+              }
+              const currentEmptyCount = scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] || 0;
+              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = currentEmptyCount + 1;
+              
+              // Priority 3: Record query execution (even if empty)
+              const responseTime = Date.now() - startTime;
+              queryPrioritizer.recordExecution(query, true, 0, responseTime);
+            }
+          } catch (error) {
+            // Priority 3: Record failed query execution
+            const startTime = Date.now();
+            const responseTime = Date.now() - startTime;
+            queryPrioritizer.recordExecution(query, false, 0, responseTime);
+            throw error;
+          }
         }
         
-        // Move to next query/page for this provider
-        queryIndex++;
-        if (queryIndex >= providerQueries.length) {
-          queryIndex = 0;
-          page++;
+        // Priority 4: Smart page skipping - check if we should skip ahead
+        const EMPTY_PAGE_THRESHOLD = 3; // Skip to next query after 3 consecutive empty pages
+        const providerState = scanResumeState.providerStates[typedCurrentProvider];
+        const emptyPagesCount = (query && providerState?.queryEmptyPages) ? (providerState.queryEmptyPages[query] ?? 0) : 0;
+        if (query && emptyPagesCount >= EMPTY_PAGE_THRESHOLD) {
+          logger.warn(`[FARM] Skipping query "${query}" after ${EMPTY_PAGE_THRESHOLD} consecutive empty pages (current page: ${page})`);
+          // Reset empty pages counter for this query
+          if (providerState && providerState.queryEmptyPages) {
+            providerState.queryEmptyPages[query] = 0;
+          }
+          // Move to next query
+          queryIndex++;
+          // If we've gone through all queries, move to next page and reset query index
+          if (queryIndex >= providerQueries.length) {
+            queryIndex = 0;
+            page++;
+          }
+        } else {
+          // Normal progression: move to next query/page
+          queryIndex++;
+          if (queryIndex >= providerQueries.length) {
+            queryIndex = 0;
+            page++;
+          }
         }
         
         // If any provider's page exceeds 120, reset all to page 1 and log
@@ -792,8 +1118,9 @@ export class GitHubCodeLeakFarmService {
           }
         }
         if (shouldResetPages) {
+          // Priority 4: Reset with queryEmptyPages tracking
           for (const provider of providerNames) {
-            scanResumeState.providerStates[provider] = { queryIndex: 0, page: 1 };
+            scanResumeState.providerStates[provider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
           }
           scanResumeState.currentPage = 1;
           scanResumeState.currentQueryIndex = 0;
@@ -804,7 +1131,13 @@ export class GitHubCodeLeakFarmService {
         }
         
         // Update provider state
-        scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page };
+        // Priority 4: Preserve queryEmptyPages when updating state
+        const currentProviderState = scanResumeState.providerStates[typedCurrentProvider] || { queryIndex: 0, page: 1, queryEmptyPages: {} };
+        scanResumeState.providerStates[typedCurrentProvider] = {
+          queryIndex,
+          page,
+          queryEmptyPages: currentProviderState.queryEmptyPages || {}
+        };
         scanResumeState.currentQueryIndex = queryIndex;
         scanResumeState.currentPage = page;
         scanResumeState.lastProcessedTime = Date.now();
@@ -829,73 +1162,130 @@ export class GitHubCodeLeakFarmService {
   }
 
   // Process only ONE page for a single query
-  private async processOnePageForQuery(query: string, page: number): Promise<void> {
+  // Priority 4: Returns whether the page had results (for smart page skipping)
+  private async processOnePageForQuery(query: string, page: number): Promise<{ hadResults: boolean; itemCount: number }> {
     try {
+      // Priority 2: Use adaptive throttling instead of simple wait
       await waitForRateLimitIfNeeded();
-      if (!this.running) return;
+      await rateLimitOptimizer.waitWithThrottling();
+      if (!this.running) return { hadResults: false, itemCount: 0 };
       
-      const response = await retry(() => axios.get('https://api.github.com/search/code', {
-        params: { q: query, per_page: 10, page },
-        headers: {
-          'Authorization': `Bearer ${config.GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'API-Radar-Scanner/1.0',
-        },
-        timeout: 30000,
-      }));
+      // Priority 2: Use GitHubService for search (handles token rotation automatically)
+      const response = await retry(() => githubService.searchCode(query, page, 10), 'SEARCH');
+      
+      // Priority 2: Update rate limit info from response headers
+      if (response.headers) {
+        rateLimitOptimizer.updateFromHeaders(response.headers);
+      }
       
       const items: GitHubSearchItem[] = response.data?.items || [];
+      const itemCount = items.length;
       
-      if (items.length === 0) {
-        return;
+      if (itemCount === 0) {
+        return { hadResults: false, itemCount: 0 };
       }
       
       await this.processSearchResults(items, query);
+      return { hadResults: true, itemCount };
       
     } catch (error: any) {
       // Handle expected errors gracefully instead of treating them as unhandled
       if (axios.isAxiosError(error)) {
-        if (error.response?.status === 403) {
-          // Rate limit or permission error - this is expected and handled by retry logic
-          logger.warn(`[FARM] Rate limit or permission error for query "${query}" (page ${page}): ${error.message}`);
-          return; // Don't re-throw, just return gracefully
+        if (error.response?.status === 403 || error.response?.status === 429) {
+          // Rate limit error - this is expected and handled by retry logic
+          logger.warn(`[FARM] Rate limit error (${error.response.status}) for query "${query}" (page ${page}): ${error.message}`);
+          return { hadResults: false, itemCount: 0 }; // Don't re-throw, just return gracefully
         } else if (error.response?.status === 422) {
           // Unprocessable Entity - could be invalid search query or no more results
           const errorMessage = error.response.data?.message || '';
           if (page > 100 || errorMessage.includes('page') || errorMessage.includes('limit') || errorMessage.includes('422')) {
             // No more results available (beyond GitHub's search limit for this query)
             logger.warn(`[FARM] No more results available for query "${query}" (page ${page}): Reached end of results`);
-            return; // Don't re-throw, just return gracefully
+            return { hadResults: false, itemCount: 0 }; // Don't re-throw, just return gracefully
           } else {
             // Invalid search query syntax
             logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
-            return; // Don't re-throw, just return gracefully
+            return { hadResults: false, itemCount: 0 }; // Don't re-throw, just return gracefully
           }
         } else if (error.response?.status && error.response.status >= 500) {
           // Server error - this is expected and handled by retry logic
           logger.warn(`[FARM] Server error (${error.response.status}) for query "${query}" (page ${page}): ${error.message}`);
-          return; // Don't re-throw, just return gracefully
+          return { hadResults: false, itemCount: 0 }; // Don't re-throw, just return gracefully
         } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
           // Timeout error - this is expected and handled by retry logic
           logger.warn(`[FARM] Timeout error for query "${query}" (page ${page}): ${error.message}`);
-          return; // Don't re-throw, just return gracefully
+          return { hadResults: false, itemCount: 0 }; // Don't re-throw, just return gracefully
         }
       }
       
       // For truly unexpected errors, log them but don't crash the scan loop
       logger.error(`[FARM] Unexpected error in processOnePageForQuery for "${query}" (page ${page}): ${error instanceof Error ? error.message : String(error)}`);
       // Don't re-throw - let the scan continue with the next query/page
+      return { hadResults: false, itemCount: 0 };
     }
   }
 
+  /**
+   * Priority 3: Root Fix - Process search results with parallel processing
+   * 
+   * Uses concurrency manager to process multiple files in parallel
+   * while respecting rate limits and maintaining order
+   */
   private async processSearchResults(items: GitHubSearchItem[], query: string): Promise<void> {
     let processedCount = 0;
     let skippedCount = 0;
     
-    // Process files sequentially
+    // Priority 4: Group items by repo for repo-level incremental scanning
+    const repoGroups = new Map<string, GitHubSearchItem[]>();
     for (const item of items) {
+      const repoUrl = item.repository.html_url;
+      if (!repoGroups.has(repoUrl)) {
+        repoGroups.set(repoUrl, []);
+      }
+      repoGroups.get(repoUrl)!.push(item);
+    }
+    
+    // Priority 4: Check each repo before processing its files
+    const reposToProcess: { repoUrl: string; items: GitHubSearchItem[]; repoName: string }[] = [];
+    for (const [repoUrl, repoItems] of repoGroups.entries()) {
+      const repoName = repoItems[0]!.repository.full_name;
+      
+      // Get repo's latest commit hash
+      let repoLatestCommit = '';
+      try {
+        await waitForRateLimitIfNeeded();
+        await rateLimitOptimizer.waitWithThrottling();
+        repoLatestCommit = await retry(() => githubService.getRepoLatestCommitHash(repoName), 'REPO-COMMIT');
+      } catch (error) {
+        // If we can't get repo commit, process files anyway (fallback to file-level checking)
+        logger.warn(`[FARM] Failed to get repo commit for ${repoName}, processing files individually: ${error instanceof Error ? error.message : String(error)}`);
+        reposToProcess.push({ repoUrl, items: repoItems, repoName });
+        continue;
+      }
+      
+      if (!repoLatestCommit) {
+        // No commit hash, process files individually
+        reposToProcess.push({ repoUrl, items: repoItems, repoName });
+        continue;
+      }
+      
+      // Priority 4: Check if repo was already scanned with this commit
+      if (await repoAlreadyScannedWithCommit(repoUrl, repoLatestCommit)) {
+        logger.warn(`[FARM] SKIP REPO: ${repoName} - Already scanned with commit ${repoLatestCommit.substring(0, 8)}... (${repoItems.length} files skipped)`);
+        skippedCount += repoItems.length;
+        continue; // Skip entire repo
+      }
+      
+      // Repo has changes or never scanned - process its files
+      reposToProcess.push({ repoUrl, items: repoItems, repoName });
+    }
+    
+    // Priority 3: Process files in parallel (up to max concurrency)
+    const processItem = async (item: GitHubSearchItem): Promise<{ processed: boolean; skipped: boolean }> => {
+      // Priority 2: Use adaptive throttling
       await waitForRateLimitIfNeeded();
-      if (!this.running) return;
+      await rateLimitOptimizer.waitWithThrottling();
+      if (!this.running) return { processed: false, skipped: false };
       
       const repoName: string = item.repository.full_name;
       const filePath: string = item.path;
@@ -905,84 +1295,103 @@ export class GitHubCodeLeakFarmService {
       const fileName = filePath.split('/').pop() || '';
       if (docFilePatterns.some(pattern => pattern.test(fileName))) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Documentation file (${fileName})`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
       // Skip files with problematic characters that might cause issues
       if (fileName.includes('#') || fileName.includes('?') || fileName.includes('&')) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Problematic characters in filename (${fileName})`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
-      // Check cache first to avoid any API calls for already processed files
+      // Priority 3: Check LRU cache first
       const cacheKey = `${item.repository.html_url}|${filePath}|${query}`;
       if (scannedCache.has(cacheKey)) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in cache (query: ${query})`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
       // Get commit hash first (this is the most recent state of the file)
       let commitHash = '';
       try {
         await waitForRateLimitIfNeeded();
-        commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath));
+        await rateLimitOptimizer.waitWithThrottling();
+        commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath), 'COMMIT-HASH');
       } catch (error) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to get commit hash: ${error instanceof Error ? error.message : String(error)}`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       if (!commitHash) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No commit hash returned`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
-      // Now check if this specific commit+query combination was already scanned
+      // Priority 3: Check LRU cache for commit-specific key
       const cacheKeyWithCommit = `${item.repository.html_url}|${filePath}|${query}|${commitHash}`;
       if (scannedCache.has(cacheKeyWithCommit)) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned with this commit (${commitHash.substring(0, 8)}...)`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
       // Check database for this specific commit+query combination
       if (await alreadyScanned(item.repository.html_url, filePath, commitHash)) {
-        scannedCache.add(cacheKeyWithCommit);
+        scannedCache.set(cacheKeyWithCommit, true);
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in database (commit: ${commitHash.substring(0, 8)}...)`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
       // If we get here, we need to scan the file - make the content API call
       await waitForRateLimitIfNeeded();
+      await rateLimitOptimizer.waitWithThrottling();
       logger.scan(repoName, filePath);
       let content;
       try {
         await waitForRateLimitIfNeeded();
-        content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'));
+        await rateLimitOptimizer.waitWithThrottling();
+        content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'), 'FILE-CONTENT');
       } catch (error) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to fetch content: ${error instanceof Error ? error.message : String(error)}`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       if (!content) {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No content returned`);
-        skippedCount++;
-        continue;
+        return { processed: false, skipped: true };
       }
       
       try {
+        if (!query) {
+          logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No query provided`);
+          return { processed: false, skipped: true };
+        }
         await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, commitHash);
-        scannedCache.add(cacheKeyWithCommit);
-        processedCount++;
+        scannedCache.set(cacheKeyWithCommit, true);
+        return { processed: true, skipped: false };
       } catch (error) {
         logger.error(`[FARM] Failed to process leaks for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
-        skippedCount++;
+        return { processed: false, skipped: true };
       }
+    };
+
+    // Priority 3: Flatten repos to process into individual items
+    const itemsToProcess: GitHubSearchItem[] = [];
+    for (const { items } of reposToProcess) {
+      itemsToProcess.push(...items);
     }
+    
+    // Priority 3: Execute all items with concurrency control
+    const results = await concurrencyManager.executeAll(
+      itemsToProcess.map(item => () => processItem(item))
+    );
+
+    // Count results
+    results.forEach(result => {
+      if (result?.processed) processedCount++;
+      if (result?.skipped) skippedCount++;
+    });
+    
+    // Priority 3: Record query performance for prioritization
+    const leakCount = processedCount; // Approximate (actual count is in detectAndSaveLeaks)
+    queryPrioritizer.recordExecution(query, true, leakCount, 0);
     
     // Only log summary if there was activity
     if (processedCount > 0 || skippedCount > 0) {
@@ -1002,10 +1411,14 @@ export class GitHubCodeLeakFarmService {
     const leaks = extractApiKeys(content);
     const foundLeaks: Partial<ILeak>[] = [];
     
+    // Priority 3: Record leak count for query prioritization (will be updated after save)
+    const leakCount = leaks.length;
+    
     // Check repository creation date for leak filtering
     let repoCreatedAt: Date;
     try {
-      repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName));
+      await rateLimitOptimizer.waitWithThrottling();
+      repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName), 'REPO-METADATA');
     } catch (error) {
       logger.error('[FARM] Failed to get repo creation date: ' + (error instanceof Error ? error.message : String(error)));
       // If we can't get creation date, don't save any leaks but still save scan attempt
@@ -1037,7 +1450,8 @@ export class GitHubCodeLeakFarmService {
     // Commented out repository cutoff logic. Always process all repos regardless of age.
     for (const { key, provider } of leaks) {
       try {
-        const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath));
+        await rateLimitOptimizer.waitWithThrottling();
+        const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
         // Upsert leak: update if exists for this repoUrl+filePath+provider, else create
         const leakData: Partial<ILeak> = {
           redactedKey: redactKey(key),
@@ -1066,6 +1480,11 @@ export class GitHubCodeLeakFarmService {
     
     // Always save scan attempt for all repositories (since we scan everything)
     await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, foundLeaks.length > 0, foundLeaks.map(l => l.provider as string));
+    
+    // Priority 3: Update query metrics with actual leak count
+    if (leakCount > 0) {
+      queryPrioritizer.recordExecution(query, true, leakCount, 0);
+    }
   }
 
   private async getRepoCreationDate(repoName: string): Promise<Date> {
@@ -1113,8 +1532,8 @@ export class GitHubCodeLeakFarmService {
 
   private handleSearchError(error: any, query: string, page: number): void {
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 403) {
-        logger.warn(`[FARM] Rate limit hit for query: ${query} (page ${page})`);
+      if (error.response?.status === 403 || error.response?.status === 429) {
+        logger.warn(`[FARM] Rate limit hit (${error.response.status}) for query: ${query} (page ${page})`);
       } else if (error.response?.status === 422) {
         logger.warn(`[FARM] Invalid search query "${query}" (page ${page}): ${error.message}`);
       } else if (error.response?.status && error.response.status >= 500) {

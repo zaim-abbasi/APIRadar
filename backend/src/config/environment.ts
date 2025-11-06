@@ -23,8 +23,12 @@ const envSchema = z.object({
     }),
   GITHUB_TOKEN: z.string()
     .min(1, 'GitHub token is required')
-    .refine((token) => token.startsWith('ghp_') || token.startsWith('github_pat_'), {
-      message: 'GitHub token must be a valid GitHub personal access token'
+    .refine((token) => {
+      // Support comma-separated tokens
+      const tokens = token.split(',').map(t => t.trim()).filter(Boolean);
+      return tokens.every(t => t.startsWith('ghp_') || t.startsWith('github_pat_'));
+    }, {
+      message: 'GitHub token(s) must be valid GitHub personal access tokens (comma-separated for multiple tokens)'
     }),
   GITHUB_TOKENS: z.string().optional().transform((val) => {
     if (!val) return [];
