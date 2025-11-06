@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     // Properly check if user is authenticated
     const isAuthenticated = !!(session?.user?.email || session?.user?.id);
     
-    if (isAuthenticated) {
+    if (isAuthenticated && session) {
       authHeaders['x-user-id'] = session.user.id || session.user.email || '';
       authHeaders['x-user-email'] = session.user.email || '';
       authHeaders['x-user-plan'] = session.user.plan || 'pro';
