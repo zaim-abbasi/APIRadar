@@ -40,29 +40,15 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
 
     // Security: Enforce time range limits
+    // All time ranges are now accessible to all users
     let enforcedTimeRange = timeRange;
-    if (accessLimits.maxTimeRange !== 'all') {
-      // For unauthenticated users, only allow '7d' and '15d'
-      const allowedTimeRanges = ['7d', '15d'];
-      
-      if (timeRange && !allowedTimeRanges.includes(timeRange)) {
-        // Log potential security violation
-        request.log.warn({
-          msg: 'Time range violation attempt',
-          userId: user.id,
-          requestedTimeRange: timeRange,
-          allowedTimeRanges: allowedTimeRanges,
-          ip: request.ip
-        });
-        enforcedTimeRange = '15d'; // Default to 15d for unauthenticated users
-      }
-    }
 
     // Build filter with security constraints
     const filter: any = {};
     if (provider && provider !== 'all') filter.provider = provider;
     
-    if (enforcedTimeRange) {
+    // Apply time range filter based on selected option
+    if (enforcedTimeRange && enforcedTimeRange !== 'all') {
       const now = new Date();
       let days = 0;
       if (enforcedTimeRange === '7d') days = 7;
@@ -73,13 +59,8 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         filter.leakIntroducedAt = { $gte: fromDate };
       }
     }
-
-    // Security: For unauthenticated users, limit to recent leaks only
-    if (!isAuthenticated) {
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 30); // Last 30 days for unauthenticated
-      filter.leakDetectedAt = { $gte: recentDate };
-    }
+    // If timeRange is 'all' or not specified, don't filter by leakIntroducedAt
+    // No additional restrictions - show all leaks matching the provider filter
 
     let sort: any = { leakIntroducedAt: -1 };
     if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };

@@ -251,6 +251,16 @@ button[aria-expanded] {
   --tw-ring-shadow: none !important;
 }
 
+/* Disable focus rings on buttons when clicked (mouse interaction) */
+button:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-width: 0 !important;
+}
+
 @keyframes pulse-slow {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }

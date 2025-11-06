@@ -189,29 +189,7 @@ const FiltersSection = React.memo(({
           <SelectContent>
             <TooltipProvider>
               {TIME_RANGES.map((range) => {
-                const is30d = range.value === '30d';
-                const isDisabled = !isPro && is30d;
-                let badge = null;
-                if (isDisabled && is30d) {
-                  if (!isLoggedIn) {
-                    badge = <Badge variant="secondary" className="ml-2 text-xs">Sign in</Badge>;
-                  }
-                }
-                return isDisabled ? (
-                  <Tooltip key={range.value} delayDuration={100}>
-                    <TooltipTrigger asChild>
-                      <div className="relative">
-                        <SelectItem value={range.value} disabled className="opacity-50 cursor-not-allowed flex items-center">
-                          {range.label}
-                          {badge}
-                        </SelectItem>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-background text-foreground rounded px-3 py-2 text-xs shadow-lg">
-                      Sign in to access this range
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
+                return (
                   <SelectItem key={range.value} value={range.value}>
                     {range.label}
                   </SelectItem>
@@ -389,21 +367,27 @@ const ResultsSection = React.memo(({
           
           {/* Fade-out blur effect for unauthenticated users - suggests more content */}
           {isUnauthenticated && filteredLeaks.length > 6 && (
-            <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none z-10">
-              {/* Gradient fade */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent" />
-              {/* Blur overlay for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/60 to-transparent backdrop-blur-sm" />
-                 {/* Subtle pulsing animation hint */}
-                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
-                   <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-                     <span>Sign in to View all</span>
-                     <svg className="w-4 h-4 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                     </svg>
-                   </div>
-                 </div>
-            </div>
+            <>
+              <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
+                {/* Gradient fade that keeps last row visible - starts transparent at top */}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
+                {/* Subtle blur overlay - lighter at top to keep last row visible */}
+                <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
+              </div>
+              {/* Sign in hint - outside pointer-events-none container */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20">
+                <button
+                  onClick={() => signIn('google', { callbackUrl: window.location.href })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-secondary border border-border rounded-md shadow-sm hover:bg-secondary/80 hover:text-foreground transition-all duration-200 focus:outline-none"
+                  aria-label="Sign in to view all leaks"
+                >
+                  <span>Sign in to View all</span>
+                  <svg className="w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </button>
+              </div>
+            </>
           )}
         </div>
         

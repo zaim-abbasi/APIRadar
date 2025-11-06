@@ -6,6 +6,7 @@ export const PROVIDERS = [
 ] as const;
 
 export const TIME_RANGES = [
+  { value: 'all', label: 'All' },
   { value: '7d', label: 'Last 7 Days' },
   { value: '15d', label: 'Last 15 Days' },
   { value: '30d', label: 'Last 30 Days' },
