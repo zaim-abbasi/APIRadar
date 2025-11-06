@@ -180,7 +180,7 @@ const CopyButton = React.memo(({
           variant="ghost"
           size="icon"
           disabled
-          className="h-9 w-9 md:hidden cursor-not-allowed focus:outline-none !bg-transparent !hover:bg-transparent opacity-60 transition-opacity duration-200"
+          className="h-9 w-9 md:hidden cursor-default focus:outline-none !bg-transparent !hover:bg-transparent opacity-60 transition-opacity duration-200 pointer-events-none"
           aria-label="Sign in required to copy full key"
         >
           <Lock className="h-4 w-4 text-muted-foreground" />
@@ -190,7 +190,7 @@ const CopyButton = React.memo(({
           variant="ghost"
           size="sm"
           disabled
-          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-not-allowed focus:outline-none rounded-md"
+          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-default focus:outline-none rounded-md pointer-events-none"
           aria-label="Sign in required to copy full key"
         >
           <Lock className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover/card:scale-110" />
@@ -282,9 +282,9 @@ const LeakCard = React.memo(({
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm h-[180px] transition-all duration-200 hover:border-border/80 hover:shadow-md hover:shadow-primary/5 hover:bg-card/70">
-      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''}`}> 
-        <div className="flex items-start justify-between gap-3 sm:gap-4 h-full">
-          <div className="space-y-2.5 sm:space-y-3 flex-1 min-w-0">
+      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''} relative`}> 
+        <div className="h-full">
+          <div className="space-y-2.5 sm:space-y-3 w-full">
             {/* Provider & Key */}
             <div className="flex flex-row items-center gap-2.5 min-w-[180px]">
               <code className="text-sm font-mono bg-muted/80 px-2.5 py-1.5 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 w-full sm:w-[180px] text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
@@ -344,14 +344,14 @@ const LeakCard = React.memo(({
 
             {/* Metadata - BULLETPROOF SECURITY */}
             <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-w-0">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 text-xs text-muted-foreground min-w-0 w-full">
                 <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60 transition-colors duration-200 group-hover/card:text-muted-foreground/80" />
-                <span className="sm:truncate text-foreground/75 font-medium">Key added in Repo:</span>
-                <span className="sm:truncate text-foreground/80 font-semibold">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
+                <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Key added in Repo:</span>
+                <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
                 {!isLocked && safeFilePath && (
-                  <span className="flex items-center gap-1.5 pl-1">
+                  <span className="flex items-center gap-1.5 pl-1 min-w-0 flex-1">
                     <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-                    <code className="text-xs break-all sm:truncate sm:max-w-[200px] bg-muted/50 px-1.5 py-0.5 rounded border border-border/30" title={safeFilePath}>{safeFilePath}</code>
+                    <code className="text-xs break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 min-w-0" title={safeFilePath}>{safeFilePath}</code>
                   </span>
                 )}
                 {isLocked && (
@@ -369,13 +369,15 @@ const LeakCard = React.memo(({
             </div>
           </div>
 
-          {/* Copy Button - BULLETPROOF SECURITY */}
-          <CopyButton 
-            leak={{...leak, fullKey: safeFullKey}} 
-            copiedKey={copiedKey} 
-            onCopy={onCopy} 
-            plan={plan}
-          />
+          {/* Copy Button - BULLETPROOF SECURITY - Absolutely positioned */}
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+            <CopyButton 
+              leak={{...leak, fullKey: safeFullKey}} 
+              copiedKey={copiedKey} 
+              onCopy={onCopy} 
+              plan={plan}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

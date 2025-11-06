@@ -13,12 +13,8 @@ const nextConfig = {
   },
   // Compress responses
   compress: true,
-  // Optimize production builds
-  swcMinify: true,
   // Enable React strict mode for better development
   reactStrictMode: true,
-  // Optimize fonts
-  optimizeFonts: true,
   // Power up with webpack optimizations
   webpack: (config, { dev, isServer }) => {
     // Production optimizations

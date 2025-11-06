@@ -31,7 +31,7 @@ const CACHE_TTL = 60 * 1000; // 1 minute
 
 export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const isMobile = useIsMobile();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { isAuthenticated } = usePlanCheck();
   const plan: 'free' | 'pro' = isAuthenticated ? 'pro' : 'free';
 
@@ -42,7 +42,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     sortBy: string;
   }>({
     selectedProvider: 'all',
-    timeRange: '15d',
+    timeRange: 'all',
     sortBy: 'newest'
   });
   const [loadingState, setLoadingState] = useState({
@@ -60,7 +60,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const isDefaultFilters = useMemo(
     () =>
       filterState.selectedProvider === 'all' &&
-      filterState.timeRange === '15d' &&
+      filterState.timeRange === 'all' &&
       filterState.sortBy === 'newest' &&
       paginationState.page === 1,
     [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page]
@@ -165,13 +165,15 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }
   }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page, paginationState.refreshIndex, session]);
 
-  // Only fetch on mount and when filters change, not on every re-render
+  // Root fix: Wait for session to load before initial fetch
+  // This ensures authenticated users get proper auth headers on first load
   useEffect(() => {
-    if (!hasInitializedRef.current) {
+    // Only fetch when session has finished loading (not 'loading' status)
+    if (!hasInitializedRef.current && sessionStatus !== 'loading') {
       hasInitializedRef.current = true;
       fetchAndSetLeaks();
     }
-  }, []);
+  }, [sessionStatus, fetchAndSetLeaks]);
 
   // Fetch when filters change
   useEffect(() => {

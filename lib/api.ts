@@ -211,7 +211,7 @@ export async function fetchLeaks({
   };
 }>> {
   // Create cache key for request deduplication
-  const cacheKey = `leaks:${provider || 'all'}:${timeRange || '15d'}:${sortBy || 'newest'}:${page}:${limit}:${session?.user?.id || 'anonymous'}`;
+  const cacheKey = `leaks:${provider || 'all'}:${timeRange || 'all'}:${sortBy || 'newest'}:${page}:${limit}:${session?.user?.id || 'anonymous'}`;
   
   return deduplicateRequest(cacheKey, async () => {
     try {

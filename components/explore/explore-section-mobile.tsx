@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn, Rocket } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { Card, CardContent } from '@/components/ui/card';
 import { TIME_RANGES, SORT_OPTIONS } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
@@ -105,41 +105,47 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-5 mb-6 w-full max-w-md animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
         <div className="flex flex-col gap-3 sm:gap-4">
           <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 transition-all duration-200 hover:bg-card/80 hover:border-border focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 shadow-sm" aria-label="Select time range" tabIndex={0}>
-              <Filter className="h-4 w-4 mr-2 text-muted-foreground/70" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <TooltipProvider>
-                {TIME_RANGES.map((range) => {
-                  return (
-                    <SelectItem key={range.value} value={range.value} aria-label={range.label}>
-                      {range.label}
-                    </SelectItem>
-                  );
-                })}
-              </TooltipProvider>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 transition-all duration-200 hover:bg-card/80 hover:border-border focus:ring-2 focus:ring-primary/50 focus:ring-offset-1 shadow-sm" aria-label="Select sort order" tabIndex={0}>
-              <SortAsc className="h-4 w-4 mr-2 text-muted-foreground/70" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <CustomSelect value={timeRange} onValueChange={setTimeRange}>
+            <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select time range" tabIndex={0}>
+              <div className="flex items-center gap-2 w-full">
+                <Filter className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center">
+                  {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
+                </CustomSelectValue>
+              </div>
+            </CustomSelectTrigger>
+            <CustomSelectContent>
+              {TIME_RANGES.map((range) => {
+                return (
+                  <CustomSelectItem key={range.value} value={range.value} aria-label={range.label}>
+                    {range.label}
+                  </CustomSelectItem>
+                );
+              })}
+            </CustomSelectContent>
+          </CustomSelect>
+          <CustomSelect value={sortBy} onValueChange={setSortBy}>
+            <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select sort order" tabIndex={0}>
+              <div className="flex items-center gap-2 w-full">
+                <SortAsc className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center">
+                  {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
+                </CustomSelectValue>
+              </div>
+            </CustomSelectTrigger>
+            <CustomSelectContent>
               {SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value} aria-label={option.label}>
+                <CustomSelectItem key={option.value} value={option.value} aria-label={option.label}>
                   {option.label}
-                </SelectItem>
+                </CustomSelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </CustomSelectContent>
+          </CustomSelect>
         </div>
         {/* Results Count and Refresh */}
         <div className="flex flex-row items-center justify-between gap-2 mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
           <div className="flex-1 text-sm text-muted-foreground/80 truncate font-medium">
-            {total} leak{total !== 1 ? 's' : ''} found
+            <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
             {selectedProvider !== 'all' && ` for ${selectedProvider}`}
           </div>
           <div className="flex-shrink-0">

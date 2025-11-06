@@ -247,39 +247,33 @@ const StatCard = React.memo(({
   const IconComponent = useMemo(() => stat.icon, [stat.icon]);
   
   return (
-    <div 
-      className="group"
-    >
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-border/70 transition-all duration-200 hover:shadow-md hover:shadow-primary/5 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-5">
-          <CardTitle className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors duration-200 tracking-tight">
-            {stat.title}
-          </CardTitle>
-          <div className="p-1.5 rounded-lg bg-muted/30 group-hover:bg-muted/50 transition-colors duration-200">
-            <IconComponent className={`${stat.color} h-6 w-6 transition-transform duration-200 group-hover:scale-110`} />
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-5 pt-0">
-          <div className="text-2xl font-semibold text-foreground">
-            {typeof stat.value === 'number' && stat.value !== null ? (
-              stat.isPercentage ? (
-                <span>{stat.value.toFixed(1)}%</span>
-              ) : (
-                <span>{stat.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-              )
-            ) : stat.isDate && stat.value ? (
-              <span>{new Date(stat.value).toLocaleDateString('en-US', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-              })}</span>
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+        <CardTitle className="text-sm font-medium text-foreground/90 tracking-tight">
+          {stat.title}
+        </CardTitle>
+        <IconComponent className={`${stat.color} h-9 w-9`} />
+      </CardHeader>
+      <CardContent className="p-3 sm:p-4 pt-0">
+        <div className="text-2xl font-semibold text-foreground">
+          {typeof stat.value === 'number' && stat.value !== null ? (
+            stat.isPercentage ? (
+              <span>{stat.value.toFixed(1)}%</span>
             ) : (
-              <span className="inline-block w-16 h-6 skeleton rounded"></span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+              <span>{stat.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+            )
+          ) : stat.isDate && stat.value ? (
+            <span>{new Date(stat.value).toLocaleDateString('en-US', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            })}</span>
+          ) : (
+            <span className="inline-block w-16 h-6 skeleton rounded"></span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 });
 

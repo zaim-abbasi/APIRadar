@@ -242,6 +242,37 @@ button[aria-expanded] {
   --tw-ring-shadow: none !important;
 }
 
+/* Completely disable all animations on Select dropdowns */
+[data-radix-select-content],
+[data-radix-select-viewport],
+[data-radix-select-content] * {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Disable Radix UI Select animations for all states */
+[data-radix-select-content][data-state="open"],
+[data-radix-select-content][data-state="closed"],
+[data-radix-select-content][data-side] {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  will-change: auto !important;
+}
+
+/* Disable any slide animations from positioning */
+[data-radix-select-content][data-side="bottom"],
+[data-radix-select-content][data-side="top"],
+[data-radix-select-content][data-side="left"],
+[data-radix-select-content][data-side="right"] {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
 /* Disable focus rings on command input */
 [data-radix-command-input] {
   outline: none !important;

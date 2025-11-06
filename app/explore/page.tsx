@@ -4,7 +4,7 @@ import React, { useState, useMemo, Suspense, useCallback, useEffect, useRef } fr
 import { Filter, SortAsc, RefreshCw, Loader2, LogIn, Rocket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
 import { TIME_RANGES, SORT_OPTIONS, PROVIDERS, PROVIDER_API_MAP } from '@/lib/constants';
@@ -102,9 +102,9 @@ const ResultsCount = React.memo(({
       <div className="flex-1 text-sm text-muted-foreground truncate">
         {isClient && !error && (
           <>
-            <span className="block sm:hidden">{total} leaks found</span>
+            <span className="block sm:hidden"><span className="font-bold">{total}</span> leaks found</span>
             <span className="hidden sm:inline">
-              {total} leak{total !== 1 ? 's' : ''} found
+              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
               {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
             </span>
           </>
@@ -175,44 +175,56 @@ const FiltersSection = React.memo(({
     <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-6 animate-fade-in-up opacity-0 animate-delay-10">
       <div className="flex flex-col lg:flex-row gap-3">
         {/* Provider Filter */}
-        <ProviderFilter
-          selectedProvider={selectedProvider}
-          onProviderChange={onProviderChange}
-        />
+        <div className="flex-1 lg:w-[33.333%]">
+          <ProviderFilter
+            selectedProvider={selectedProvider}
+            onProviderChange={onProviderChange}
+          />
+        </div>
 
         {/* Time Range */}
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <TooltipProvider>
+        <div className="flex-1 lg:w-[33.333%]">
+          <CustomSelect value={timeRange} onValueChange={setTimeRange}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 w-full">
+                <Filter className="h-4 w-4 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center">
+                  {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
+                </CustomSelectValue>
+              </div>
+            </CustomSelectTrigger>
+            <CustomSelectContent>
               {TIME_RANGES.map((range) => {
                 return (
-                  <SelectItem key={range.value} value={range.value}>
+                  <CustomSelectItem key={range.value} value={range.value}>
                     {range.label}
-                  </SelectItem>
+                  </CustomSelectItem>
                 );
               })}
-            </TooltipProvider>
-          </SelectContent>
-        </Select>
+            </CustomSelectContent>
+          </CustomSelect>
+        </div>
 
         {/* Sort */}
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm transition-all duration-75 hover:bg-card/70 focus:ring-0 focus:ring-offset-0">
-            <SortAsc className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex-1 lg:w-[33.333%]">
+          <CustomSelect value={sortBy} onValueChange={setSortBy}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 w-full">
+                <SortAsc className="h-4 w-4 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center">
+                  {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
+                </CustomSelectValue>
+              </div>
+            </CustomSelectTrigger>
+            <CustomSelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <CustomSelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </CustomSelectItem>
+              ))}
+            </CustomSelectContent>
+          </CustomSelect>
+        </div>
       </div>
 
       {/* Results Count */}

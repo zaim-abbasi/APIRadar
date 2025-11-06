@@ -136,7 +136,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
       {/* Chart */}
       <div className="lg:col-span-2 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm hover:shadow-md hover:border-border/70 transition-all duration-200" aria-label="Leaks by Provider">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm" aria-label="Leaks by Provider">
           <CardHeader className="pb-3 px-5 pt-5">
             <CardTitle className="text-lg font-semibold tracking-tight">Leaks by Provider</CardTitle>
             <CardDescription className="text-xs text-muted-foreground/80 mt-1">
@@ -175,7 +175,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
       {/* Provider List */}
       <div className="w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm hover:shadow-md hover:border-border/70 transition-all duration-200" aria-label="Top Providers">
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm" aria-label="Top Providers">
           <CardHeader className="pb-3 px-5 pt-5">
             <CardTitle className="text-lg font-semibold tracking-tight">Top Providers</CardTitle>
             <CardDescription className="text-xs text-muted-foreground/80 mt-1">

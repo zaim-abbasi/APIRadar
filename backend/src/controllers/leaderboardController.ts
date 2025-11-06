@@ -25,21 +25,9 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       return reply.send(leaderboardCache);
     }
 
-    // Calculate start and end of day in Pakistan Standard Time (UTC+5)
+    // Calculate leaks found in the last 24 hours (more intuitive than "today in a specific timezone")
     const nowUtc = new Date();
-    // Offset in milliseconds for UTC+5
-    const pkOffsetMs = 5 * 60 * 60 * 1000;
-    // Get current UTC+5 time
-    const nowPk = new Date(nowUtc.getTime() + pkOffsetMs);
-    // Start of day in PKT
-    const startOfDayPk = new Date(nowPk);
-    startOfDayPk.setHours(0, 0, 0, 0);
-    // End of day in PKT
-    const endOfDayPk = new Date(nowPk);
-    endOfDayPk.setHours(23, 59, 59, 999);
-    // Convert back to UTC for database query
-    const startOfDayUtc = new Date(startOfDayPk.getTime() - pkOffsetMs);
-    const endOfDayUtc = new Date(endOfDayPk.getTime() - pkOffsetMs);
+    const twentyFourHoursAgo = new Date(nowUtc.getTime() - 24 * 60 * 60 * 1000);
 
     // Query database for counts and top providers
     // Note: countDocuments() returns a number, not a document, so we don't use .lean()
@@ -70,11 +58,10 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       percentage: totalLeaksFound > 0 ? (provider.count / totalLeaksFound) * 100 : 0
     }));
 
-    // Calculate leaks found today in PKT (query uses UTC dates)
+    // Calculate leaks found in the last 24 hours
     const leaksFoundToday = await Leak.countDocuments({
       leakDetectedAt: {
-        $gte: startOfDayUtc,
-        $lte: endOfDayUtc
+        $gte: twentyFourHoursAgo
       }
     });
 
