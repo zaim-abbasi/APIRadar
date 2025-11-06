@@ -15,8 +15,12 @@ interface ProviderFilterProps {
 export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange }: ProviderFilterProps) => {
   const selectedProviderLabel = PROVIDERS.find(p => p.value === selectedProvider)?.label || 'All Providers';
 
+  const handleValueChange = (value: string) => {
+    onProviderChange(value as Provider);
+  };
+
   return (
-    <CustomSelect value={selectedProvider} onValueChange={onProviderChange}>
+    <CustomSelect value={selectedProvider} onValueChange={handleValueChange}>
       <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
         <div className="flex items-center gap-2 w-full">
           <Filter className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
