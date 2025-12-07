@@ -189,7 +189,8 @@ export class ConfigurationService {
           providerStates: {
             openai: { queryIndex: 0, page: 1 },
             google_gemini: { queryIndex: 0, page: 1 },
-            anthropic: { queryIndex: 0, page: 1 }
+            anthropic: { queryIndex: 0, page: 1 },
+            binance: { queryIndex: 0, page: 1 }
           },
           scanStatus: 'idle'
         };

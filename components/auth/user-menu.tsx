@@ -84,29 +84,21 @@ export function UserMenu() {
           variant="ghost" 
           className="relative h-8 w-8 md:h-9 md:w-9 rounded-full focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
         >
-          {mounted ? (
-            <Avatar className={cn(
-              "h-8 w-8 md:h-9 md:w-9 border border-border/60",
-              theme === 'dark' ? "bg-card text-card-foreground" : "bg-card text-card-foreground"
+          <Avatar className={cn(
+            "h-8 w-8 md:h-9 md:w-9 border border-border/60",
+            mounted && theme === 'dark' ? "bg-card text-card-foreground" : "bg-card text-card-foreground"
+          )} suppressHydrationWarning>
+            <AvatarFallback className={cn(
+              "flex items-center justify-center h-full w-full text-base font-semibold select-none",
+              mounted && theme === 'dark'
+                ? "bg-zinc-800 text-white"
+                : "bg-secondary text-secondary-foreground"
             )}>
-              <AvatarFallback className={cn(
-                "flex items-center justify-center h-full w-full text-base font-semibold select-none",
-                theme === 'dark'
-                  ? "bg-zinc-800 text-white"
-                  : "bg-secondary text-secondary-foreground"
-              )}>
-                {session && userName
-                  ? displayLetter
-                  : <UserCircle className="h-5 w-5 text-muted-foreground/70" />}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-border/60 bg-card text-card-foreground">
-              <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-semibold select-none bg-secondary text-secondary-foreground">
-                <UserCircle className="h-5 w-5 text-muted-foreground/70" />
-              </AvatarFallback>
-            </Avatar>
-          )}
+              {session && userName && mounted
+                ? displayLetter
+                : <UserCircle className="h-5 w-5 text-muted-foreground/70" />}
+            </AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 bg-background/95 backdrop-blur-md p-1">
@@ -145,8 +137,7 @@ export function UserMenu() {
           </>
         )}
         {/* Theme toggle inside dropdown */}
-        {mounted && (
-          <DropdownMenuItem
+        <DropdownMenuItem
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary cursor-pointer active:scale-[0.98]"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           >
@@ -157,9 +148,8 @@ export function UserMenu() {
                 <Moon className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
-            <span className="font-medium text-sm">Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
+            <span className="font-medium text-sm" suppressHydrationWarning>Switch to {mounted && theme === 'dark' ? 'Light' : 'Dark'} Mode</span>
           </DropdownMenuItem>
-        )}
         {session && (
           <DropdownMenuItem 
             onClick={handleSignOut} 

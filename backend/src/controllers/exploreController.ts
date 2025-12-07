@@ -43,9 +43,30 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     // All time ranges are now accessible to all users
     let enforcedTimeRange = timeRange;
 
-    // Build filter with security constraints
+    // Build filter with security constraints - STRICT provider filtering
     const filter: any = {};
-    if (provider && provider !== 'all') filter.provider = provider;
+    const validProviders = ['openai', 'anthropic', 'google_gemini', 'binance'];
+    
+    if (provider && provider !== 'all') {
+      const normalizedProvider = String(provider).trim().toLowerCase();
+      // Only apply filter if provider is valid - otherwise return empty results
+      if (validProviders.includes(normalizedProvider)) {
+        filter.provider = normalizedProvider;
+      } else {
+        // Invalid provider - return empty results instead of all leaks
+        request.log.warn({ msg: 'Invalid provider requested', provider: normalizedProvider, userId: user.id });
+        return reply.send({ 
+          leaks: [], 
+          total: 0, 
+          hasMore: false,
+          planLimits: {
+            maxLeaks: accessLimits.maxLeaks,
+            canInfiniteScroll: accessLimits.canInfiniteScroll,
+            maxTimeRange: accessLimits.maxTimeRange
+          }
+        });
+      }
+    }
     
     // Apply time range filter based on selected option
     if (enforcedTimeRange && enforcedTimeRange !== 'all') {
@@ -66,6 +87,15 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };
     else if (sortBy === 'provider') sort = { provider: 1, leakIntroducedAt: -1 };
 
+    // Log filter for debugging (remove in production if needed)
+    request.log.info({ 
+      msg: 'Leak filter applied', 
+      filter, 
+      provider, 
+      normalizedProvider: provider ? String(provider).trim().toLowerCase() : 'all',
+      userId: user.id 
+    });
+
     // Get total count for pagination (for summary)
     const total = await Leak.countDocuments(filter);
 
@@ -73,13 +103,26 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
     const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
 
-    // Fetch leaks with security constraints
+    // Fetch leaks with security constraints - ensure filter is applied
     const leaks = await Leak.find(filter)
       .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
       .sort(sort)
       .skip(skip)
       .limit(actualLimit)
       .lean();
+    
+    // Verify all returned leaks match the filter (safety check)
+    if (filter.provider) {
+      const mismatched = leaks.filter((leak: any) => leak.provider !== filter.provider);
+      if (mismatched.length > 0) {
+        request.log.error({ 
+          msg: 'Filter mismatch detected', 
+          expectedProvider: filter.provider, 
+          mismatchedCount: mismatched.length,
+          sampleMismatched: mismatched.slice(0, 3).map((l: any) => ({ id: l.id, provider: l.provider }))
+        });
+      }
+    }
 
     // Security: Remove sensitive data based on authentication status
     const mappedLeaks = leaks.map((leak: any) => {

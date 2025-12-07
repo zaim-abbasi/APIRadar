@@ -2,7 +2,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 // Request deduplication cache to prevent duplicate API calls
 const requestCache = new Map<string, { promise: Promise<any>; timestamp: number }>();
-const CACHE_DURATION = 1000; // 1 second deduplication window
+const CACHE_DURATION = 500; // Reduced to 500ms to prevent stale filter results
 
 // Helper to deduplicate requests
 function deduplicateRequest<T>(
@@ -21,17 +21,33 @@ function deduplicateRequest<T>(
     }
   }
   
+  // Root fix: Only use cache if very recent (within 500ms) to prevent stale filter results
   if (cached && now - cached.timestamp < CACHE_DURATION) {
     return cached.promise;
   }
   
   const promise = requestFn().finally(() => {
-    // Remove from cache after completion
+    // Remove from cache immediately after completion to prevent stale data
     setTimeout(() => requestCache.delete(key), CACHE_DURATION);
   });
   
   requestCache.set(key, { promise, timestamp: now });
   return promise;
+}
+
+// Root fix: Function to clear cache for specific filter patterns
+export function clearLeaksCache(pattern?: string) {
+  if (pattern) {
+    // Clear cache entries matching pattern (e.g., specific provider)
+    for (const [key] of Array.from(requestCache.entries())) {
+      if (key.includes(pattern)) {
+        requestCache.delete(key);
+      }
+    }
+  } else {
+    // Clear all cache
+    requestCache.clear();
+  }
 }
 
 export interface ApiResponse<T> {
@@ -192,7 +208,8 @@ export async function fetchLeaks({
   sortBy, 
   page = 1, 
   limit = 10,
-  session
+  session,
+  signal
 }: {
   provider?: string;
   timeRange?: string;
@@ -200,6 +217,7 @@ export async function fetchLeaks({
   page?: number;
   limit?: number;
   session?: any;
+  signal?: AbortSignal;
 }): Promise<ApiResponse<{ 
   leaks: any[]; 
   total: number; 
@@ -210,14 +228,21 @@ export async function fetchLeaks({
     maxTimeRange: string;
   };
 }>> {
-  // Create cache key for request deduplication
-  const cacheKey = `leaks:${provider || 'all'}:${timeRange || 'all'}:${sortBy || 'newest'}:${page}:${limit}:${session?.user?.id || 'anonymous'}`;
+  // Root fix: Create comprehensive cache key with all filter parameters to prevent cache collisions
+  const normalizedProvider = provider ? String(provider).trim() : 'all';
+  const normalizedTimeRange = timeRange || 'all';
+  const normalizedSortBy = sortBy || 'newest';
+  const userId = session?.user?.id || 'anonymous';
+  const cacheKey = `leaks:${normalizedProvider}:${normalizedTimeRange}:${normalizedSortBy}:${page}:${limit}:${userId}`;
   
   return deduplicateRequest(cacheKey, async () => {
     try {
       const headers = createAuthHeaders(session);
       const params = new URLSearchParams();
-      if (provider) params.append('provider', provider);
+      // Ensure provider is properly encoded and not undefined/null
+      if (provider && provider !== 'all') {
+        params.append('provider', String(provider).trim());
+      }
       if (timeRange) params.append('timeRange', timeRange);
       if (sortBy) params.append('sortBy', sortBy);
       params.append('page', String(page));
@@ -226,8 +251,9 @@ export async function fetchLeaks({
       const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
         method: 'GET',
         headers,
-        // Add cache control for better performance
-        cache: page === 1 ? 'default' : 'no-store' as RequestCache
+        signal, // Root fix: Support request cancellation
+        // Root fix: Always use no-store to prevent browser cache from serving stale filter results
+        cache: 'no-store' as RequestCache
       });
     
       if (response.status === 401) {

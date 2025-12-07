@@ -103,7 +103,11 @@ AnimatedCounter.displayName = 'AnimatedCounter';
 
 // Optimized animated date component
 const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
-  const [displayDate, setDisplayDate] = useState<string>('');
+  // Initialize with target date for SSR consistency
+  const [displayDate, setDisplayDate] = useState<string>(() => {
+    if (!dateString || isNaN(new Date(dateString).getTime())) return '';
+    return new Date(dateString).toISOString().slice(0, 10);
+  });
   const [isVisible, setIsVisible] = useState(false);
   const [hasAnimated, setHasAnimated] = useState(false);
 
@@ -185,53 +189,45 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
 AnimatedDate.displayName = 'AnimatedDate';
 
 function AnimatedDateCounterInline({ dateString }: { dateString: string | null }) {
-  const [mounted, setMounted] = useState(false);
-  const [day, setDay] = useState(1);
-  const [year, setYear] = useState(2000);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted || !dateString || isNaN(new Date(dateString).getTime())) return;
-    const targetDate = new Date(dateString);
-    const targetDay = targetDate.getUTCDate();
-    const targetYear = targetDate.getUTCFullYear();
-    let frame: number;
-    let start: number | null = null;
-    const animate = (timestamp: number) => {
-      if (!start) start = timestamp;
-      const progress = Math.min((timestamp - start) / 600, 1);
-      setDay(Math.round(1 + (targetDay - 1) * progress));
-      setYear(Math.round(2000 + (targetYear - 2000) * progress));
-      if (progress < 1) {
-        frame = requestAnimationFrame(animate);
-      }
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [mounted, dateString]);
-
   if (!dateString || isNaN(new Date(dateString).getTime())) return null;
+  
   const date = new Date(dateString);
+  const targetDay = date.getUTCDate();
+  const targetYear = date.getUTCFullYear();
   const month = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ][date.getUTCMonth()];
 
-  // On first render (SSR), show the final value
-  if (!mounted) {
-    return (
-      <span className="transition-all duration-600 ease-out">
-        {date.getUTCDate()} {month}, {date.getUTCFullYear()}
-      </span>
-    );
-  }
+  // Initialize with target values for SSR consistency
+  const [day, setDay] = useState(targetDay);
+  const [year, setYear] = useState(targetYear);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+    // Only animate if we're starting from initial values
+    if (day === targetDay && year === targetYear) {
+      let frame: number;
+      let start: number | null = null;
+      const animate = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / 600, 1);
+        setDay(Math.round(1 + (targetDay - 1) * progress));
+        setYear(Math.round(2000 + (targetYear - 2000) * progress));
+        if (progress < 1) {
+          frame = requestAnimationFrame(animate);
+        }
+      };
+      frame = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [targetDay, targetYear, day, year]);
+
+  // Always render the same structure for SSR consistency
   return (
-    <span className="transition-all duration-600 ease-out">
-      {day} {month}, {year}
+    <span className="transition-all duration-600 ease-out" suppressHydrationWarning>
+      {mounted ? `${day} ${month}, ${year}` : `${targetDay} ${month}, ${targetYear}`}
     </span>
   );
 }

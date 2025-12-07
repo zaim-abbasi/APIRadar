@@ -3,6 +3,7 @@ export const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic (Claude)' },
   { value: 'google', label: 'Google' },
+  { value: 'binance', label: 'Binance' },
 ] as const;
 
 export const TIME_RANGES = [
@@ -23,5 +24,6 @@ export const PROVIDER_API_MAP: Record<string, string> = {
   google: 'google_gemini',
   openai: 'openai',
   anthropic: 'anthropic',
+  binance: 'binance',
   all: 'all',
 };

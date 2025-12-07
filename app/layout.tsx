@@ -139,7 +139,7 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <ThemeProvider
             attribute="class"
@@ -147,7 +147,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="min-h-screen flex flex-col">
+            <div className="min-h-screen flex flex-col" suppressHydrationWarning>
               <Navbar />
               <main className="flex-1">
                 {children}

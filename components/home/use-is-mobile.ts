@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 
 // Optimize mobile detection with debouncing and media query listener
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(() => {
-    // SSR-safe initial state
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia("(max-width: 1023px)").matches;
-  });
+  // Always start with false for SSR consistency
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Use MediaQueryList for better performance
