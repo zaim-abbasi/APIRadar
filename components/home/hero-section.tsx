@@ -70,35 +70,18 @@ const CTAButton = React.memo(({
 
 CTAButton.displayName = 'CTAButton';
 
-// Memoized Hero Headline component
-const HeroHeadline = React.memo(() => (
-  <div className="mb-6 animate-fade-in-up">
-    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold leading-[0.95] tracking-tight drop-shadow-sm">
-      {/* First Line */}
-      <div className="mb-2 sm:mb-3 md:mb-4 animate-fade-in-up">
-        <span className="text-foreground">Tracking Public{' '}</span>
-        <span className="text-red-600 drop-shadow-md">API</span>
-      </div>
-      {/* Second Line */}
-      <div className="text-muted-foreground/80 animate-fade-in-up drop-shadow-sm">
-        leaks Live
-      </div>
-    </h1>
-  </div>
-));
 
-HeroHeadline.displayName = 'HeroHeadline';
 
-// Memoized Feature Tags component
+// Memoized Feature Tags component (for left column)
 const FeatureTags = React.memo(() => {
   const features = useMemo(() => [
-    { icon: Zap, text: 'Leaks as They Happen', color: 'text-yellow-500', shouldSpin: true },
-    { icon: Eye, text: 'See Everything Exposed', color: 'text-green-500', shouldSpin: false },
-    { icon: Globe, text: 'Global Leak Radar', color: 'text-blue-500', shouldSpin: false }
+    { icon: Zap, text: 'Real-Time Monitoring', color: 'text-yellow-500', shouldSpin: true },
+    { icon: Eye, text: 'Comprehensive Detection', color: 'text-green-500', shouldSpin: false },
+    { icon: Globe, text: 'Global Coverage', color: 'text-blue-500', shouldSpin: false }
   ], []);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6 animate-fade-in-up">
+    <>
       {features.map((feature, index) => (
         <FeatureTag
           key={index}
@@ -109,63 +92,151 @@ const FeatureTags = React.memo(() => {
           shouldSpin={feature.shouldSpin}
         />
       ))}
-    </div>
+    </>
   );
 });
 
 FeatureTags.displayName = 'FeatureTags';
 
-// Memoized Subheading component
-const HeroSubheading = React.memo(() => (
-  <p className="text-base md:text-lg text-muted-foreground leading-snug mb-6 sm:mb-8 px-4 animate-fade-in-up">
-    See what’s leaking right now—API keys exposed in real time.<br className="hidden sm:block" />
-    Don’t miss the secrets spilling from public code. Explore the world’s live feed of credential leaks.
-  </p>
-));
 
-HeroSubheading.displayName = 'HeroSubheading';
 
-// Memoized CTA Buttons component
-const CTAButtons = React.memo(() => (
-  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-8 sm:mb-12">
-    <CTAButton href="/leaderboard" variant="outline">
-      Leaderboard
-    </CTAButton>
-    <CTAButton href="/explore">
-      <span className="flex items-center justify-center w-full">
-        Explore Leaks
-        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
-      </span>
-    </CTAButton>
-  </div>
-));
 
-CTAButtons.displayName = 'CTAButtons';
+
+// Memoized Right Column Content
+const RightColumn = React.memo(() => {
+  const features = useMemo(() => [
+    { 
+      icon: Zap, 
+      text: 'Real-Time Monitoring', 
+      description: 'Track leaks as they happen',
+      color: 'text-yellow-500'
+    },
+    { 
+      icon: Eye, 
+      text: 'Comprehensive Detection', 
+      description: 'Monitor millions of repositories',
+      color: 'text-green-500'
+    },
+    { 
+      icon: Globe, 
+      text: 'Global Coverage', 
+      description: 'Worldwide leak tracking',
+      color: 'text-blue-500'
+    }
+  ], []);
+
+  return (
+    <div className="flex flex-col gap-6 lg:gap-8">
+      {/* Feature Cards */}
+      <div className="space-y-4">
+        {features.map((feature, index) => (
+          <div
+            key={index}
+            className={cn(
+              "p-5 rounded-lg border bg-card/50 backdrop-blur-sm animate-fade-in-up",
+              "border-border"
+            )}
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div className="flex items-start gap-4">
+              <feature.icon className={cn("h-5 w-5 flex-shrink-0 mt-0.5", feature.color)} />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {feature.text}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA Buttons - Vertical Stack */}
+      <div className="flex flex-col gap-3 pt-2">
+        <Link
+          href="/explore"
+          prefetch={true}
+          className={cn(
+            "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "bg-primary text-primary-foreground border-primary/80 hover:bg-primary/90 hover:border-primary shadow-sm hover:shadow-md"
+          )}
+        >
+          <span className="flex items-center justify-center w-full">
+            Explore Leaks
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
+          </span>
+        </Link>
+        <Link
+          href="/leaderboard"
+          prefetch={true}
+          className={cn(
+            "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-primary/60 shadow-sm hover:shadow-md"
+          )}
+        >
+          View Leaderboard
+        </Link>
+      </div>
+    </div>
+  );
+});
+RightColumn.displayName = 'RightColumn';
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative h-auto min-h-[80vh] sm:h-screen overflow-hidden">
-      {/* Clean Background - No Grid */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/5">
-        {/* Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-background/10" />
-      </div>
+    <section className="relative h-auto min-h-[85vh] sm:min-h-screen overflow-hidden bg-background">
 
-      <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-3 sm:px-0">
-        <div className="min-h-[80vh] sm:min-h-screen flex flex-col justify-center text-center max-w-7xl mx-auto w-full py-4 sm:py-0">
-          {/* Main Headline - Optimized Layout */}
-          <HeroHeadline />
+      <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="min-h-[85vh] sm:min-h-screen flex items-center justify-center w-full max-w-7xl mx-auto pt-2 sm:pt-4 lg:pt-6 pb-8 sm:pb-12 lg:pb-16">
+          {/* 2-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-16 w-full items-center">
+            {/* Left Column - Content */}
+            <div className="flex flex-col justify-center space-y-6 lg:space-y-8 text-left lg:text-left">
+              {/* Headline */}
+              <div className="animate-fade-in-up">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight mb-4">
+                  <span className="text-foreground">Real-Time{' '}</span>
+                  <span className="text-destructive">API Key</span>
+                  <br />
+                  <span className="text-foreground">Leak Detection</span>
+                </h1>
+              </div>
 
-          {/* Feature Tags */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-6 animate-fade-in-up">
-            <FeatureTags />
+              {/* Subheading */}
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl animate-fade-in-up">
+                Monitor API key exposures across millions of public repositories. Track security incidents as they happen with detailed insights and real-time alerts.
+              </p>
+
+              {/* Key Benefits List */}
+              <div className="space-y-3 pt-2 animate-fade-in-up">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
+                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                    Continuous monitoring of public code repositories
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
+                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                    Instant alerts when new API keys are exposed
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
+                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                    Detailed repository context and leak analysis
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Features & CTAs */}
+            <div className="flex flex-col justify-center animate-fade-in-up">
+              <RightColumn />
+            </div>
           </div>
-
-          {/* Subheading */}
-          <HeroSubheading />
-
-          {/* CTA Buttons */}
-          <CTAButtons />
         </div>
       </div>
     </section>

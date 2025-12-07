@@ -93,7 +93,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
   const isLoggedIn = !!session?.user;
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 py-7 bg-gradient-to-b from-background via-white/90 to-muted/60 dark:from-background dark:via-zinc-900/80 dark:to-muted/60">
+    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 py-7 bg-background">
       {/* Header */}
       <div className="flex flex-col items-center mb-7 mt-2 z-10 w-full">
         <h1 className="text-4xl font-extrabold leading-tight text-center mb-3 text-primary tracking-tight z-10 drop-shadow-md">

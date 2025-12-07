@@ -162,7 +162,7 @@ export function TOTPGate() {
           {/* API Radar branding - text only */}
           <div className="flex flex-col items-center">
             <span className="text-lg font-extrabold tracking-tight flex items-center gap-1">
-              <span className="text-red-600">API</span>
+              <span className="text-destructive">API</span>
               <span className="text-foreground"> Radar</span>
             </span>
           </div>

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 220 14.3% 100%;
     --foreground: 0 0% 3.9%;
 
     --card: 0 0% 100%;
@@ -36,7 +36,7 @@
   }
  
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 220 14.3% 3.9%;
     --foreground: 0 0% 98%;
  
     --card: 0 0% 3.9%;
@@ -332,6 +332,63 @@ button:focus:not(:focus-visible) {
   -moz-user-select: none !important;
   -ms-user-select: none !important;
   user-select: none !important;
+}
+
+/* Custom Scrollbar Styling - Black Thin Scrollbar */
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }
 
 

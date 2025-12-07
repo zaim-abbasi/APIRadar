@@ -10,12 +10,8 @@ const ProviderChart = dynamic(() => import("@/components/leaderboard/provider-ch
 
 const LeaderboardHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <h1 className="text-3xl md:text-4xl font-semibold mb-2 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight">
-      Security Leaderboard
-    </h1>
-    <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden md:block">
-      Explore real-time API key leak trends. Discover which providers are most public and gain insights with our comprehensive analytics.
+    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden md:block font-semibold">
+      Explore real-time API key leak trends.
     </p>
   </div>
 ));

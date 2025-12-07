@@ -87,13 +87,13 @@ export function UserMenu() {
           {mounted ? (
             <Avatar className={cn(
               "h-8 w-8 md:h-9 md:w-9 border border-border/60",
-              theme === 'dark' ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
+              theme === 'dark' ? "bg-card text-card-foreground" : "bg-card text-card-foreground"
             )}>
               <AvatarFallback className={cn(
                 "flex items-center justify-center h-full w-full text-base font-semibold select-none",
                 theme === 'dark'
                   ? "bg-zinc-800 text-white"
-                  : "bg-zinc-100 text-zinc-900"
+                  : "bg-secondary text-secondary-foreground"
               )}>
                 {session && userName
                   ? displayLetter
@@ -101,15 +101,15 @@ export function UserMenu() {
               </AvatarFallback>
             </Avatar>
           ) : (
-            <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-border/60 bg-white text-zinc-900">
-              <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-semibold select-none bg-zinc-100 text-zinc-900">
+            <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-border/60 bg-card text-card-foreground">
+              <AvatarFallback className="flex items-center justify-center h-full w-full text-base font-semibold select-none bg-secondary text-secondary-foreground">
                 <UserCircle className="h-5 w-5 text-muted-foreground/70" />
               </AvatarFallback>
             </Avatar>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-xl shadow-lg border border-border/60 bg-background/95 backdrop-blur-md dark:bg-zinc-900/95 p-1">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 bg-background/95 backdrop-blur-md p-1">
         {/* If signed in, show user info, else show Guest */}
         <DropdownMenuLabel className="font-semibold px-3 py-2 rounded-lg bg-primary/5 mb-1 transition-colors duration-200">
           <div className="flex flex-col space-y-0.5">
@@ -152,9 +152,9 @@ export function UserMenu() {
           >
             <div className="transition-transform duration-200 group-hover:scale-110">
               {theme === 'dark' ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
+                <Sun className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Moon className="h-4 w-4 text-blue-500" />
+                <Moon className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
             <span className="font-medium text-sm">Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode</span>

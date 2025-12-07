@@ -12,8 +12,8 @@ const FooterLogo = React.memo(() => (
       <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
     </div>
     <span className="text-base font-medium">
-      <span className="text-red-600">API</span>
-      <span className="text-zinc-900 dark:text-white"> Radar</span>
+      <span className="text-destructive">API</span>
+      <span className="text-foreground"> Radar</span>
     </span>
   </Link>
 ));

@@ -14,12 +14,8 @@ import { Provider } from '@/types';
 
 const ExploreHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <h1 className="text-3xl md:text-4xl font-semibold mb-2 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight">
-      Explore Leaked API Keys
-    </h1>
-    <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-      Real-time database of API key leaks from public repositories. View detailed leak information and repository context to stay informed about the latest exposures.
+    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
+      Real-time database of API key leaks from public repositories.
     </p>
   </div>
 ));
@@ -140,7 +136,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       {/* Header */}
       <ExploreHeader />
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-5 mb-6 animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-4 sm:p-5 mb-6 animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
         <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
           <div className="flex-1 lg:w-[33.333%]">
             <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />

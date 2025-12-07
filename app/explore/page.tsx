@@ -61,12 +61,8 @@ class ExplorePageError extends Error {
 // Memoized Header component
 const ExploreHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <h1 className="text-3xl md:text-4xl font-semibold mb-2 bg-gradient-to-r from-primary to-foreground bg-clip-text text-transparent tracking-tight">
-      Explore Leaked API Keys
-    </h1>
-    <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-foreground mx-auto mb-3 rounded-full opacity-60" />
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-      Real-time database of API key leaks from public repositories. View detailed leak information and repository context to stay informed about the latest exposures.
+    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
+      Real-time database of API key leaks from public repositories.
     </p>
   </div>
 ));

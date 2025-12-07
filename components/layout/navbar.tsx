@@ -79,14 +79,14 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
       <nav className="flex flex-col min-h-[1px] gap-1 px-0.5 py-1 w-full">
         {/* Profile Section */}
         <div className="flex items-center gap-1 mb-1 min-h-[40px]">
-          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary dark:bg-white/10 dark:text-white text-[15px] font-semibold">
+          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary text-[15px] font-semibold">
             {displayLetter}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             {session && userName ? (
               <span className="text-[13px] font-semibold truncate">{userName}</span>
             ) : (
-              <span className="text-[13px] font-semibold text-primary dark:text-white">Unauthorized</span>
+              <span className="text-[13px] font-semibold text-primary">Unauthorized</span>
             )}
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
@@ -223,8 +223,8 @@ const NavbarComponent = () => {
                 <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
               </div>
               <span className="text-xl font-medium">
-                <span className="text-red-600">API</span>
-                <span className="text-zinc-900 dark:text-white"> Radar</span>
+                <span className="text-destructive">API</span>
+                <span className="text-foreground"> Radar</span>
               </span>
             </Link>
           </div>
