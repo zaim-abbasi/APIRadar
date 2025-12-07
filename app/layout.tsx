@@ -7,6 +7,8 @@ import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from 'sonner';
 import Analytics from '@/components/Analytics';
+import { KonamiCodeListener } from '@/components/auth/konami-code-listener';
+import { TOTPGate } from '@/components/auth/totp-gate';
 
 // Optimize font loading with subset and display swap
 const inter = Inter({ 
@@ -153,6 +155,8 @@ export default function RootLayout({
               <Footer />
             </div>
             <Toaster />
+            <KonamiCodeListener />
+            <TOTPGate />
           </ThemeProvider>
         </AuthProvider>
         <Analytics />
