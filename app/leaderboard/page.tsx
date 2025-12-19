@@ -57,8 +57,8 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
       headers: {
         'Content-Type': 'application/json',
       },
-      // Production caching - 5 minutes
-      next: { revalidate: 300 }
+      // No caching - page is fully dynamic, always fetch fresh data
+      cache: 'no-store'
     });
 
     if (!response.ok) {
@@ -154,9 +154,13 @@ const ChartsSection = React.memo(({ data }: { data: ChartData }) => (
 
 ChartsSection.displayName = 'ChartsSection';
 
+// Force dynamic rendering - leaderboard data changes frequently
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Always fetch fresh data
+
 // Main page component
 export default async function LeaderboardPage() {
-  // Fetch data server-side
+  // Fetch data server-side (at request time, not build time)
   const leaderboardData = await fetchLeaderboardData();
 
   // Prepare data with proper validation
