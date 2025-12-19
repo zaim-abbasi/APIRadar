@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -15,11 +12,10 @@ const nextConfig = {
   compress: true,
   // Enable React strict mode for better development
   reactStrictMode: true,
-  // Power up with webpack optimizations
+  // Use webpack for stability (Turbopack has Windows symlink issues)
+  // Webpack optimizations for production builds
   webpack: (config, { dev, isServer }) => {
-    // Production optimizations
     if (!dev && !isServer) {
-      // Tree shaking optimizations
       config.optimization = {
         ...config.optimization,
         moduleIds: 'deterministic',

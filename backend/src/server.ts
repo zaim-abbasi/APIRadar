@@ -18,9 +18,7 @@ async function startServer() {
       origin: [
         'https://apiradar.live',
         'https://www.apiradar.live',
-        'http://localhost:3000',
-        'http://144.24.115.249',
-        'https://144.24.115.249'
+        'http://localhost:3000', // For local development
       ],
       credentials: true,
     });
