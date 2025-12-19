@@ -5,10 +5,11 @@
   "workspaces": [
     "app"
   ],
-  "scripts": {
+    "scripts": {
     "dev": "next dev",
-    "dev:full": "concurrently \"npm run dev\" \"cd backend && npm run dev\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
+    "dev:all": "concurrently \"npm run dev\" \"cd backend && npm run dev\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "build": "next build",
+    "build:both": "concurrently \"npm run build\" \"cd backend && npm run build:prod\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "start": "next start",
     "lint": "next lint",
     "postbuild": "next-sitemap"
