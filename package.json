@@ -2,10 +2,7 @@
   "name": "leakpeek",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "app"
-  ],
-    "scripts": {
+  "scripts": {
     "dev": "next dev --webpack",
     "dev:all": "concurrently \"npm run dev\" \"cd backend && npm run dev\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "build": "next build --webpack",
