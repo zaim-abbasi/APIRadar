@@ -61,35 +61,17 @@ jobs:
         if: matrix.component == 'frontend'
         run: |
           set -e
-          echo "📁 Working directory: $(pwd)"
-          echo "📁 Project structure:"
-          ls -la | head -20
-          echo ""
-          echo "🔨 Starting Next.js build..."
-          npm run build 2>&1 | tee build.log || {
-            echo "❌ Build failed!"
-            echo "📄 Build log:"
-            cat build.log || true
-            exit 1
-          }
-          echo ""
-          echo "✅ Build command completed"
-          echo "📁 Checking build output..."
+          npm run build
           if [ ! -d .next ]; then
-            echo "❌ ERROR: .next directory not found after build"
-            echo "📁 Current directory contents:"
+            echo "CRITICAL: .next directory not created"
+            echo "Directory listing:"
             ls -la
-            echo "📁 Checking for .next in subdirectories:"
-            find . -name ".next" -type d 2>/dev/null || echo "No .next found"
             exit 1
           fi
           if [ ! -d public ]; then
-            echo "❌ ERROR: public directory not found"
+            echo "CRITICAL: public directory missing"
             exit 1
           fi
-          echo "✅ Build verification passed"
-          echo "📊 Build output sizes:"
-          du -sh .next public
         env:
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://apiradar.live
