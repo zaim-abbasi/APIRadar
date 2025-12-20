@@ -5,6 +5,7 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
+import { KEY_VALIDATORS } from './apiKeyValidator';
 // Priority 1: Critical Error Handling & Recovery
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { retryWithBackoff } from '../utils/retryWithBackoff';
@@ -174,53 +175,6 @@ interface GitHubRepoMetadata {
   [key: string]: any;
 }
 
-// Filter out placeholder/demo keys that contain common placeholder words
-function isPlaceholderKey(key: string): boolean {
-  const placeholderWords = [
-    'your', 'key', 'demo', 'example', 'placeholder', 'template', 
-    'sample', 'test', 'fake', 'dummy', 'mock', 'production', 'development',
-    'staging', 'local', 'config', 'secret', 'password', 'token'
-  ];
-  const lowerKey = key.toLowerCase();
-  // Ignore keys that are just sk-xxxx... or sk-xxxxxxxx... (all x or X)
-  if (/^sk-([x]{4,}|[x]{20,})$/i.test(key)) return true;
-  return placeholderWords.some(word => lowerKey.includes(word));
-}
-
-// Key validation functions with stricter validation for generic patterns
-function isValidOpenAIKey(key: string): boolean {
-  // Skip placeholder keys
-  if (isPlaceholderKey(key)) return false;
-  // Ignore keys that are just sk-xxxx... or sk-xxxxxxxx... (all x or X)
-  if (/^sk-([x]{4,}|[x]{20,})$/i.test(key)) return false;
-  // Use the same pattern as in SEARCH_PATTERNS
-  return /^sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}$/.test(key);
-}
-
-function isValidGeminiKey(key: string): boolean {
-  // Skip placeholder keys
-  if (isPlaceholderKey(key)) return false;
-  // Ignore keys that are just sk-xxxx... or sk-xxxxxxxx... (all x or X)
-  if (/^sk-([x]{4,}|[x]{20,})$/i.test(key)) return false;
-  // Use the same pattern as in SEARCH_PATTERNS
-  return /^AIza[0-9A-Za-z]{35,36}$/.test(key);
-}
-
-function isValidAnthropicKey(key: string): boolean {
-  // Skip placeholder keys
-  if (isPlaceholderKey(key)) return false;
-  // Ignore keys that are just sk-xxxx... or sk-xxxxxxxx... (all x or X)
-  if (/^sk-([x]{4,}|[x]{20,})$/i.test(key)) return false;
-  // Use the same pattern as in SEARCH_PATTERNS
-  return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32,}$/.test(key);
-}
-
-// Provider validation mapping
-const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
-  openai: isValidOpenAIKey,
-  google_gemini: isValidGeminiKey,
-  anthropic: isValidAnthropicKey
-};
 
 function redactKey(key: string): string {
   if (key.length <= 8) return key;
