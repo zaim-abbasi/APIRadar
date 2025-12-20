@@ -65,6 +65,13 @@ jobs:
           NEXTAUTH_SECRET: dummy-secret-for-build
           NEXTAUTH_URL: https://apiradar.live
 
+      - name: ✅ Verify frontend build
+        if: matrix.component == 'frontend'
+        run: |
+          [ ! -d .next ] && echo "ERROR: .next directory not found" && exit 1
+          [ ! -d public ] && echo "ERROR: public directory not found" && exit 1
+          echo "Build verification passed"
+
       - name: 📤 Upload artifacts
         uses: actions/upload-artifact@v4
         with:
