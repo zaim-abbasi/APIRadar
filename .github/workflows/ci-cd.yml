@@ -5,6 +5,11 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 env:
   NODE_VERSION: '20.x'
 
@@ -23,7 +28,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: ${{ matrix.component == 'frontend' && 'npm' || 'backend/npm' }}
+          cache: ${{ matrix.component == 'frontend' && 'npm' || '' }}
+
+      - name: 💾 Cache backend dependencies
+        if: matrix.component == 'backend'
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-backend-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-
 
       - name: 📦 Install dependencies
         if: matrix.component == 'frontend'
