@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: read
-  checks: write
+  statuses: write
   pull-requests: write
 
 env:
@@ -61,6 +61,9 @@ jobs:
         env:
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://apiradar.live
+          MONGODB_URI: mongodb://dummy:27017/dummy
+          NEXTAUTH_SECRET: dummy-secret-for-build
+          NEXTAUTH_URL: https://apiradar.live
 
       - name: 📤 Upload artifacts
         uses: actions/upload-artifact@v4
