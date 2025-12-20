@@ -119,21 +119,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     };
   }, [paginationState.hasMore, loadingState.isLoading, loadingState.isLoadingMore, isAuthenticated]);
 
-  // Root fix: Clear state and cache immediately when filters change to prevent stale data display
-  useEffect(() => {
-    // Immediately clear leaks to prevent showing stale data
-    setLeaks([]);
-    setPaginationState(prev => ({ ...prev, page: 1, hasMore: false, total: 0 }));
-    setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
-    // Clear request cache to force fresh API calls with new filters
-    clearLeaksCache();
-    // Clear firstPageCache when filters change (not default filters)
-    if (!isDefaultFilters) {
-      firstPageCache.leaks = [];
-      firstPageCache.timestamp = 0;
-    }
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
-
   // Root fix: Use ref to track latest filter state to prevent stale closures
   const filterStateRef = useRef(filterState);
   const paginationStateRef = useRef(paginationState);
@@ -162,6 +147,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       const currentFilterState = filterStateRef.current;
       const currentPaginationState = paginationStateRef.current;
       
+      // Root fix: Set loading state (leaks already cleared by filter change useEffect)
       if (currentPaginationState.page === 1) {
         setLoadingState(prev => ({ ...prev, isLoading: true, isLoadingMore: false, error: null }));
       } else {
@@ -243,17 +229,27 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }
   }, [sessionStatus, fetchAndSetLeaks]);
 
-  // Root fix: Single useEffect to handle all filter changes with proper debouncing
+  // Root fix: Single useEffect to handle all filter changes - clear state immediately, then fetch
   useEffect(() => {
     if (!hasInitializedRef.current) return;
+    
+    // Root fix: Clear leaks and set loading IMMEDIATELY to prevent empty state flash
+    setLeaks([]);
+    setPaginationState(prev => ({ ...prev, page: 1, hasMore: false, total: 0 }));
+    setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+    clearLeaksCache();
+    if (!isDefaultFilters) {
+      firstPageCache.leaks = [];
+      firstPageCache.timestamp = 0;
+    }
     
     // Small delay to batch rapid filter changes
     const timeoutId = setTimeout(() => {
       fetchAndSetLeaks();
-    }, 50); // 50ms debounce to batch rapid changes
+    }, 50);
     
     return () => clearTimeout(timeoutId);
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex, fetchAndSetLeaks]);
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex, fetchAndSetLeaks, isDefaultFilters]);
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
   useEffect(() => {
