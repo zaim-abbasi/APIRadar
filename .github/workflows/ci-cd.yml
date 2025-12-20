@@ -10,146 +10,34 @@ permissions:
   statuses: write
   pull-requests: write
 
-env:
-  NODE_VERSION: '20.x'
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 💾 Cache backend dependencies
-        uses: actions/cache@v4
-        with:
-          path: backend/node_modules
-          key: ${{ runner.os }}-backend-${{ hashFiles('backend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-backend-
-
-      - name: 📦 Install backend dependencies
-        working-directory: ./backend
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-
-      - name: 🔨 Build backend
-        working-directory: ./backend
-        run: npm run build:prod
-        env:
-          NODE_ENV: production
-
-      - name: 📤 Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build
-          path: backend/dist
-          retention-days: 2
-          compression-level: 0
-          if-no-files-found: error
-
-  notify-build-success:
-    runs-on: ubuntu-latest
-    needs: build
-    if: success()
-    steps:
-      - name: ✅ Notify build success
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.sha,
-              state: 'success',
-              context: 'CI/CD Pipeline - Build',
-              description: 'Build completed successfully',
-              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
-            });
-
-  notify-build-failure:
-    runs-on: ubuntu-latest
-    needs: build
-    if: failure()
-    steps:
-      - name: 📢 Notify build failure
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { sha, ref, actor, runId, serverUrl, repo } = context;
-            const branch = ref.replace('refs/heads/', '');
-            const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
-            
-            await github.rest.repos.createCommitStatus({
-              owner: repo.owner,
-              repo: repo.repo,
-              sha,
-              state: 'failure',
-              context: 'CI/CD Pipeline',
-              description: 'Build failed - old version still running',
-              target_url: url
-            });
-            
-            try {
-              const prs = await github.rest.pulls.list({
-                owner: repo.owner,
-                repo: repo.repo,
-                state: 'open',
-                head: `${repo.owner}:${branch}`
-              });
-              if (prs.data.length > 0) {
-                await github.rest.issues.createComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  issue_number: prs.data[0].number,
-                  body: `## ❌ Build Failed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n\n⚠️ **Old version is still running in production.**\n\n[Workflow logs](${url})`
-                });
-              }
-            } catch {}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 8
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: 📥 Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-build
-          path: backend/dist
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📦 Create deployment package
+      - name: 📦 Package
         run: |
-          tar --exclude='node_modules' --exclude='.git' --exclude='.next' -cf deployment.tar \
+          tar --exclude='node_modules' --exclude='.git' --exclude='.next' --exclude='backend/dist' -cf deployment.tar \
             app components lib hooks types public package.json package-lock.json \
-            backend/dist backend/package.json backend/package-lock.json \
-            backend/ecosystem.config.js next.config.js tsconfig.json \
-            tailwind.config.ts postcss.config.js components.json \
-            next-sitemap.config.js 2>/dev/null
+            backend/src backend/package.json backend/package-lock.json \
+            backend/ecosystem.config.js backend/tsconfig*.json \
+            next.config.js tsconfig.json tailwind.config.ts postcss.config.js \
+            components.json next-sitemap.config.js 2>/dev/null
 
-      - name: 🚀 Deploy to production
+      - name: 🚀 Transfer
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
-          source: "deployment.tar"
-          target: "/home/${{ secrets.SERVER_USER }}/API-Radar"
-          strip_components: 0
+          source: deployment.tar
+          target: /home/${{ secrets.SERVER_USER }}/API-Radar
 
-      - name: 🔄 Deploy, backup and restart
+      - name: 🔄 Build & Deploy
         id: deploy
         uses: appleboy/ssh-action@master
         with:
@@ -159,61 +47,48 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
             set -e
-            DEPLOY_DIR="/home/${{ secrets.SERVER_USER }}/API-Radar"
-            BACKUP_FILE="/home/${{ secrets.SERVER_USER }}/API-Radar-backup/backup-latest.tar"
-            cd "${DEPLOY_DIR}"
+            cd /home/${{ secrets.SERVER_USER }}/API-Radar
+            BACKUP="/home/${{ secrets.SERVER_USER }}/API-Radar-backup/backup-latest.tar"
             
-            if [ -d .next ] || [ -d backend/dist ]; then
-              mkdir -p "$(dirname "${BACKUP_FILE}")"
-              rm -f "${BACKUP_FILE}"
-              tar -cf "${BACKUP_FILE}" .next public package.json package-lock.json \
+            [ -d .next ] || [ -d backend/dist ] && mkdir -p "$(dirname "$BACKUP")" && \
+              tar -cf "$BACKUP" .next public package.json package-lock.json \
                 backend/dist backend/package.json backend/package-lock.json \
                 backend/ecosystem.config.js next.config.js 2>/dev/null || true
-            fi
             
             tar -xf deployment.tar && rm -f deployment.tar
             
-            if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ] 2>/dev/null; then
+            [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ] 2>/dev/null && \
               npm ci --prefer-offline --no-audit --legacy-peer-deps || \
               npm install --prefer-offline --no-audit --legacy-peer-deps
-            fi
             
-            if [ ! -d backend/node_modules ] || [ backend/package.json -nt backend/node_modules/.package-lock.json ] 2>/dev/null; then
-              cd backend
-              npm ci --production --ignore-scripts --prefer-offline --no-audit --silent --legacy-peer-deps || \
-              npm install --production --ignore-scripts --prefer-offline --no-audit --silent --legacy-peer-deps
-              cd ..
-            fi
+            [ ! -d backend/node_modules ] || [ backend/package.json -nt backend/node_modules/.package-lock.json ] 2>/dev/null && \
+              (cd backend && npm ci --prefer-offline --no-audit --legacy-peer-deps || npm install --prefer-offline --no-audit --legacy-peer-deps)
             
-            echo "Building frontend on server..."
+            cd backend && npm run build:prod && cd ..
+            [ ! -d backend/dist ] && exit 1
+            
             npm run build
-            if [ ! -d .next ]; then
-              echo "ERROR: Frontend build failed - .next missing"
-              exit 1
-            fi
-            echo "Frontend build successful"
+            [ ! -d .next ] && exit 1
             
-            if pm2 list | grep -q "api-radar-backend.*online"; then
-              pm2 reload api-radar-backend --update-env 2>/dev/null || pm2 restart api-radar-backend
-            else
-              cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend && cd ..
-            fi
+            pm2 list | grep -q "api-radar-backend.*online" && pm2 reload api-radar-backend --update-env 2>/dev/null || \
+              (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
             
-            if pm2 list | grep -q "api-radar-frontend.*online"; then
-              pm2 restart api-radar-frontend --update-env
-            else
+            pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
               pm2 start npm --name api-radar-frontend -- start
-            fi
+            
             pm2 save --force
-            
-            for i in 0 1; do
-              [ $i -eq 1 ] && sleep 1
-              pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online" && break
-              [ $i -eq 1 ] && echo "ERROR: Services failed to start" && pm2 logs api-radar-backend --lines 5 --nostream 2>/dev/null && pm2 logs api-radar-frontend --lines 5 --nostream 2>/dev/null && exit 1
-            done
+            sleep 1
+            pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online" || exit 1
 
-      - name: ✅ Notify deployment success
-        if: success()
+  notify-success:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    permissions:
+      statuses: write
+      pull-requests: write
+    steps:
+      - name: ✅ Notify
         uses: actions/github-script@v7
         with:
           script: |
@@ -222,61 +97,31 @@ jobs:
             const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
             
             await github.rest.repos.createCommitStatus({
-              owner: repo.owner,
-              repo: repo.repo,
-              sha,
-              state: 'success',
-              context: 'CI/CD Pipeline',
-              description: 'Deployed successfully to production',
-              target_url: url
+              owner: repo.owner, repo: repo.repo, sha,
+              state: 'success', context: 'CI/CD Pipeline',
+              description: 'Deployed successfully', target_url: url
             });
             
-            try {
-              const prs = await github.rest.pulls.list({ owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}` });
-              if (prs.data.length > 0) {
-                await github.rest.issues.createComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  issue_number: prs.data[0].number,
-                  body: `## ✅ Deployment Successful\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Deployed:** ${new Date().toISOString()}\n\n🌐 **Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
-                });
-              }
-            } catch {}
-
-      - name: ❌ Notify deployment failure
-        if: failure() && steps.deploy.outcome == 'failure'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { sha, ref, actor, runId, serverUrl, repo } = context;
-            const branch = ref.replace('refs/heads/', '');
-            const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
-            
-            await github.rest.repos.createCommitStatus({
-              owner: repo.owner,
-              repo: repo.repo,
-              sha,
-              state: 'failure',
-              context: 'CI/CD Pipeline',
-              description: 'Deployment failed - rolling back',
-              target_url: url
+            const prs = await github.rest.pulls.list({
+              owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
             });
-            
-            try {
-              const prs = await github.rest.pulls.list({ owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}` });
-              if (prs.data.length > 0) {
-                await github.rest.issues.createComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  issue_number: prs.data[0].number,
-                  body: `## ❌ Deployment Failed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n\n🔄 **Rollback in progress...**\n\n[Workflow](${url})`
-                });
-              }
-            } catch {}
+            if (prs.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: repo.owner, repo: repo.repo, issue_number: prs.data[0].number,
+                body: `## ✅ Deployment Successful\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\n🌐 **Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
+              });
+            }
 
-      - name: 🔙 Rollback on failure
+  rollback:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    permissions:
+      statuses: write
+      pull-requests: write
+    steps:
+      - name: 🔙 Rollback
         id: rollback
-        if: failure() && steps.deploy.outcome == 'failure'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -285,26 +130,21 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
             set -e
-            DEPLOY_DIR="/home/${{ secrets.SERVER_USER }}/API-Radar"
-            BACKUP_FILE="/home/${{ secrets.SERVER_USER }}/API-Radar-backup/backup-latest.tar"
-            [ ! -f "$BACKUP_FILE" ] && echo "ERROR: No backup found" && exit 1
-            cd "${DEPLOY_DIR}" && tar -xf "$BACKUP_FILE"
+            cd /home/${{ secrets.SERVER_USER }}/API-Radar
+            BACKUP="/home/${{ secrets.SERVER_USER }}/API-Radar-backup/backup-latest.tar"
+            [ ! -f "$BACKUP" ] && exit 1
+            tar -xf "$BACKUP"
             
-            if pm2 list | grep -q "api-radar-backend.*online"; then
-              pm2 reload api-radar-backend --update-env 2>/dev/null || pm2 restart api-radar-backend
-            else
-              cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend && cd ..
-            fi
+            pm2 list | grep -q "api-radar-backend.*online" && pm2 reload api-radar-backend --update-env 2>/dev/null || \
+              (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
             
-            if pm2 list | grep -q "api-radar-frontend.*online"; then
-              pm2 restart api-radar-frontend --update-env
-            else
+            pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
               pm2 start npm --name api-radar-frontend -- start
-            fi
+            
             pm2 save --force
 
-      - name: 🔄 Notify rollback success
-        if: always() && steps.rollback.outcome == 'success'
+      - name: 🔄 Notify Rollback
+        if: steps.rollback.outcome == 'success'
         uses: actions/github-script@v7
         with:
           script: |
@@ -313,23 +153,42 @@ jobs:
             const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
             
             await github.rest.repos.createCommitStatus({
-              owner: repo.owner,
-              repo: repo.repo,
-              sha,
-              state: 'success',
-              context: 'CI/CD Pipeline - Rollback',
-              description: 'Rollback completed successfully',
-              target_url: url
+              owner: repo.owner, repo: repo.repo, sha,
+              state: 'success', context: 'CI/CD Pipeline - Rollback',
+              description: 'Rollback completed', target_url: url
             });
             
-            try {
-              const prs = await github.rest.pulls.list({ owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}` });
-              if (prs.data.length > 0) {
-                await github.rest.issues.createComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  issue_number: prs.data[0].number,
-                  body: `## 🔄 Rollback Completed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Rolled back:** ${new Date().toISOString()}\n\n✅ **Previous working version restored.**\n\n🌐 **Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
-                });
-              }
-            } catch {}
+            const prs = await github.rest.pulls.list({
+              owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
+            });
+            if (prs.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: repo.owner, repo: repo.repo, issue_number: prs.data[0].number,
+                body: `## 🔄 Rollback Completed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\n✅ **Previous version restored.**\n\n🌐 **Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
+              });
+            }
+
+      - name: ❌ Notify Failure
+        if: steps.rollback.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { sha, ref, actor, runId, serverUrl, repo } = context;
+            const branch = ref.replace('refs/heads/', '');
+            const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
+            
+            await github.rest.repos.createCommitStatus({
+              owner: repo.owner, repo: repo.repo, sha,
+              state: 'failure', context: 'CI/CD Pipeline',
+              description: 'Deployment failed', target_url: url
+            });
+            
+            const prs = await github.rest.pulls.list({
+              owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
+            });
+            if (prs.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: repo.owner, repo: repo.repo, issue_number: prs.data[0].number,
+                body: `## ❌ Deployment Failed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n\n🔄 **Rollback attempted.**\n\n[Workflow](${url})`
+              });
+            }
