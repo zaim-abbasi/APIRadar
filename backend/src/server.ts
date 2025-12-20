@@ -12,7 +12,7 @@ const server = fastify({
 });
 
 async function startServer() {
-  process.on('unhandledRejection', (reason, promise) => {
+  process.on('unhandledRejection', (reason, _promise) => {
     logger.error(`[FATAL] Unhandled Promise Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
   });
   process.on('uncaughtException', (error) => {

@@ -28,7 +28,6 @@ export class RateLimitOptimizer {
   private readonly MAX_DELAY = 10000;
   private readonly BASE_DELAY = 1000;
   private usageHistory: Array<{ timestamp: number; remaining: number; limit: number }> = [];
-  private readonly HISTORY_WINDOW = 3600000;
   private lastRotationTime = 0;
 
   constructor() {
@@ -49,7 +48,7 @@ export class RateLimitOptimizer {
     logger.warn(`[RATE-LIMIT] Initialized optimizer with ${this.tokens.length} token(s)`);
   }
 
-  updateFromHeaders(headers: any, tokenIndex?: number): void {
+  updateFromHeaders(_headers: any, _tokenIndex?: number): void {
   }
 
   getCurrentTokenState(): TokenRateLimitState | null {
@@ -225,10 +224,6 @@ export class RateLimitOptimizer {
     };
   }
 
-  private cleanHistory(): void {
-    const cutoff = Date.now() - this.HISTORY_WINDOW;
-    this.usageHistory = this.usageHistory.filter(entry => entry.timestamp > cutoff);
-  }
 
   async refreshTokenStatus(tokenIndex: number): Promise<void> {
     if (tokenIndex >= this.tokens.length) return;
