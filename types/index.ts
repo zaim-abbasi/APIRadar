@@ -41,5 +41,4 @@ export type Provider =
   | 'discord'
   | 'twilio'
   | 'sendgrid'
-  | 'binance'
   | 'all';

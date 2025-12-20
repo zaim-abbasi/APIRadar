@@ -33,11 +33,6 @@ const SEARCH_PATTERNS = [
     provider: 'openai',
     pattern: /\b(sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,})\b/g,
     searchString: 'sk-'
-  },
-  {
-    provider: 'binance',
-    pattern: /\b([a-zA-Z0-9]{64})\b/g,
-    searchString: 'binance'
   }
 ];
 
@@ -82,8 +77,7 @@ const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
 const PROVIDER_QUERIES = {
   openai: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-') && !query.includes('sk-ant-api')),
   google_gemini: ALL_SEARCH_QUERIES.filter(query => query.includes('AIza')),
-  anthropic: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-ant-api')),
-  binance: ALL_SEARCH_QUERIES.filter(query => query.includes('binance'))
+  anthropic: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-ant-api'))
 };
 
 // Configuration constants with fallback defaults
@@ -171,21 +165,11 @@ function isValidAnthropicKey(key: string): boolean {
   return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32,}$/.test(key);
 }
 
-function isValidBinanceKey(key: string): boolean {
-  // Skip placeholder keys
-  if (isPlaceholderKey(key)) return false;
-  // Ignore keys that are all the same character (e.g., all x's or all 0's)
-  if (/^([a-zA-Z0-9])\1{63}$/.test(key)) return false;
-  // Use the same pattern as in SEARCH_PATTERNS - exactly 64 alphanumeric characters
-  return /^[a-zA-Z0-9]{64}$/.test(key);
-}
-
 // Provider validation mapping
 const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
   google_gemini: isValidGeminiKey,
-  anthropic: isValidAnthropicKey,
-  binance: isValidBinanceKey
+  anthropic: isValidAnthropicKey
 };
 
 function redactKey(key: string): string {
@@ -349,8 +333,7 @@ let scanResumeState: ScanResumeState = {
   providerStates: {
     openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
     google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-    anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-    binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+    anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
   }
 };
 
@@ -392,8 +375,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
         const defaultProviderStates = {
           openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
           google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+          anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
         };
         
         // Merge saved states with defaults, ensuring queryEmptyPages exists
@@ -436,8 +418,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
       const defaultProviderStates = {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
         google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       };
       
       // Merge saved states with defaults, ensuring queryEmptyPages exists
@@ -476,8 +457,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     providerStates: {
       openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
       google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-      anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-      binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+      anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
     }
   };
   return scanResumeState;
@@ -496,8 +476,7 @@ async function clearScanState(): Promise<void> {
       providerStates: {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
         google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     });
     
@@ -517,8 +496,7 @@ async function clearScanState(): Promise<void> {
       providerStates: {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
         google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        binance: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     };
     

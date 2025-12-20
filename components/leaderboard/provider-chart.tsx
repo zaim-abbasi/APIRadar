@@ -17,7 +17,6 @@ const providerColors: Record<string, string> = {
   'openai': '#10b981',
   'anthropic': '#d97706',
   'google_gemini': '#3b82f6',
-  'binance': '#f59e0b',
 };
 
 // Function to map database provider names to display names
@@ -26,7 +25,6 @@ const getProviderDisplayName = (provider: string): string => {
     'openai': 'OpenAI',
     'google_gemini': 'Google',
     'anthropic': 'Anthropic (Claude)',
-    'binance': 'Binance',
     'cohere': 'Cohere',
     'aws': 'AWS',
     'stripe': 'Stripe',

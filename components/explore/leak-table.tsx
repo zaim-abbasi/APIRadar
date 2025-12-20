@@ -37,7 +37,6 @@ const providerColors: Record<string, string> = {
   'google-cloud': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
   'discord': 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
   'twilio': 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
-  'binance': 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
   'sendgrid': 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
 };
 

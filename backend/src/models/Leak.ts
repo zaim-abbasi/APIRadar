@@ -38,7 +38,6 @@ const LeakSchema = new Schema<ILeak>(
         'mistral-ai',
         'cohere',
         'huggingface',
-        'binance',
       ],
       index: true,
     },

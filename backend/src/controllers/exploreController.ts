@@ -45,7 +45,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     // Build filter with security constraints - STRICT provider filtering
     const filter: any = {};
-    const validProviders = ['openai', 'anthropic', 'google_gemini', 'binance'];
+    const validProviders = ['openai', 'anthropic', 'google_gemini'];
     
     if (provider && provider !== 'all') {
       const normalizedProvider = String(provider).trim().toLowerCase();
