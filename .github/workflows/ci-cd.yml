@@ -60,7 +60,15 @@ jobs:
       - name: 🔨 Build frontend
         if: matrix.component == 'frontend'
         run: |
-          npm run build
+          set -e
+          echo "Building with npx next build directly..."
+          npx next build --webpack
+          if [ ! -d .next ]; then
+            echo "ERROR: .next missing"
+            ls -la
+            exit 1
+          fi
+          echo "Build successful"
         env:
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://apiradar.live
@@ -68,23 +76,11 @@ jobs:
           NEXTAUTH_SECRET: dummy-secret-for-build
           NEXTAUTH_URL: https://apiradar.live
 
-      - name: ✅ Verify build output
-        if: matrix.component == 'frontend'
-        run: |
-          [ -d .next ] || { echo "ERROR: .next missing"; ls -la; exit 1; }
-          [ -d public ] || { echo "ERROR: public missing"; exit 1; }
-
-      - name: 📦 Create build archive
-        if: matrix.component == 'frontend'
-        run: |
-          tar -czf frontend-build.tar.gz .next public
-          ls -lh frontend-build.tar.gz
-
       - name: 📤 Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.component }}-build
-          path: ${{ matrix.component == 'frontend' && 'frontend-build.tar.gz' || 'backend/dist' }}
+          path: ${{ matrix.component == 'frontend' && '.next public' || 'backend/dist' }}
           retention-days: 2
           compression-level: 0
           if-no-files-found: error
@@ -171,11 +167,6 @@ jobs:
           name: frontend-build
           path: .
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 📦 Extract frontend build
-        run: |
-          tar -xzf frontend-build.tar.gz
-          ls -la .next public
 
       - name: 📦 Create deployment package
         run: |
