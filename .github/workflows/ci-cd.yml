@@ -17,9 +17,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    strategy:
-      matrix:
-        component: [frontend, backend]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -28,10 +25,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: ${{ matrix.component == 'frontend' && 'npm' || '' }}
 
       - name: 💾 Cache backend dependencies
-        if: matrix.component == 'backend'
         uses: actions/cache@v4
         with:
           path: backend/node_modules
@@ -39,54 +34,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-backend-
 
-      - name: 📦 Install dependencies
-        if: matrix.component == 'frontend'
-        run: |
-          npm ci --prefer-offline --no-audit --legacy-peer-deps
-          echo "✅ Dependencies installed"
-
       - name: 📦 Install backend dependencies
-        if: matrix.component == 'backend'
         working-directory: ./backend
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🔨 Build backend
-        if: matrix.component == 'backend'
         working-directory: ./backend
         run: npm run build:prod
         env:
           NODE_ENV: production
 
-      - name: 🔨 Build frontend
-        if: matrix.component == 'frontend'
-        run: |
-          set -e
-          echo "=== BUILD START ==="
-          npx next build --webpack 2>&1
-          echo "=== BUILD END ==="
-          echo "Checking for .next..."
-          if [ ! -d .next ]; then
-            echo "❌ .next MISSING!"
-            echo "PWD: $(pwd)"
-            echo "Files:"
-            ls -la
-            echo "Searching for .next:"
-            find . -name ".next" -type d 2>/dev/null || echo "Not found"
-            exit 1
-          fi
-          echo "✅ .next exists"
-        env:
-          NODE_ENV: production
-          NEXT_PUBLIC_APP_URL: https://apiradar.live
-          MONGODB_URI: mongodb://dummy:27017/dummy
-          NEXTAUTH_SECRET: dummy-secret-for-build
-          NEXTAUTH_URL: https://apiradar.live
-
-      - name: 📤 Upload artifacts
+      - name: 📤 Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.component }}-build
-          path: ${{ matrix.component == 'frontend' && '.next public' || 'backend/dist' }}
+          name: backend-build
+          path: backend/dist
           retention-days: 2
           compression-level: 0
           if-no-files-found: error
@@ -94,7 +56,7 @@ jobs:
   notify-build-success:
     runs-on: ubuntu-latest
     needs: build
-    if: success() && needs.build.result == 'success'
+    if: success()
     steps:
       - name: ✅ Notify build success
         uses: actions/github-script@v7
@@ -113,7 +75,7 @@ jobs:
   notify-build-failure:
     runs-on: ubuntu-latest
     needs: build
-    if: failure() && needs.build.result == 'failure'
+    if: failure()
     steps:
       - name: 📢 Notify build failure
         uses: actions/github-script@v7
@@ -160,27 +122,21 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: 📥 Download artifacts
+      - name: 📥 Download backend artifact
         uses: actions/download-artifact@v4
         with:
           name: backend-build
           path: backend/dist
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📥 Download frontend artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: .
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: 📦 Create deployment package
         run: |
-          tar --exclude='node_modules' --exclude='.git' -cf deployment.tar \
-            .next public package.json package-lock.json \
+          tar --exclude='node_modules' --exclude='.git' --exclude='.next' -cf deployment.tar \
+            app components lib hooks types public package.json package-lock.json \
             backend/dist backend/package.json backend/package-lock.json \
             backend/ecosystem.config.js next.config.js tsconfig.json \
-            tailwind.config.ts postcss.config.js components.json 2>/dev/null
+            tailwind.config.ts postcss.config.js components.json \
+            next-sitemap.config.js 2>/dev/null
 
       - name: 🚀 Deploy to production
         uses: appleboy/scp-action@master
@@ -218,8 +174,8 @@ jobs:
             tar -xf deployment.tar && rm -f deployment.tar
             
             if [ ! -d node_modules ] || [ package.json -nt node_modules/.package-lock.json ] 2>/dev/null; then
-              npm ci --production --ignore-scripts --prefer-offline --no-audit --silent --legacy-peer-deps || \
-              npm install --production --ignore-scripts --prefer-offline --no-audit --silent --legacy-peer-deps
+              npm ci --prefer-offline --no-audit --legacy-peer-deps || \
+              npm install --prefer-offline --no-audit --legacy-peer-deps
             fi
             
             if [ ! -d backend/node_modules ] || [ backend/package.json -nt backend/node_modules/.package-lock.json ] 2>/dev/null; then
@@ -228,6 +184,14 @@ jobs:
               npm install --production --ignore-scripts --prefer-offline --no-audit --silent --legacy-peer-deps
               cd ..
             fi
+            
+            echo "Building frontend on server..."
+            npm run build
+            if [ ! -d .next ]; then
+              echo "ERROR: Frontend build failed - .next missing"
+              exit 1
+            fi
+            echo "Frontend build successful"
             
             if pm2 list | grep -q "api-radar-backend.*online"; then
               pm2 reload api-radar-backend --update-env 2>/dev/null || pm2 restart api-radar-backend
