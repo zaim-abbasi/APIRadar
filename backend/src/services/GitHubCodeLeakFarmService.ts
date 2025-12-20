@@ -47,13 +47,63 @@ const PROVIDER_PATTERNS: { [provider: string]: RegExp } = (() => {
   return patternMap;
 })();
 
-// File types to search in
-const ENV_VARIATIONS = [
-  '.env',  // This will catch all .env* files
-  'config.json', 
-  'secrets.yaml', 
-  'docker-compose.yml', 
-  'docker-compose.yaml'
+// High-risk file names and patterns where API keys are commonly stored or leaked
+const HIGH_RISK_FILE_PATTERNS = [
+  // Env files
+  '.env',
+  '.env.local',
+  '.env.development',
+  '.env.production',
+  '.env.test',
+  // Generic secrets/config
+  'config.json',
+  'config.yaml',
+  'config.yml',
+  'secrets.json',
+  'secrets.yaml',
+  'secrets.yml',
+  'appsettings.json',
+  'application.yml',
+  'application.yaml',
+  'database.yml',
+  // Names containing "secret"/"credential" in common extensions
+  'secret.json',
+  'secret.yaml',
+  'secret.yml',
+  'credentials.json',
+  'credentials.yaml',
+  'credentials.yml',
+  // Docker & containers
+  'docker-compose.yml',
+  'docker-compose.yaml',
+  'Dockerfile',
+  // CI/CD
+  '.github/workflows/*.yml',
+  '.github/workflows/*.yaml',
+  '.gitlab-ci.yml',
+  'Jenkinsfile',
+  '.circleci/config.yml',
+  // Kubernetes / Helm / IaC
+  'deployment.yml',
+  'deployment.yaml',
+  'k8s.yml',
+  'k8s.yaml',
+  '*.tf',
+  // Language/framework configs
+  // Node/JS
+  'config.js',
+  'config.ts',
+  'next.config.js',
+  'next.config.ts',
+  'vite.config.js',
+  'vite.config.ts',
+  'nuxt.config.js',
+  'nuxt.config.ts',
+  // Python
+  'settings.py',
+  'config.py',
+  // PHP/WordPress
+  'wp-config.php'
 ];
 
 // Generate comprehensive search queries using patterns and file types
@@ -61,9 +111,9 @@ const generateComprehensiveQueries = () => {
   const queries: string[] = [];
   
   // Generate queries for ALL file types × ALL patterns
-  ENV_VARIATIONS.forEach(fileType => {
+  HIGH_RISK_FILE_PATTERNS.forEach(filePattern => {
     SEARCH_PATTERNS.forEach(({ searchString }) => {
-      queries.push(`filename:${fileType} ${searchString}`);
+      queries.push(`filename:${filePattern} ${searchString}`);
     });
   });
   
