@@ -29,8 +29,7 @@ export class RateLimitOptimizer {
   private readonly BASE_DELAY = 1000;
   private usageHistory: Array<{ timestamp: number; remaining: number; limit: number }> = [];
   private readonly HISTORY_WINDOW = 3600000;
-  private lastFullRefresh = 0;
-  private readonly REFRESH_INTERVAL = 30000;
+  private lastRotationTime = 0;
 
   constructor() {
     this.tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
@@ -51,27 +50,6 @@ export class RateLimitOptimizer {
   }
 
   updateFromHeaders(headers: any, tokenIndex?: number): void {
-    const tokenIdx = tokenIndex ?? this.currentTokenIndex;
-    const state = this.tokenStates.get(tokenIdx);
-    if (!state) return;
-    const codeSearchLimit = headers['x-ratelimit-limit'];
-    const codeSearchRemaining = headers['x-ratelimit-remaining'];
-    const codeSearchReset = headers['x-ratelimit-reset'];
-    if (codeSearchLimit && codeSearchRemaining !== undefined && codeSearchReset) {
-      state.codeSearch = {
-        limit: parseInt(codeSearchLimit, 10),
-        remaining: parseInt(codeSearchRemaining, 10),
-        reset: parseInt(codeSearchReset, 10),
-        resetTime: parseInt(codeSearchReset, 10) * 1000
-      };
-      this.usageHistory.push({
-        timestamp: Date.now(),
-        remaining: state.codeSearch.remaining,
-        limit: state.codeSearch.limit
-      });
-      this.cleanHistory();
-      state.lastUpdated = Date.now();
-    }
   }
 
   getCurrentTokenState(): TokenRateLimitState | null {
@@ -83,7 +61,12 @@ export class RateLimitOptimizer {
     let bestScore = -1;
     const now = Date.now();
     for (const [index, state] of this.tokenStates.entries()) {
-      if (!state.codeSearch) continue;
+      if (!state.codeSearch) {
+        if (bestScore === -1) {
+          bestIndex = index;
+        }
+        continue;
+      }
       const remaining = state.codeSearch.remaining;
       const timeUntilReset = Math.max(0, state.codeSearch.resetTime - now);
       const score = remaining + (3600000 - Math.min(timeUntilReset, 3600000)) / 1000;
@@ -96,16 +79,26 @@ export class RateLimitOptimizer {
   }
 
   shouldRotateToken(): boolean {
+    const now = Date.now();
+    if (now - this.lastRotationTime < 5000) return false;
     const currentState = this.getCurrentTokenState();
     if (!currentState || !currentState.codeSearch) return false;
     const currentRemaining = currentState.codeSearch.remaining;
+    const currentLimit = currentState.codeSearch.limit;
+    const currentRatio = currentRemaining / currentLimit;
     const bestTokenIndex = this.getBestToken();
+    if (bestTokenIndex === this.currentTokenIndex) return false;
     const bestState = this.tokenStates.get(bestTokenIndex);
-    if (bestState?.codeSearch && bestState.codeSearch.remaining > currentRemaining * 1.2) {
+    if (!bestState?.codeSearch) return false;
+    const bestRemaining = bestState.codeSearch.remaining;
+    const remainingDiff = bestRemaining - currentRemaining;
+    if (currentRatio < this.LOW_THRESHOLD) {
+      return remainingDiff >= Math.max(10, currentLimit * 0.01);
+    }
+    if (bestRemaining > currentRemaining * 1.15 || remainingDiff > currentLimit * 0.1) {
       return true;
     }
-    if (currentRemaining < currentState.codeSearch.limit * this.LOW_THRESHOLD && 
-        bestState?.codeSearch && bestState.codeSearch.remaining > currentRemaining) {
+    if (bestState.codeSearch.resetTime < currentState.codeSearch.resetTime && bestRemaining > currentRemaining * 0.95) {
       return true;
     }
     return false;
@@ -116,10 +109,21 @@ export class RateLimitOptimizer {
     if (bestIndex !== this.currentTokenIndex) {
       const oldIndex = this.currentTokenIndex;
       this.currentTokenIndex = bestIndex;
-      logger.warn(
-        `[RATE-LIMIT] Rotated from token ${oldIndex + 1} to token ${this.currentTokenIndex + 1} ` +
-        `(remaining: ${this.getCurrentTokenState()?.codeSearch?.remaining ?? 'unknown'})`
-      );
+      this.lastRotationTime = Date.now();
+      const newState = this.tokenStates.get(bestIndex);
+      const remaining = newState?.codeSearch?.remaining;
+      const limit = newState?.codeSearch?.limit;
+      if (remaining !== undefined && limit !== undefined) {
+        logger.warn(
+          `[RATE-LIMIT] Rotated from token ${oldIndex + 1} to token ${this.currentTokenIndex + 1} ` +
+          `(remaining: ${remaining}/${limit})`
+        );
+      } else {
+        logger.warn(
+          `[RATE-LIMIT] Rotated from token ${oldIndex + 1} to token ${this.currentTokenIndex + 1} ` +
+          `(state: ${remaining !== undefined ? remaining : 'unknown'})`
+        );
+      }
     }
   }
 
@@ -143,12 +147,6 @@ export class RateLimitOptimizer {
     return Math.max(this.MIN_DELAY, Math.min(delay, this.MAX_DELAY));
   }
 
-  shouldSlowDown(): boolean {
-    const state = this.getCurrentTokenState();
-    if (!state || !state.codeSearch) return false;
-    const remainingRatio = state.codeSearch.remaining / state.codeSearch.limit;
-    return remainingRatio <= this.LOW_THRESHOLD;
-  }
 
   predictResetTime(): number | null {
     const state = this.getCurrentTokenState();
@@ -171,23 +169,10 @@ export class RateLimitOptimizer {
   }
 
   async waitWithThrottling(): Promise<void> {
-    const now = Date.now();
-    if (now - this.lastFullRefresh > this.REFRESH_INTERVAL) {
-      await this.refreshAllTokenStatuses();
-      this.lastFullRefresh = now;
-    }
     if (this.shouldRotateToken()) {
       this.rotateToBestToken();
     }
     const delay = this.calculateAdaptiveDelay();
-    const state = this.getCurrentTokenState();
-    if (state?.codeSearch && this.shouldSlowDown()) {
-      const remainingRatio = (state.codeSearch.remaining / state.codeSearch.limit * 100).toFixed(1);
-      logger.warn(
-        `[RATE-LIMIT] Proactive slowdown: ${state.codeSearch.remaining}/${state.codeSearch.limit} ` +
-        `(${remainingRatio}%) remaining. Delay: ${delay}ms`
-      );
-    }
     if (delay > 0) {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -221,7 +206,6 @@ export class RateLimitOptimizer {
       codeSearchReset: number | null;
       lastUpdated: number;
     }>;
-    shouldSlowDown: boolean;
     adaptiveDelay: number;
     predictedReset: number | null;
   } {
@@ -236,7 +220,6 @@ export class RateLimitOptimizer {
       currentToken: this.currentTokenIndex,
       tokenCount: this.tokens.length,
       tokens,
-      shouldSlowDown: this.shouldSlowDown(),
       adaptiveDelay: this.calculateAdaptiveDelay(),
       predictedReset: this.predictResetTime()
     };

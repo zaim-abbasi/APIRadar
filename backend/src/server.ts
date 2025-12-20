@@ -12,6 +12,13 @@ const server = fastify({
 });
 
 async function startServer() {
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error(`[FATAL] Unhandled Promise Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
+  });
+  process.on('uncaughtException', (error) => {
+    logger.error(`[FATAL] Uncaught Exception: ${error.stack || error.message}`);
+    process.exit(1);
+  });
   try {
     await server.register(cors, {
       origin: [
@@ -40,7 +47,7 @@ async function startServer() {
       logger.init(`Configuration initialization failed: ${err?.message || err}`);
     }
     try {
-      gitHubCodeLeakFarmService.start();
+      await gitHubCodeLeakFarmService.start();
     } catch (err: any) {
       logger.init(`Leak farm failed to start: ${err?.message || err}`);
       process.exit(1);
@@ -49,12 +56,6 @@ async function startServer() {
     logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
     const tokenCount = (config.GITHUB_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean).length;
     logger.init(`All systems operational. GitHub tokens loaded: ${tokenCount}`);
-    (globalThis as any).__activitySinceStartup = false;
-    setTimeout(() => {
-      if (!(globalThis as any).__activitySinceStartup) {
-        logger.init('No new files to scan. System is idle, waiting for new changes...');
-      }
-    }, 5000);
     process.on('SIGINT', async () => {
       logger.status('Shutting Down', 'Gracefully...');
       gitHubCodeLeakFarmService.stop();

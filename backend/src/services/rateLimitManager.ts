@@ -1,6 +1,5 @@
 import { logger } from '../utils/logger';
-import axios from 'axios';
-import { config } from '../config/environment';
+import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export let rateLimitPauseUntil: number | null = null;
 export let rateLimitActive = false;
@@ -16,25 +15,38 @@ export async function checkActualRateLimitStatus(): Promise<boolean> {
       return rateLimitActive;
     }
     lastActualCheckTime = now;
-    const response = await axios.get('https://api.github.com/rate_limit', {
-      headers: {
-        'Authorization': `Bearer ${config.GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'API-Radar-Scanner/1.0',
-      },
-      timeout: 5000,
-    });
-    const coreLimit = response.data.resources.core;
-    const codeSearchLimit = response.data.resources.code_search;
-    const isCoreRateLimited = coreLimit.remaining === 0;
-    const isCodeSearchRateLimited = codeSearchLimit.remaining === 0;
-    const isRateLimited = isCoreRateLimited || isCodeSearchRateLimited;
-    if (!isRateLimited && rateLimitActive && coreLimit.remaining > 100 && codeSearchLimit.remaining >= 1) {
-      logger.init('[GITHUB] Token is no longer rate limited, clearing state and resuming...');
+    await rateLimitOptimizer.refreshAllTokenStatuses();
+    const status = rateLimitOptimizer.getStatus();
+    let allTokensExhausted = true;
+    let earliestReset = 0;
+    for (const token of status.tokens) {
+      if (token.codeSearchRemaining !== null && token.codeSearchRemaining > 0) {
+        allTokensExhausted = false;
+        break;
+      }
+      if (token.codeSearchReset !== null && (earliestReset === 0 || token.codeSearchReset < earliestReset)) {
+        earliestReset = token.codeSearchReset;
+      }
+    }
+    if (!allTokensExhausted && rateLimitActive) {
+      logger.init('[GITHUB] Token rotation available, clearing rate limit state and resuming...');
       clearRateLimit();
       return false;
     }
-    return isRateLimited;
+    if (allTokensExhausted) {
+      if (earliestReset > 0) {
+        if (!rateLimitActive || !rateLimitPauseUntil || earliestReset > rateLimitPauseUntil) {
+          setRateLimit(earliestReset);
+        }
+      } else {
+        const defaultWaitTime = Date.now() + 3600000;
+        if (!rateLimitActive || !rateLimitPauseUntil || defaultWaitTime > rateLimitPauseUntil) {
+          setRateLimit(defaultWaitTime);
+        }
+      }
+      return true;
+    }
+    return false;
   } catch (error) {
     if (error instanceof Error && !error.message?.includes('timeout')) {
       logger.error('[GITHUB] Failed to check rate limit status: ' + error.message);
@@ -76,6 +88,17 @@ export async function waitForRateLimitIfNeeded() {
 }
 
 export function setRateLimit(resetTime: number) {
+  const status = rateLimitOptimizer.getStatus();
+  let hasAvailableToken = false;
+  for (const token of status.tokens) {
+    if (token.codeSearchRemaining !== null && token.codeSearchRemaining > 0) {
+      hasAvailableToken = true;
+      break;
+    }
+  }
+  if (hasAvailableToken) {
+    return;
+  }
   const now = Date.now();
   if (resetTime <= now) {
     return;
@@ -88,7 +111,7 @@ export function setRateLimit(resetTime: number) {
     rateLimitActive = true;
     lastRateLimitSetTime = now;
     if (!rateLimitWarned) {
-      logger.warn(`[GITHUB] 5000 tokens used, code will be resumed after it resets.`);
+      logger.warn(`[GITHUB] All tokens exhausted (${status.tokenCount} tokens), code will be resumed after reset.`);
       rateLimitWarned = true;
     }
   }

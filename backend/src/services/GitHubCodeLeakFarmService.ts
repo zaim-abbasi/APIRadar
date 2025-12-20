@@ -227,7 +227,14 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
 }
 const scannedCache = new LRUCache<string, boolean>(10000, 24 * 60 * 60 * 1000);
 const repoLastCommitCache = new LRUCache<string, string>(5000, 24 * 60 * 60 * 1000);
-const concurrencyManager = new ConcurrencyManager(5);
+function getFileConcurrency(): number {
+  const tokenCount = rateLimitOptimizer.getTokenCount();
+  return Math.max(5, Math.min(tokenCount * 3, 30));
+}
+function getRepoConcurrency(): number {
+  const tokenCount = rateLimitOptimizer.getTokenCount();
+  return Math.max(3, Math.min(tokenCount, 10));
+}
 interface ScanResumeState {
   currentProviderIndex: number;
   currentQueryIndex: number;
@@ -427,8 +434,8 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
           await waitForRateLimitIfNeeded();
           throw err;
         } else {
-          logger.warn('[GITHUB] 429 rate limit error (no reset time). Waiting 60s...');
-          await new Promise(res => setTimeout(res, 60000));
+          logger.warn('[GITHUB] 429 rate limit error (no reset time). Waiting 30s...');
+          await new Promise(res => setTimeout(res, 30000));
           throw err;
         }
       }
@@ -553,7 +560,7 @@ export class GitHubCodeLeakFarmService {
   constructor() {
     initializeRateLimitManager();
   }
-  public start() {
+  public async start() {
     if (this.running) {
       logger.warn('[FARM] Service is already running');
       return;
@@ -561,6 +568,11 @@ export class GitHubCodeLeakFarmService {
     this.running = true;
     logger.init('[FARM] Starting GitHub code leak farm service...');
     this.immediateConfigCheck();
+    try {
+      await rateLimitOptimizer.refreshAllTokenStatuses();
+    } catch (error) {
+      logger.warn(`[FARM] Failed to refresh token statuses on startup: ${error instanceof Error ? error.message : String(error)}`);
+    }
     this.scanLoop();
   }
 
@@ -616,10 +628,12 @@ export class GitHubCodeLeakFarmService {
     let lastRateLimitCheck = Date.now();
     let lastConfigCheck = Date.now();
     let lastTokenRefresh = Date.now();
+    let lastTokenStateLog = Date.now();
     const STATUS_LOG_INTERVAL = 1 * 60 * 1000;
     const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000;
     const CONFIG_CHECK_INTERVAL = 30 * 1000;
     const TOKEN_REFRESH_INTERVAL = 60 * 1000;
+    const TOKEN_STATE_LOG_INTERVAL = 5 * 60 * 1000;
     let firstCycle = true;
     let scanCompleted = false;
     while (this.running) {
@@ -630,6 +644,16 @@ export class GitHubCodeLeakFarmService {
           } catch (error) {
             logger.warn(`[FARM] Failed to refresh token statuses: ${error instanceof Error ? error.message : String(error)}`);
           }
+        }
+        if (Date.now() - lastTokenStateLog > TOKEN_STATE_LOG_INTERVAL) {
+          lastTokenStateLog = Date.now();
+          const status = rateLimitOptimizer.getStatus();
+          const tokenStates = status.tokens.map(t => 
+            t.codeSearchRemaining !== null && t.codeSearchLimit !== null
+              ? `Token ${t.index + 1}: ${t.codeSearchRemaining}/${t.codeSearchLimit}`
+              : `Token ${t.index + 1}: unknown`
+          ).join(', ');
+          logger.warn(`[RATE-LIMIT] Token states (current: ${status.currentToken + 1}): ${tokenStates}`);
         }
         if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
           lastConfigCheck = Date.now();
@@ -683,7 +707,6 @@ export class GitHubCodeLeakFarmService {
             logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
             lastStatusLog = Date.now();
           }
-          await new Promise(resolve => setTimeout(resolve, 10000));
           continue;
         }
         
@@ -761,17 +784,7 @@ export class GitHubCodeLeakFarmService {
       }
       const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
       let providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
-      const rateLimitLow = rateLimitOptimizer.shouldSlowDown();
       providerQueries = queryPrioritizer.prioritizeQueries(providerQueries);
-      if (rateLimitLow) {
-        const originalLength = providerQueries.length;
-        providerQueries = providerQueries.filter(query => 
-          !queryPrioritizer.shouldSkipQuery(query, true)
-        );
-        if (providerQueries.length < originalLength) {
-          logger.warn(`[FARM] Skipped ${originalLength - providerQueries.length} low-value queries due to low rate limits`);
-        }
-      }
       const defaultProviderState = { queryIndex: 0, page: 1, queryEmptyPages: {} };
       const providerState = resumeState.providerStates[typedCurrentProvider] || defaultProviderState;
       if (!providerState.queryEmptyPages) {
@@ -935,28 +948,38 @@ export class GitHubCodeLeakFarmService {
       repoGroups.get(repoUrl)!.push(item);
     }
     const reposToProcess: { repoUrl: string; items: GitHubSearchItem[]; repoName: string }[] = [];
-    for (const [repoUrl, repoItems] of repoGroups.entries()) {
-      const repoName = repoItems[0]!.repository.full_name;
-      let repoLatestCommit = '';
-      try {
-        await waitForRateLimitIfNeeded();
-        await rateLimitOptimizer.waitWithThrottling();
-        repoLatestCommit = await retry(() => githubService.getRepoLatestCommitHash(repoName), 'REPO-COMMIT');
-      } catch (error) {
-        logger.warn(`[FARM] Failed to get repo commit for ${repoName}, processing files individually: ${error instanceof Error ? error.message : String(error)}`);
-        reposToProcess.push({ repoUrl, items: repoItems, repoName });
-        continue;
+    const repoEntries = Array.from(repoGroups.entries());
+    const repoConcurrency = getRepoConcurrency();
+    const repoCheckManager = new ConcurrencyManager(repoConcurrency);
+    const repoCheckPromises = repoEntries.map(([repoUrl, repoItems]) => 
+      repoCheckManager.execute(async () => {
+        const repoName = repoItems[0]!.repository.full_name;
+        let repoLatestCommit = '';
+        try {
+          await waitForRateLimitIfNeeded();
+          await rateLimitOptimizer.waitWithThrottling();
+          repoLatestCommit = await retry(() => githubService.getRepoLatestCommitHash(repoName), 'REPO-COMMIT');
+        } catch (error) {
+          logger.warn(`[FARM] Failed to get repo commit for ${repoName}, processing files individually: ${error instanceof Error ? error.message : String(error)}`);
+          return { repoUrl, items: repoItems, repoName, skip: false };
+        }
+        if (!repoLatestCommit) {
+          return { repoUrl, items: repoItems, repoName, skip: false };
+        }
+        if (await repoAlreadyScannedWithCommit(repoUrl, repoLatestCommit)) {
+          logger.warn(`[FARM] SKIP REPO: ${repoName} - Already scanned with commit ${repoLatestCommit.substring(0, 8)}... (${repoItems.length} files skipped)`);
+          return { repoUrl, items: repoItems, repoName, skip: true };
+        }
+        return { repoUrl, items: repoItems, repoName, skip: false };
+      }).catch(() => ({ repoUrl, items: repoItems, repoName: repoItems[0]!.repository.full_name, skip: false }))
+    );
+    const repoCheckResults = await Promise.all(repoCheckPromises);
+    for (const result of repoCheckResults) {
+      if (result.skip) {
+        skippedCount += result.items.length;
+      } else {
+        reposToProcess.push({ repoUrl: result.repoUrl, items: result.items, repoName: result.repoName });
       }
-      if (!repoLatestCommit) {
-        reposToProcess.push({ repoUrl, items: repoItems, repoName });
-        continue;
-      }
-      if (await repoAlreadyScannedWithCommit(repoUrl, repoLatestCommit)) {
-        logger.warn(`[FARM] SKIP REPO: ${repoName} - Already scanned with commit ${repoLatestCommit.substring(0, 8)}... (${repoItems.length} files skipped)`);
-        skippedCount += repoItems.length;
-        continue;
-      }
-      reposToProcess.push({ repoUrl, items: repoItems, repoName });
     }
     const processItem = async (item: GitHubSearchItem): Promise<{ processed: boolean; skipped: boolean }> => {
       await waitForRateLimitIfNeeded();
@@ -1037,7 +1060,8 @@ export class GitHubCodeLeakFarmService {
     for (const { items } of reposToProcess) {
       itemsToProcess.push(...items);
     }
-    const results = await concurrencyManager.executeAll(
+    const fileConcurrencyManager = new ConcurrencyManager(getFileConcurrency());
+    const results = await fileConcurrencyManager.executeAll(
       itemsToProcess.map(item => () => processItem(item))
     );
     results.forEach(result => {
