@@ -41,7 +41,9 @@ jobs:
 
       - name: 📦 Install dependencies
         if: matrix.component == 'frontend'
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+        run: |
+          npm ci --prefer-offline --no-audit --legacy-peer-deps
+          echo "✅ Dependencies installed"
 
       - name: 📦 Install backend dependencies
         if: matrix.component == 'backend'
@@ -57,20 +59,43 @@ jobs:
 
       - name: 🔨 Build frontend
         if: matrix.component == 'frontend'
-        run: npm run build
+        run: |
+          set -e
+          echo "📁 Working directory: $(pwd)"
+          echo "📁 Project structure:"
+          ls -la | head -20
+          echo ""
+          echo "🔨 Starting Next.js build..."
+          npm run build 2>&1 | tee build.log || {
+            echo "❌ Build failed!"
+            echo "📄 Build log:"
+            cat build.log || true
+            exit 1
+          }
+          echo ""
+          echo "✅ Build command completed"
+          echo "📁 Checking build output..."
+          if [ ! -d .next ]; then
+            echo "❌ ERROR: .next directory not found after build"
+            echo "📁 Current directory contents:"
+            ls -la
+            echo "📁 Checking for .next in subdirectories:"
+            find . -name ".next" -type d 2>/dev/null || echo "No .next found"
+            exit 1
+          fi
+          if [ ! -d public ]; then
+            echo "❌ ERROR: public directory not found"
+            exit 1
+          fi
+          echo "✅ Build verification passed"
+          echo "📊 Build output sizes:"
+          du -sh .next public
         env:
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://apiradar.live
           MONGODB_URI: mongodb://dummy:27017/dummy
           NEXTAUTH_SECRET: dummy-secret-for-build
           NEXTAUTH_URL: https://apiradar.live
-
-      - name: ✅ Verify frontend build
-        if: matrix.component == 'frontend'
-        run: |
-          [ ! -d .next ] && echo "ERROR: .next directory not found" && exit 1
-          [ ! -d public ] && echo "ERROR: public directory not found" && exit 1
-          echo "Build verification passed"
 
       - name: 📤 Upload artifacts
         uses: actions/upload-artifact@v4
