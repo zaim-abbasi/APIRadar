@@ -888,10 +888,6 @@ export class GitHubCodeLeakFarmService {
       await rateLimitOptimizer.waitWithThrottling();
       if (!this.running) return { hadResults: false, itemCount: 0 };
       const response = await retry(() => githubService.searchCode(query, page, 10), 'SEARCH');
-      if (response.headers) {
-        rateLimitOptimizer.updateFromHeaders(response.headers);
-      }
-      
       const items: GitHubSearchItem[] = response.data?.items || [];
       const itemCount = items.length;
       

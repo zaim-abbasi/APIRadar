@@ -57,7 +57,7 @@ export class CircuitBreaker {
       this.onSuccess();
       return result;
     } catch (error) {
-      this.onFailure();
+      this.onFailure(error);
       throw error;
     }
   }
@@ -119,7 +119,10 @@ export class CircuitBreaker {
     }
   }
 
-  private onFailure(): void {
+  private onFailure(error?: any): void {
+    if (!this.shouldCountAsFailure(error)) {
+      return;
+    }
     const now = Date.now();
     this.failures.push(now);
     this.lastFailureTime = now;
@@ -134,6 +137,9 @@ export class CircuitBreaker {
 
   shouldCountAsFailure(error: any): boolean {
     if (error?.response?.status === 401) {
+      return false;
+    }
+    if (error?.code === 11000) {
       return false;
     }
     return true;

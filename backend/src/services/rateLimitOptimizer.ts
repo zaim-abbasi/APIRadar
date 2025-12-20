@@ -203,10 +203,7 @@ export class RateLimitOptimizer {
     if (currentState?.codeSearch && currentState.codeSearch.remaining > 0) {
       return this.currentTokenIndex;
     }
-    const bestIndex = this.getBestToken();
-    if (bestIndex !== this.currentTokenIndex) {
-      this.currentTokenIndex = bestIndex;
-    }
+    this.rotateToBestToken();
     return this.currentTokenIndex;
   }
 
