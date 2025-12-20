@@ -1,39 +1,53 @@
 "use client";
-import React, { useState, useMemo, useCallback, useEffect, useRef, Suspense } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  Suspense,
+} from "react";
 import { useIsMobile } from "@/components/home/use-is-mobile";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { usePlanCheck } from "@/hooks/use-plan-check";
-import { PROVIDER_API_MAP } from '@/lib/constants';
-import { fetchLeaks, clearLeaksCache } from '@/lib/api';
-import { LeakedKey, Provider } from '@/types';
+import { PROVIDER_API_MAP } from "@/lib/constants";
+import { fetchLeaks, clearLeaksCache } from "@/lib/api";
+import { LeakedKey, Provider } from "@/types";
 
 // Optimize dynamic imports with loading states and proper chunking
 const ExploreSectionMobile = dynamic(
   () => import("@/components/explore/explore-section-mobile"),
-  { 
+  {
     ssr: false,
-    loading: () => <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+    loading: () => (
+      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+    ),
   }
 );
 const ExploreSectionDesktop = dynamic(
   () => import("@/components/explore/explore-section-desktop"),
-  { 
+  {
     ssr: false,
-    loading: () => <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+    loading: () => (
+      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+    ),
   }
 );
 
 const PAGE_SIZE = 10;
-const INFINITE_SCROLL_MARGIN = '0px 0px 600px 0px';
-const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = { leaks: [], timestamp: 0 };
+const INFINITE_SCROLL_MARGIN = "0px 0px 600px 0px";
+const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = {
+  leaks: [],
+  timestamp: 0,
+};
 const CACHE_TTL = 60 * 1000; // 1 minute
 
 export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const isMobile = useIsMobile();
   const { data: session, status: sessionStatus } = useSession();
   const { isAuthenticated } = usePlanCheck();
-  const plan: 'free' | 'pro' = isAuthenticated ? 'pro' : 'free';
+  const plan: "free" | "pro" = isAuthenticated ? "pro" : "free";
 
   // State management
   const [filterState, setFilterState] = useState<{
@@ -41,37 +55,46 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     timeRange: string;
     sortBy: string;
   }>({
-    selectedProvider: 'all',
-    timeRange: 'all',
-    sortBy: 'newest'
+    selectedProvider: "all",
+    timeRange: "all",
+    sortBy: "newest",
   });
   const [loadingState, setLoadingState] = useState({
     isLoading: false,
     isLoadingMore: false,
-    error: null as string | null
+    error: null as string | null,
   });
   const [paginationState, setPaginationState] = useState({
     page: 1,
     hasMore: false,
     total: 0,
-    refreshIndex: 0
+    refreshIndex: 0,
   });
   // Memoize default filters check to prevent unnecessary recalculations
   const isDefaultFilters = useMemo(
     () =>
-      filterState.selectedProvider === 'all' &&
-      filterState.timeRange === 'all' &&
-      filterState.sortBy === 'newest' &&
+      filterState.selectedProvider === "all" &&
+      filterState.timeRange === "all" &&
+      filterState.sortBy === "newest" &&
       paginationState.page === 1,
-    [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.page]
+    [
+      filterState.selectedProvider,
+      filterState.timeRange,
+      filterState.sortBy,
+      paginationState.page,
+    ]
   );
 
   // Initialize leaks from cache if available (client-only to prevent hydration mismatch)
   const [leaks, setLeaks] = useState<LeakedKey[]>([]);
-  
+
   // Load from cache on client mount only
   useEffect(() => {
-    if (isDefaultFilters && firstPageCache.leaks.length > 0 && typeof window !== 'undefined') {
+    if (
+      isDefaultFilters &&
+      firstPageCache.leaks.length > 0 &&
+      typeof window !== "undefined"
+    ) {
       const now = Date.now();
       if (now - firstPageCache.timestamp < CACHE_TTL) {
         setLeaks(firstPageCache.leaks);
@@ -90,28 +113,39 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Set up IntersectionObserver for infinite scroll
   useEffect(() => {
     // Only observe if user can scroll infinitely (authenticated) and hasMore is true
-    if (!isAuthenticated || !paginationState.hasMore || loadingState.isLoading) {
+    if (
+      !isAuthenticated ||
+      !paginationState.hasMore ||
+      loadingState.isLoading
+    ) {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
       return;
     }
-    
+
     // Disconnect existing observer
     if (observerRef.current) observerRef.current.disconnect();
-    
+
     // Create new observer
-    observerRef.current = new window.IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !loadingState.isLoading && !loadingState.isLoadingMore) {
-        setPaginationState(prev => ({ ...prev, page: prev.page + 1 }));
-      }
-    }, { rootMargin: INFINITE_SCROLL_MARGIN });
-    
+    observerRef.current = new window.IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !loadingState.isLoading &&
+          !loadingState.isLoadingMore
+        ) {
+          setPaginationState((prev) => ({ ...prev, page: prev.page + 1 }));
+        }
+      },
+      { rootMargin: INFINITE_SCROLL_MARGIN }
+    );
+
     // Observe the loading element
     if (loadingRef.current) {
       observerRef.current.observe(loadingRef.current);
     }
-    
+
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
@@ -122,12 +156,13 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Root fix: Use ref to track latest filter state to prevent stale closures
   const filterStateRef = useRef(filterState);
   const paginationStateRef = useRef(paginationState);
-  
+  const fetchAndSetLeaksRef = useRef<() => Promise<void>>();
+
   // Keep refs in sync with state
   useEffect(() => {
     filterStateRef.current = filterState;
   }, [filterState]);
-  
+
   useEffect(() => {
     paginationStateRef.current = paginationState;
   }, [paginationState]);
@@ -137,27 +172,34 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     // Create new abort controller for this request
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
-    
+
     try {
       // Root fix: Always use latest state from refs to prevent stale closures
       const currentFilterState = filterStateRef.current;
       const currentPaginationState = paginationStateRef.current;
-      
+
       // Root fix: Set loading state (leaks already cleared by filter change useEffect)
       if (currentPaginationState.page === 1) {
-        setLoadingState(prev => ({ ...prev, isLoading: true, isLoadingMore: false, error: null }));
+        setLoadingState((prev) => ({
+          ...prev,
+          isLoading: true,
+          isLoadingMore: false,
+          error: null,
+        }));
       } else {
-        setLoadingState(prev => ({ ...prev, isLoadingMore: true }));
+        setLoadingState((prev) => ({ ...prev, isLoadingMore: true }));
       }
       // Map frontend provider to backend provider value using latest state
-      const backendProvider = currentFilterState.selectedProvider === 'all' 
-        ? 'all' 
-        : (PROVIDER_API_MAP[currentFilterState.selectedProvider] || currentFilterState.selectedProvider);
-      
+      const backendProvider =
+        currentFilterState.selectedProvider === "all"
+          ? "all"
+          : PROVIDER_API_MAP[currentFilterState.selectedProvider] ||
+            currentFilterState.selectedProvider;
+
       const { data, error } = await fetchLeaks({
         provider: backendProvider,
         timeRange: currentFilterState.timeRange,
@@ -167,7 +209,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         session,
         signal: abortController.signal,
       });
-      
+
       // Root fix: Ignore results if request was aborted
       if (abortController.signal.aborted) {
         return;
@@ -179,13 +221,14 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         // Root fix: Use functional updates and verify we're still on the same page/filter
         const latestFilterState = filterStateRef.current;
         const latestPaginationState = paginationStateRef.current;
-        
+
         setLeaks((prev) => {
           // Only update if filters haven't changed during the request
           if (latestPaginationState.page === 1) {
-            const isDefault = latestFilterState.selectedProvider === 'all' &&
-              latestFilterState.timeRange === 'all' &&
-              latestFilterState.sortBy === 'newest';
+            const isDefault =
+              latestFilterState.selectedProvider === "all" &&
+              latestFilterState.timeRange === "all" &&
+              latestFilterState.sortBy === "newest";
             if (isDefault) {
               firstPageCache.leaks = data.leaks;
               firstPageCache.timestamp = Date.now();
@@ -196,67 +239,87 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
           const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
           return [...prev, ...newLeaks];
         });
-        setPaginationState(prev => ({
+        setPaginationState((prev) => ({
           ...prev,
           total: data.total,
-          hasMore: data.hasMore
+          hasMore: data.hasMore,
         }));
       }
     } catch (error: any) {
       // Root fix: Don't show error if request was aborted (expected behavior)
-      if (error?.name === 'AbortError' || abortController.signal.aborted) {
+      if (error?.name === "AbortError" || abortController.signal.aborted) {
         return;
       }
-      setLoadingState(prev => ({
+      setLoadingState((prev) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to load data'
+        error: error instanceof Error ? error.message : "Failed to load data",
       }));
     } finally {
       // Only update loading state if this request wasn't aborted
       if (!abortController.signal.aborted) {
-        setLoadingState(prev => ({ ...prev, isLoading: false, isLoadingMore: false }));
+        setLoadingState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isLoadingMore: false,
+        }));
       }
     }
   }, [session]); // Root fix: Only depend on session, use refs for filter/pagination state
+
+  // Keep fetchAndSetLeaks ref in sync
+  useEffect(() => {
+    fetchAndSetLeaksRef.current = fetchAndSetLeaks;
+  }, [fetchAndSetLeaks]);
 
   // Root fix: Wait for session to load before initial fetch
   // This ensures authenticated users get proper auth headers on first load
   useEffect(() => {
     // Only fetch when session has finished loading (not 'loading' status)
-    if (!hasInitializedRef.current && sessionStatus !== 'loading') {
+    if (!hasInitializedRef.current && sessionStatus !== "loading") {
       hasInitializedRef.current = true;
-      fetchAndSetLeaks();
+      fetchAndSetLeaksRef.current?.();
     }
-  }, [sessionStatus, fetchAndSetLeaks]);
+  }, [sessionStatus]);
 
   // Root fix: Single useEffect to handle all filter changes - clear state immediately, then fetch
   useEffect(() => {
     if (!hasInitializedRef.current) return;
-    
+
     // Root fix: Clear leaks and set loading IMMEDIATELY to prevent empty state flash
     setLeaks([]);
-    setPaginationState(prev => ({ ...prev, page: 1, hasMore: false, total: 0 }));
-    setLoadingState(prev => ({ ...prev, isLoading: true, error: null }));
+    setPaginationState((prev) => ({
+      ...prev,
+      page: 1,
+      hasMore: false,
+      total: 0,
+    }));
+    setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
     clearLeaksCache();
-    if (!isDefaultFilters) {
+
+    // Check if default filters (calculate inline to avoid dependency loop)
+    const isDefault =
+      filterState.selectedProvider === "all" &&
+      filterState.timeRange === "all" &&
+      filterState.sortBy === "newest";
+    if (!isDefault) {
       firstPageCache.leaks = [];
       firstPageCache.timestamp = 0;
     }
-    
+
     // Small delay to batch rapid filter changes
     const timeoutId = setTimeout(() => {
-      fetchAndSetLeaks();
+      fetchAndSetLeaksRef.current?.();
     }, 50);
-    
+
     return () => clearTimeout(timeoutId);
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex, fetchAndSetLeaks, isDefaultFilters]);
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex]);
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
   useEffect(() => {
     if (hasInitializedRef.current && paginationState.page > 1) {
-      fetchAndSetLeaks();
+      fetchAndSetLeaksRef.current?.();
     }
-  }, [paginationState.page, fetchAndSetLeaks]);
+  }, [paginationState.page]);
 
   // Re-fetch when authentication status changes to update hasMore and enable infinite scroll
   useEffect(() => {
@@ -269,33 +332,37 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       // Reset to page 1 and trigger refresh to get updated hasMore value
       // This ensures infinite scroll is enabled immediately after sign-in
       // and works for all filter categories (15d, 30d, all providers, all sort options)
-      setPaginationState(prev => ({ 
-        ...prev, 
-        page: 1, 
-        refreshIndex: prev.refreshIndex + 1 
+      setPaginationState((prev) => ({
+        ...prev,
+        page: 1,
+        refreshIndex: prev.refreshIndex + 1,
       }));
       // Clear leaks state to force fresh data fetch
       setLeaks([]);
       // Trigger immediate refetch
-      fetchAndSetLeaks();
+      fetchAndSetLeaksRef.current?.();
     } else {
       prevAuthenticatedRef.current = isAuthenticated;
     }
-  }, [isAuthenticated, session, fetchAndSetLeaks]);
+  }, [isAuthenticated, session]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
-    setFilterState(prev => ({ ...prev, selectedProvider: provider }));
+    setFilterState((prev) => ({ ...prev, selectedProvider: provider }));
   }, []);
   const handleTimeRangeChange = useCallback((timeRange: string) => {
-    setFilterState(prev => ({ ...prev, timeRange }));
+    setFilterState((prev) => ({ ...prev, timeRange }));
   }, []);
   const handleSortByChange = useCallback((sortBy: string) => {
-    setFilterState(prev => ({ ...prev, sortBy }));
+    setFilterState((prev) => ({ ...prev, sortBy }));
   }, []);
   const handleRefresh = useCallback(() => {
-    setPaginationState(prev => ({ ...prev, page: 1, refreshIndex: prev.refreshIndex + 1 }));
-    setLoadingState(prev => ({ ...prev, error: null }));
+    setPaginationState((prev) => ({
+      ...prev,
+      page: 1,
+      refreshIndex: prev.refreshIndex + 1,
+    }));
+    setLoadingState((prev) => ({ ...prev, error: null }));
   }, []);
 
   // Memoize shared props to prevent unnecessary re-renders of child components
@@ -333,7 +400,19 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   );
 
   if (isMobile) {
-    return <ExploreSectionMobile {...sharedProps} loadingRef={loadingRef} hasMore={paginationState.hasMore} />;
+    return (
+      <ExploreSectionMobile
+        {...sharedProps}
+        loadingRef={loadingRef}
+        hasMore={paginationState.hasMore}
+      />
+    );
   }
-  return <ExploreSectionDesktop {...sharedProps} loadingRef={loadingRef} hasMore={paginationState.hasMore} />;
-}); 
+  return (
+    <ExploreSectionDesktop
+      {...sharedProps}
+      loadingRef={loadingRef}
+      hasMore={paginationState.hasMore}
+    />
+  );
+});
