@@ -2,7 +2,6 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ConfigurationService } from '../services/ConfigurationService';
 
 export async function configurationRoutes(server: FastifyInstance) {
-  // Get scan state
   server.get('/api/config/scan-state', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const scanState = await ConfigurationService.getScanState();
@@ -16,8 +15,6 @@ export async function configurationRoutes(server: FastifyInstance) {
       return reply.status(500).send({ error: 'Failed to fetch scan state' });
     }
   });
-
-  // Set scan state
   server.post('/api/config/scan-state', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { scanState } = request.body as { scanState: any };
@@ -37,22 +34,8 @@ export async function configurationRoutes(server: FastifyInstance) {
       return reply.status(500).send({ error: 'Failed to update scan state' });
     }
   });
-
-  // Get all configuration
   server.get('/api/config', async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      /*
-      const [repositoryAgeCutoff, scanState] = await Promise.all([
-        ConfigurationService.getRepositoryAgeCutoff(),
-        ConfigurationService.getScanState()
-      ]);
-
-      return reply.send({
-        repositoryAgeCutoff: repositoryAgeCutoff?.toISOString(),
-        scanState
-      });
-      */
-      // Only return scanState for now
       const scanState = await ConfigurationService.getScanState();
       return reply.send({ scanState });
     } catch (error) {

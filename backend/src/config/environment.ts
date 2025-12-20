@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import { z } from 'zod';
 import { logger } from '../utils/logger';
 
-// Load environment variables
 dotenv.config();
 
 const envSchema = z.object({
@@ -24,7 +23,6 @@ const envSchema = z.object({
   GITHUB_TOKEN: z.string()
     .min(1, 'GitHub token is required')
     .refine((token) => {
-      // Support comma-separated tokens
       const tokens = token.split(',').map(t => t.trim()).filter(Boolean);
       return tokens.every(t => t.startsWith('ghp_') || t.startsWith('github_pat_'));
     }, {
@@ -74,7 +72,6 @@ const envSchema = z.object({
     .default('1000'),
 });
 
-// Parse and validate environment variables
 function validateEnv() {
   try {
     return envSchema.parse(process.env);

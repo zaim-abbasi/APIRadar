@@ -7,8 +7,7 @@ let externalLogger: any = null;
 
 export function setLogger(loggerInstance: any) {
   externalLogger = loggerInstance;
-  // Only log in development and only for new index creation
-  mongoose.set('debug', false); // Disable general debug logging
+  mongoose.set('debug', false);
 }
 
 function log(level: 'info' | 'warn' | 'error', message: string) {
@@ -35,8 +34,6 @@ export async function connectToMongoDB(): Promise<void> {
       bufferCommands: false,
     });
     isConnected = true;
-    
-    // Log only when indexes are created (not when they already exist)
     mongoose.connection.on('index', (indexName: string) => {
       if (indexName.includes('leaks')) {
         log('info', `Created new index: ${indexName}`);

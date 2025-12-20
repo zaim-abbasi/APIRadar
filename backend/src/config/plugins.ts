@@ -7,23 +7,16 @@ import { config } from './environment';
 import { logger } from '../utils/logger';
 
 export async function registerPlugins(server: FastifyInstance): Promise<void> {
-  // Security headers
   await server.register(helmet, {
-    contentSecurityPolicy: false, // Disable CSP for API
+    contentSecurityPolicy: false,
   });
-
-  // CORS
   await server.register(cors, {
-    origin: true, // Allow all origins
+    origin: true,
     credentials: true,
   });
-
-  // Compression
   await server.register(compress, {
     global: true,
   });
-
-  // Rate limiting
   await server.register(rateLimit, {
     max: config.RATE_LIMIT_MAX,
     timeWindow: config.RATE_LIMIT_WINDOW,
@@ -36,11 +29,8 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
       };
     },
   });
-
-  // Global error handler
   server.setErrorHandler(async (error, _request, reply) => {
     logger.error(`Fastify error: ${error.message}`);
-    // Validation errors
     if (error.validation) {
       return reply.status(400).send({
         error: 'Validation Error',
@@ -48,14 +38,12 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
         details: error.validation,
       });
     }
-    // MongoDB errors
     if (error.name === 'MongoError' || error.name === 'ValidationError') {
       return reply.status(400).send({
         error: 'Database Error',
         message: 'Invalid data provided',
       });
     }
-    // Default error response
     const statusCode = error.statusCode || 500;
     const message = statusCode === 500 ? 'Internal Server Error' : error.message;
     return reply.status(statusCode).send({
@@ -64,11 +52,8 @@ export async function registerPlugins(server: FastifyInstance): Promise<void> {
       ...(config.NODE_ENV === 'development' && { stack: error.stack }),
     });
   });
-
-  // Not found handler
   server.setNotFoundHandler(async (request, reply) => {
     if (request.url === '/favicon.ico') {
-      // Suppress favicon 404 logs
       return reply.status(204).send();
     }
     logger.warn(`404 Not Found: ${request.method} ${request.url}`);

@@ -3,7 +3,6 @@ import { getLeaksHandler, getLeakFullKeyHandler } from '../controllers/exploreCo
 import { authenticateUser } from '../middleware/auth';
 
 export async function leaksRoutes(server: FastifyInstance) {
-  // Add authentication middleware to all leak routes
   server.addHook('preHandler', authenticateUser);
 
   server.get('/api/leaks', {
@@ -53,8 +52,6 @@ export async function leaksRoutes(server: FastifyInstance) {
     },
     handler: getLeaksHandler,
   });
-
-  // Route for fetching the full key (Pro users only)
   server.get('/api/leaks/:id/fullkey', {
     schema: {
       params: {

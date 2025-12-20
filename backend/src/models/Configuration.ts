@@ -11,8 +11,7 @@ const ConfigurationSchema = new Schema<IConfiguration>({
     type: String,
     required: true,
     unique: true,
-    // enum: ['repository_age_cutoff', 'scan_state']
-    enum: ['scan_state'] // repository_age_cutoff commented out
+    enum: ['scan_state']
   },
   value: {
     type: Schema.Types.Mixed,
@@ -24,7 +23,6 @@ const ConfigurationSchema = new Schema<IConfiguration>({
   }
 });
 
-// Update the updatedAt field on save
 ConfigurationSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();

@@ -8,11 +8,8 @@ export class GitHubService {
   private readonly clients: AxiosInstance[];
   
   constructor() {
-    // Support GITHUB_TOKEN as a single token or comma-separated list
     const tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
     this.clients = tokens.map(token => this.createClient(token));
-    
-    // Ensure we have at least one client
     if (this.clients.length === 0) {
       throw new Error('No valid GitHub tokens provided');
     }
@@ -29,21 +26,16 @@ export class GitHubService {
       timeout: 30000,
     });
 
-    // Add retry logic for rate limiting
     client.interceptors.response.use(
       (response: any) => response,
       async (error: any) => {
-        // Handle both 403 and 429 rate limit errors
         if ((error.response?.status === 403 || error.response?.status === 429) && error.response?.headers['x-ratelimit-remaining'] === '0') {
           const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
           const now = Date.now();
-          
-          // If the reset time is in the past, clear the rate limit state
           if (resetTime <= now) {
             clearRateLimit();
             return client.request(error.config);
           }
-          
           setRateLimit(resetTime);
           await waitForRateLimitIfNeeded();
           return client.request(error.config);
@@ -55,43 +47,30 @@ export class GitHubService {
     return client;
   }
 
-
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    // Priority 2: Use best available token (proactive load balancing)
     if (rateLimitOptimizer.shouldRotateToken()) {
       rateLimitOptimizer.rotateToBestToken();
     }
-
-    // Get client for current token (aligned with optimizer)
     const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
     const client = this.clients[tokenIndex % this.clients.length]!;
-
     try {
       const response = await requestFn(client);
-      
-      // Priority 2: Update rate limit info from response headers
       if (response && (response as any).headers) {
         rateLimitOptimizer.updateFromHeaders((response as any).headers, tokenIndex);
       }
-      
       return response;
     } catch (error: any) {
-      // Priority 2: Update rate limit info from error response headers
       if (error.response?.headers) {
         rateLimitOptimizer.updateFromHeaders(error.response.headers, tokenIndex);
       }
-
-      // Priority 2: Handle 401 (invalid token) - rotate to next token
       if (error.response?.status === 401 && this.clients.length > 1) {
         rateLimitOptimizer.rotateToBestToken();
         const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
         const newClient = this.clients[newTokenIndex % this.clients.length]!;
         logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1} (previous token may be invalid)`);
-        // Retry with new token
         try {
           return await requestFn(newClient);
         } catch (retryError: any) {
-          // If new token also fails with 401, mark it as invalid and try next
           if (retryError.response?.status === 401 && this.clients.length > 1) {
             rateLimitOptimizer.rotateToBestToken();
             const nextTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
@@ -102,8 +81,6 @@ export class GitHubService {
           throw retryError;
         }
       }
-
-      // If rate limited (403 or 429) and we have multiple tokens, try the next one
       if ((error.response?.status === 403 || error.response?.status === 429) && this.clients.length > 1) {
         rateLimitOptimizer.rotateToBestToken();
         const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
@@ -123,21 +100,16 @@ export class GitHubService {
     commitCount: number;
   }> {
     try {
-      // Get repository metadata including creation date
       const repoResponse = await this.makeRequest(client => 
         client.get(`/repos/${repoName}`)
       );
-      
       const createdAt = repoResponse.data.created_at;
-      
-      // Get additional metadata
       const [riskyFiles, contributors, hasReadme, commitCount] = await Promise.all([
         this.getRiskyFiles(repoName),
         this.getContributorCount(repoName),
         this.hasReadme(repoName),
         this.getCommitCount(repoName),
       ]);
-
       return {
         createdAt,
         riskyFiles,
@@ -159,7 +131,6 @@ export class GitHubService {
 
   private async getRiskyFiles(repoName: string): Promise<string[]> {
     try {
-      // Fetch repo metadata for default_branch
       let defaultBranch = 'main';
       try {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
@@ -167,8 +138,6 @@ export class GitHubService {
       } catch (err: any) {
         logger.error(err.response?.data?.message || 'No message');
       }
-
-      // Risky files
       const riskyFiles = [] as string[];
       try {
         const contents = await this.makeRequest(client => 
@@ -208,7 +177,6 @@ export class GitHubService {
 
   private async hasReadme(repoName: string): Promise<boolean> {
     try {
-      // Fetch repo metadata for default_branch
       let defaultBranch = 'main';
       try {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
@@ -216,7 +184,6 @@ export class GitHubService {
       } catch (err: any) {
         logger.error(err.response?.data?.message || 'No message');
       }
-
       try {
         await this.makeRequest(client => 
           client.get(`/repos/${repoName}/readme?ref=${defaultBranch}`)
@@ -224,7 +191,6 @@ export class GitHubService {
         return true;
       } catch (err: any) {
         if (err.response?.status === 404) {
-          // README not found - do not log anything
           return false;
         } else {
           logger.error(err.response?.data?.message || 'No message');
@@ -233,13 +199,10 @@ export class GitHubService {
       }
     } catch (error) {
       logger.error(`Error checking README for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
-      return true; // Default to true to avoid false positives
+      return true;
     }
   }
 
-  /**
-   * Priority 2: Search code using GitHub API with token rotation
-   */
   async searchCode(query: string, page: number = 1, perPage: number = 10): Promise<any> {
     return await this.makeRequest(client =>
       client.get('/search/code', {
@@ -250,7 +213,6 @@ export class GitHubService {
 
   private async getCommitCount(repoName: string): Promise<number> {
     try {
-      // Fetch repo metadata for default_branch
       let defaultBranch = 'main';
       try {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
@@ -307,19 +269,12 @@ export class GitHubService {
     }
   }
 
-  /**
-   * Priority 4: Get repository's latest commit hash (HEAD of default branch)
-   * Used for repo-level incremental scanning
-   */
   async getRepoLatestCommitHash(repoName: string): Promise<string> {
     try {
-      // Get repo info to find default branch
       const repoInfo = await this.makeRequest(client =>
         client.get(`/repos/${repoName}`)
       );
       const defaultBranch = repoInfo.data?.default_branch || 'main';
-      
-      // Get latest commit from default branch
       const response = await this.makeRequest(client =>
         client.get(`/repos/${repoName}/commits/${defaultBranch}`)
       );

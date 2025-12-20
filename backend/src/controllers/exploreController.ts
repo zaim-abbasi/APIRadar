@@ -13,7 +13,6 @@ const querySchema = z.object({
 
 export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
-    // Ensure authentication middleware has run
     if (!request.user) {
       return reply.status(401).send({ error: 'Authentication required' });
     }
@@ -28,32 +27,20 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
     const accessLimits = getAccessLimits(isAuthenticated);
-
-    // Security: Enforce access-based limits
     let enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
     let enforcedPage = accessLimits.canInfiniteScroll ? page : 1;
-    
-    // For unauthorized users, limit to 6 leaks maximum
     if (!isAuthenticated) {
       enforcedLimit = Math.min(enforcedLimit, 6);
-      enforcedPage = 1; // No pagination for unauthorized users
+      enforcedPage = 1;
     }
-
-    // Security: Enforce time range limits
-    // All time ranges are now accessible to all users
     let enforcedTimeRange = timeRange;
-
-    // Build filter with security constraints - STRICT provider filtering
     const filter: any = {};
     const validProviders = ['openai', 'anthropic', 'google_gemini'];
-    
     if (provider && provider !== 'all') {
       const normalizedProvider = String(provider).trim().toLowerCase();
-      // Only apply filter if provider is valid - otherwise return empty results
       if (validProviders.includes(normalizedProvider)) {
         filter.provider = normalizedProvider;
       } else {
-        // Invalid provider - return empty results instead of all leaks
         request.log.warn({ msg: 'Invalid provider requested', provider: normalizedProvider, userId: user.id });
         return reply.send({ 
           leaks: [], 
@@ -67,8 +54,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         });
       }
     }
-    
-    // Apply time range filter based on selected option
     if (enforcedTimeRange && enforcedTimeRange !== 'all') {
       const now = new Date();
       let days = 0;
@@ -80,14 +65,9 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         filter.leakIntroducedAt = { $gte: fromDate };
       }
     }
-    // If timeRange is 'all' or not specified, don't filter by leakIntroducedAt
-    // No additional restrictions - show all leaks matching the provider filter
-
     let sort: any = { leakIntroducedAt: -1 };
     if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };
     else if (sortBy === 'provider') sort = { provider: 1, leakIntroducedAt: -1 };
-
-    // Log filter for debugging (remove in production if needed)
     request.log.info({ 
       msg: 'Leak filter applied', 
       filter, 
@@ -95,23 +75,15 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       normalizedProvider: provider ? String(provider).trim().toLowerCase() : 'all',
       userId: user.id 
     });
-
-    // Get total count for pagination (for summary)
     const total = await Leak.countDocuments(filter);
-
-    // Calculate pagination with security limits
     const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
     const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
-
-    // Fetch leaks with security constraints - ensure filter is applied
     const leaks = await Leak.find(filter)
       .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
       .sort(sort)
       .skip(skip)
       .limit(actualLimit)
       .lean();
-    
-    // Verify all returned leaks match the filter (safety check)
     if (filter.provider) {
       const mismatched = leaks.filter((leak: any) => leak.provider !== filter.provider);
       if (mismatched.length > 0) {
@@ -123,8 +95,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         });
       }
     }
-
-    // Security: Remove sensitive data based on authentication status
     const mappedLeaks = leaks.map((leak: any) => {
       const baseLeak = {
         id: leak.id || leak._id,
@@ -133,9 +103,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         leakIntroducedAt: leak.leakIntroducedAt,
         isLocked: !isAuthenticated
       };
-
       if (isAuthenticated) {
-        // Authenticated users (Pro) get full data including fullKey
         return {
           ...baseLeak,
           redactedKey: leak.redactedKey,
@@ -145,7 +113,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
           fullKey: leak.fullKey
         };
       } else {
-        // Unauthenticated users (Free) get minimal data
         return {
           ...baseLeak,
           redactedKey: leak.redactedKey ? `${leak.redactedKey.slice(0, 8)}****` : 'sk-****',
@@ -156,14 +123,10 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         };
       }
     });
-
-    // Calculate hasMore based on access limits
     let hasMore = false;
     if (accessLimits.canInfiniteScroll && isAuthenticated) {
-      hasMore = (enforcedPage * enforcedLimit) < total; // use true total for hasMore
+      hasMore = (enforcedPage * enforcedLimit) < total;
     }
-
-    // Log access for security monitoring
     request.log.info({
       msg: 'Leaks accessed',
       userId: user.id,
@@ -180,7 +143,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     return reply.send({ 
       leaks: mappedLeaks, 
-      total, // always return the true total for summary
+      total,
       hasMore,
       planLimits: {
         maxLeaks: accessLimits.maxLeaks,
@@ -197,7 +160,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
 export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
-    // Ensure authentication middleware has run
     if (!request.user) {
       return reply.status(401).send({ error: 'Authentication required' });
     }
@@ -205,8 +167,6 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     const { id } = request.params as { id: string };
     const user = request.user;
     const accessLimits = getAccessLimits(user.isAuthenticated);
-
-    // Security: Only authenticated users (Pro) can access full keys
     if (!accessLimits.canAccessFullKey || !user.isAuthenticated) {
       request.log.warn({
         msg: 'Unauthorized full key access attempt',
@@ -219,13 +179,10 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
         loginRequired: true
       });
     }
-
     const leak = await Leak.findById(id).select('+fullKey');
     if (!leak) {
       return reply.status(404).send({ error: 'Leak not found' });
     }
-
-    // Log full key access for security monitoring
     request.log.info({
       msg: 'Full key accessed',
       userId: user.id,

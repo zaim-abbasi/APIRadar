@@ -1,13 +1,5 @@
 import { logger } from './logger';
 
-/**
- * Concurrency Manager
- * 
- * Priority 3: Root Implementation
- * - Controls parallel execution with rate limit awareness
- * - Prevents overwhelming APIs with too many concurrent requests
- * - Respects rate limits while maximizing throughput
- */
 export class ConcurrencyManager {
   private activeTasks = 0;
   private readonly maxConcurrency: number;
@@ -22,9 +14,6 @@ export class ConcurrencyManager {
     this.maxConcurrency = maxConcurrency;
   }
 
-  /**
-   * Execute a task with concurrency control
-   */
   async execute<T>(task: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       this.queue.push({ task, resolve, reject });
@@ -32,9 +21,6 @@ export class ConcurrencyManager {
     });
   }
 
-  /**
-   * Process queued tasks up to max concurrency
-   */
   private async processQueue(): Promise<void> {
     if (this.isProcessing) return;
     this.isProcessing = true;
@@ -46,7 +32,6 @@ export class ConcurrencyManager {
       this.activeTasks++;
       this.runTask(item).finally(() => {
         this.activeTasks--;
-        // Continue processing queue
         this.processQueue();
       });
     }
@@ -54,9 +39,6 @@ export class ConcurrencyManager {
     this.isProcessing = false;
   }
 
-  /**
-   * Run a single task
-   */
   private async runTask<T>(item: {
     task: () => Promise<T>;
     resolve: (value: T) => void;
@@ -70,9 +52,6 @@ export class ConcurrencyManager {
     }
   }
 
-  /**
-   * Execute multiple tasks in parallel (up to max concurrency)
-   */
   async executeAll<T>(tasks: Array<() => Promise<T>>): Promise<T[]> {
     const results = await Promise.allSettled(
       tasks.map(task => this.execute(task))
@@ -88,9 +67,6 @@ export class ConcurrencyManager {
     });
   }
 
-  /**
-   * Get current status
-   */
   getStatus(): {
     activeTasks: number;
     queuedTasks: number;
@@ -105,18 +81,12 @@ export class ConcurrencyManager {
     };
   }
 
-  /**
-   * Wait until all active tasks complete
-   */
   async waitForCompletion(): Promise<void> {
     while (this.activeTasks > 0 || this.queue.length > 0) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
 
-  /**
-   * Clear queue (use with caution)
-   */
   clearQueue(): void {
     const size = this.queue.length;
     this.queue.forEach(item => {
