@@ -61,14 +61,20 @@ jobs:
         if: matrix.component == 'frontend'
         run: |
           set -e
-          echo "Building with npx next build directly..."
-          npx next build --webpack
+          echo "=== BUILD START ==="
+          npx next build --webpack 2>&1
+          echo "=== BUILD END ==="
+          echo "Checking for .next..."
           if [ ! -d .next ]; then
-            echo "ERROR: .next missing"
+            echo "❌ .next MISSING!"
+            echo "PWD: $(pwd)"
+            echo "Files:"
             ls -la
+            echo "Searching for .next:"
+            find . -name ".next" -type d 2>/dev/null || echo "Not found"
             exit 1
           fi
-          echo "Build successful"
+          echo "✅ .next exists"
         env:
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://apiradar.live
