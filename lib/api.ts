@@ -209,7 +209,8 @@ export async function fetchLeaks({
   page = 1, 
   limit = 10,
   session,
-  signal
+  signal,
+  bypassCache = false
 }: {
   provider?: string;
   timeRange?: string;
@@ -218,6 +219,7 @@ export async function fetchLeaks({
   limit?: number;
   session?: any;
   signal?: AbortSignal;
+  bypassCache?: boolean;
 }): Promise<ApiResponse<{ 
   leaks: any[]; 
   total: number; 
@@ -228,50 +230,59 @@ export async function fetchLeaks({
     maxTimeRange: string;
   };
 }>> {
-  // Root fix: Create comprehensive cache key with all filter parameters to prevent cache collisions
   const normalizedProvider = provider ? String(provider).trim() : 'all';
   const normalizedTimeRange = timeRange || 'all';
   const normalizedSortBy = sortBy || 'newest';
   const userId = session?.user?.id || 'anonymous';
   const cacheKey = `leaks:${normalizedProvider}:${normalizedTimeRange}:${normalizedSortBy}:${page}:${limit}:${userId}`;
   
+  const fetchFn = async () => {
+    const headers = createAuthHeaders(session);
+    const params = new URLSearchParams();
+    if (provider && provider !== 'all') {
+      params.append('provider', String(provider).trim());
+    }
+    if (timeRange) params.append('timeRange', timeRange);
+    if (sortBy) params.append('sortBy', sortBy);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    
+    const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
+      method: 'GET',
+      headers,
+      signal,
+      cache: 'no-store' as RequestCache
+    });
+  
+    if (response.status === 401) {
+      return { error: 'Authentication required' };
+    }
+    
+    if (response.status === 429) {
+      const data = await response.json();
+      return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
+    }
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return { data };
+  };
+  
+  if (bypassCache) {
+    try {
+      return await fetchFn();
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
+    }
+  }
+  
   return deduplicateRequest(cacheKey, async () => {
     try {
-      const headers = createAuthHeaders(session);
-      const params = new URLSearchParams();
-      // Ensure provider is properly encoded and not undefined/null
-      if (provider && provider !== 'all') {
-        params.append('provider', String(provider).trim());
-      }
-      if (timeRange) params.append('timeRange', timeRange);
-      if (sortBy) params.append('sortBy', sortBy);
-      params.append('page', String(page));
-      params.append('limit', String(limit));
-      
-      const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
-        method: 'GET',
-        headers,
-        signal, // Root fix: Support request cancellation
-        // Root fix: Always use no-store to prevent browser cache from serving stale filter results
-        cache: 'no-store' as RequestCache
-      });
-    
-      if (response.status === 401) {
-        return { error: 'Authentication required' };
-      }
-      
-      if (response.status === 429) {
-        const data = await response.json();
-        return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
-      }
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const data = await response.json();
-      return { data };
+      return await fetchFn();
     } catch (error) {
       return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
     }

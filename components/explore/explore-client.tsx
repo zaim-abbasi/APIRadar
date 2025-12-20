@@ -109,6 +109,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const prevAuthenticatedRef = useRef(isAuthenticated);
   // Root fix: Track in-flight requests to cancel stale ones
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isRefreshingRef = useRef(false);
 
   // Set up IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -208,6 +209,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         limit: PAGE_SIZE,
         session,
         signal: abortController.signal,
+        bypassCache: isRefreshingRef.current,
       });
 
       // Root fix: Ignore results if request was aborted
@@ -281,11 +283,10 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }
   }, [sessionStatus]);
 
-  // Root fix: Single useEffect to handle all filter changes - clear state immediately, then fetch
+  // Root fix: Handle filter changes - separate from refresh to prevent loops
   useEffect(() => {
     if (!hasInitializedRef.current) return;
 
-    // Root fix: Clear leaks and set loading IMMEDIATELY to prevent empty state flash
     setLeaks([]);
     setPaginationState((prev) => ({
       ...prev,
@@ -296,7 +297,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
     clearLeaksCache();
 
-    // Check if default filters (calculate inline to avoid dependency loop)
     const isDefault =
       filterState.selectedProvider === "all" &&
       filterState.timeRange === "all" &&
@@ -306,13 +306,30 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       firstPageCache.timestamp = 0;
     }
 
-    // Small delay to batch rapid filter changes
     const timeoutId = setTimeout(() => {
       fetchAndSetLeaksRef.current?.();
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy, paginationState.refreshIndex]);
+  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
+
+  // Root fix: Handle refresh separately - optimized for speed
+  useEffect(() => {
+    if (!hasInitializedRef.current || paginationState.refreshIndex === 0) return;
+    
+    isRefreshingRef.current = true;
+    clearLeaksCache();
+    setPaginationState((prev) => ({
+      ...prev,
+      page: 1,
+      hasMore: false,
+      total: 0,
+    }));
+    setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
+    fetchAndSetLeaksRef.current?.().finally(() => {
+      isRefreshingRef.current = false;
+    });
+  }, [paginationState.refreshIndex]);
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
   useEffect(() => {
@@ -357,13 +374,13 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     setFilterState((prev) => ({ ...prev, sortBy }));
   }, []);
   const handleRefresh = useCallback(() => {
+    if (loadingState.isLoading) return;
     setPaginationState((prev) => ({
       ...prev,
       page: 1,
       refreshIndex: prev.refreshIndex + 1,
     }));
-    setLoadingState((prev) => ({ ...prev, error: null }));
-  }, []);
+  }, [loadingState.isLoading]);
 
   // Memoize shared props to prevent unnecessary re-renders of child components
   const sharedProps = useMemo(
