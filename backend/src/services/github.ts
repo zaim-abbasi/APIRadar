@@ -136,7 +136,16 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        logger.error(err.response?.data?.message || 'No message');
+        const branches = ['main', 'master', 'develop'];
+        for (const branch of branches) {
+          try {
+            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
+            defaultBranch = branch;
+            break;
+          } catch {
+            continue;
+          }
+        }
       }
       const riskyFiles = [] as string[];
       try {
@@ -154,7 +163,9 @@ export class GitHubService {
           }
         }
       } catch (err: any) {
-        logger.error(err.response?.data?.message || 'No message');
+        const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
+        const statusCode = err.response?.status || 'N/A';
+        logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
       }
       return riskyFiles;
     } catch (error) {
@@ -170,7 +181,9 @@ export class GitHubService {
       );
       return contribs.data.length;
     } catch (err: any) {
-      logger.error(err.response?.data?.message || 'No message');
+      const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
+      const statusCode = err.response?.status || 'N/A';
+      logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
       return 1;
     }
   }
@@ -182,7 +195,16 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        logger.error(err.response?.data?.message || 'No message');
+        const branches = ['main', 'master', 'develop'];
+        for (const branch of branches) {
+          try {
+            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
+            defaultBranch = branch;
+            break;
+          } catch {
+            continue;
+          }
+        }
       }
       try {
         await this.makeRequest(client => 
@@ -193,7 +215,9 @@ export class GitHubService {
         if (err.response?.status === 404) {
           return false;
         } else {
-          logger.error(err.response?.data?.message || 'No message');
+          const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
+          const statusCode = err.response?.status || 'N/A';
+          logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
           return false;
         }
       }
@@ -218,7 +242,16 @@ export class GitHubService {
         const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
         defaultBranch = meta.data.default_branch || 'main';
       } catch (err: any) {
-        logger.error(err.response?.data?.message || 'No message');
+        const branches = ['main', 'master', 'develop'];
+        for (const branch of branches) {
+          try {
+            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
+            defaultBranch = branch;
+            break;
+          } catch {
+            continue;
+          }
+        }
       }
       try {
         const commits = await this.makeRequest(client => 
@@ -228,7 +261,9 @@ export class GitHubService {
         const totalCommits = link ? parseInt(link.match(/&page=(\d+)>; rel="last"/)?.[1] || '1', 10) : 1;
         return totalCommits;
       } catch (err: any) {
-        logger.error(err.response?.data?.message || 'No message');
+        const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
+        const statusCode = err.response?.status || 'N/A';
+        logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
         return 10;
       }
     } catch (error) {
@@ -254,34 +289,42 @@ export class GitHubService {
   }
 
   async getFileLatestCommitHash(repoName: string, filePath: string): Promise<string> {
-    try {
-      const [owner, repo] = repoName.split('/');
-      const response = await this.makeRequest(client =>
-        client.get(`/repos/${owner}/${repo}/commits`, {
-          params: { path: filePath, per_page: 1 }
-        })
-      );
-      const commit = response.data?.[0];
-      return commit?.sha || '';
-    } catch (error) {
-      logger.error(`Commit hash error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
-      return '';
-    }
+    const [owner, repo] = repoName.split('/');
+    const response = await this.makeRequest(client =>
+      client.get(`/repos/${owner}/${repo}/commits`, {
+        params: { path: filePath, per_page: 1 }
+      })
+    );
+    const commit = response.data?.[0];
+    return commit?.sha || '';
   }
 
   async getRepoLatestCommitHash(repoName: string): Promise<string> {
+    const repoInfo = await this.makeRequest(client =>
+      client.get(`/repos/${repoName}`)
+    );
+    let defaultBranch = repoInfo.data?.default_branch || 'main';
     try {
-      const repoInfo = await this.makeRequest(client =>
-        client.get(`/repos/${repoName}`)
-      );
-      const defaultBranch = repoInfo.data?.default_branch || 'main';
       const response = await this.makeRequest(client =>
         client.get(`/repos/${repoName}/commits/${defaultBranch}`)
       );
       return response.data?.sha || '';
-    } catch (error) {
-      logger.error(`Repo commit hash error: ${repoName} - ${error instanceof Error ? error.message : String(error)}`);
-      return '';
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        const branches = ['main', 'master', 'develop'];
+        for (const branch of branches) {
+          if (branch === defaultBranch) continue;
+          try {
+            const response = await this.makeRequest(client =>
+              client.get(`/repos/${repoName}/commits/${branch}`)
+            );
+            return response.data?.sha || '';
+          } catch {
+            continue;
+          }
+        }
+      }
+      throw err;
     }
   }
 }

@@ -127,6 +127,9 @@ export class CircuitBreaker {
     this.failures.push(now);
     this.lastFailureTime = now;
     if (this.state === CircuitState.HALF_OPEN) {
+      if (error?.response?.status >= 500 && error?.response?.status < 600) {
+        return;
+      }
       this.state = CircuitState.OPEN;
       this.openedAt = now;
       this.successes = 0;
@@ -137,6 +140,9 @@ export class CircuitBreaker {
 
   shouldCountAsFailure(error: any): boolean {
     if (error?.response?.status === 401) {
+      return false;
+    }
+    if (error?.response?.status === 403 || error?.response?.status === 429) {
       return false;
     }
     if (error?.code === 11000) {

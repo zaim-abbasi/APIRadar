@@ -762,7 +762,7 @@ export class GitHubCodeLeakFarmService {
     const MAX_PAGE = 100;
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
-      if (!providerState || providerState.page <= MAX_PAGE) {
+      if (!providerState || providerState.page < MAX_PAGE) {
         return false;
       }
     }

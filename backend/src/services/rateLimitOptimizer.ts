@@ -79,9 +79,12 @@ export class RateLimitOptimizer {
 
   shouldRotateToken(): boolean {
     const now = Date.now();
-    if (now - this.lastRotationTime < 5000) return false;
+    if (now - this.lastRotationTime < 10000) return false;
     const currentState = this.getCurrentTokenState();
     if (!currentState || !currentState.codeSearch) return false;
+    if (currentState.codeSearch.remaining === 0) {
+      return true;
+    }
     const currentRemaining = currentState.codeSearch.remaining;
     const currentLimit = currentState.codeSearch.limit;
     const currentRatio = currentRemaining / currentLimit;
@@ -92,12 +95,12 @@ export class RateLimitOptimizer {
     const bestRemaining = bestState.codeSearch.remaining;
     const remainingDiff = bestRemaining - currentRemaining;
     if (currentRatio < this.LOW_THRESHOLD) {
-      return remainingDiff >= Math.max(10, currentLimit * 0.01);
+      return remainingDiff >= Math.max(2, currentLimit * 0.2);
     }
-    if (bestRemaining > currentRemaining * 1.15 || remainingDiff > currentLimit * 0.1) {
+    if (bestRemaining > currentRemaining * 1.5 || remainingDiff >= 3) {
       return true;
     }
-    if (bestState.codeSearch.resetTime < currentState.codeSearch.resetTime && bestRemaining > currentRemaining * 0.95) {
+    if (bestState.codeSearch.resetTime < currentState.codeSearch.resetTime && bestRemaining > currentRemaining * 1.1) {
       return true;
     }
     return false;
