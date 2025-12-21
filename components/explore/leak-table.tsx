@@ -15,7 +15,6 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LeakedKey, Provider } from '@/types';
 import { toast } from 'sonner';
 import { cn, parseGitHubRepoUrl } from '@/lib/utils';
@@ -257,6 +256,13 @@ const normalizeRedactedKeyFn = (key: string): string => {
   return `${first}${'*'.repeat(asterisksCount)}${last}`;
 };
 
+const formatTimeAgo = (date: Date): string => {
+  return formatDistanceToNow(date, { addSuffix: true })
+    .replace(/\babout\s+/gi, '')
+    .replace(/\bhours?\b/gi, 'hrs')
+    .replace(/\bminutes?\b/gi, 'mins');
+};
+
 // Memoized Leak Card component with optimized comparison
 const LeakCard = React.memo(({ 
   leak, 
@@ -281,18 +287,18 @@ const LeakCard = React.memo(({
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm h-[180px] transition-all duration-200 hover:border-border/80 hover:shadow-md hover:shadow-primary/5 hover:bg-card/70">
-      <CardContent className={`p-4 sm:p-6 ${isLocked ? 'locked-content' : ''} relative`}> 
-        <div className="h-full">
-          <div className="space-y-2.5 sm:space-y-3 w-full">
+      <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:shadow-md hover:shadow-primary/5 hover:bg-card/70">
+      <CardContent className={`p-3 sm:p-4 ${isLocked ? 'locked-content' : ''} relative`}> 
+        <div className="flex flex-col h-full">
+          <div className="flex-1 flex flex-col gap-2.5 w-full">
             {/* Provider & Key */}
-            <div className="flex flex-row items-center gap-2.5 min-w-[180px]">
-              <code className="text-sm font-mono bg-muted/80 px-2.5 py-1.5 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 w-full sm:w-[180px] text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
+            <div className="flex flex-row items-center justify-between gap-2.5 min-w-0 w-full">
+              <code className="text-sm font-mono bg-muted/80 px-2 py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
                 {normalizeRedactedKeyFn(leak.redactedKey)}
               </code>
               <div
                 className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border shadow-sm",
+                  "inline-flex items-center rounded-md px-2 py-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border shadow-sm flex-shrink-0",
                   (leak.provider === 'google_gemini' || leak.provider === 'google')
                     ? 'bg-blue-200/40 text-blue-700 dark:text-blue-300 border-blue-400/30 hover:bg-blue-200/50'
                     : providerColors[leak.provider] || providerColors['github']
@@ -303,21 +309,21 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Repository Info - BULLETPROOF SECURITY */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-base">
               {isLocked ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Lock className="h-3 w-3" />
-                  <span className="text-sm">Sign in to view repository</span>
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Sign in to view repository</span>
                 </div>
               ) : (() => {
                 const parsed = safeRepoUrl ? parseGitHubRepoUrl(safeRepoUrl) : null;
                 if (!parsed || !safeRepoUrl) return (
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <span className="text-sm">Repository not available</span>
+                    <span>Repository not available</span>
                   </div>
                 );
                 return (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <a
                       href={safeRepoUrl}
                       target="_blank"
@@ -325,7 +331,7 @@ const LeakCard = React.memo(({
                       className="font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
                     >
                       {parsed.repo}
-                      <ExternalLink className="h-3 w-3 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
+                      <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
                     </a>
                     <span className="hidden sm:inline text-muted-foreground/70">by</span>
                     <a
@@ -334,7 +340,7 @@ const LeakCard = React.memo(({
                       rel="noopener noreferrer"
                       className="hidden sm:flex text-muted-foreground hover:text-primary items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
                     >
-                      <User className="h-3 w-3 transition-transform duration-200 group-hover/card:scale-110" />
+                      <User className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
                       {parsed.owner}
                     </a>
                   </div>
@@ -343,34 +349,33 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Metadata - BULLETPROOF SECURITY */}
-            <div className="space-y-1">
-              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 text-xs text-muted-foreground min-w-0 w-full">
-                <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60 transition-colors duration-200 group-hover/card:text-muted-foreground/80" />
-                <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Key added in Repo:</span>
-                <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0">{formatDistanceToNow(new Date(leak.leakIntroducedAt), { addSuffix: true })}</span>
-                {!isLocked && safeFilePath && (
-                  <span className="flex items-center gap-1.5 pl-1 min-w-0 flex-1">
-                    <FileText className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-                    <code className="text-xs break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 min-w-0" title={safeFilePath}>{safeFilePath}</code>
-                  </span>
-                )}
-                {isLocked && (
-                  <span className="flex items-center gap-1.5 pl-1">
-                    <Lock className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
-                    <span className="text-xs text-muted-foreground/80">Sign in to view file path</span>
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground min-w-0">
-                <Calendar className="h-3 w-3 flex-shrink-0 text-muted-foreground/60 transition-colors duration-200 group-hover/card:text-muted-foreground/80" />
-                <span className="sm:truncate text-foreground/75 font-medium">Leak Detected:</span>
-                <span className="sm:truncate text-foreground/80 font-semibold">{formatDistanceToNow(new Date(leak.leakDetectedAt), { addSuffix: true })}</span>
-              </div>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0 w-full overflow-hidden">
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+              <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Key added in Repo:</span>
+              <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0">{formatTimeAgo(new Date(leak.leakIntroducedAt))}</span>
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60 ml-2.5" />
+              <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Leak Detected:</span>
+              <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0 truncate">{formatTimeAgo(new Date(leak.leakDetectedAt))}</span>
             </div>
+
+            {/* File Path */}
+            {!isLocked && safeFilePath && (
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <span className="text-sm text-foreground/75 font-medium">Key path:</span>
+                <code className="text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
+              </div>
+            )}
+            {isLocked && (
+              <div className="flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <span className="text-sm text-muted-foreground/80">Sign in to view file path</span>
+              </div>
+            )}
           </div>
 
           {/* Copy Button - BULLETPROOF SECURITY - Absolutely positioned */}
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+          <div className="absolute top-10 right-4 sm:top-12 sm:right-6">
             <CopyButton 
               leak={{...leak, fullKey: safeFullKey}} 
               copiedKey={copiedKey} 
