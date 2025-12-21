@@ -309,7 +309,7 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Repository Info - BULLETPROOF SECURITY */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-base">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
               {isLocked ? (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Lock className="h-3.5 w-3.5" />
