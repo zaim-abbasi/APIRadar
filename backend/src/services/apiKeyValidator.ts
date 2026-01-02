@@ -41,11 +41,11 @@ export function isValidGeminiKey(key: string): boolean {
 
 export function isValidAnthropicKey(key: string): boolean {
   if (isPlaceholderKey(key)) return false;
-  return /^sk-ant-api\d{2}-[a-zA-Z0-9]{32,}$/.test(key);
+  return /^sk-ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}$/.test(key);
 }
 
 export const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
   openai: isValidOpenAIKey,
-  google_gemini: isValidGeminiKey,
+  google: isValidGeminiKey,
   anthropic: isValidAnthropicKey
 };

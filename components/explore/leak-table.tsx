@@ -299,12 +299,12 @@ const LeakCard = React.memo(({
               <div
                 className={cn(
                   "inline-flex items-center rounded-md px-2 py-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border shadow-sm flex-shrink-0",
-                  (leak.provider === 'google_gemini' || leak.provider === 'google')
+                  leak.provider === 'google'
                     ? 'bg-blue-200/40 text-blue-700 dark:text-blue-300 border-blue-400/30 hover:bg-blue-200/50'
                     : providerColors[leak.provider] || providerColors['github']
                 )}
               >
-                {(leak.provider === 'google_gemini' || leak.provider === 'google') ? 'google' : leak.provider}
+                {leak.provider === 'google' ? 'google' : leak.provider}
               </div>
             </div>
 

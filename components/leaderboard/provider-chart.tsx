@@ -16,14 +16,14 @@ interface ProviderChartProps {
 const providerColors: Record<string, string> = {
   'openai': '#10b981',
   'anthropic': '#d97706',
-  'google_gemini': '#3b82f6',
+  'google': '#3b82f6',
 };
 
 // Function to map database provider names to display names
 const getProviderDisplayName = (provider: string): string => {
   const displayNames: Record<string, string> = {
     'openai': 'OpenAI',
-    'google_gemini': 'Google',
+    'google': 'Google',
     'anthropic': 'Anthropic (Claude)',
     'cohere': 'Cohere',
     'aws': 'AWS',

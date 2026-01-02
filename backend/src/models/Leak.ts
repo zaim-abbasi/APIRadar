@@ -33,7 +33,7 @@ const LeakSchema = new Schema<ILeak>(
       lowercase: true,
       enum: [
         'openai',
-        'google_gemini',
+        'google',
         'anthropic',
         'mistral-ai',
         'cohere',

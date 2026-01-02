@@ -17,11 +17,11 @@ import { queryPrioritizer } from '../utils/queryPrioritizer';
 const SEARCH_PATTERNS = [
   {
     provider: 'anthropic',
-    pattern: /\b(sk-ant-api\d{2}-[a-zA-Z0-9]{32,})\b/g,
+    pattern: /\b(sk-ant-api\d{2}-[a-zA-Z0-9+/=]{30,150})\b/g,
     searchString: 'sk-ant-api'
   },
   {
-    provider: 'google_gemini',
+    provider: 'google',
     pattern: /\bAIza[0-9A-Za-z]{35,36}\b/g,
     searchString: 'AIza'
   },
@@ -100,7 +100,7 @@ const generateComprehensiveQueries = () => {
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
 const PROVIDER_QUERIES = {
   openai: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-') && !query.includes('sk-ant-api')),
-  google_gemini: ALL_SEARCH_QUERIES.filter(query => query.includes('AIza')),
+  google: ALL_SEARCH_QUERIES.filter(query => query.includes('AIza')),
   anthropic: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-ant-api'))
 };
 const MAX_RETRIES = 2;
@@ -258,7 +258,7 @@ let scanResumeState: ScanResumeState = {
   lastProcessedTime: Date.now(),
   providerStates: {
     openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-    google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+    google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
     anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
   }
 };
@@ -286,7 +286,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
       if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
         const defaultProviderStates = {
           openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+          google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
           anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
         };
         const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
@@ -320,7 +320,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
       const saved = (global as any).scanResumeState as any;
       const defaultProviderStates = {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
           anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       };
       const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
@@ -354,7 +354,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     lastProcessedTime: Date.now(),
     providerStates: {
       openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-      google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+      google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
       anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
     }
   };
@@ -369,7 +369,7 @@ async function clearScanState(): Promise<void> {
       lastProcessedTime: Date.now(),
       providerStates: {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
         anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     });
@@ -385,7 +385,7 @@ async function clearScanState(): Promise<void> {
       lastProcessedTime: Date.now(),
       providerStates: {
         openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google_gemini: { queryIndex: 0, page: 1, queryEmptyPages: {} },
+        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
         anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     };
@@ -758,7 +758,7 @@ export class GitHubCodeLeakFarmService {
   }
 
   private isScanStateComplete(state: ScanResumeState): boolean {
-    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
+    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google', 'anthropic'];
     const MAX_PAGE = 100;
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
@@ -773,7 +773,7 @@ export class GitHubCodeLeakFarmService {
     let scannedAnything = false;
     try {
       const resumeState = await loadResumeState();
-      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google_gemini', 'anthropic'];
+      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google', 'anthropic'];
       const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
       const currentProvider = providerNames[validProviderIndex];
       if (!currentProvider) {

@@ -20,7 +20,7 @@ export const SORT_OPTIONS = [
 
 // Add a mapping for frontend-to-backend provider values
 export const PROVIDER_API_MAP: Record<string, string> = {
-  google: 'google_gemini',
+  google: 'google',
   openai: 'openai',
   anthropic: 'anthropic',
   all: 'all',

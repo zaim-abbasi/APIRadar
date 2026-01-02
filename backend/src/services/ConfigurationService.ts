@@ -65,7 +65,7 @@ export class ConfigurationService {
         lastProcessedTime: Date.now(),
         providerStates: {
           openai: { queryIndex: 0, page: 1 },
-          google_gemini: { queryIndex: 0, page: 1 },
+          google: { queryIndex: 0, page: 1 },
           anthropic: { queryIndex: 0, page: 1 }
         },
         scanStatus: 'idle'
@@ -94,7 +94,7 @@ export class ConfigurationService {
           lastProcessedTime: Date.now(),
           providerStates: {
             openai: { queryIndex: 0, page: 1 },
-            google_gemini: { queryIndex: 0, page: 1 },
+            google: { queryIndex: 0, page: 1 },
             anthropic: { queryIndex: 0, page: 1 }
           },
           scanStatus: 'idle'
