@@ -16,18 +16,8 @@ import { LRUCache } from '../utils/lruCache';
 import { queryPrioritizer } from '../utils/queryPrioritizer';
 const SEARCH_PATTERNS = [
   {
-    provider: 'anthropic',
-    pattern: /\b(sk-ant-api\d{2}-[a-zA-Z0-9+/=]{30,150})\b/g,
-    searchString: 'sk-ant-api'
-  },
-  {
-    provider: 'google',
-    pattern: /\b(AIza[0-9A-Za-z\-_]{30,40})\b/g,
-    searchString: 'AIza'
-  },
-  {
-    provider: 'openai',
-    pattern: /\b(sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,})\b/g,
+    provider: 'ai-key',
+    pattern: /\b(sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}))\b/g,
     searchString: 'sk-'
   }
 ];
@@ -99,11 +89,11 @@ const generateComprehensiveQueries = () => {
 };
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
 const PROVIDER_QUERIES = {
-  openai: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-') && !query.includes('sk-ant-api')),
-  google: ALL_SEARCH_QUERIES.filter(query => query.includes('AIza')),
-  anthropic: ALL_SEARCH_QUERIES.filter(query => query.includes('sk-ant-api'))
+  'ai-key': ALL_SEARCH_QUERIES.filter(query => query.includes('sk-'))
 };
 const MAX_RETRIES = 2;
+const RESULTS_PER_PAGE = 10;
+const MAX_PAGE = 100;
 const githubApiCircuitBreaker = new CircuitBreaker('github-api', {
   failureThreshold: 5,
   successThreshold: 2,
@@ -257,9 +247,7 @@ let scanResumeState: ScanResumeState = {
   currentPage: 1,
   lastProcessedTime: Date.now(),
   providerStates: {
-    openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-    google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-    anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+    'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
   }
 };
 async function saveResumeState() {
@@ -285,9 +273,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     const saved = await ConfigurationService.getScanState();
       if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
         const defaultProviderStates = {
-          openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+          'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
         };
         const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
         if (saved.providerStates) {
@@ -319,9 +305,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     if ((global as any).scanResumeState) {
       const saved = (global as any).scanResumeState as any;
       const defaultProviderStates = {
-        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-          anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
       };
       const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
       if (saved.providerStates) {
@@ -353,9 +337,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     currentPage: 1,
     lastProcessedTime: Date.now(),
     providerStates: {
-      openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-      google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-      anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+      'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
     }
   };
   return scanResumeState;
@@ -368,9 +350,7 @@ async function clearScanState(): Promise<void> {
       currentPage: 1,
       lastProcessedTime: Date.now(),
       providerStates: {
-        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     });
     if (success) {
@@ -384,9 +364,7 @@ async function clearScanState(): Promise<void> {
       currentPage: 1,
       lastProcessedTime: Date.now(),
       providerStates: {
-        openai: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        google: { queryIndex: 0, page: 1, queryEmptyPages: {} },
-        anthropic: { queryIndex: 0, page: 1, queryEmptyPages: {} }
+        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
       }
     };
     delete (global as any).scanResumeState;
@@ -758,8 +736,7 @@ export class GitHubCodeLeakFarmService {
   }
 
   private isScanStateComplete(state: ScanResumeState): boolean {
-    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google', 'anthropic'];
-    const MAX_PAGE = 100;
+    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['ai-key'];
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
       if (!providerState || providerState.page < MAX_PAGE) {
@@ -773,7 +750,7 @@ export class GitHubCodeLeakFarmService {
     let scannedAnything = false;
     try {
       const resumeState = await loadResumeState();
-      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['openai', 'google', 'anthropic'];
+      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['ai-key'];
       const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
       const currentProvider = providerNames[validProviderIndex];
       if (!currentProvider) {
@@ -800,6 +777,7 @@ export class GitHubCodeLeakFarmService {
         if (query) {
           const startTime = Date.now();
           try {
+            logger.warn(`[FARM] Executing query: "${query}" (page ${page})`);
             const result = await this.processOnePageForQuery(query, page);
             if (result.hadResults) {
               scannedAnything = true;
@@ -852,7 +830,6 @@ export class GitHubCodeLeakFarmService {
             page++;
           }
         }
-        const MAX_PAGE = 100;
         let shouldResetPages = false;
         for (const provider of providerNames) {
           const state = scanResumeState.providerStates[provider] || { queryIndex: 0, page: 1 };
@@ -900,14 +877,17 @@ export class GitHubCodeLeakFarmService {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
       if (!this.running) return { hadResults: false, itemCount: 0 };
-      const response = await retry(() => githubService.searchCode(query, page, 10), 'SEARCH');
+      const response = await retry(() => githubService.searchCode(query, page, RESULTS_PER_PAGE), 'SEARCH');
       const items: GitHubSearchItem[] = response.data?.items || [];
       const itemCount = items.length;
+      const totalCount = response.data?.total_count || 0;
       
       if (itemCount === 0) {
+        logger.warn(`[FARM] Query returned 0 results (total_count: ${totalCount}) for: "${query}" (page ${page})`);
         return { hadResults: false, itemCount: 0 };
       }
       
+      logger.warn(`[FARM] Query returned ${itemCount} results (total_count: ${totalCount}) for: "${query}" (page ${page})`);
       await this.processSearchResults(items, query);
       return { hadResults: true, itemCount };
     } catch (error: any) {

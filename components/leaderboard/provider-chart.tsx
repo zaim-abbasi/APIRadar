@@ -14,19 +14,14 @@ interface ProviderChartProps {
 
 // Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'openai': 'hsl(var(--chart-2))',
-  'anthropic': 'hsl(var(--chart-1))',
-  'google': 'hsl(var(--chart-3))',
+  'ai-key': 'hsl(var(--chart-2))',
 };
 
 // Function to map database provider names to display names
 const getProviderDisplayName = (provider: string): string => {
   const displayNames: Record<string, string> = {
-    'openai': 'OpenAI',
-    'google': 'Google',
-    'anthropic': 'Anthropic (Claude)',
+    'ai-key': 'AI Key',
     'cohere': 'Cohere',
-    'aws': 'AWS',
     'stripe': 'Stripe',
     'github': 'GitHub',
     'discord': 'Discord',

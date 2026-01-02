@@ -58,7 +58,7 @@ export const HeroSectionMobile = React.memo(() => {
           <div className={cn("p-1.5 rounded-full bg-background", "text-green-500", "flex-shrink-0")}> 
             <Eye className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">Filter by provider (OpenAI, Google, etc.) and see where leaks come from</span>
+          <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">Filter by provider (AI Key, etc.) and see where leaks come from</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card shadow-md border border-border/50">
           <div className={cn("h-6 w-1 rounded-lg", "bg-blue-500/80", "mr-1")}></div>

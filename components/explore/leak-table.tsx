@@ -27,14 +27,8 @@ interface LeakTableProps {
 }
 
 const providerColors: Record<string, string> = {
-  openai:
-    "bg-green-500/10 text-green-700",
-
-  anthropic:
-    "bg-yellow-500/10 text-yellow-700",
-
-  google:
-    "bg-blue-500/10 text-blue-700"
+  'ai-key':
+    "bg-green-500/10 text-green-700"
 }
 
 // Memoized Loading Skeleton component

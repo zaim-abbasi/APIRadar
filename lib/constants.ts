@@ -1,8 +1,6 @@
 export const PROVIDERS = [
   { value: 'all', label: 'All Providers' },
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic (Claude)' },
-  { value: 'google', label: 'Google' },
+  { value: 'ai-key', label: 'AI Key' },
 ] as const;
 
 export const TIME_RANGES = [
@@ -20,8 +18,6 @@ export const SORT_OPTIONS = [
 
 // Add a mapping for frontend-to-backend provider values
 export const PROVIDER_API_MAP: Record<string, string> = {
-  google: 'google',
-  openai: 'openai',
-  anthropic: 'anthropic',
+  'ai-key': 'ai-key',
   all: 'all',
 };

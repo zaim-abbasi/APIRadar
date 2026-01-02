@@ -57,7 +57,7 @@ WhatYouCanDo.displayName = 'WhatYouCanDo';
 
 const WhatYouSee = React.memo(() => {
   const items = [
-    { icon: Key, text: 'Provider (e.g., OpenAI, Google, Anthropic, etc.)', iconColor: 'text-blue-600' },
+    { icon: Key, text: 'Provider (e.g., AI Key, etc.)', iconColor: 'text-blue-600' },
     { icon: Lock, text: 'Redacted key (first/last characters only)', iconColor: 'text-orange-500' },
     { icon: Github, text: 'Repository and file path', iconColor: 'text-gray-700' },
     { icon: Calendar, text: 'Detected at time', iconColor: 'text-indigo-500' },

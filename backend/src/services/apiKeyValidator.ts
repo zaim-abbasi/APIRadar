@@ -29,23 +29,11 @@ function isPlaceholderKey(key: string): boolean {
   return false;
 }
 
-export function isValidOpenAIKey(key: string): boolean {
+export function isValidAIKey(key: string): boolean {
   if (isPlaceholderKey(key)) return false;
-  return /^sk-(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}$/.test(key);
-}
-
-export function isValidGeminiKey(key: string): boolean {
-  if (isPlaceholderKey(key)) return false;
-  return /^AIza[0-9A-Za-z\-_]{30,40}$/.test(key);
-}
-
-export function isValidAnthropicKey(key: string): boolean {
-  if (isPlaceholderKey(key)) return false;
-  return /^sk-ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}$/.test(key);
+  return /^sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,})$/.test(key);
 }
 
 export const KEY_VALIDATORS: Record<string, (key: string) => boolean> = {
-  openai: isValidOpenAIKey,
-  google: isValidGeminiKey,
-  anthropic: isValidAnthropicKey
+  'ai-key': isValidAIKey
 };

@@ -33,9 +33,7 @@ export interface FilterOptions {
 }
 
 export type Provider = 
-  | 'openai'
-  | 'aws'
-  | 'google-cloud'
+  | 'ai-key'
   | 'stripe'
   | 'github'
   | 'discord'

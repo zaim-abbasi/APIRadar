@@ -224,7 +224,7 @@ export const HeroSection = React.memo(() => {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
                   <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                    Filter by provider (OpenAI, Google, etc.) and see where leaks come from
+                    Filter by provider (AI Key, etc.) and see where leaks come from
                   </p>
                 </div>
                 <div className="flex items-start gap-3">

@@ -35,7 +35,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
     let enforcedTimeRange = timeRange;
     const filter: any = {};
-    const validProviders = ['openai', 'anthropic', 'google'];
+    const validProviders = ['ai-key'];
     if (provider && provider !== 'all') {
       const normalizedProvider = String(provider).trim().toLowerCase();
       if (validProviders.includes(normalizedProvider)) {

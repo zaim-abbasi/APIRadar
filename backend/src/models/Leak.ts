@@ -32,9 +32,7 @@ const LeakSchema = new Schema<ILeak>(
       trim: true,
       lowercase: true,
       enum: [
-        'openai',
-        'google',
-        'anthropic',
+        'ai-key',
         'mistral-ai',
         'cohere',
         'huggingface',

@@ -64,9 +64,7 @@ export class ConfigurationService {
         currentPage: 1,
         lastProcessedTime: Date.now(),
         providerStates: {
-          openai: { queryIndex: 0, page: 1 },
-          google: { queryIndex: 0, page: 1 },
-          anthropic: { queryIndex: 0, page: 1 }
+          'ai-key': { queryIndex: 0, page: 1 }
         },
         scanStatus: 'idle'
       };
@@ -93,9 +91,7 @@ export class ConfigurationService {
           currentPage: 1,
           lastProcessedTime: Date.now(),
           providerStates: {
-            openai: { queryIndex: 0, page: 1 },
-            google: { queryIndex: 0, page: 1 },
-            anthropic: { queryIndex: 0, page: 1 }
+            'ai-key': { queryIndex: 0, page: 1 }
           },
           scanStatus: 'idle'
         };
