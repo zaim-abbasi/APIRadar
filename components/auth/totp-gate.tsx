@@ -142,13 +142,13 @@ export function TOTPGate() {
   return (
     <>
       {/* Blur overlay blocking content - matches API Radar backdrop */}
-      <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80" />
+      <div className="fixed inset-0 z-40 glass-card" />
       
       <Dialog open={isOpen} onOpenChange={() => {}}>
         <DialogContent 
           className={cn(
             "sm:max-w-md z-50",
-            "border-border/40 shadow-sm",
+            "glass-card border-border/40 shadow-sm",
             "animate-fade-in-up",
             "focus:outline-none focus-visible:outline-none",
             "ring-0 focus-visible:ring-0 focus:ring-0",
@@ -162,7 +162,7 @@ export function TOTPGate() {
           {/* API Radar branding - text only */}
           <div className="flex flex-col items-center">
             <span className="text-lg font-extrabold tracking-tight flex items-center gap-1">
-              <span className="text-destructive">API</span>
+              <span className="text-coral">API</span>
               <span className="text-foreground"> Radar</span>
             </span>
           </div>
@@ -174,18 +174,6 @@ export function TOTPGate() {
             Enter your 6-digit authentication code to access this platform
           </DialogDescription>
         </DialogHeader>
-
-        {/* FOMO Section - Better formatted and placed */}
-        <div className="bg-muted/40 border-l-3 border-primary/30 rounded-md p-3 space-y-2.5">
-          <div className="text-center space-y-1.5">
-            <p className="text-lg leading-tight text-foreground font-medium" dir="rtl" style={{ fontFamily: 'serif' }}>
-              "وَلَا تَأْكُلُوا أَمْوَالَكُم بَيْنَكُم بِالْبَاطِلِ"
-            </p>
-            <p className="text-[11px] text-muted-foreground/85 italic leading-tight">
-              "And do not consume one another's wealth unjustly" — Quran 2:188
-            </p>
-          </div>
-        </div>
 
         <div className="space-y-3 py-1">
           {error && (
@@ -217,7 +205,8 @@ export function TOTPGate() {
               className={cn(
                 "text-center text-lg font-mono tracking-[0.5em] h-10",
                 "border-input bg-background",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset focus-visible:ring-offset-0",
+                "focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-inset focus-visible:ring-offset-0",
+                "focus-visible:border-coral",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
               autoFocus
@@ -230,12 +219,13 @@ export function TOTPGate() {
             onClick={handleVerify}
             disabled={code.length !== 6 || isVerifying}
             className={cn(
-              "w-full h-10 rounded-md",
-              "bg-primary text-primary-foreground hover:bg-primary/90",
+              "w-full h-10 rounded-lg",
+              "bg-coral text-white border border-coral/80",
+              "hover:!bg-coral hover:brightness-90 hover:border-coral/70",
               "font-semibold transition-all duration-200 ease-in-out",
-              "focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2",
+              "focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
               "disabled:opacity-50 disabled:pointer-events-none",
-              "shadow-sm hover:shadow-md active:scale-[0.98]"
+              "active:scale-[0.98]"
             )}
             size="default"
           >
@@ -250,7 +240,7 @@ export function TOTPGate() {
           </Button>
 
           <p className="text-xs text-center text-muted-foreground leading-relaxed">
-            Need to configure TOTP? For assistance, contact: <a href="mailto:zaim.k.abbasi@gmail.com" className="text-primary hover:underline">zaim.k.abbasi@gmail.com</a>
+            Need to configure TOTP? For assistance, contact: <a href="mailto:zaim.k.abbasi@gmail.com" className="text-blue-500 hover:underline">zaim.k.abbasi@gmail.com</a>
           </p>
         </div>
       </DialogContent>

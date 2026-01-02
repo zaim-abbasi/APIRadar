@@ -11,7 +11,7 @@ const FooterLogo = React.memo(() => (
       <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
     </div>
     <span className="text-base font-medium">
-      <span className="text-destructive">API</span>
+      <span className="text-coral">API</span>
       <span className="text-foreground"> Radar</span>
     </span>
   </Link>
@@ -34,7 +34,7 @@ const FooterNavigation = React.memo(() => {
           key={item.href}
           href={item.href}
           prefetch={true}
-          className="text-sm text-muted-foreground hover:text-primary transition-colors duration-150"
+          className="text-sm text-muted-foreground hover:text-coral transition-colors duration-150"
         >
           {item.label}
         </Link>
@@ -48,7 +48,7 @@ FooterNavigation.displayName = 'FooterNavigation';
 
 const FooterComponent = () => {
   return (
-    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 bg-background/95 backdrop-blur-md shadow-sm">
+    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 shadow-sm">
       <div className="container mx-auto px-4 py-5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full text-center">
           {/* Left: Logo & Name */}

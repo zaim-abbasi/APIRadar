@@ -103,7 +103,7 @@ const ResultsCount = React.memo(({
           </>
         )}
         {error && (
-          <span className="text-destructive text-sm">
+          <span className="text-coral text-sm">
             Error loading data. Please try refreshing.
           </span>
         )}
@@ -113,7 +113,7 @@ const ResultsCount = React.memo(({
       <button
         onClick={onRefresh}
         disabled={isLoading}
-        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm flex items-center gap-1 transition-all duration-75 hover:bg-primary/90 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-white bg-coral border-none rounded-md flex items-center gap-1 transition-all duration-200 hover:bg-coral/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Refreshing...' : 'Refresh'}
@@ -275,7 +275,7 @@ const ResultsSection = React.memo(({
       <div className="animate-fade-in-up opacity-0 animate-delay-10">
         <div className="min-h-[200px] flex items-center justify-center">
           <div className="text-center">
-            <div className="text-destructive text-lg font-semibold mb-2">
+            <div className="text-coral text-lg font-semibold mb-2">
               Failed to load data
             </div>
             <div className="text-muted-foreground text-sm">
@@ -443,7 +443,7 @@ const ActionCard = ({ title, subtitle, button, icon, socialProof }: ActionCardPr
             
             {/* Benefit text */}
             {socialProof && (
-              <div className="text-xs text-green-700 dark:text-green-400 font-medium">
+              <div className="text-xs text-green-700 font-medium">
                 {socialProof}
               </div>
             )}

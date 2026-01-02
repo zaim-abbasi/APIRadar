@@ -29,8 +29,8 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-1 space-y-2.5 min-w-0">
             {/* Icon and Title */}
             <div className="flex flex-row items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
+              <div className="p-1.5 rounded-lg bg-coral/10">
+                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">Sign in to unlock full access</span>
             </div>
@@ -41,7 +41,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
             </div>
             
             {/* Benefit text */}
-            <div className="flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400 font-medium">
+            <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -53,7 +53,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-primary border-none rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-white bg-coral border-none rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
               aria-label="Sign in with Google"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -195,7 +195,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             <button
               onClick={onRefresh}
               disabled={isLoading}
-              className="h-8 pl-2.5 pr-2.5 py-1 text-xs font-medium text-primary-foreground bg-primary border-none rounded-md shadow-sm hover:shadow-md flex items-center gap-1.5 transition-all duration-200 hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg h-9 px-3.5 text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5"
               aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
             >
               <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -225,22 +225,9 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               <>
                 <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
                   {/* Gradient fade that keeps last row visible - starts transparent at top */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--beige)) 0%, hsl(var(--beige) / 0.98) 20%, hsl(var(--beige) / 0.90) 40%, hsl(var(--beige) / 0.70) 60%, hsl(var(--beige) / 0.40) 75%, transparent 100%)' }} />
                   {/* Subtle blur overlay - lighter at top to keep last row visible */}
-                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
-                </div>
-                {/* Sign in hint - outside pointer-events-none container */}
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2.5 z-20">
-                  <button
-                    onClick={() => signIn('google', { callbackUrl: window.location.href })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-secondary border border-border rounded-md shadow-sm hover:bg-secondary/80 hover:text-foreground transition-all duration-200 focus:outline-none"
-                    aria-label="Sign in to view all leaks"
-                  >
-                    <span>Sign in to View all</span>
-                    <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </button>
+                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--beige) / 0.90) 0%, hsl(var(--beige) / 0.75) 30%, hsl(var(--beige) / 0.50) 55%, hsl(var(--beige) / 0.25) 75%, transparent 100%)' }} />
                 </div>
               </>
             )}

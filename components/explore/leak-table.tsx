@@ -27,17 +27,15 @@ interface LeakTableProps {
 }
 
 const providerColors: Record<string, string> = {
-  'openai': 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
-  'anthropic': 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
-  'google': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
-  'aws': 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
-  'stripe': 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
-  'github': 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20',
-  'google-cloud': 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
-  'discord': 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
-  'twilio': 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
-  'sendgrid': 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
-};
+  openai:
+    "bg-green-500/10 text-green-700",
+
+  anthropic:
+    "bg-yellow-500/10 text-yellow-700",
+
+  google:
+    "bg-blue-500/10 text-blue-700"
+}
 
 // Memoized Loading Skeleton component
 const LoadingSkeleton = React.memo(() => (
@@ -136,12 +134,12 @@ const CopyButton = React.memo(({
           variant="ghost"
           size="icon"
           onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-          className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
+          className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
           aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
         >
           <div className="transition-transform duration-200 active:scale-95">
             {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <Check className="h-4 w-4 text-green-600" />
             ) : (
               <Copy className="h-4 w-4 text-foreground/70 hover:text-foreground transition-colors duration-200" />
             )}
@@ -152,12 +150,12 @@ const CopyButton = React.memo(({
           variant="ghost"
           size="sm"
           onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-pointer focus:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
+          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-pointer focus:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
           aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
         >
           <div className="transition-transform duration-200 group-hover/card:scale-110">
             {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <Check className="h-4 w-4 text-green-600" />
             ) : (
               <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-foreground transition-colors duration-200" />
             )}
@@ -209,12 +207,12 @@ const CopyButton = React.memo(({
         variant="ghost"
         size="icon"
         onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-        className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
+        className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
         aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
       >
         <div className="transition-transform duration-200 active:scale-95">
           {copiedKey === leak.id ? (
-            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <Check className="h-4 w-4 text-green-600" />
           ) : (
             <Copy className="h-4 w-4 text-foreground/70 hover:text-foreground transition-colors duration-200" />
           )}
@@ -225,12 +223,12 @@ const CopyButton = React.memo(({
         variant="ghost"
         size="sm"
         onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-        className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-pointer focus:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1"
+        className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-pointer focus:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
         aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
       >
         <div className="transition-transform duration-200 group-hover/card:scale-110">
           {copiedKey === leak.id ? (
-            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <Check className="h-4 w-4 text-green-600" />
           ) : (
             <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-foreground transition-colors duration-200" />
           )}
@@ -287,7 +285,7 @@ const LeakCard = React.memo(({
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:shadow-md hover:shadow-primary/5 hover:bg-card/70">
+      <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:bg-card/70">
       <CardContent className={`p-3 sm:p-4 ${isLocked ? 'locked-content' : ''} relative`}> 
         <div className="flex flex-col h-full">
           <div className="flex-1 flex flex-col gap-2.5 w-full">
@@ -299,12 +297,10 @@ const LeakCard = React.memo(({
               <div
                 className={cn(
                   "inline-flex items-center rounded-md px-2 py-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border shadow-sm flex-shrink-0",
-                  leak.provider === 'google'
-                    ? 'bg-blue-200/40 text-blue-700 dark:text-blue-300 border-blue-400/30 hover:bg-blue-200/50'
-                    : providerColors[leak.provider] || providerColors['github']
+                  providerColors[leak.provider] || providerColors['github']
                 )}
               >
-                {leak.provider === 'google' ? 'google' : leak.provider}
+                {leak.provider}
               </div>
             </div>
 
@@ -328,7 +324,7 @@ const LeakCard = React.memo(({
                       href={safeRepoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-primary hover:text-primary/80 hover:underline flex items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
+                      className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
                     >
                       {parsed.repo}
                       <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
@@ -338,7 +334,7 @@ const LeakCard = React.memo(({
                       href={`https://github.com/${parsed.owner}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:flex text-muted-foreground hover:text-primary items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
+                      className="hidden sm:flex text-muted-foreground hover:text-coral items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
                     >
                       <User className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
                       {parsed.owner}

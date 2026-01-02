@@ -14,7 +14,7 @@ export const HeroSectionMobile = React.memo(() => {
     { icon: Globe, text: "Global Coverage", color: "text-blue-500", accent: "bg-blue-400/80" },
   ], []);
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-7 bg-background">
+    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-7">
       {/* Soft background tint for depth */}
       <div className="absolute inset-0 pointer-events-none z-0" />
 
@@ -22,46 +22,46 @@ export const HeroSectionMobile = React.memo(() => {
       <div className="flex flex-col items-center mb-7 mt-2 z-10">
         <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={52} width={52} className="max-h-14 max-w-14 object-contain mb-2 drop-shadow-md" priority />
         <span className="text-2xl font-extrabold tracking-tight flex items-center gap-1">
-          <span className="text-destructive">API</span>
-          <span className="text-primary">Radar</span>
+          <span className="text-coral">API</span>
+          <span className="text-foreground">Radar</span>
         </span>
       </div>
 
       {/* Headline */}
       <h1 className="text-4xl font-semibold leading-tight text-center mb-4 text-foreground tracking-tight z-10">
-        Real-Time <span className="text-destructive">API Key</span>
+        Real-Time <span className="text-coral">API Key</span>
         <br />
         <span className="text-foreground">Leak Detection</span>
       </h1>
 
       {/* Subheading */}
       <div className="w-full max-w-md mx-auto mb-8 z-10 px-1 space-y-3">
-        <div className="rounded-lg bg-card/95 px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-primary/10">
+        <div className="rounded-lg glass-card px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-border/50">
           Browse a live feed of API keys accidentally exposed in public GitHub repositories.
         </div>
-        <div className="rounded-lg bg-card/95 px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-primary/10">
+        <div className="rounded-lg glass-card px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-border/50">
           API Radar helps you understand how often keys leak and where the risks come from.
         </div>
       </div>
 
       {/* Feature Tags - premium vertical stack */}
       <div className="w-full max-w-xs mx-auto mb-8 flex flex-col gap-2 z-10">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
-          <div className={cn("h-6 w-1 rounded-lg", "bg-yellow-400/80", "mr-1")}></div>
-          <div className={cn("p-1.5 rounded-full bg-background", "text-yellow-500", "flex-shrink-0")}> 
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card shadow-md border border-border/50">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-coral/80", "mr-1")}></div>
+          <div className={cn("p-1.5 rounded-full bg-background", "text-coral", "flex-shrink-0")}> 
             <Zap className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">View newly discovered API keys from public repos in real time</span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
-          <div className={cn("h-6 w-1 rounded-lg", "bg-green-400/80", "mr-1")}></div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card shadow-md border border-border/50">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-green-500/80", "mr-1")}></div>
           <div className={cn("p-1.5 rounded-full bg-background", "text-green-500", "flex-shrink-0")}> 
             <Eye className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">Filter by provider (OpenAI, Google, etc.) and see where leaks come from</span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
-          <div className={cn("h-6 w-1 rounded-lg", "bg-blue-400/80", "mr-1")}></div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg glass-card shadow-md border border-border/50">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-blue-500/80", "mr-1")}></div>
           <div className={cn("p-1.5 rounded-full bg-background", "text-blue-500", "flex-shrink-0")}> 
             <Globe className="h-4 w-4" />
           </div>
@@ -75,7 +75,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/explore"
           prefetch={true}
           aria-label="Explore Leaks"
-          className="flex items-center justify-center rounded-lg h-14 px-7 text-lg font-semibold w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+          className="flex items-center justify-center rounded-lg h-14 px-7 text-lg font-semibold w-full bg-coral text-white hover:bg-coral/90 hover-glow transition-all duration-200 shadow-lg hover:shadow-xl active:scale-[0.98] group focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
           tabIndex={0}
         >
           <span className="flex items-center justify-center w-full">
@@ -87,7 +87,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/leaderboard"
           prefetch={true}
           aria-label="View Leaderboard"
-          className="flex items-center justify-center rounded-lg h-14 px-7 text-lg font-semibold w-full border border-primary/20 bg-background text-primary hover:bg-muted/80 hover:border-primary/30 transition-all duration-200 shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 active:scale-[0.98]"
+          className="flex items-center justify-center rounded-lg h-14 px-7 text-lg font-semibold w-full border border-border bg-background text-foreground hover:bg-muted/80 hover:border-coral/30 transition-all duration-200 shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
           tabIndex={0}
         >
           View Leaderboard
@@ -101,13 +101,13 @@ export const HeroSectionMobile = React.memo(() => {
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-9 pb-5 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">API Radar</span>
-          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
+          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
+          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-primary transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
             <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>

@@ -12,11 +12,11 @@ interface ProviderChartProps {
   totalLeaks?: number;
 }
 
-// Static provider colors object
+// Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'openai': '#10b981',
-  'anthropic': '#d97706',
-  'google': '#3b82f6',
+  'openai': 'hsl(var(--chart-2))',
+  'anthropic': 'hsl(var(--chart-1))',
+  'google': 'hsl(var(--chart-3))',
 };
 
 // Function to map database provider names to display names
@@ -62,14 +62,14 @@ const ProviderListItem = React.memo(({
   provider: ProviderStats; 
   index: number; 
 }) => {
-  const providerColor = useMemo(() => providerColors[provider.provider] || '#6b7280', [provider.provider]);
+  const providerColor = useMemo(() => providerColors[provider.provider] || 'hsl(var(--muted-foreground))', [provider.provider]);
   const formattedCount = useMemo(() => provider.count.toLocaleString(), [provider.count]);
   const formattedPercentage = useMemo(() => provider.percentage.toFixed(1), [provider.percentage]);
   const formattedName = useMemo(() => getProviderDisplayName(provider.provider), [provider.provider]);
 
   return (
     <div 
-      className="flex items-center justify-between p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 group border border-border/30 hover:border-border/50 hover:shadow-sm"
+      className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30"
     >
       <div className="flex items-center gap-3">
         <div 
@@ -77,7 +77,7 @@ const ProviderListItem = React.memo(({
           style={{ backgroundColor: providerColor }}
         />
         <div>
-          <div className="font-medium capitalize group-hover:text-primary transition-colors text-sm">
+          <div className="font-medium capitalize text-sm text-foreground">
             {formattedName}
           </div>
           <div className="text-xs text-muted-foreground">
@@ -109,7 +109,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
   const chartData = useMemo(() => safeData.map(item => ({
     ...item,
-    fill: providerColors[item.provider] || '#6b7280'
+    fill: providerColors[item.provider] || 'hsl(var(--muted-foreground))'
   })), [safeData]);
 
   const topProviders = useMemo(() => safeData.slice(0, 5), [safeData]);
@@ -136,7 +136,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
       {/* Chart */}
       <div className="lg:col-span-2 w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm w-full shadow-sm" aria-label="Leaks by Provider">
+        <Card className="border-border/50 glass-card w-full shadow-sm" aria-label="Leaks by Provider">
           <CardHeader className="pb-3 px-5 pt-5">
             <CardTitle className="text-lg font-semibold tracking-tight">Leaks by Provider</CardTitle>
             <CardDescription className="text-xs text-muted-foreground/80 mt-1">
@@ -175,7 +175,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
       {/* Provider List */}
       <div className="w-full">
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-fit w-full shadow-sm" aria-label="Top Providers">
+        <Card className="border-border/50 glass-card h-fit w-full shadow-sm" aria-label="Top Providers">
           <CardHeader className="pb-3 px-5 pt-5">
             <CardTitle className="text-lg font-semibold tracking-tight">Top Providers</CardTitle>
             <CardDescription className="text-xs text-muted-foreground/80 mt-1">

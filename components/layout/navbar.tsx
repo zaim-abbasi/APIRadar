@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from 'next-themes';
 // Optimize icon imports - only import what's needed
 import { Moon, Sun, Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,9 +33,9 @@ const NavLinks = React.memo(() => {
           href={item.href}
           prefetch={true}
           className={cn(
-            "relative px-3 py-2 text-sm font-medium transition-colors hover:text-primary",
+            "relative px-3 py-2 text-[15px] font-medium transition-colors hover:text-coral",
             pathname === item.href
-              ? "text-primary"
+              ? "text-coral"
               : "text-muted-foreground"
           )}
         >
@@ -44,7 +43,7 @@ const NavLinks = React.memo(() => {
           {pathname === item.href && (
             <motion.div
               layoutId="navbar-indicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-coral rounded-full"
               initial={false}
               transition={{ duration: 0.2, ease: 'easeOut' }}
             />
@@ -61,7 +60,6 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAuthenticated } = usePlanCheck();
-  const { theme, setTheme } = useTheme();
   let displayLetter = 'U';
   let userName = undefined;
   let userEmail = undefined;
@@ -79,14 +77,14 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
       <nav className="flex flex-col min-h-[1px] gap-1 px-0.5 py-1 w-full">
         {/* Profile Section */}
         <div className="flex items-center gap-1 mb-1 min-h-[40px]">
-          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-primary/10 to-muted text-primary text-[15px] font-semibold">
+          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-coral/10 to-muted text-coral text-[15px] font-semibold">
             {displayLetter}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             {session && userName ? (
               <span className="text-[13px] font-semibold truncate">{userName}</span>
             ) : (
-              <span className="text-[13px] font-semibold text-primary">Unauthorized</span>
+              <span className="text-[13px] font-semibold text-coral">Unauthorized</span>
             )}
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
@@ -96,7 +94,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             <button onClick={async () => {
               await signOut({ callbackUrl: '/', redirect: true });
               window.location.reload();
-            }} className="ml-1 p-1.5 rounded-full hover:bg-destructive/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2" title="Sign out" aria-label="Sign out" tabIndex={0}>
+            }} className="ml-1 p-1.5 rounded-full hover:bg-destructive/10 transition-colors focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2" title="Sign out" aria-label="Sign out" tabIndex={0}>
               <LogOut className="h-4.5 w-4.5 text-destructive" />
             </button>
           ) : null}
@@ -115,10 +113,10 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
                 onLinkClick();
               }}
               className={cn(
-                "flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2",
+                "flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
                 pathname === item.href
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-primary hover:bg-muted/50"
+                  ? "bg-coral/10 text-coral"
+                  : "text-muted-foreground hover:text-coral hover:bg-muted/50"
               )}
               aria-label={item.label}
               tabIndex={0}
@@ -126,22 +124,6 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
               {item.label}
             </Link>
           ))}
-        </div>
-        {/* Spacer to push theme toggle to bottom if needed */}
-        <div className="flex-1" />
-        {/* Theme Toggle (as a row, consistent with nav items) */}
-        <div className="flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors cursor-pointer select-none mt-1 min-h-[40px] focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
-          role="button"
-          tabIndex={0}
-          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          onClick={() => {
-            setTheme(theme === 'dark' ? 'light' : 'dark');
-            onLinkClick();
-          }}
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          <span>Theme</span>
         </div>
       </nav>
     );
@@ -174,7 +156,7 @@ const MobileMenuDrawer = ({ isOpen, onClose, anchorTop, children }: { isOpen: bo
           transition={{ duration: 0.22, ease: 'easeInOut' }}
           ref={drawerRef}
           style={{ top: anchorTop, right: 4, position: 'absolute', zIndex: 100, willChange: 'transform, opacity' }}
-          className="w-[85vw] max-w-[200px] bg-background rounded-md shadow-lg border border-border/60 p-1 mt-0"
+          className="w-[85vw] max-w-[200px] rounded-md shadow-lg border border-border/60 p-1 mt-0 bg-background/95 backdrop-blur-md"
         >
           {children}
         </motion.div>
@@ -184,9 +166,9 @@ const MobileMenuDrawer = ({ isOpen, onClose, anchorTop, children }: { isOpen: bo
 };
 
 const NavbarComponent = () => {
-  const { theme, setTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const [drawerTop, setDrawerTop] = useState(64); // default navbar height
   const pathname = usePathname();
@@ -201,6 +183,17 @@ const NavbarComponent = () => {
     }
   }, [navRef, isMenuOpen]);
 
+  // Scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setIsScrolled(scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Scroll to top on route change for mobile
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -213,7 +206,7 @@ const NavbarComponent = () => {
   };
 
   return (
-    <nav ref={navRef} className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 shadow-sm">
+    <nav ref={navRef} className={cn("sticky top-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200", isScrolled && "bg-beige/95 backdrop-blur-md")}>
       <div className="container mx-auto px-2 sm:px-4">
         <div className="flex h-16 items-center w-full">
           {/* Left: Logo */}
@@ -223,7 +216,7 @@ const NavbarComponent = () => {
                 <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
               </div>
               <span className="text-xl font-medium">
-                <span className="text-destructive">API</span>
+                <span className="text-coral">API</span>
                 <span className="text-foreground"> Radar</span>
               </span>
             </Link>
@@ -245,7 +238,7 @@ const NavbarComponent = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-12 w-12 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+              className="md:hidden h-12 w-12 focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
               tabIndex={0}
