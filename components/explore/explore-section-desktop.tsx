@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { Filter, SortAsc, RefreshCw, LogIn, Rocket } from 'lucide-react';
+import { Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -14,9 +14,6 @@ import { Provider } from '@/types';
 
 const ExploreHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
-      Real-time database of API key leaks from public repositories.
-    </p>
   </div>
 ));
 
@@ -146,7 +143,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             <CustomSelect value={timeRange} onValueChange={setTimeRange}>
               <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
                 <div className="flex items-center gap-2 w-full">
-                  <Filter className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                  <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                   <CustomSelectValue className="flex-1 text-center">
                     {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
                   </CustomSelectValue>
@@ -168,7 +165,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             <CustomSelect value={sortBy} onValueChange={setSortBy}>
               <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
                 <div className="flex items-center gap-2 w-full">
-                  <SortAsc className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                   <CustomSelectValue className="flex-1 text-center">
                     {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
                   </CustomSelectValue>

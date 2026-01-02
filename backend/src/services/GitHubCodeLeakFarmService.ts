@@ -22,7 +22,7 @@ const SEARCH_PATTERNS = [
   },
   {
     provider: 'google',
-    pattern: /\bAIza[0-9A-Za-z]{35,36}\b/g,
+    pattern: /\b(AIza[0-9A-Za-z\-_]{30,40})\b/g,
     searchString: 'AIza'
   },
   {

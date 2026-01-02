@@ -10,9 +10,6 @@ const ProviderChart = dynamic(() => import("@/components/leaderboard/provider-ch
 
 const LeaderboardHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed hidden md:block font-semibold">
-      Explore real-time API key leak trends.
-    </p>
   </div>
 ));
 LeaderboardHeader.displayName = 'LeaderboardHeader';

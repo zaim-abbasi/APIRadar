@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, Suspense, useCallback, useEffect, useRef } from 'react';
-import { Filter, SortAsc, RefreshCw, Loader2, LogIn, Rocket } from 'lucide-react';
+import { Calendar, ArrowUpDown, RefreshCw, Loader2, LogIn, Rocket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -61,9 +61,6 @@ class ExplorePageError extends Error {
 // Memoized Header component
 const ExploreHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
-      Real-time database of API key leaks from public repositories.
-    </p>
   </div>
 ));
 
@@ -183,7 +180,7 @@ const FiltersSection = React.memo(({
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
             <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
               <div className="flex items-center gap-2 w-full">
-                <Filter className="h-4 w-4 flex-shrink-0" />
+                <Calendar className="h-4 w-4 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
                   {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
                 </CustomSelectValue>
@@ -206,7 +203,7 @@ const FiltersSection = React.memo(({
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
             <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
               <div className="flex items-center gap-2 w-full">
-                <SortAsc className="h-4 w-4 flex-shrink-0" />
+                <ArrowUpDown className="h-4 w-4 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
                   {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
                 </CustomSelectValue>

@@ -35,27 +35,38 @@ export const HeroSectionMobile = React.memo(() => {
       </h1>
 
       {/* Subheading */}
-      <div className="w-full max-w-md mx-auto mb-8 z-10 px-1">
+      <div className="w-full max-w-md mx-auto mb-8 z-10 px-1 space-y-3">
         <div className="rounded-lg bg-card/95 px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-primary/10">
-          Monitor API key exposures across millions of public repositories. Track security incidents as they happen with detailed insights.
+          Browse a live feed of API keys accidentally exposed in public GitHub repositories.
+        </div>
+        <div className="rounded-lg bg-card/95 px-6 py-4 text-base text-muted-foreground text-center leading-relaxed shadow-xl border border-primary/10">
+          API Radar helps you understand how often keys leak and where the risks come from.
         </div>
       </div>
 
       {/* Feature Tags - premium vertical stack */}
       <div className="w-full max-w-xs mx-auto mb-8 flex flex-col gap-2 z-10">
-        {features.map((feature, idx) => (
-          <div
-            key={idx}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group"
-            style={{ boxShadow: "0 2px 12px 0 rgba(0,0,0,0.07)" }}
-          >
-            <div className={cn("h-6 w-1 rounded-lg", feature.accent, "mr-1")}></div>
-            <div className={cn("p-1.5 rounded-full bg-background", feature.color, "flex-shrink-0")}> 
-              <feature.icon className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">{feature.text}</span>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-yellow-400/80", "mr-1")}></div>
+          <div className={cn("p-1.5 rounded-full bg-background", "text-yellow-500", "flex-shrink-0")}> 
+            <Zap className="h-4 w-4" />
           </div>
-        ))}
+          <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">View newly discovered API keys from public repos in real time</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-green-400/80", "mr-1")}></div>
+          <div className={cn("p-1.5 rounded-full bg-background", "text-green-500", "flex-shrink-0")}> 
+            <Eye className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">Filter by provider (OpenAI, Google, etc.) and see where leaks come from</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/90 shadow-md border border-transparent hover:border-primary/10 transition-all duration-150 group">
+          <div className={cn("h-6 w-1 rounded-lg", "bg-blue-400/80", "mr-1")}></div>
+          <div className={cn("p-1.5 rounded-full bg-background", "text-blue-500", "flex-shrink-0")}> 
+            <Globe className="h-4 w-4" />
+          </div>
+          <span className="text-sm font-semibold text-foreground/90 text-left leading-tight pl-1">Learn from real incidents to improve your own secrets-management practices</span>
+        </div>
       </div>
 
       {/* CTA Buttons */}

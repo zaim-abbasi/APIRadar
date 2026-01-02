@@ -8,15 +8,15 @@ import { headers } from 'next/headers';
 // Page-specific metadata
 export const metadata: Metadata = {
   title: 'Security Leaderboard - API Radar',
-  description: 'Explore real-time API key leak trends.',
+  description: '',
   openGraph: {
     title: 'Security Leaderboard - API Radar',
-    description: 'Explore real-time API key leak trends.',
+    description: '',
     url: 'https://apiradar.live/leaderboard',
   },
   twitter: {
     title: 'Security Leaderboard - API Radar',
-    description: 'Explore real-time API key leak trends.',
+    description: '',
   },
 };
 
@@ -121,9 +121,6 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
 // Clean component structure
 const LeaderboardHeader = React.memo(() => (
   <div className="mb-6 text-center">
-    <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-semibold">
-      Explore real-time API key leak trends.
-    </p>
   </div>
 ));
 

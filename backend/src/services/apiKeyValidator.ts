@@ -36,7 +36,7 @@ export function isValidOpenAIKey(key: string): boolean {
 
 export function isValidGeminiKey(key: string): boolean {
   if (isPlaceholderKey(key)) return false;
-  return /^AIza[0-9A-Za-z]{35,36}$/.test(key);
+  return /^AIza[0-9A-Za-z\-_]{30,40}$/.test(key);
 }
 
 export function isValidAnthropicKey(key: string): boolean {

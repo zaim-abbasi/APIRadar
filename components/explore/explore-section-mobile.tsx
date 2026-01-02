@@ -1,6 +1,6 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
-import { Github, Linkedin, Mail, Filter, SortAsc, RefreshCw, LogIn, Rocket } from "lucide-react";
+import { Github, Linkedin, Mail, Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -108,7 +108,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
             <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select time range" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
-                <Filter className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
                   {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
                 </CustomSelectValue>
@@ -127,7 +127,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
             <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select sort order" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
-                <SortAsc className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
                   {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
                 </CustomSelectValue>

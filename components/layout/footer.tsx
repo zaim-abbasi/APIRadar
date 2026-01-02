@@ -2,7 +2,6 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import { Shield, Github, Linkedin } from 'lucide-react';
 import Image from 'next/image';
 
 // Memoized Logo component
@@ -46,43 +45,6 @@ const FooterNavigation = React.memo(() => {
 
 FooterNavigation.displayName = 'FooterNavigation';
 
-// Memoized Social Links component
-const SocialLinks = React.memo(() => {
-  const socialLinks = useMemo(() => [
-    { 
-      icon: Github, 
-      href: 'https://github.com/zaim-abbasi', 
-      label: 'GitHub',
-      ariaLabel: 'Visit Zaim Abbasi on GitHub'
-    },
-    { 
-      icon: Linkedin, 
-      href: 'https://www.linkedin.com/in/zaim-abbasi/', 
-      label: 'LinkedIn',
-      ariaLabel: 'Connect with Zaim Abbasi on LinkedIn'
-    }
-  ], []);
-
-  return (
-    <div className="flex space-x-3">
-      {socialLinks.map((social) => (
-        <a
-          key={social.label}
-          href={social.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={social.ariaLabel}
-          className="p-1.5 rounded-md bg-muted/50 hover:bg-muted text-muted-foreground hover:text-primary transition-all duration-150 hover:scale-110"
-        >
-          <social.icon className="h-3.5 w-3.5" />
-          <span className="sr-only">{social.label}</span>
-        </a>
-      ))}
-    </div>
-  );
-});
-
-SocialLinks.displayName = 'SocialLinks';
 
 const FooterComponent = () => {
   return (
@@ -95,46 +57,10 @@ const FooterComponent = () => {
           </div>
 
           {/* Center: Copyright */}
-          <div className="w-full md:w-auto flex justify-center mb-2 md:mb-0">
+          <div className="w-full md:w-auto flex justify-center">
             <span id="footer-label" className="text-xs text-muted-foreground/80 text-center font-medium">
               © 2025 API Radar. Real-time detection and tracking of API key leaks.
             </span>
-          </div>
-
-          {/* Right: GitHub & Email */}
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 space-x-0 md:space-x-3 w-full md:w-auto justify-center md:justify-end">
-            <a
-              href="mailto:zaim.k.abbasi@gmail.com"
-              className="text-sm text-muted-foreground/80 hover:text-primary underline transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded"
-              tabIndex={0}
-              aria-label="Contact via email"
-            >
-              Contact
-            </a>
-            <div className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors duration-200">
-              <a
-                href="https://github.com/zaim-abbasi"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Visit Zaim Abbasi on GitHub"
-                className="text-muted-foreground/80 hover:text-primary transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded-md p-1 hover:bg-muted/50"
-                tabIndex={0}
-              >
-                <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
-                <span className="sr-only">GitHub</span>
-              </a>
-              <a
-                href="https://www.linkedin.com/in/zaim-abbasi/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Connect with Zaim Abbasi on LinkedIn"
-                className="text-muted-foreground/80 hover:text-primary transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 rounded-md p-1 hover:bg-muted/50"
-                tabIndex={0}
-              >
-                <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
-                <span className="sr-only">LinkedIn</span>
-              </a>
-            </div>
           </div>
         </div>
       </div>

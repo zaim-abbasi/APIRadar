@@ -106,21 +106,21 @@ FeatureTags.displayName = 'FeatureTags';
 const RightColumn = React.memo(() => {
   const features = useMemo(() => [
     { 
-      icon: Zap, 
-      text: 'Real-Time Monitoring', 
-      description: 'Track leaks as they happen',
+      icon: FileSearch, 
+      text: 'Explore Real Leaks', 
+      description: 'See a constantly updated list of leaked API keys from public GitHub code',
       color: 'text-yellow-500'
     },
     { 
-      icon: Eye, 
-      text: 'Comprehensive Detection', 
-      description: 'Monitor millions of repositories',
+      icon: Shield, 
+      text: 'Understand Patterns', 
+      description: 'Check which providers and file types are most commonly involved in leaks',
       color: 'text-green-500'
     },
     { 
-      icon: Globe, 
-      text: 'Global Coverage', 
-      description: 'Worldwide leak tracking',
+      icon: BookOpen, 
+      text: 'Training Tool', 
+      description: 'Use examples to teach developers what not to commit',
       color: 'text-blue-500'
     }
   ], []);
@@ -205,28 +205,33 @@ export const HeroSection = React.memo(() => {
               </div>
 
               {/* Subheading */}
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl animate-fade-in-up">
-                Monitor API key exposures across millions of public repositories. Track security incidents as they happen with detailed insights and real-time alerts.
-              </p>
+              <div className="space-y-2 animate-fade-in-up">
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
+                  Browse a live feed of API keys accidentally exposed in public GitHub repositories.
+                </p>
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
+                  API Radar helps you understand how often keys leak and where the risks come from.
+                </p>
+              </div>
 
               {/* Key Benefits List */}
               <div className="space-y-3 pt-2 animate-fade-in-up">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
                   <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                    Continuous monitoring of public code repositories
+                    View newly discovered API keys from public repos in real time
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
                   <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                    Instant alerts when new API keys are exposed
+                    Filter by provider (OpenAI, Google, etc.) and see where leaks come from
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-destructive mt-2" />
                   <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
-                    Detailed repository context and leak analysis
+                    Learn from real incidents to improve your own secrets-management practices
                   </p>
                 </div>
               </div>
