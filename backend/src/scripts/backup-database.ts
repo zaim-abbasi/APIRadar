@@ -14,11 +14,11 @@ const BACKUP_RETENTION = 2;
 
 function getDatabaseName(uri: string): string {
   const match = uri.match(/\/([^/?]+)(\?|$)/);
-  return match ? match[1] : 'test';
+  return match?.[1] ?? 'test';
 }
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0] ?? '';
 }
 
 async function exportCollection(collectionName: string, model: mongoose.Model<any>, backupDir: string): Promise<number> {
