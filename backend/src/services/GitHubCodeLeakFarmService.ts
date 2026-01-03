@@ -88,9 +88,21 @@ const generateComprehensiveQueries = () => {
   return queries;
 };
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
-const PROVIDER_QUERIES = {
-  'ai-key': ALL_SEARCH_QUERIES.filter(query => query.includes('sk-'))
-};
+const PROVIDER_QUERIES = (() => {
+  const queries: { [key: string]: string[] } = {};
+  SEARCH_PATTERNS.forEach(({ provider, searchString }) => {
+    queries[provider] = ALL_SEARCH_QUERIES.filter(query => query.includes(searchString));
+  });
+  return queries;
+})();
+
+function getDefaultProviderStates(): { [key: string]: { queryIndex: number; page: number; queryEmptyPages: { [query: string]: number } } } {
+  const states: { [key: string]: { queryIndex: number; page: number; queryEmptyPages: { [query: string]: number } } } = {};
+  for (const provider of Object.keys(PROVIDER_QUERIES)) {
+    states[provider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+  }
+  return states;
+}
 const MAX_RETRIES = 2;
 const RESULTS_PER_PAGE = 10;
 const MAX_PAGE = 100;
@@ -246,9 +258,7 @@ let scanResumeState: ScanResumeState = {
   currentQueryIndex: 0,
   currentPage: 1,
   lastProcessedTime: Date.now(),
-  providerStates: {
-    'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-  }
+  providerStates: getDefaultProviderStates()
 };
 async function saveResumeState() {
   try {
@@ -272,9 +282,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
   try {
     const saved = await ConfigurationService.getScanState();
       if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
-        const defaultProviderStates = {
-          'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-        };
+        const defaultProviderStates = getDefaultProviderStates();
         const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
         if (saved.providerStates) {
           for (const [provider, state] of Object.entries(saved.providerStates)) {
@@ -304,9 +312,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     }
     if ((global as any).scanResumeState) {
       const saved = (global as any).scanResumeState as any;
-      const defaultProviderStates = {
-        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-      };
+      const defaultProviderStates = getDefaultProviderStates();
       const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
       if (saved.providerStates) {
         for (const [provider, state] of Object.entries(saved.providerStates)) {
@@ -336,9 +342,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
     currentQueryIndex: 0,
     currentPage: 1,
     lastProcessedTime: Date.now(),
-    providerStates: {
-      'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-    }
+    providerStates: getDefaultProviderStates()
   };
   return scanResumeState;
 }
@@ -349,9 +353,7 @@ async function clearScanState(): Promise<void> {
       currentQueryIndex: 0,
       currentPage: 1,
       lastProcessedTime: Date.now(),
-      providerStates: {
-        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-      }
+      providerStates: getDefaultProviderStates()
     });
     if (success) {
       logger.warn(`[FARM] Scan state cleared from database`);
@@ -363,9 +365,7 @@ async function clearScanState(): Promise<void> {
       currentQueryIndex: 0,
       currentPage: 1,
       lastProcessedTime: Date.now(),
-      providerStates: {
-        'ai-key': { queryIndex: 0, page: 1, queryEmptyPages: {} }
-      }
+      providerStates: getDefaultProviderStates()
     };
     delete (global as any).scanResumeState;
     logger.warn(`[FARM] Scan state cleared, will start from beginning on next restart`);
@@ -607,7 +607,9 @@ export class GitHubCodeLeakFarmService {
     let lastConfigCheck = Date.now();
     let lastTokenRefresh = Date.now();
     let lastTokenStateLog = Date.now();
+    let lastIdleLog = Date.now();
     const STATUS_LOG_INTERVAL = 1 * 60 * 1000;
+    const IDLE_LOG_INTERVAL = 15 * 60 * 1000;
     const RATE_LIMIT_CHECK_INTERVAL = 10 * 1000;
     const CONFIG_CHECK_INTERVAL = 30 * 1000;
     const TOKEN_REFRESH_INTERVAL = 60 * 1000;
@@ -668,7 +670,10 @@ export class GitHubCodeLeakFarmService {
           }
         }
         if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
-          logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
+          if (Date.now() - lastRateLimitCheck > 5 * 60 * 1000) {
+            logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
+            lastRateLimitCheck = Date.now();
+          }
           clearRateLimit();
         }
         if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
@@ -681,10 +686,12 @@ export class GitHubCodeLeakFarmService {
           if (firstCycle) {
             logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
             firstCycle = false;
-          } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
+            lastIdleLog = Date.now();
+          } else if (Date.now() - lastIdleLog > IDLE_LOG_INTERVAL) {
             logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
-            lastStatusLog = Date.now();
+            lastIdleLog = Date.now();
           }
+          await new Promise(resolve => setTimeout(resolve, 10000));
           continue;
         }
         
@@ -709,8 +716,10 @@ export class GitHubCodeLeakFarmService {
             }
             const allDone = this.isScanStateComplete(state);
             if (allDone) {
-              scanCompleted = true;
-              logger.warn('[FARM] Scan cycle completed - no more files to process');
+              logger.warn('[FARM] Max page reached for all providers. Resetting to page 1 to catch new repos...');
+              await clearScanState();
+              scanResumeState = await loadResumeState();
+              scanCompleted = false;
             } else {
               logger.warn('[FARM] Scan state not complete, continuing scan...');
               scanCompleted = false;
@@ -736,7 +745,7 @@ export class GitHubCodeLeakFarmService {
   }
 
   private isScanStateComplete(state: ScanResumeState): boolean {
-    const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['ai-key'];
+    const providerNames = Object.keys(PROVIDER_QUERIES) as Array<keyof typeof PROVIDER_QUERIES>;
     for (const provider of providerNames) {
       const providerState = state.providerStates[provider];
       if (!providerState || providerState.page < MAX_PAGE) {
@@ -750,7 +759,7 @@ export class GitHubCodeLeakFarmService {
     let scannedAnything = false;
     try {
       const resumeState = await loadResumeState();
-      const providerNames: Array<keyof typeof PROVIDER_QUERIES> = ['ai-key'];
+      const providerNames = Object.keys(PROVIDER_QUERIES) as Array<keyof typeof PROVIDER_QUERIES>;
       const validProviderIndex = Math.max(0, Math.min(resumeState.currentProviderIndex, providerNames.length - 1));
       const currentProvider = providerNames[validProviderIndex];
       if (!currentProvider) {
@@ -760,7 +769,7 @@ export class GitHubCodeLeakFarmService {
         return false;
       }
       const typedCurrentProvider = currentProvider as keyof typeof PROVIDER_QUERIES;
-      let providerQueries = PROVIDER_QUERIES[typedCurrentProvider];
+      let providerQueries = PROVIDER_QUERIES[typedCurrentProvider] || [];
       providerQueries = queryPrioritizer.prioritizeQueries(providerQueries);
       const defaultProviderState = { queryIndex: 0, page: 1, queryEmptyPages: {} };
       const providerState = resumeState.providerStates[typedCurrentProvider] || defaultProviderState;

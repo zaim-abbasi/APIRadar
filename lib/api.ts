@@ -139,7 +139,6 @@ export async function fetchTopProviders(session?: any): Promise<ApiResponse<{ to
 export async function fetchLeaderboardDataServer(): Promise<{
   totalReposScanned: number;
   totalLeaksFound: number;
-  repositoryAgeCutoff: string | null;
   topProviders: Array<{ provider: string; count: number; percentage: number }>;
   todayLeaks: number;
 }> {
@@ -168,7 +167,6 @@ export async function fetchLeaderboardDataServer(): Promise<{
     return {
       totalReposScanned: 0,
       totalLeaksFound: 0,
-      repositoryAgeCutoff: null,
       topProviders: [],
       todayLeaks: 0
     };
@@ -179,7 +177,6 @@ export async function fetchLeaderboardDataServer(): Promise<{
 export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
   totalReposScanned: number;
   totalLeaksFound: number;
-  repositoryAgeCutoff: string | null;
   topProviders: Array<{ provider: string; count: number; percentage: number }>;
   todayLeaks: number;
 }>> {

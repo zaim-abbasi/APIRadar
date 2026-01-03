@@ -5,6 +5,7 @@ import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
 import { ConfigurationService } from './services/ConfigurationService';
+import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler';
 import { registerRoutes } from './routes';
 
 const server = fastify({
@@ -52,12 +53,14 @@ async function startServer() {
       logger.init(`Leak farm failed to start: ${err?.message || err}`);
       process.exit(1);
     }
+    startBackupScheduler();
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
     logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
     const tokenCount = (config.GITHUB_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean).length;
     logger.init(`All systems operational. GitHub tokens loaded: ${tokenCount}`);
     process.on('SIGINT', async () => {
       logger.status('Shutting Down', 'Gracefully...');
+      stopBackupScheduler();
       gitHubCodeLeakFarmService.stop();
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -68,6 +71,7 @@ async function startServer() {
 
     process.on('SIGTERM', async () => {
       logger.status('Shutting Down', 'Gracefully...');
+      stopBackupScheduler();
       gitHubCodeLeakFarmService.stop();
       await new Promise(resolve => setTimeout(resolve, 1000));
       

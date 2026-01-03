@@ -36,6 +36,7 @@ Thumbs.db
 # Project-specific
 repos.json
 src/static/learn.json
+db_backup/
 
 # Python virtual environment for TruffleHog
 

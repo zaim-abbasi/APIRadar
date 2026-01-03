@@ -292,14 +292,11 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     totalLeaks,
     todayLeaks,
     leaksFoundToday
-    // repositoryCutoff
   } = data;
 
-  // Defensive: fallback for all stats
   const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
   const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;
   const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
-  // const safeRepositoryCutoff = typeof repositoryCutoff === 'string' ? repositoryCutoff : null;
 
   const stats = useMemo(() => [
     {

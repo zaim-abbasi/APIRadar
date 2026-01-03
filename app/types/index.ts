@@ -11,5 +11,4 @@ export interface LeaderboardData {
   todayLeaks: number;
   weeklyGrowth: number;
   leaksFoundToday: number;
-  // repositoryCutoff?: string | null; // commented out
 } 

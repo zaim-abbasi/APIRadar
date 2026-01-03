@@ -24,7 +24,6 @@ export const metadata: Metadata = {
 // interface StatsData {
 //   totalLeaks: number;
 //   todayLeaks: number;
-//   repositoryCutoff: string | null;
 // }
 
 interface ChartData {
