@@ -1,21 +1,27 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { AuthProvider } from '@/components/providers/session-provider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { Toaster } from 'sonner';
 import Analytics from '@/components/Analytics';
-import { KonamiCodeListener } from '@/components/auth/konami-code-listener';
-import { TOTPGate } from '@/components/auth/totp-gate';
+import { HydrationFix } from '@/components/hydration-fix';
 
-// Optimize font loading with subset and display swap
 const inter = Inter({ 
   subsets: ['latin'], 
   display: 'swap',
   preload: true,
   variable: '--font-inter',
+  fallback: ['system-ui', 'arial']
+});
+
+const spaceGrotesk = Space_Grotesk({ 
+  subsets: ['latin'], 
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-space-grotesk',
   fallback: ['system-ui', 'arial']
 });
 
@@ -75,8 +81,6 @@ export default function RootLayout({
         {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
         {/* Favicon: fallback to logo-png.png if favicon.ico is missing */}
         <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
-        {/* Preload critical CSS (correct path) */}
-        <link rel="preload" href="/app/globals.css" as="style" />
         {/* Open Graph & Twitter handled by Next.js metadata */}
         {/* JSON-LD Structured Data: WebSite and Organization with social profiles */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{
@@ -86,8 +90,8 @@ export default function RootLayout({
             "name": "API Radar",
             "url": "https://apiradar.live",
             "sameAs": [
-              "https://github.com/zaim-abbasi",
-              "https://www.linkedin.com/in/zaim-abbasi/"
+              "https://www.linkedin.com/company/apiradar/",
+              "https://github.com/zaim-abbasi"
             ],
             "potentialAction": {
               "@type": "SearchAction",
@@ -104,8 +108,8 @@ export default function RootLayout({
             "url": "https://apiradar.live",
             "logo": "https://apiradar.live/logo/logo-webp.webp",
             "sameAs": [
-              "https://github.com/zaim-abbasi",
-              "https://www.linkedin.com/in/zaim-abbasi/"
+              "https://www.linkedin.com/company/apiradar/",
+              "https://github.com/zaim-abbasi"
             ]
           })
         }} />
@@ -138,8 +142,86 @@ export default function RootLayout({
             })();
           `
         }} />
+        {/* Remove browser extension attributes to prevent hydration mismatches */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              if (typeof window !== 'undefined') {
+                function removeExtensionAttributes() {
+                  var attributes = ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore'];
+                  attributes.forEach(function(attr) {
+                    var elements = document.querySelectorAll('[' + attr + ']');
+                    elements.forEach(function(el) {
+                      el.removeAttribute(attr);
+                    });
+                  });
+                }
+                if (document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', removeExtensionAttributes);
+                } else {
+                  removeExtensionAttributes();
+                }
+                var observer = new MutationObserver(function() {
+                  removeExtensionAttributes();
+                });
+                if (document.body) {
+                  observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore']
+                  });
+                }
+              }
+            })();
+          `
+        }} />
+        {/* Suppress hydration warnings for browser extension attributes */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              if (typeof window !== 'undefined') {
+                const observer = new MutationObserver(function(mutations) {
+                  mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                      if (node.nodeType === 1) {
+                        const element = node;
+                        if (element.hasAttribute && element.hasAttribute('bis_skin_checked')) {
+                          element.removeAttribute('bis_skin_checked');
+                        }
+                        if (element.querySelectorAll) {
+                          const elementsWithAttr = element.querySelectorAll('[bis_skin_checked]');
+                          elementsWithAttr.forEach(function(el) {
+                            el.removeAttribute('bis_skin_checked');
+                          });
+                        }
+                      }
+                    });
+                  });
+                });
+                if (document.body) {
+                  observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['bis_skin_checked']
+                  });
+                } else {
+                  document.addEventListener('DOMContentLoaded', function() {
+                    observer.observe(document.body, {
+                      childList: true,
+                      subtree: true,
+                      attributes: true,
+                      attributeFilter: ['bis_skin_checked']
+                    });
+                  });
+                }
+              }
+            })();
+          `
+        }} />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${inter.className} ${spaceGrotesk.variable}`} suppressHydrationWarning>
         <AuthProvider>
           <ThemeProvider
             attribute="class"
@@ -156,10 +238,9 @@ export default function RootLayout({
               <Footer />
             </div>
             <Toaster />
-            <KonamiCodeListener />
-            <TOTPGate />
           </ThemeProvider>
         </AuthProvider>
+        <HydrationFix />
         <Analytics />
       </body>
     </html>

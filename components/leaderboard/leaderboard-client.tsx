@@ -27,7 +27,7 @@ export default function LeaderboardClient({ statsData, chartData }: { statsData:
     return <LeaderboardSectionMobile statsData={statsData} chartData={chartData} />;
   }
   return (
-    <div className="container mx-auto px-4 py-6 flex flex-col flex-1">
+    <div className="container mx-auto px-4 pt-3 pb-6 flex flex-col flex-1">
       <LeaderboardHeader />
       <StatsSection data={statsData} />
       <div className="flex-1 min-h-0">

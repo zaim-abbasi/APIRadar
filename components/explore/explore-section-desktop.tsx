@@ -131,7 +131,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 }) {
   const isUnauthenticated = !session || !session.user;
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 pt-3 pb-6">
       {/* Structured Data for Explore Page */}
       <script
         type="application/ld+json"
@@ -165,7 +165,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           {/* Time Range */}
           <div className="flex-1 lg:w-[33.333%]">
             <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-              <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
+              <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
                 <div className="flex items-center gap-2 w-full">
                   <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                   <CustomSelectValue className="flex-1 text-center">
@@ -187,7 +187,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           {/* Sort */}
           <div className="flex-1 lg:w-[33.333%]">
             <CustomSelect value={sortBy} onValueChange={setSortBy}>
-              <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
+              <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
                 <div className="flex items-center gap-2 w-full">
                   <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                   <CustomSelectValue className="flex-1 text-center">
@@ -239,6 +239,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               isLoading={isLoading}
               selectedProvider={selectedProvider}
               plan={plan}
+              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href }) : undefined}
             />
             
             {/* Fade-out blur effect for unauthenticated users - suggests more content */}
@@ -259,10 +260,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           <div ref={loadingRef} style={{ height: 1 }} />
         )}
       </div>
-      {/* Action Card for unauthenticated users */}
-      {isUnauthenticated && (
-        <ActionCard onSignIn={() => signIn('google', { callbackUrl: window.location.href })} />
-      )}
     </div>
   );
 });

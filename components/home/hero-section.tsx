@@ -140,7 +140,7 @@ const RightColumn = React.memo(() => {
             <div className="flex items-start gap-3">
               <feature.icon className={cn("h-[18px] w-[18px] flex-shrink-0 mt-0.5", feature.color)} />
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-foreground mb-1">
+                <h3 className="text-base font-semibold text-foreground mb-1">
                   {feature.text}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -185,10 +185,10 @@ RightColumn.displayName = 'RightColumn';
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative h-auto min-h-[85vh] sm:min-h-screen overflow-hidden">
+    <section className="relative h-screen overflow-hidden">
 
       <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="min-h-[85vh] sm:min-h-screen flex items-center justify-center w-full max-w-7xl mx-auto pt-2 sm:pt-4 lg:pt-6 pb-8 sm:pb-12 lg:pb-16">
+        <div className="h-full flex items-center justify-center w-full max-w-7xl mx-auto">
           {/* 2-Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-16 w-full items-center">
             {/* Left Column - Content */}

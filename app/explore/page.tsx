@@ -195,7 +195,7 @@ const FiltersSection = React.memo(({
         {/* Time Range */}
         <div className="flex-1 lg:w-[33.333%]">
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
               <div className="flex items-center gap-2 w-full">
                 <Calendar className="h-4 w-4 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
@@ -218,7 +218,7 @@ const FiltersSection = React.memo(({
         {/* Sort */}
         <div className="flex-1 lg:w-[33.333%]">
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm">
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
               <div className="flex items-center gap-2 w-full">
                 <ArrowUpDown className="h-4 w-4 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">

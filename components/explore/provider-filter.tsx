@@ -21,7 +21,7 @@ export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange }
 
   return (
     <CustomSelect value={selectedProvider} onValueChange={handleValueChange}>
-      <CustomSelectTrigger className="w-full bg-card/60 backdrop-blur-sm border-border/60 shadow-sm">
+      <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
         <div className="flex items-center gap-2 w-full">
           <Layers className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
           <CustomSelectValue className="flex-1 text-center">

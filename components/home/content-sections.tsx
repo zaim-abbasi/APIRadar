@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { FileSearch, TrendingUp, GraduationCap, Github, Calendar, Key, ExternalLink, Lock, Linkedin, Lightbulb } from 'lucide-react';
+import { FileSearch, TrendingUp, GraduationCap, Github, Calendar, Key, ExternalLink, Lock, Linkedin, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -130,11 +130,22 @@ const WhatsNext = React.memo(() => {
         </p>
         <div className="flex items-center gap-3">
           <a
-            href="mailto:zaim.k.abbasi@gmail.com?subject=Feature%20Suggestion%20for%20API%20Radar"
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=Contact%20API%20Radar%20Developer"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-coral text-white border border-coral/80 hover:brightness-90 hover:border-coral/70 text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
           >
-            <Lightbulb className="h-4 w-4" />
-            <span>Suggest a feature</span>
+            <Mail className="h-4 w-4" />
+            <span>Contact the Developer</span>
+          </a>
+          <a
+            href="https://www.linkedin.com/company/apiradar/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center px-3 py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            aria-label="Connect on LinkedIn"
+          >
+            <Linkedin className="h-4 w-4" />
           </a>
           <a
             href="https://github.com/zaim-abbasi"
@@ -144,15 +155,6 @@ const WhatsNext = React.memo(() => {
             aria-label="Visit on GitHub"
           >
             <Github className="h-4 w-4" />
-          </a>
-          <a
-            href="https://www.linkedin.com/in/zaim-abbasi/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center px-3 py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
-            aria-label="Connect on LinkedIn"
-          >
-            <Linkedin className="h-4 w-4" />
           </a>
         </div>
       </div>
@@ -164,7 +166,7 @@ WhatsNext.displayName = 'WhatsNext';
 
 export const ContentSections = React.memo(() => {
   return (
-    <section className="pt-4 sm:pt-6 pb-8 sm:pb-10">
+    <section className="pt-2 sm:pt-3 pb-8 sm:pb-10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">

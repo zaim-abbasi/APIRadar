@@ -2,15 +2,11 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
-  <Link href="/" className="flex items-center space-x-1">
-    <div>
-      <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
-    </div>
-    <span className="text-base font-medium">
+  <Link href="/" className="flex items-center">
+    <span className="text-xl font-semibold tracking-tight">
       <span className="text-coral">API</span>
       <span className="text-foreground"> Radar</span>
     </span>
@@ -48,8 +44,8 @@ FooterNavigation.displayName = 'FooterNavigation';
 
 const FooterComponent = () => {
   return (
-    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 shadow-sm">
-      <div className="container mx-auto px-4 py-5">
+    <footer role="contentinfo" aria-labelledby="footer-label" className="hidden md:block border-t border-border/40 shadow-sm" style={{ height: '50px' }}>
+      <div className="container mx-auto px-4 h-full flex items-center">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full text-center">
           {/* Left: Logo & Name */}
           <div className="flex items-center space-x-1.5 w-full md:w-auto justify-center md:justify-start mb-2 md:mb-0">

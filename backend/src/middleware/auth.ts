@@ -26,7 +26,7 @@ export const ACCESS_LIMITS = {
 
 const authSchema = z.object({
   'x-user-id': z.string().optional(),
-  'x-user-email': z.string().email().optional(),
+  'x-user-email': z.string().optional(),
   'x-user-authenticated': z.string().optional(),
 });
 
@@ -53,7 +53,10 @@ export async function authenticateUser(request: AuthenticatedRequest, reply: Fas
     }
 
     const { 'x-user-id': userId, 'x-user-email': userEmail, 'x-user-authenticated': isAuthenticated } = authData.data;
-    const isUserAuthenticated: boolean = isAuthenticated === 'true' && !!userId && !!userEmail;
+    const normalizedUserId = userId && userId.trim() !== '' ? userId.trim() : undefined;
+    const normalizedUserEmail = userEmail && userEmail.trim() !== '' ? userEmail.trim() : undefined;
+    const isValidEmail = !!normalizedUserEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedUserEmail);
+    const isUserAuthenticated: boolean = isAuthenticated === 'true' && !!normalizedUserId && !!normalizedUserEmail && isValidEmail;
     const clientId = userId || request.ip || 'anonymous';
     const rateLimit = isUserAuthenticated ? RATE_LIMITS.authenticated : RATE_LIMITS.unauthenticated;
     
@@ -75,8 +78,8 @@ export async function authenticateUser(request: AuthenticatedRequest, reply: Fas
       });
     }
     const user = {
-      id: userId || 'anonymous',
-      email: userEmail || 'anonymous@example.com',
+      id: normalizedUserId || 'anonymous',
+      email: normalizedUserEmail || 'anonymous@example.com',
       isAuthenticated: isUserAuthenticated
     };
     request.user = user;

@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 // Optimize icon imports - only import what's needed
-import { Moon, Sun, Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import { UserMenu } from '@/components/auth/user-menu';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
@@ -33,21 +32,13 @@ const NavLinks = React.memo(() => {
           href={item.href}
           prefetch={true}
           className={cn(
-            "relative px-3 py-2 text-[15px] font-medium transition-colors hover:text-coral",
+            "px-3 py-2 text-base font-medium transition-colors hover:text-coral",
             pathname === item.href
               ? "text-coral"
               : "text-muted-foreground"
           )}
         >
           {item.label}
-          {pathname === item.href && (
-            <motion.div
-              layoutId="navbar-indicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-coral rounded-full"
-              initial={false}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-            />
-          )}
         </Link>
       ))}
     </>
@@ -60,16 +51,18 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
   const router = useRouter();
   const { data: session, status } = useSession();
   const { isAuthenticated } = usePlanCheck();
-  let displayLetter = 'U';
+  let firstName = 'U';
   let userName = undefined;
   let userEmail = undefined;
   if (session && session.user) {
     userName = session.user.name;
     userEmail = session.user.email;
     if (userName && typeof userName === 'string' && userName.length > 0) {
-      displayLetter = userName.charAt(0).toUpperCase();
+      const spaceIndex = userName.indexOf(' ');
+      firstName = spaceIndex > 0 ? userName.substring(0, spaceIndex) : userName;
     } else if (userEmail && typeof userEmail === 'string' && userEmail.length > 0) {
-      displayLetter = userEmail.charAt(0).toUpperCase();
+      const atIndex = userEmail.indexOf('@');
+      firstName = atIndex > 0 ? userEmail.substring(0, atIndex) : userEmail;
     }
   }
   if (compact) {
@@ -77,8 +70,8 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
       <nav className="flex flex-col min-h-[1px] gap-1 px-0.5 py-1 w-full">
         {/* Profile Section */}
         <div className="flex items-center gap-1 mb-1 min-h-[40px]">
-          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-coral/10 to-muted text-coral text-[15px] font-semibold">
-            {displayLetter}
+          <div className="flex items-center justify-center h-9 px-2 py-1 rounded-md border border-border/60 bg-gradient-to-br from-coral/10 to-muted text-coral text-xs font-semibold whitespace-nowrap">
+            {firstName}
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             {session && userName ? (
@@ -170,7 +163,7 @@ const NavbarComponent = () => {
   const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
-  const [drawerTop, setDrawerTop] = useState(64); // default navbar height
+  const [drawerTop, setDrawerTop] = useState(50); // default navbar height
   const pathname = usePathname();
 
   useEffect(() => {
@@ -208,14 +201,11 @@ const NavbarComponent = () => {
   return (
     <nav ref={navRef} className={cn("sticky top-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200", isScrolled && "bg-beige/95 backdrop-blur-md")}>
       <div className="container mx-auto px-2 sm:px-4">
-        <div className="flex h-16 items-center w-full">
+        <div className="flex items-center w-full" style={{ height: '50px' }}>
           {/* Left: Logo */}
-          <div className="flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center space-x-1" onClick={handleNavClick}>
-              <div className="relative">
-                <Image src="/logo/logo-webp.webp" alt="API Radar Logo" height={36} width={36} className="max-h-9 max-w-9 object-contain" priority sizes="(max-width: 768px) 36px, 72px" />
-              </div>
-              <span className="text-xl font-medium">
+          <div className="flex items-center flex-1 md:flex-none md:w-1/3 justify-start">
+            <Link href="/" className="flex items-center" onClick={handleNavClick}>
+              <span className="text-2xl font-semibold tracking-tight">
                 <span className="text-coral">API</span>
                 <span className="text-foreground"> Radar</span>
               </span>
@@ -230,7 +220,7 @@ const NavbarComponent = () => {
           </div>
 
           {/* Right: Theme Toggle, User Menu, Mobile Menu */}
-          <div className="flex items-center space-x-2 flex-shrink-0 ml-auto md:ml-0">
+          <div className="flex items-center space-x-2 flex-1 md:flex-none md:w-1/3 justify-end">
             {/* User Menu (profile icon always visible) */}
             <div className="hidden md:block"><UserMenu /></div>
 

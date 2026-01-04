@@ -14,7 +14,7 @@ export const HeroSectionMobile = React.memo(() => {
     { icon: Globe, text: "Global Coverage", color: "text-blue-500", accent: "bg-blue-400/80" },
   ], []);
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 sm:px-4 py-7">
+    <section className="relative h-screen flex flex-col items-center justify-center px-3 sm:px-4">
       {/* Soft background tint for depth */}
       <div className="absolute inset-0 pointer-events-none z-0" />
 
@@ -104,11 +104,11 @@ export const HeroSectionMobile = React.memo(() => {
           <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
+          <a href="https://www.linkedin.com/company/apiradar/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+            <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
+          </a>
           <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
-          </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
-            <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>
       </footer>

@@ -117,7 +117,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
   const isLoggedIn = !!session?.user;
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 py-7 bg-background">
+    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 pt-4 pb-7 bg-background">
       {/* Header */}
       <div className="flex flex-col items-center mb-7 mt-2 z-10 w-full">
         <h1 className="text-4xl font-extrabold leading-tight text-center mb-3 text-foreground tracking-tight z-10">
@@ -130,7 +130,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <div className="flex flex-col gap-3 sm:gap-4">
           <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select time range" tabIndex={0}>
+            <CustomSelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm border-border" aria-label="Select time range" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
                 <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
@@ -149,7 +149,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             </CustomSelectContent>
           </CustomSelect>
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="min-w-[150px] bg-card/60 backdrop-blur-sm border-border/60 shadow-sm" aria-label="Select sort order" tabIndex={0}>
+            <CustomSelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm border-border" aria-label="Select sort order" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
                 <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center">
@@ -171,9 +171,9 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <InstructionsSection />
           <div className="flex flex-row items-center gap-2 flex-wrap">
             <div className="text-sm text-muted-foreground/80 whitespace-nowrap font-medium flex-shrink-0">
-              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
-              {selectedProvider !== 'all' && ` for ${selectedProvider}`}
-            </div>
+            <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
+            {selectedProvider !== 'all' && ` for ${selectedProvider}`}
+          </div>
             <button
               onClick={onRefresh}
               disabled={isLoading}
@@ -192,7 +192,13 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <Suspense fallback={<div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse" aria-busy="true" aria-live="polite">Loading…</div>}>
           {/* Wrap in relative container for fade effect */}
           <div className="relative">
-            <LeakTable leaks={leaks} isLoading={isLoading} selectedProvider={selectedProvider} plan={plan} />
+            <LeakTable 
+              leaks={leaks} 
+              isLoading={isLoading} 
+              selectedProvider={selectedProvider} 
+              plan={plan}
+              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href }) : undefined}
+            />
             
             {/* Fade-out blur effect for unauthenticated users - suggests more content */}
             {isUnauthenticated && total > 6 && (
@@ -212,10 +218,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <div ref={loadingRef} style={{ height: 1 }} />
         )}
       </div>
-      {/* Action Card for unauthenticated users */}
-      {isUnauthenticated && (
-        <ActionCard onSignIn={() => signIn('google', { callbackUrl: window.location.href })} />
-      )}
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
@@ -223,11 +225,11 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
+          <a href="https://www.linkedin.com/company/apiradar/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+            <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
+          </a>
           <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
-          </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
-            <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>
       </footer>

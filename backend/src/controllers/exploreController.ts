@@ -14,7 +14,8 @@ const querySchema = z.object({
 export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
     if (!request.user) {
-      return reply.status(401).send({ error: 'Authentication required' });
+      request.log.warn({ msg: 'Request user not set by middleware', ip: request.ip });
+      return reply.status(500).send({ error: 'Internal server error' });
     }
 
     const user = request.user;
@@ -96,32 +97,18 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       }
     }
     const mappedLeaks = leaks.map((leak: any) => {
-      const baseLeak = {
+      return {
         id: leak.id || leak._id,
         provider: leak.provider,
         leakDetectedAt: leak.leakDetectedAt,
         leakIntroducedAt: leak.leakIntroducedAt,
-        isLocked: !isAuthenticated
+        isLocked: false,
+        redactedKey: leak.redactedKey,
+        repoUrl: leak.repoUrl,
+        filePath: leak.filePath,
+        repoCreatedAt: leak.repoCreatedAt,
+        fullKey: leak.fullKey
       };
-      if (isAuthenticated) {
-        return {
-          ...baseLeak,
-          redactedKey: leak.redactedKey,
-          repoUrl: leak.repoUrl,
-          filePath: leak.filePath,
-          repoCreatedAt: leak.repoCreatedAt,
-          fullKey: leak.fullKey
-        };
-      } else {
-        return {
-          ...baseLeak,
-          redactedKey: leak.redactedKey ? `${leak.redactedKey.slice(0, 8)}****` : 'sk-****',
-          repoUrl: null,
-          filePath: null,
-          repoCreatedAt: null,
-          fullKey: null
-        };
-      }
     });
     let hasMore = false;
     if (accessLimits.canInfiniteScroll && isAuthenticated) {

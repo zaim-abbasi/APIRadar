@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
-import { UserCircle, LogOut } from 'lucide-react';
+import { LogOut, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,18 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 export function UserMenu() {
   const { data: session, status } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { isAuthenticated } = usePlanCheck();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Optimized sign-in handler with immediate redirect
   const handleSignIn = useCallback(async () => {
@@ -56,49 +50,51 @@ export function UserMenu() {
     }
   }, [isSigningOut]);
 
-  // Memoize user display data to prevent unnecessary recalculations
-  const { displayLetter, userName, userEmail } = useMemo(() => {
-    let letter = 'U';
+  const { displayName, userName, userEmail } = useMemo(() => {
+    let display = '';
     let name: string | undefined = undefined;
     let email: string | undefined = undefined;
 
-    if (session && session.user) {
+    if (status === 'loading') {
+      display = '';
+    } else if (session && session.user) {
       name = session.user.name || undefined;
       email = session.user.email || undefined;
       if (name && typeof name === 'string' && name.length > 0) {
-        letter = name.charAt(0).toUpperCase();
+        display = name;
       } else if (email && typeof email === 'string' && email.length > 0) {
-        letter = email.charAt(0).toUpperCase();
+        display = email;
+      } else {
+        display = 'Sign in';
       }
+    } else {
+      display = 'Sign in';
     }
-    return { displayLetter: letter, userName: name, userEmail: email };
-  }, [session]);
+    return { displayName: display, userName: name, userEmail: email };
+  }, [session, status]);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className="relative h-8 w-8 md:h-9 md:w-9 rounded-md focus-visible:outline-none"
-        >
-          <Avatar className={cn(
-            "h-8 w-8 md:h-9 md:w-9 border border-border/60",
-            "bg-card/50 backdrop-blur-sm"
-          )} suppressHydrationWarning>
-            <AvatarFallback className={cn(
-              "flex items-center justify-center h-full w-full text-base font-semibold select-none",
-              "bg-gradient-to-br from-coral/10 to-muted text-coral"
-            )}>
-              {session && userName && mounted
-                ? displayLetter
-                : <UserCircle className="h-5 w-5 text-coral/70" />}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+        <div className="px-3.5 py-1.5 rounded-md border bg-card/50 backdrop-blur-sm border-border">
+          <button
+            className={cn(
+              "flex items-center justify-between w-full text-sm font-medium transition-colors hover:text-coral focus-visible:outline-none text-left",
+              "text-foreground"
+            )}
+          >
+            <span>{displayName || '\u00A0'}</span>
+            <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
+          </button>
+        </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-md border border-border/60 p-1">
+      <DropdownMenuContent 
+        align="end" 
+        sideOffset={4} 
+        className="w-56 max-w-xs rounded-md border border-border/60 p-1"
+      >
         {/* If signed in, show user info, else show Guest */}
-        <DropdownMenuLabel className="font-medium px-3 py-2 rounded-md bg-coral/5 mb-1 transition-colors duration-200">
+        <DropdownMenuLabel className="font-medium px-2 py-1 rounded-md bg-coral/5 mb-0.5 transition-colors duration-200">
           <div className="flex flex-col space-y-0.5">
             {session && userName ? (
               <>
@@ -114,7 +110,7 @@ export function UserMenu() {
           <>
             <DropdownMenuItem 
               onClick={() => handleSignIn()} 
-              className="flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer mb-1 active:scale-[0.98]"
+              className="flex items-center gap-2 px-2 py-1 rounded-md transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer active:scale-[0.98]"
             >
               <svg className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -128,14 +124,14 @@ export function UserMenu() {
         )}
         {session && (
           <>
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator className="my-0.5" />
           </>
         )}
         {session && (
           <DropdownMenuItem 
             onClick={handleSignOut} 
             disabled={isSigningOut}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            className="flex items-center gap-2 px-2 py-1 rounded-md transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
           >
             <LogOut className="h-4 w-4 text-destructive transition-transform duration-200 group-hover:scale-110" />
             <span className="font-medium text-sm">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>

@@ -10,8 +10,8 @@ import {
   FileText, 
   GitCommit,
   Check,
-  Lock,
-  GitBranch
+  GitBranch,
+  LogIn
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ interface LeakTableProps {
   isLoading?: boolean;
   selectedProvider: Provider;
   plan: 'free' | 'pro';
+  onSignIn?: () => void;
 }
 
 const providerColors: Record<string, string> = {
@@ -114,7 +115,7 @@ const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provide
 
 EmptyState.displayName = 'EmptyState';
 
-// Memoized Copy Button component - BULLETPROOF SECURITY
+// Memoized Copy Button component
 const CopyButton = React.memo(({ 
   leak, 
   copiedKey, 
@@ -126,91 +127,10 @@ const CopyButton = React.memo(({
   onCopy: (text: string, keyId: string) => void; 
   plan: 'free' | 'pro';
 }) => {
-  // Override isLocked if user is authenticated (pro plan)
-  const isLocked = plan === 'pro' ? false : (leak.isLocked === true);
-  const hasSensitiveData = leak.fullKey && !isLocked;
-
-  // If user is authenticated (pro), always show copy button
-  // Only show lock message for unauthenticated users
-  if (plan === 'pro') {
-    // Authenticated users: show copy button if we have data, otherwise show nothing
-    if (!hasSensitiveData && !leak.fullKey && !leak.redactedKey) {
-      return null; // No data to copy
-    }
-    // Show copy button for authenticated users
-    return (
-      <>
-        {/* Mobile: just the icon, always visible */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-          className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
-          aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
-        >
-          <div className="transition-transform duration-200 active:scale-95">
-            {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-coral" />
-            ) : (
-              <Copy className="h-4 w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
-            )}
-          </div>
-        </Button>
-        {/* Desktop: icon + text, visible on hover of card */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-pointer focus:outline-none rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
-          aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
-        >
-          <div className="transition-transform duration-200 group-hover/card:scale-110">
-            {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-coral" />
-            ) : (
-              <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-coral transition-colors duration-200" />
-            )}
-          </div>
-          <span className="text-sm font-medium transition-all duration-200 text-foreground/70 group-hover/card:text-coral">
-            {copiedKey === leak.id ? 'Copied' : 'Copy'}
-          </span>
-        </Button>
-      </>
-    );
+  if (!leak.fullKey && !leak.redactedKey) {
+    return null;
   }
 
-  // Unauthenticated users: show lock message
-  if (plan === 'free' || isLocked || !hasSensitiveData) {
-    return (
-      <>
-        {/* Mobile: Lock icon only */}
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled
-          className="h-9 w-9 md:hidden cursor-default focus:outline-none !bg-transparent !hover:bg-transparent opacity-60 transition-opacity duration-200 pointer-events-none"
-          aria-label="Sign in required to copy full key"
-        >
-          <Lock className="h-4 w-4 text-muted-foreground" />
-        </Button>
-        {/* Desktop: Lock icon + text on hover */}
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled
-          className="hidden md:flex items-center gap-2 h-9 px-3 opacity-0 group-hover/card:opacity-100 transition-all duration-200 !bg-transparent !hover:bg-muted/50 cursor-default focus:outline-none rounded-md pointer-events-none"
-          aria-label="Sign in required to copy full key"
-        >
-          <Lock className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover/card:scale-110" />
-          <span className="text-sm font-medium transition-all duration-200 text-foreground/70">
-            Sign in to copy full key
-          </span>
-        </Button>
-      </>
-    );
-  }
-
-  // Basic and Pro users: show copy button
   return (
     <>
       {/* Mobile: just the icon, always visible */}
@@ -223,7 +143,7 @@ const CopyButton = React.memo(({
       >
         <div className="transition-transform duration-200 active:scale-95">
           {copiedKey === leak.id ? (
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-4 w-4 text-coral" />
           ) : (
             <Copy className="h-4 w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
           )}
@@ -239,12 +159,12 @@ const CopyButton = React.memo(({
       >
         <div className="transition-transform duration-200 group-hover/card:scale-110">
           {copiedKey === leak.id ? (
-            <Check className="h-4 w-4 text-green-600" />
+            <Check className="h-4 w-4 text-coral" />
           ) : (
-            <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-foreground transition-colors duration-200" />
+            <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-coral transition-colors duration-200" />
           )}
         </div>
-        <span className="text-sm font-medium transition-all duration-200 text-foreground/70 group-hover/card:text-foreground">
+        <span className="text-sm font-medium transition-all duration-200 text-foreground/70 group-hover/card:text-coral">
           {copiedKey === leak.id ? 'Copied' : 'Copy'}
         </span>
       </Button>
@@ -286,18 +206,16 @@ const LeakCard = React.memo(({
   onCopy: (text: string, keyId: string) => void; 
   plan: 'free' | 'pro';
 }) => {
-  // Override isLocked if user is authenticated (pro plan)
-  const isLocked = plan === 'pro' ? false : (leak.isLocked === true);
-  const safeRepoUrl = isLocked ? null : leak.repoUrl;
-  const safeFilePath = isLocked ? null : leak.filePath;
-  const safeFullKey = isLocked ? null : leak.fullKey;
+  const safeRepoUrl = leak.repoUrl;
+  const safeFilePath = leak.filePath;
+  const safeFullKey = leak.fullKey;
   return (
     <div 
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:bg-card/70">
-      <CardContent className={`p-3 sm:p-4 ${isLocked ? 'locked-content' : ''} relative`}> 
+      <CardContent className="p-3 sm:p-4 relative"> 
         <div className="flex flex-col h-full">
           <div className="flex-1 flex flex-col gap-2.5 w-full">
             {/* Provider & Key */}
@@ -315,14 +233,9 @@ const LeakCard = React.memo(({
               </div>
             </div>
 
-            {/* Repository Info - BULLETPROOF SECURITY */}
+            {/* Repository Info */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
-              {isLocked ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" />
-                  <span>Sign in to view repository</span>
-                </div>
-              ) : (() => {
+              {(() => {
                 const parsed = safeRepoUrl ? parseGitHubRepoUrl(safeRepoUrl) : null;
                 if (!parsed || !safeRepoUrl) return (
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -374,17 +287,11 @@ const LeakCard = React.memo(({
             </div>
 
             {/* File Path */}
-            {!isLocked && safeFilePath && (
+            {safeFilePath && (
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="h-3.5 w-3.5 flex-shrink-0 text-coral" />
                 <span className="text-sm text-coral font-medium">Key path:</span>
                 <code className="text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
-              </div>
-            )}
-            {isLocked && (
-              <div className="flex items-center gap-2">
-                <Lock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
-                <span className="text-sm text-muted-foreground/80">Sign in to view file path</span>
               </div>
             )}
           </div>
@@ -407,7 +314,7 @@ const LeakCard = React.memo(({
 
 LeakCard.displayName = 'LeakCard';
 
-const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, plan }: LeakTableProps) => {
+const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, plan, onSignIn }: LeakTableProps) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Memoized copy handler with optimized error handling
@@ -431,6 +338,8 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
 
   // Filter and memoize valid leaks to prevent unnecessary re-renders
   const validLeaks = useMemo(() => leaks.filter(leak => leak !== null) as LeakedKey[], [leaks]);
+  const isUnauthenticated = plan === 'free';
+  const showGradient = isUnauthenticated && validLeaks.length === 6;
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -443,17 +352,90 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
   // Render as a 2-column grid on desktop, 1 column on mobile
   // Use stable keys for better React reconciliation
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-      {validLeaks.map((leak, index) => (
-        <LeakCard
-          key={leak.id || `leak-${index}`}
-          leak={leak}
-          index={index}
-          copiedKey={copiedKey}
-          onCopy={handleCopy}
-          plan={plan}
-        />
-      ))}
+    <div className="relative">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        {validLeaks.map((leak, index) => (
+          <div
+            key={leak.id || `leak-${index}`}
+            className={cn(
+              "relative",
+              showGradient && index >= 4 && "overflow-hidden"
+            )}
+          >
+            <LeakCard
+              leak={leak}
+              index={index}
+              copiedKey={copiedKey}
+              onCopy={handleCopy}
+              plan={plan}
+            />
+            {showGradient && index >= 4 && (
+              <div className="absolute inset-0 pointer-events-none z-10 rounded-md overflow-hidden">
+                <div 
+                  className="absolute inset-0 backdrop-blur-[4px]"
+                  style={{
+                    background: index === 4 
+                      ? 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--beige) / 0.2) 60%, hsl(var(--beige) / 0.45) 75%, hsl(var(--beige) / 0.7) 87%, hsl(var(--beige) / 0.88) 94%, hsl(var(--beige) / 0.96) 98%, hsl(var(--beige)) 100%)'
+                      : 'linear-gradient(to bottom, transparent 0%, transparent 30%, hsl(var(--beige) / 0.25) 50%, hsl(var(--beige) / 0.55) 70%, hsl(var(--beige) / 0.8) 85%, hsl(var(--beige) / 0.93) 93%, hsl(var(--beige) / 0.98) 97%, hsl(var(--beige)) 100%)'
+                  }}
+                />
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: index === 4
+                      ? 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--beige) / 0.12) 70%, hsl(var(--beige) / 0.35) 82%, hsl(var(--beige) / 0.6) 91%, hsl(var(--beige) / 0.82) 96%, hsl(var(--beige) / 0.94) 99%, hsl(var(--beige)) 100%)'
+                      : 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--beige) / 0.18) 60%, hsl(var(--beige) / 0.45) 75%, hsl(var(--beige) / 0.72) 87%, hsl(var(--beige) / 0.9) 94%, hsl(var(--beige) / 0.97) 98%, hsl(var(--beige)) 100%)'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {showGradient && onSignIn && (
+        <div className="mt-4 sm:mt-5 relative z-20 pointer-events-auto">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div className="flex-1 space-y-2 min-w-0">
+                  <div className="flex flex-row items-center gap-2">
+                    <div className="p-1.5 rounded-md bg-coral/10">
+                      <LogIn className="h-4 w-4 sm:h-5 sm:w-5 text-coral flex-shrink-0" />
+                    </div>
+                    <span className="text-sm sm:text-base font-medium text-foreground">Don't miss out on thousands of leaks</span>
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed">
+                    You're only seeing 6 leaks. Sign in now to access <span className="font-semibold text-foreground">3,000+ leaked API keys</span> with full details, repository links, and unlimited access.
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>100% free. No credit card required. Instant access.</span>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 sm:self-center">
+                  <button
+                    onClick={onSignIn}
+                    className="text-xs sm:text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+                    aria-label="Sign in with Google"
+                  >
+                    <div className="bg-white rounded-full p-0.5 flex-shrink-0">
+                      <svg className="h-4 w-4 sm:h-4.5 sm:w-4.5" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                    </div>
+                    <span>Continue with Google</span>
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }, (prevProps, nextProps) => {
