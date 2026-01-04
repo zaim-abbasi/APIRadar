@@ -126,25 +126,25 @@ const RightColumn = React.memo(() => {
   ], []);
 
   return (
-    <div className="flex flex-col gap-6 lg:gap-8">
-      {/* Feature Cards - Single column layout */}
-      <div className="space-y-4">
+    <div className="flex flex-col gap-5 sm:gap-6 lg:gap-8">
+      <div className="space-y-3 sm:space-y-4">
         {features.map((feature, index) => (
           <div
             key={index}
             className={cn(
-              "p-4 rounded-md border bg-card/50 backdrop-blur-sm animate-fade-in-up border-border"
+              "p-3 sm:p-4 rounded-md border bg-card/50 backdrop-blur-sm animate-fade-in-up border-border"
             )}
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            <div className="flex items-start gap-3">
-              <feature.icon className={cn("h-[18px] w-[18px] flex-shrink-0 mt-0.5", feature.color)} />
+              <div className="flex items-start gap-2.5 sm:gap-3">
+              <feature.icon className={cn("h-4 w-4 sm:h-[18px] sm:w-[18px] flex-shrink-0 mt-0.5", feature.color)} />
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-foreground mb-1">
+                <h2 className="text-sm sm:text-base font-semibold text-foreground mb-0.5 sm:mb-1">
                   {feature.text}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  <span className="lg:hidden">{feature.description.split('.')[0]}.</span>
+                  <span className="hidden lg:inline">{feature.description}</span>
                 </p>
               </div>
             </div>
@@ -152,13 +152,12 @@ const RightColumn = React.memo(() => {
         ))}
       </div>
 
-      {/* CTA Buttons - Vertical Stack */}
-      <div className="flex flex-col gap-3 pt-2">
+      <div className="flex flex-col gap-2.5 sm:gap-3 pt-1 sm:pt-2">
         <Link
           href="/explore"
           prefetch={true}
           className={cn(
-            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
             "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70"
           )}
         >
@@ -171,7 +170,7 @@ const RightColumn = React.memo(() => {
           href="/leaderboard"
           prefetch={true}
           className={cn(
-            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
             "bg-card/50 backdrop-blur-sm text-foreground border-border hover:brightness-90 hover:border-coral/70"
           )}
         >
@@ -185,17 +184,13 @@ RightColumn.displayName = 'RightColumn';
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative h-screen overflow-hidden">
-
-      <div className="container mx-auto relative z-10 h-full flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="h-full flex items-center justify-center w-full max-w-7xl mx-auto">
-          {/* 2-Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-16 w-full items-center">
-            {/* Left Column - Content */}
-            <div className="flex flex-col justify-center space-y-6 lg:space-y-8 text-left lg:text-left">
-              {/* Headline */}
+    <section className="relative min-h-screen flex items-center py-8 md:py-12 lg:py-0 lg:h-screen overflow-hidden">
+      <div className="container mx-auto relative z-10 w-full px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
+            <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8 text-center lg:text-left">
               <div className="animate-fade-in-up">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight mb-4">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
                   <span className="text-foreground">Real-Time{' '}</span>
                   <span className="text-coral">API Key</span>
                   <br />
@@ -203,40 +198,38 @@ export const HeroSection = React.memo(() => {
                 </h1>
               </div>
 
-              {/* Subheading */}
-              <div className="space-y-2 animate-fade-in-up">
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
-                  Browse a live feed of API keys accidentally exposed in public GitHub repositories.
+              <div className="space-y-2 sm:space-y-2.5 animate-fade-in-up">
+                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
+                  <span className="lg:hidden">Browse leaked API keys from public GitHub repositories.</span>
+                  <span className="hidden lg:inline">Browse a live feed of API keys accidentally exposed in public GitHub repositories.</span>
                 </p>
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
+                <p className="hidden lg:block text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
                   API Radar helps you understand how often keys leak and where the risks come from.
                 </p>
               </div>
 
-              {/* Key Benefits List */}
-              <div className="space-y-3 pt-2 animate-fade-in-up">
-                <div className="flex items-start gap-3">
+              <div className="hidden md:block space-y-2.5 sm:space-y-3 pt-1 sm:pt-2 animate-fade-in-up">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
                     View newly discovered API keys from public repos in real time
                   </p>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
                     Filter by provider (AI Key, etc.) and see where leaks come from
                   </p>
                 </div>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-sm md:text-base text-foreground/90 leading-relaxed">
+                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
                     Learn from real incidents to improve your own secrets-management practices
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Features & CTAs */}
             <div className="flex flex-col justify-center animate-fade-in-up">
               <RightColumn />
             </div>

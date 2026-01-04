@@ -23,7 +23,7 @@ export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange }
     <CustomSelect value={selectedProvider} onValueChange={handleValueChange}>
       <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
         <div className="flex items-center gap-2 w-full">
-          <Layers className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
+          <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
           <CustomSelectValue className="flex-1 text-center">
             <span className="truncate block">{selectedProviderLabel}</span>
           </CustomSelectValue>

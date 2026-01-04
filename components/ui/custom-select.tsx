@@ -100,7 +100,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                   ref: triggerRef,
                   disabled,
                   className: cn(
-                    'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+                    'flex h-11 sm:h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 sm:px-3 py-2.5 sm:py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 min-h-[44px] sm:min-h-0',
                     triggerClassName,
                     existingClassName
                   ),
@@ -205,7 +205,7 @@ export const CustomSelectContent = React.forwardRef<HTMLDivElement, {
         width: `${position.width}px`
       }}
     >
-      <div className="p-1" style={{ width: '100%' }}>
+      <div className="p-1 sm:p-1" style={{ width: '100%' }}>
         {children}
       </div>
     </div>
@@ -229,7 +229,7 @@ export const CustomSelectItem = React.forwardRef<HTMLDivElement, CustomSelectIte
         onClick={() => context.onValueChange(value)}
         aria-label={ariaLabel}
         className={cn(
-          'relative flex w-full cursor-pointer select-none items-center rounded-md py-1 pl-8 pr-2 text-sm outline-none hover:ring-0 focus:ring-0 focus-visible:ring-0 ring-0 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+          'relative flex w-full cursor-pointer select-none items-center rounded-md py-2.5 sm:py-1 pl-8 sm:pl-8 pr-2 text-sm outline-none hover:ring-0 focus:ring-0 focus-visible:ring-0 ring-0 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 min-h-[44px] sm:min-h-0',
           isSelected && 'bg-accent text-accent-foreground',
           className
         )}

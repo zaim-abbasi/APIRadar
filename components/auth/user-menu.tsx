@@ -76,17 +76,15 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="px-3.5 py-1.5 rounded-md border bg-card/50 backdrop-blur-sm border-border">
-          <button
-            className={cn(
-              "flex items-center justify-between w-full text-sm font-medium transition-colors hover:text-coral focus-visible:outline-none text-left",
-              "text-foreground"
-            )}
-          >
-            <span>{displayName || '\u00A0'}</span>
-            <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
-          </button>
-        </div>
+        <button
+          className={cn(
+            "px-3.5 py-1.5 rounded-md border bg-card/50 backdrop-blur-sm border-border flex items-center justify-between min-w-[120px] max-w-[200px] text-sm font-medium transition-colors hover:text-coral focus-visible:outline-none text-left",
+            "text-foreground"
+          )}
+        >
+          <span className="truncate flex-1 min-w-0">{displayName || '\u00A0'}</span>
+          <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="end" 

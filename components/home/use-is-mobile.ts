@@ -9,7 +9,7 @@ export function useIsMobile() {
 
   useEffect(() => {
     // Use MediaQueryList for better performance
-    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
     
     // Debounce handler to prevent excessive updates
     let timeoutId: NodeJS.Timeout;

@@ -138,14 +138,14 @@ const CopyButton = React.memo(({
         variant="ghost"
         size="icon"
         onClick={() => onCopy(leak.fullKey || leak.redactedKey, leak.id)}
-        className="h-9 w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
+        className="h-11 w-11 sm:h-9 sm:w-9 md:hidden cursor-pointer focus:outline-none !bg-transparent !hover:bg-muted/50 transition-all duration-200 rounded-md focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
         aria-label={copiedKey === leak.id ? 'Copied' : 'Copy API key'}
       >
         <div className="transition-transform duration-200 active:scale-95">
           {copiedKey === leak.id ? (
-            <Check className="h-4 w-4 text-coral" />
+            <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
           ) : (
-            <Copy className="h-4 w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
+            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
           )}
         </div>
       </Button>
@@ -215,17 +215,18 @@ const LeakCard = React.memo(({
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:bg-card/70">
-      <CardContent className="p-3 sm:p-4 relative"> 
-        <div className="flex flex-col h-full">
-          <div className="flex-1 flex flex-col gap-2.5 w-full">
+      <CardContent className="p-2.5 sm:p-4 relative"> 
+        <div className="flex flex-col h-full pr-8 sm:pr-0">
+          <div className="flex-1 flex flex-col gap-2 sm:gap-2.5 w-full">
             {/* Provider & Key */}
-            <div className="flex flex-row items-center justify-between gap-2.5 min-w-0 w-full">
-              <code className="text-sm font-mono bg-muted/80 px-2 py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
-                {normalizeRedactedKeyFn(leak.redactedKey)}
+            <div className="flex flex-row items-center justify-between gap-2 min-w-0 w-full">
+              <code className="text-xs sm:text-sm font-mono bg-muted/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
+                <span className="sm:hidden truncate block">{normalizeRedactedKeyFn(leak.redactedKey)}</span>
+                <span className="hidden sm:inline">{normalizeRedactedKeyFn(leak.redactedKey)}</span>
               </code>
               <div
                 className={cn(
-                  "inline-flex items-center justify-center rounded-sm px-2 py-1 text-xs font-medium border shadow-sm flex-shrink-0",
+                  "inline-flex items-center justify-center rounded-sm px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium border shadow-sm flex-shrink-0",
                   providerColors[leak.provider] || providerColors['github']
                 )}
               >
@@ -234,35 +235,35 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Repository Info */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
+            <div className="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm">
               {(() => {
                 const parsed = safeRepoUrl ? parseGitHubRepoUrl(safeRepoUrl) : null;
                 if (!parsed || !safeRepoUrl) return (
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <span>Repository not available</span>
+                    <span className="text-xs sm:text-sm">Repository not available</span>
                   </div>
                 );
                 return (
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <GitBranch className="h-3.5 w-3.5 flex-shrink-0 text-coral" />
-                      <span className="text-sm text-coral font-medium whitespace-nowrap flex-shrink-0">Repo Name:</span>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <GitBranch className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-coral" />
+                      <span className="text-xs sm:text-sm text-coral font-medium whitespace-nowrap flex-shrink-0">Repo Name:</span>
+                      <a
+                        href={safeRepoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1 min-w-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
+                      >
+                        <span className="truncate">{parsed.repo}</span>
+                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral flex-shrink-0 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
+                      </a>
                     </div>
-                    <a
-                      href={safeRepoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
-                    >
-                      {parsed.repo}
-                      <ExternalLink className="h-3.5 w-3.5 text-coral transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
-                    </a>
-                    <span className="hidden sm:inline text-muted-foreground/70">by</span>
+                    <span className="hidden sm:inline text-muted-foreground/70 text-sm">by</span>
                     <a
                       href={`https://github.com/${parsed.owner}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:flex text-muted-foreground hover:text-coral items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
+                      className="hidden sm:flex text-muted-foreground hover:text-coral items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded text-sm"
                     >
                       <User className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
                       {parsed.owner}
@@ -272,15 +273,15 @@ const LeakCard = React.memo(({
               })()}
             </div>
 
-            {/* Metadata - BULLETPROOF SECURITY */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+            {/* Metadata */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
               <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-muted-foreground/60" />
                 <span className="text-muted-foreground/70">Added:</span>
                 <span className="text-foreground/90 font-medium">{formatTimeAgo(new Date(leak.leakIntroducedAt))}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-muted-foreground/60" />
                 <span className="text-muted-foreground/70">Detected:</span>
                 <span className="text-foreground/90 font-medium">{formatTimeAgo(new Date(leak.leakDetectedAt))}</span>
               </div>
@@ -288,16 +289,16 @@ const LeakCard = React.memo(({
 
             {/* File Path */}
             {safeFilePath && (
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-coral" />
-                <span className="text-sm text-coral font-medium">Key path:</span>
-                <code className="text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
+              <div className="flex items-start sm:items-center gap-1.5 sm:gap-2 min-w-0">
+                <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-coral mt-0.5 sm:mt-0" />
+                <span className="text-xs sm:text-sm text-coral font-medium">Key path:</span>
+                <code className="text-xs sm:text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
               </div>
             )}
           </div>
 
-          {/* Copy Button - BULLETPROOF SECURITY - Absolutely positioned */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-4">
+          {/* Copy Button - Absolutely positioned */}
+          <div className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-3">
             <CopyButton 
               leak={{...leak, fullKey: safeFullKey}} 
               copiedKey={copiedKey} 
@@ -353,7 +354,7 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
   // Use stable keys for better React reconciliation
   return (
     <div className="relative">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-5">
         {validLeaks.map((leak, index) => (
           <div
             key={leak.id || `leak-${index}`}
@@ -393,16 +394,16 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
         ))}
       </div>
       {showGradient && onSignIn && (
-        <div className="mt-4 sm:mt-5 relative z-20 pointer-events-auto">
+        <div className="mt-3 sm:mt-5 relative z-20 pointer-events-auto">
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                <div className="flex-1 space-y-2 min-w-0">
-                  <div className="flex flex-row items-center gap-2">
-                    <div className="p-1.5 rounded-md bg-coral/10">
-                      <LogIn className="h-4 w-4 sm:h-5 sm:w-5 text-coral flex-shrink-0" />
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
+                <div className="flex-1 space-y-1.5 sm:space-y-2 min-w-0">
+                  <div className="flex flex-row items-center gap-1.5 sm:gap-2">
+                    <div className="p-1 sm:p-1.5 rounded-md bg-coral/10">
+                      <LogIn className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-coral flex-shrink-0" />
                     </div>
-                    <span className="text-sm sm:text-base font-medium text-foreground">Don't miss out on thousands of leaks</span>
+                    <span className="text-xs sm:text-base font-medium text-foreground">Don't miss out on thousands of leaks</span>
                   </div>
                   <div className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed">
                     You're only seeing 6 leaks. Sign in now to access <span className="font-semibold text-foreground">3,000+ leaked API keys</span> with full details, repository links, and unlimited access.
@@ -417,11 +418,11 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
                 <div className="flex-shrink-0 sm:self-center">
                   <button
                     onClick={onSignIn}
-                    className="text-xs sm:text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+                    className="text-xs sm:text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
                     aria-label="Sign in with Google"
                   >
                     <div className="bg-white rounded-full p-0.5 flex-shrink-0">
-                      <svg className="h-4 w-4 sm:h-4.5 sm:w-4.5" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>

@@ -26,13 +26,13 @@ const NavLinks = React.memo(() => {
   const pathname = usePathname();
   return (
     <>
-      {navItems.map((item) => (
+          {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           prefetch={true}
           className={cn(
-            "px-3 py-2 text-base font-medium transition-colors hover:text-coral",
+            "px-3 py-2 text-base font-medium transition-colors hover:text-coral whitespace-nowrap",
             pathname === item.href
               ? "text-coral"
               : "text-muted-foreground"
@@ -70,14 +70,11 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
       <nav className="flex flex-col min-h-[1px] gap-1 px-0.5 py-1 w-full">
         {/* Profile Section */}
         <div className="flex items-center gap-1 mb-1 min-h-[40px]">
-          <div className="flex items-center justify-center h-9 px-2 py-1 rounded-md border border-border/60 bg-gradient-to-br from-coral/10 to-muted text-coral text-xs font-semibold whitespace-nowrap">
-            {firstName}
-          </div>
           <div className="flex flex-col flex-1 min-w-0">
             {session && userName ? (
-              <span className="text-[13px] font-semibold truncate">{userName}</span>
+              <span className="text-[13px] font-medium truncate text-foreground">{userName}</span>
             ) : (
-              <span className="text-[13px] font-semibold text-coral">Unauthorized</span>
+              <span className="text-[13px] font-medium text-muted-foreground">Unauthorized</span>
             )}
             {session && userEmail && (
               <span className="text-[11px] text-muted-foreground truncate">{userEmail}</span>
@@ -92,7 +89,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             </button>
           ) : null}
         </div>
-        <div className="border-t border-border/40 my-1" />
+        <div className="border-t border-border/50 my-1" />
         {/* Nav Links */}
         <div className="flex flex-col gap-1">
           {navItems.map((item) => (
@@ -106,10 +103,10 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
                 onLinkClick();
               }}
               className={cn(
-                "flex items-center gap-2 px-2 py-2 rounded-md text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
+                "flex items-center gap-2 px-2 py-2.5 sm:py-2 rounded-md text-[14px] font-medium transition-colors text-left min-h-[44px] sm:min-h-[40px] focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
                 pathname === item.href
                   ? "bg-coral/10 text-coral"
-                  : "text-muted-foreground hover:text-coral hover:bg-muted/50"
+                  : "text-muted-foreground hover:text-coral hover:bg-muted/40"
               )}
               aria-label={item.label}
               tabIndex={0}
@@ -149,7 +146,7 @@ const MobileMenuDrawer = ({ isOpen, onClose, anchorTop, children }: { isOpen: bo
           transition={{ duration: 0.22, ease: 'easeInOut' }}
           ref={drawerRef}
           style={{ top: anchorTop, right: 4, position: 'absolute', zIndex: 100, willChange: 'transform, opacity' }}
-          className="w-[85vw] max-w-[200px] rounded-md shadow-lg border border-border/60 p-1 mt-0 bg-background/95 backdrop-blur-md"
+          className="w-[85vw] max-w-[200px] rounded-md shadow-lg border border-border/50 p-1 mt-0 bg-background/97 backdrop-blur-md"
         >
           {children}
         </motion.div>
@@ -199,9 +196,9 @@ const NavbarComponent = () => {
   };
 
   return (
-    <nav ref={navRef} className={cn("sticky top-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200", isScrolled && "bg-beige/95 backdrop-blur-md")}>
-      <div className="container mx-auto px-2 sm:px-4">
-        <div className="flex items-center w-full" style={{ height: '50px' }}>
+    <nav ref={navRef} className={cn("sticky top-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200 w-full", isScrolled && "bg-beige/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4">
+        <div className="flex items-center w-full h-full" style={{ height: '50px', minHeight: '50px' }}>
           {/* Left: Logo */}
           <div className="flex items-center flex-1 md:flex-none md:w-1/3 justify-start">
             <Link href="/" className="flex items-center" onClick={handleNavClick}>
@@ -220,9 +217,9 @@ const NavbarComponent = () => {
           </div>
 
           {/* Right: Theme Toggle, User Menu, Mobile Menu */}
-          <div className="flex items-center space-x-2 flex-1 md:flex-none md:w-1/3 justify-end">
+          <div className="flex items-center space-x-2 flex-1 md:flex-none md:w-1/3 justify-end min-w-0">
             {/* User Menu (profile icon always visible) */}
-            <div className="hidden md:block"><UserMenu /></div>
+            <div className="hidden md:block min-w-0 flex-shrink-0"><UserMenu /></div>
 
             {/* Mobile Menu Button */}
             <Button
@@ -237,6 +234,7 @@ const NavbarComponent = () => {
               <motion.div
                 animate={{ rotate: isMenuOpen ? 90 : 0 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
+                style={{ willChange: 'transform' }}
               >
                 {isMenuOpen ? (
                   <X className="h-6 w-6" />

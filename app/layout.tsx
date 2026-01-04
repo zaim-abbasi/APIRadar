@@ -78,6 +78,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Preconnect to external domains for faster loading */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
         {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
         {/* Favicon: fallback to logo-png.png if favicon.ico is missing */}
         <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />

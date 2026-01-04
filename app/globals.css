@@ -40,7 +40,7 @@
 
     --radius: 0.75rem;
 
-    --coral: 14 65% 59%;
+    --coral: 14 65% 55%;
     --beige: 40 47% 95%;
     --glass-white: 0 0% 100% / 0.8;
     --glass-border: 0 0% 100% / 0.2;
@@ -52,6 +52,7 @@
   html {
     background-color: hsl(var(--beige));
     scroll-padding-top: 50px;
+    overflow-y: scroll;
   }
 
   * {
@@ -119,10 +120,12 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .animate-spin-slow {
   animation: spin-slow 8s linear infinite;
+  will-change: transform;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -377,7 +380,12 @@ button:focus:not(:focus-visible) {
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+@supports (scrollbar-color: rgba(0, 0, 0, 0.3)) {
+  * {
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+  }
 }
 
 /* Smooth scrolling */

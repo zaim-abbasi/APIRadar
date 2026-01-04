@@ -15,20 +15,20 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
 });
 
 const InstructionsSection = memo(() => {
-  const [showInstructions, setShowInstructions] = React.useState(true);
+  const [showInstructions, setShowInstructions] = React.useState(false);
   
   return (
-    <div className="mb-2 px-3 py-2.5 bg-coral/10 border border-coral/20 rounded-md">
+    <div className="mb-2 px-2.5 sm:px-3 py-2 sm:py-2.5 bg-coral/10 border border-coral/20 rounded-md">
       <button
         onClick={() => setShowInstructions(!showInstructions)}
-        className="w-full flex items-center gap-2 text-sm text-foreground"
+        className="w-full flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-foreground"
       >
-        <Info className="h-4 w-4 text-coral flex-shrink-0" />
+        <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral flex-shrink-0" />
         <span className="font-medium flex-1 text-left">How to identify provider</span>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
       </button>
       {showInstructions && (
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+        <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
           The <span className="font-medium text-foreground">AI Key</span> category includes keys from OpenAI, Anthropic, DeepSeek, OpenRouter, and similar providers. To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
         </p>
       )}
@@ -72,7 +72,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
               aria-label="Sign in with Google"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -117,23 +117,23 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
   const isLoggedIn = !!session?.user;
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-3 pt-4 pb-7 bg-background">
+    <section className="relative min-h-screen flex flex-col px-3 pt-3 pb-5 bg-background">
       {/* Header */}
-      <div className="flex flex-col items-center mb-7 mt-2 z-10 w-full">
-        <h1 className="text-4xl font-extrabold leading-tight text-center mb-3 text-foreground tracking-tight z-10">
+      <div className="flex flex-col items-center mb-4 mt-1 z-10 w-full">
+        <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2 text-foreground tracking-tight z-10">
           Explore Leaked API Keys
         </h1>
-        <div className="w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-2 rounded-full opacity-60" />
+        <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-full opacity-60" />
       </div>
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 w-full max-w-md animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
-        <div className="flex flex-col gap-3 sm:gap-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-3 sm:p-5 mb-4 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+        <div className="flex flex-col gap-2.5 sm:gap-4">
           <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm border-border" aria-label="Select time range" tabIndex={0}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border" aria-label="Select time range" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
-                <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
                   {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
                 </CustomSelectValue>
               </div>
@@ -149,10 +149,10 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             </CustomSelectContent>
           </CustomSelect>
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="min-w-[150px] bg-card/50 backdrop-blur-sm border-border" aria-label="Select sort order" tabIndex={0}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border" aria-label="Select sort order" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center">
+                <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
+                <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
                   {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
                 </CustomSelectValue>
               </div>
@@ -167,10 +167,10 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           </CustomSelect>
         </div>
         {/* Results Count and Refresh */}
-        <div className="mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
+        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
           <InstructionsSection />
-          <div className="flex flex-row items-center gap-2 flex-wrap">
-            <div className="text-sm text-muted-foreground/80 whitespace-nowrap font-medium flex-shrink-0">
+          <div className="flex flex-row items-center gap-2 flex-wrap mt-2">
+            <div className="text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium flex-shrink-0">
             <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
             {selectedProvider !== 'all' && ` for ${selectedProvider}`}
           </div>
@@ -178,17 +178,17 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               onClick={onRefresh}
               disabled={isLoading}
               aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3.5 text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 flex-shrink-0 ml-auto"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-11 sm:h-9 px-3.5 sm:px-3.5 text-xs sm:text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 flex-shrink-0 ml-auto min-h-[44px] sm:min-h-0"
               tabIndex={0}
             >
-              <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
         </div>
       </div>
       {/* Leak Table */}
-      <div className="w-full max-w-md mx-auto mb-10 z-10">
+      <div className="w-full max-w-md mx-auto mb-6 z-10">
         <Suspense fallback={<div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse" aria-busy="true" aria-live="polite">Loading…</div>}>
           {/* Wrap in relative container for fade effect */}
           <div className="relative">
@@ -219,16 +219,16 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         )}
       </div>
       {/* Social/Contact Icons (mobile only, above footer) */}
-      <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
+      <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">API Radar</span>
-          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
+          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://www.linkedin.com/company/apiradar/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+          <a href="https://www.linkedin.com/company/apiradar/" target="_blank" rel="noopener noreferrer" className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center" aria-label="LinkedIn" tabIndex={0}>
             <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
+          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>
