@@ -78,8 +78,16 @@ export async function GET(request: NextRequest) {
       authHeaders['x-user-authenticated'] = 'false';
     }
 
-    // Forward the request to backend
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;
+    
+    if (!backendUrl) {
+      backendUrl = 'http://127.0.0.1:3001';
+    }
+    
+    if (backendUrl.includes('localhost')) {
+      backendUrl = backendUrl.replace('localhost', '127.0.0.1');
+    }
+    
     const url = new URL(request.url);
     const backendUrlWithParams = `${backendUrl}/api/leaks${url.search}`;
     

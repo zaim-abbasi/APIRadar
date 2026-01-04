@@ -244,7 +244,7 @@ export async function fetchLeaks({
     params.append('page', String(page));
     params.append('limit', String(limit));
     
-    const response = await fetch(`${API_BASE_URL}/api/leaks?${params.toString()}`, {
+    const response = await fetch(`/api/leaks?${params.toString()}`, {
       method: 'GET',
       headers,
       signal,
