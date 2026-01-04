@@ -138,8 +138,8 @@ const ChartsSection = React.memo(({ data }: { data: ChartData }) => (
     <Suspense fallback={
       <div className="h-full w-full flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md">
-          <div className="h-8 skeleton rounded animate-pulse"></div>
-          <div className="h-64 skeleton rounded animate-pulse"></div>
+          <div className="h-8 skeleton rounded-md animate-pulse"></div>
+          <div className="h-64 skeleton rounded-md animate-pulse"></div>
         </div>
       </div>
     }>

@@ -286,6 +286,18 @@ button:focus:not(:focus-visible) {
   --tw-ring-width: 0 !important;
 }
 
+/* Disable focus rings on dropdown menu items */
+[data-radix-dropdown-menu-item],
+[data-radix-dropdown-menu-trigger],
+[data-radix-dropdown-menu-content] * {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  --tw-ring-shadow: none !important;
+  --tw-ring-color: transparent !important;
+  --tw-ring-width: 0 !important;
+}
+
 @keyframes pulse-slow {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -406,6 +418,18 @@ html {
   .hover-glow:hover {
     box-shadow: 0 0 20px hsl(var(--coral) / 0.4);
   }
+}
+
+[data-sonner-toast] {
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  color: hsl(var(--coral)) !important;
+  background-color: hsl(var(--beige)) !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: hsl(var(--coral)) !important;
+  font-size: 0.875rem !important;
 }
 
 

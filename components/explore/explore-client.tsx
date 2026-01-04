@@ -21,7 +21,7 @@ const ExploreSectionMobile = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-md" />
     ),
   }
 );
@@ -30,7 +30,7 @@ const ExploreSectionDesktop = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-lg" />
+      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-md" />
     ),
   }
 );

@@ -34,7 +34,7 @@ const WhatYouCanDo = React.memo(() => {
       </h2>
       <div className="space-y-5 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="p-3.5 rounded-lg border bg-card/50 backdrop-blur-sm border-border">
+          <div key={index} className="p-3.5 rounded-md border bg-card/50 backdrop-blur-sm border-border">
             <div className="flex items-start gap-2.5">
               <item.icon className={cn("h-4 w-4 flex-shrink-0 mt-0.5", item.iconColor)} />
               <div className="flex-1 min-w-0">
@@ -71,7 +71,7 @@ const WhatYouSee = React.memo(() => {
       </h2>
       <div className="space-y-2.5 mb-4 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="flex items-start gap-3 p-2.5 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50">
+          <div key={index} className="flex items-start gap-3 p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50">
             <item.icon className={cn("h-4 w-4 flex-shrink-0 mt-0.5", item.iconColor)} />
             <p className="text-sm text-foreground/90 leading-relaxed">
               {item.text}
@@ -79,7 +79,7 @@ const WhatYouSee = React.memo(() => {
           </div>
         ))}
       </div>
-      <div className="p-2.5 rounded-lg bg-card/50 backdrop-blur-sm border border-border">
+      <div className="p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border">
         <p className="text-xs text-muted-foreground leading-relaxed">
           All keys are shown for educational and security-awareness purposes only. You should never attempt to misuse exposed credentials.
         </p>
@@ -131,7 +131,7 @@ const WhatsNext = React.memo(() => {
         <div className="flex items-center gap-3">
           <a
             href="mailto:zaim.k.abbasi@gmail.com?subject=Feature%20Suggestion%20for%20API%20Radar"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-coral text-white border border-coral/80 hover:brightness-90 hover:border-coral/70 text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-coral text-white border border-coral/80 hover:brightness-90 hover:border-coral/70 text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
           >
             <Lightbulb className="h-4 w-4" />
             <span>Suggest a feature</span>
@@ -140,7 +140,7 @@ const WhatsNext = React.memo(() => {
             href="https://github.com/zaim-abbasi"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center px-3 py-2.5 rounded-lg bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            className="flex items-center justify-center px-3 py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
             aria-label="Visit on GitHub"
           >
             <Github className="h-4 w-4" />
@@ -149,7 +149,7 @@ const WhatsNext = React.memo(() => {
             href="https://www.linkedin.com/in/zaim-abbasi/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center px-3 py-2.5 rounded-lg bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            className="flex items-center justify-center px-3 py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
             aria-label="Connect on LinkedIn"
           >
             <Linkedin className="h-4 w-4" />

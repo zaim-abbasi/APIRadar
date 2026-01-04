@@ -196,7 +196,7 @@ export const CustomSelectContent = React.forwardRef<HTMLDivElement, {
       ref={ref}
       data-custom-select-portal
       className={cn(
-        'fixed z-[9999] min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md',
+        'fixed z-[9999] min-w-[8rem] overflow-hidden rounded-md border bg-card text-popover-foreground shadow-sm',
         className
       )}
       style={{ 
@@ -229,7 +229,7 @@ export const CustomSelectItem = React.forwardRef<HTMLDivElement, CustomSelectIte
         onClick={() => context.onValueChange(value)}
         aria-label={ariaLabel}
         className={cn(
-          'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+          'relative flex w-full cursor-pointer select-none items-center rounded-md py-1 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
           isSelected && 'bg-accent text-accent-foreground',
           className
         )}

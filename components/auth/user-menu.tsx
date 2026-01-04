@@ -79,7 +79,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="relative h-8 w-8 md:h-9 md:w-9 rounded-full focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1"
+          className="relative h-8 w-8 md:h-9 md:w-9 rounded-md focus-visible:outline-none"
         >
           <Avatar className={cn(
             "h-8 w-8 md:h-9 md:w-9 border border-border/60",
@@ -96,17 +96,17 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-lg shadow-lg border border-border/60 glass-card p-1">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-56 max-w-xs rounded-md border border-border/60 p-1">
         {/* If signed in, show user info, else show Guest */}
-        <DropdownMenuLabel className="font-semibold px-3 py-2 rounded-lg bg-coral/5 mb-1 transition-colors duration-200">
+        <DropdownMenuLabel className="font-medium px-3 py-2 rounded-md bg-coral/5 mb-1 transition-colors duration-200">
           <div className="flex flex-col space-y-0.5">
             {session && userName ? (
               <>
-                <span className="text-base font-semibold text-foreground truncate leading-tight">{userName}</span>
+                <span className="text-sm font-medium text-foreground truncate leading-tight">{userName}</span>
                 <span className="text-xs text-muted-foreground/80 truncate leading-tight">{userEmail}</span>
               </>
             ) : (
-                <span className="text-base font-semibold text-foreground leading-tight">Sign in</span>
+                <span className="text-sm font-medium text-foreground leading-tight">Sign in</span>
             )}
           </div>
         </DropdownMenuLabel>
@@ -114,7 +114,7 @@ export function UserMenu() {
           <>
             <DropdownMenuItem 
               onClick={() => handleSignIn()} 
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer mb-1 active:scale-[0.98]"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer mb-1 active:scale-[0.98]"
             >
               <svg className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -135,7 +135,7 @@ export function UserMenu() {
           <DropdownMenuItem 
             onClick={handleSignOut} 
             disabled={isSigningOut}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-md transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
           >
             <LogOut className="h-4 w-4 text-destructive transition-transform duration-200 group-hover:scale-110" />
             <span className="font-medium text-sm">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>

@@ -219,7 +219,7 @@ export function TOTPGate() {
             onClick={handleVerify}
             disabled={code.length !== 6 || isVerifying}
             className={cn(
-              "w-full h-10 rounded-lg",
+              "w-full h-10 rounded-md",
               "bg-coral text-white border border-coral/80",
               "hover:!bg-coral hover:brightness-90 hover:border-coral/70",
               "font-semibold transition-all duration-200 ease-in-out",

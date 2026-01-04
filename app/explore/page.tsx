@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, Suspense, useCallback, useEffect, useRef } from 'react';
-import { Calendar, ArrowUpDown, RefreshCw, Loader2, LogIn, Rocket } from 'lucide-react';
+import { Calendar, ArrowUpDown, RefreshCw, Loader2, LogIn, Rocket, Info, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -89,38 +89,55 @@ const ResultsCount = React.memo(({
   onRefresh: () => void; 
   total: number;
   error: string | null;
-}) => (
-  <div className="flex flex-row sm:flex-row items-center justify-between gap-2 mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-10">
-    <div className="flex flex-1 items-center gap-2">
-      <div className="flex-1 text-sm text-muted-foreground truncate">
-        {isClient && !error && (
-          <>
-            <span className="block sm:hidden"><span className="font-bold">{total}</span> leaks found</span>
-            <span className="hidden sm:inline">
-              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
-              {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
-            </span>
-          </>
-        )}
-        {error && (
-          <span className="text-coral text-sm">
-            Error loading data. Please try refreshing.
-          </span>
+}) => {
+  const [showInstructions, setShowInstructions] = React.useState(true);
+  
+  return (
+    <div className="mt-2 pt-2 border-t border-border/50 animate-fade-in-up opacity-0 animate-delay-10">
+      <div className="mb-2 px-3 py-2.5 bg-coral/10 border border-coral/20 rounded-md">
+        <button
+          onClick={() => setShowInstructions(!showInstructions)}
+          className="w-full flex items-center gap-2 text-sm text-foreground"
+        >
+          <Info className="h-4 w-4 text-coral flex-shrink-0" />
+          <span className="font-medium flex-1 text-left">How to identify provider</span>
+          <ChevronDown className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
+        </button>
+        {showInstructions && (
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            The <span className="font-medium text-foreground">AI Key</span> category includes keys from OpenAI, Anthropic, DeepSeek, OpenRouter, and similar providers. To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
+          </p>
         )}
       </div>
+      <div className="flex flex-row items-center gap-2 flex-wrap">
+        <div className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
+          {isClient && !error && (
+            <>
+              <span className="block sm:hidden"><span className="font-bold">{total}</span> leaks found</span>
+              <span className="hidden sm:inline">
+                <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
+                {selectedProvider !== 'all' && ` for ${getProviderLabel(selectedProvider)}`}
+              </span>
+            </>
+          )}
+          {error && (
+            <span className="text-coral text-sm">
+              Error loading data. Please try refreshing.
+            </span>
+          )}
+        </div>
+        <button
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-white bg-coral border-none rounded-md flex items-center gap-1 transition-all duration-200 hover:bg-coral/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-auto"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
     </div>
-    <div className="flex-shrink-0">
-      <button
-        onClick={onRefresh}
-        disabled={isLoading}
-        className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-white bg-coral border-none rounded-md flex items-center gap-1 transition-all duration-200 hover:bg-coral/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-        {isLoading ? 'Refreshing...' : 'Refresh'}
-      </button>
-    </div>
-  </div>
-));
+  );
+});
 
 ResultsCount.displayName = 'ResultsCount';
 
@@ -165,7 +182,7 @@ const FiltersSection = React.memo(({
   const [message, setMessage] = useState('');
 
   return (
-    <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg p-4 mb-6 animate-fade-in-up opacity-0 animate-delay-10">
+    <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-md p-4 mb-6 animate-fade-in-up opacity-0 animate-delay-10">
       <div className="flex flex-col lg:flex-row gap-3">
         {/* Provider Filter */}
         <div className="flex-1 lg:w-[33.333%]">
@@ -292,7 +309,7 @@ const ResultsSection = React.memo(({
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="animate-pulse bg-muted/40 rounded-lg h-20 mb-4" />
+          <div key={i} className="animate-pulse bg-muted/40 rounded-md h-20 mb-4" />
         ))}
       </div>
     );

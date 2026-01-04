@@ -94,7 +94,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
             <button onClick={async () => {
               await signOut({ callbackUrl: '/', redirect: true });
               window.location.reload();
-            }} className="ml-1 p-1.5 rounded-full hover:bg-destructive/10 transition-colors focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2" title="Sign out" aria-label="Sign out" tabIndex={0}>
+            }} className="ml-1 p-1.5 rounded-md hover:bg-destructive/10 transition-colors focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2" title="Sign out" aria-label="Sign out" tabIndex={0}>
               <LogOut className="h-4.5 w-4.5 text-destructive" />
             </button>
           ) : null}
@@ -113,7 +113,7 @@ const MobileMenuDropdown = React.memo(function MobileMenuDropdown({ onLinkClick,
                 onLinkClick();
               }}
               className={cn(
-                "flex items-center gap-2 px-2 py-2 rounded-lg text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
+                "flex items-center gap-2 px-2 py-2 rounded-md text-[14px] font-medium transition-colors text-left min-h-[40px] focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2",
                 pathname === item.href
                   ? "bg-coral/10 text-coral"
                   : "text-muted-foreground hover:text-coral hover:bg-muted/50"

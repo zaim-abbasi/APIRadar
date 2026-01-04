@@ -1,6 +1,6 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
-import { Github, Linkedin, Mail, Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket } from "lucide-react";
+import { Github, Linkedin, Mail, Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket, Info, ChevronDown } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -14,6 +14,30 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
   loading: () => <div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse">Loading…</div>
 });
 
+const InstructionsSection = memo(() => {
+  const [showInstructions, setShowInstructions] = React.useState(true);
+  
+  return (
+    <div className="mb-2 px-3 py-2.5 bg-coral/10 border border-coral/20 rounded-md">
+      <button
+        onClick={() => setShowInstructions(!showInstructions)}
+        className="w-full flex items-center gap-2 text-sm text-foreground"
+      >
+        <Info className="h-4 w-4 text-coral flex-shrink-0" />
+        <span className="font-medium flex-1 text-left">How to identify provider</span>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
+      </button>
+      {showInstructions && (
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          The <span className="font-medium text-foreground">AI Key</span> category includes keys from OpenAI, Anthropic, DeepSeek, OpenRouter, and similar providers. To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
+        </p>
+      )}
+    </div>
+  );
+});
+
+InstructionsSection.displayName = 'InstructionsSection';
+
 // Memoized Action Card component
 const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
   <div className="group animate-fade-in-up opacity-0" style={{ animationDelay: `150ms` }}>
@@ -24,7 +48,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-1 space-y-2.5 min-w-0">
             {/* Icon and Title */}
             <div className="flex flex-row items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-coral/10">
+              <div className="p-1.5 rounded-md bg-coral/10">
                 <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">Sign in to unlock full access</span>
@@ -48,7 +72,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-white bg-coral border-none rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
               aria-label="Sign in with Google"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -102,7 +126,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <div className="w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-2 rounded-full opacity-60" />
       </div>
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-xl p-4 sm:p-5 mb-6 w-full max-w-md animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 w-full max-w-md animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
         <div className="flex flex-col gap-3 sm:gap-4">
           <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
@@ -143,17 +167,18 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           </CustomSelect>
         </div>
         {/* Results Count and Refresh */}
-        <div className="flex flex-row items-center justify-between gap-2 mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
-          <div className="flex-1 text-sm text-muted-foreground/80 truncate font-medium">
-            <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
-            {selectedProvider !== 'all' && ` for ${selectedProvider}`}
-          </div>
-          <div className="flex-shrink-0">
+        <div className="mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
+          <InstructionsSection />
+          <div className="flex flex-row items-center gap-2 flex-wrap">
+            <div className="text-sm text-muted-foreground/80 whitespace-nowrap font-medium flex-shrink-0">
+              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
+              {selectedProvider !== 'all' && ` for ${selectedProvider}`}
+            </div>
             <button
               onClick={onRefresh}
               disabled={isLoading}
               aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg h-9 px-3.5 text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3.5 text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 flex-shrink-0 ml-auto"
               tabIndex={0}
             >
               <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -195,13 +220,13 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-7 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">API Radar</span>
-          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
+          <a href="mailto:zaim.k.abbasi@gmail.com" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
+          <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="GitHub" tabIndex={0}>
             <Github className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
-          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
+          <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1" aria-label="LinkedIn" tabIndex={0}>
             <Linkedin className="h-4 w-4 transition-transform duration-200 hover:scale-110" />
           </a>
         </div>

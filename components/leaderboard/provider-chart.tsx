@@ -36,7 +36,7 @@ const CustomTooltip = React.memo(({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-lg shadow-lg">
+      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-md shadow-lg">
         <p className="font-medium capitalize">{label}</p>
         <p className="text-sm text-muted-foreground">
           <span className="font-medium">{data.count.toLocaleString()}</span> leaks
@@ -64,7 +64,7 @@ const ProviderListItem = React.memo(({
 
   return (
     <div 
-      className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30"
+      className="flex items-center justify-between p-3 rounded-md bg-muted/20 border border-border/30"
     >
       <div className="flex items-center gap-3">
         <div 

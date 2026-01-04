@@ -10,7 +10,8 @@ import {
   FileText, 
   GitCommit,
   Check,
-  Lock
+  Lock,
+  GitBranch
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ interface LeakTableProps {
 
 const providerColors: Record<string, string> = {
   'ai-key':
-    "bg-green-500/10 text-green-700"
+    "bg-beige text-coral"
 }
 
 // Memoized Loading Skeleton component
@@ -40,38 +41,54 @@ const LoadingSkeleton = React.memo(() => (
         className="group animate-fade-in-up opacity-0"
         style={{ animationDelay: `${i * 30}ms` }}
       >
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm h-[180px] animate-pulse">
-          <CardContent className="p-4 sm:p-6">
-            <div className="space-y-2.5 sm:space-y-3 flex-1 min-w-0">
-              {/* Provider & Key skeleton */}
-              <div className="flex flex-row items-center gap-2.5 min-w-[180px]">
-                <div className="h-6 w-[180px] bg-muted/60 rounded-md skeleton" />
-                <div className="h-6 w-16 bg-muted/60 rounded-full skeleton" />
-              </div>
-
-              {/* Repository Info skeleton */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                <div className="h-4 w-32 bg-muted/60 rounded skeleton" />
-                <div className="h-4 w-24 bg-muted/60 rounded skeleton" />
-              </div>
-
-              {/* Metadata skeleton */}
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                  <div className="h-3 w-3 bg-muted/60 rounded skeleton" />
-                  <div className="h-3 w-20 bg-muted/60 rounded skeleton" />
-                  <div className="h-3 w-16 bg-muted/60 rounded skeleton" />
-                  <div className="h-3 w-24 bg-muted/60 rounded skeleton" />
+        <Card className="border-border/50 bg-card/50 backdrop-blur-sm animate-pulse">
+          <CardContent className="p-3 sm:p-4 relative">
+            <div className="flex flex-col h-full">
+              <div className="flex-1 flex flex-col gap-2.5 w-full">
+                {/* Provider & Key skeleton */}
+                <div className="flex flex-row items-center justify-between gap-2.5 min-w-0 w-full">
+                  <div className="h-6 flex-1 bg-muted/60 rounded-md" />
+                  <div className="h-6 w-16 bg-muted/60 rounded-sm" />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 min-w-0">
-                  <div className="h-3 w-3 bg-muted/60 rounded skeleton" />
-                  <div className="h-3 w-20 bg-muted/60 rounded skeleton" />
-                  <div className="h-3 w-16 bg-muted/60 rounded skeleton" />
+
+                {/* Repository Info skeleton */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3.5 w-3.5 bg-muted/60 rounded" />
+                    <div className="h-4 w-20 bg-muted/60 rounded" />
+                  </div>
+                  <div className="h-4 w-32 bg-muted/60 rounded" />
+                  <div className="hidden sm:block h-4 w-4 bg-muted/60 rounded" />
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    <div className="h-3.5 w-3.5 bg-muted/60 rounded" />
+                    <div className="h-4 w-24 bg-muted/60 rounded" />
+                  </div>
+                </div>
+
+                {/* Metadata skeleton */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3.5 w-3.5 bg-muted/60 rounded" />
+                    <div className="h-3.5 w-12 bg-muted/60 rounded" />
+                    <div className="h-3.5 w-16 bg-muted/60 rounded" />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-3.5 w-3.5 bg-muted/60 rounded" />
+                    <div className="h-3.5 w-16 bg-muted/60 rounded" />
+                    <div className="h-3.5 w-14 bg-muted/60 rounded" />
+                  </div>
+                </div>
+
+                {/* File Path skeleton */}
+                <div className="flex items-center gap-2">
+                  <div className="h-3.5 w-3.5 bg-muted/60 rounded" />
+                  <div className="h-3.5 w-16 bg-muted/60 rounded" />
+                  <div className="h-4 flex-1 bg-muted/60 rounded" />
                 </div>
               </div>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     ))}
   </div>
@@ -133,9 +150,9 @@ const CopyButton = React.memo(({
         >
           <div className="transition-transform duration-200 active:scale-95">
             {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-green-600" />
+              <Check className="h-4 w-4 text-coral" />
             ) : (
-              <Copy className="h-4 w-4 text-foreground/70 hover:text-foreground transition-colors duration-200" />
+              <Copy className="h-4 w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
             )}
           </div>
         </Button>
@@ -149,12 +166,12 @@ const CopyButton = React.memo(({
         >
           <div className="transition-transform duration-200 group-hover/card:scale-110">
             {copiedKey === leak.id ? (
-              <Check className="h-4 w-4 text-green-600" />
+              <Check className="h-4 w-4 text-coral" />
             ) : (
-              <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-foreground transition-colors duration-200" />
+              <Copy className="h-4 w-4 text-foreground/70 group-hover/card:text-coral transition-colors duration-200" />
             )}
           </div>
-          <span className="text-sm font-medium transition-all duration-200 text-foreground/70 group-hover/card:text-foreground">
+          <span className="text-sm font-medium transition-all duration-200 text-foreground/70 group-hover/card:text-coral">
             {copiedKey === leak.id ? 'Copied' : 'Copy'}
           </span>
         </Button>
@@ -208,7 +225,7 @@ const CopyButton = React.memo(({
           {copiedKey === leak.id ? (
             <Check className="h-4 w-4 text-green-600" />
           ) : (
-            <Copy className="h-4 w-4 text-foreground/70 hover:text-foreground transition-colors duration-200" />
+            <Copy className="h-4 w-4 text-foreground/70 hover:text-coral transition-colors duration-200" />
           )}
         </div>
       </Button>
@@ -290,7 +307,7 @@ const LeakCard = React.memo(({
               </code>
               <div
                 className={cn(
-                  "inline-flex items-center rounded-md px-2 py-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 font-mono text-xs font-medium border shadow-sm flex-shrink-0",
+                  "inline-flex items-center justify-center rounded-sm px-2 py-1 text-xs font-medium border shadow-sm flex-shrink-0",
                   providerColors[leak.provider] || providerColors['github']
                 )}
               >
@@ -314,6 +331,10 @@ const LeakCard = React.memo(({
                 );
                 return (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <GitBranch className="h-3.5 w-3.5 flex-shrink-0 text-coral" />
+                      <span className="text-sm text-coral font-medium whitespace-nowrap flex-shrink-0">Repo Name:</span>
+                    </div>
                     <a
                       href={safeRepoUrl}
                       target="_blank"
@@ -321,7 +342,7 @@ const LeakCard = React.memo(({
                       className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
                     >
                       {parsed.repo}
-                      <ExternalLink className="h-3.5 w-3.5 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
+                      <ExternalLink className="h-3.5 w-3.5 text-coral transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
                     </a>
                     <span className="hidden sm:inline text-muted-foreground/70">by</span>
                     <a
@@ -339,20 +360,24 @@ const LeakCard = React.memo(({
             </div>
 
             {/* Metadata - BULLETPROOF SECURITY */}
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground min-w-0 w-full overflow-hidden">
-              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
-              <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Key added in Repo:</span>
-              <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0">{formatTimeAgo(new Date(leak.leakIntroducedAt))}</span>
-              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60 ml-2.5" />
-              <span className="text-foreground/75 font-medium whitespace-nowrap flex-shrink-0">Leak Detected:</span>
-              <span className="text-foreground/80 font-semibold whitespace-nowrap flex-shrink-0 truncate">{formatTimeAgo(new Date(leak.leakDetectedAt))}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <span className="text-muted-foreground/70">Added:</span>
+                <span className="text-foreground/90 font-medium">{formatTimeAgo(new Date(leak.leakIntroducedAt))}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
+                <span className="text-muted-foreground/70">Detected:</span>
+                <span className="text-foreground/90 font-medium">{formatTimeAgo(new Date(leak.leakDetectedAt))}</span>
+              </div>
             </div>
 
             {/* File Path */}
             {!isLocked && safeFilePath && (
               <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
-                <span className="text-sm text-foreground/75 font-medium">Key path:</span>
+                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-coral" />
+                <span className="text-sm text-coral font-medium">Key path:</span>
                 <code className="text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
               </div>
             )}
@@ -365,7 +390,7 @@ const LeakCard = React.memo(({
           </div>
 
           {/* Copy Button - BULLETPROOF SECURITY - Absolutely positioned */}
-          <div className="absolute top-10 right-4 sm:top-12 sm:right-6">
+          <div className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-4">
             <CopyButton 
               leak={{...leak, fullKey: safeFullKey}} 
               copiedKey={copiedKey} 
@@ -390,13 +415,17 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
     try {
       await navigator.clipboard.writeText(text);
       setCopiedKey(keyId);
-      toast.success('API key copied to clipboard!');
+      toast.success('API key copied to clipboard!', {
+        icon: <Check className="h-4 w-4 text-coral" />,
+      });
       // Reset copied state after 1 second
       setTimeout(() => {
         setCopiedKey(null);
       }, 1000);
     } catch (err) {
-      toast.error('Failed to copy API key');
+      toast.error('Failed to copy API key', {
+        className: 'rounded-md',
+      });
     }
   }, []);
 

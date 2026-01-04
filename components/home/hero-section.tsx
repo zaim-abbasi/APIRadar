@@ -54,7 +54,7 @@ const CTAButton = React.memo(({
     href={href} 
     prefetch={true}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 animate-fade-in-up active:scale-[0.98]",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 animate-fade-in-up active:scale-[0.98]",
       variant === "default" 
         ? "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm hover:shadow-md hover-glow"
         : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-coral/60 shadow-sm hover:shadow-md"
@@ -133,7 +133,7 @@ const RightColumn = React.memo(() => {
           <div
             key={index}
             className={cn(
-              "p-4 rounded-lg border bg-card/50 backdrop-blur-sm animate-fade-in-up border-border"
+              "p-4 rounded-md border bg-card/50 backdrop-blur-sm animate-fade-in-up border-border"
             )}
             style={{ animationDelay: `${index * 100}ms` }}
           >
@@ -158,7 +158,7 @@ const RightColumn = React.memo(() => {
           href="/explore"
           prefetch={true}
           className={cn(
-            "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
             "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70"
           )}
         >
@@ -171,7 +171,7 @@ const RightColumn = React.memo(() => {
           href="/leaderboard"
           prefetch={true}
           className={cn(
-            "inline-flex items-center justify-center whitespace-nowrap rounded-lg group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-11 px-6 text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
             "bg-card/50 backdrop-blur-sm text-foreground border-border hover:brightness-90 hover:border-coral/70"
           )}
         >
