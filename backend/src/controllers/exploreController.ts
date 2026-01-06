@@ -36,23 +36,14 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
     let enforcedTimeRange = timeRange;
     const filter: any = {};
-    const validProviders = ['ai-key'];
+    const validProviders = ['ai-key', 'mistral-ai', 'cohere', 'huggingface'];
     if (provider && provider !== 'all') {
       const normalizedProvider = String(provider).trim().toLowerCase();
       if (validProviders.includes(normalizedProvider)) {
         filter.provider = normalizedProvider;
       } else {
-        request.log.warn({ msg: 'Invalid provider requested', provider: normalizedProvider, userId: user.id });
-        return reply.send({ 
-          leaks: [], 
-          total: 0, 
-          hasMore: false,
-          planLimits: {
-            maxLeaks: accessLimits.maxLeaks,
-            canInfiniteScroll: accessLimits.canInfiniteScroll,
-            maxTimeRange: accessLimits.maxTimeRange
-          }
-        });
+        request.log.warn({ msg: 'Invalid provider requested; treating as no filter', provider: normalizedProvider, userId: user.id });
+        // Do not filter by provider if unknown, just show all.
       }
     }
     if (enforcedTimeRange && enforcedTimeRange !== 'all') {
@@ -76,15 +67,26 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       normalizedProvider: provider ? String(provider).trim().toLowerCase() : 'all',
       userId: user.id 
     });
-    const total = await Leak.countDocuments(filter);
-    const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
-    const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
-    const leaks = await Leak.find(filter)
-      .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
-      .sort(sort)
-      .skip(skip)
-      .limit(actualLimit)
-      .lean();
+    let total = 0;
+    let leaks: any[] = [];
+    try {
+      const poolState = typeof require('mongoose').connection?.readyState !== 'undefined' ? require('mongoose').connection.readyState : 'unknown';
+      request.log.info({
+        msg: 'LEAKS QUERY', filter, poolState, limit: enforcedLimit, page: enforcedPage, connectionState: poolState });
+      total = await Leak.countDocuments(filter);
+      const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
+      const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
+      leaks = await Leak.find(filter)
+        .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
+        .sort(sort)
+        .skip(skip)
+        .limit(actualLimit)
+        .lean();
+      request.log.info({ msg: 'LEAKS QUERY RESULT', rowCount: leaks.length });
+    } catch (dbErr) {
+      request.log.error({ msg: 'DB error in getLeaksHandler', error: String(dbErr) });
+      return reply.status(503).send({ error: 'Database unavailable' });
+    }
     if (filter.provider) {
       const mismatched = leaks.filter((leak: any) => leak.provider !== filter.provider);
       if (mismatched.length > 0) {
@@ -119,7 +121,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       userId: user.id,
       isAuthenticated: isAuthenticated,
       requestedLimit: limit,
-      enforcedLimit: actualLimit,
+      enforcedLimit: enforcedLimit,
       requestedPage: page,
       enforcedPage: enforcedPage,
       totalResults: total,
@@ -166,7 +168,13 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
         loginRequired: true
       });
     }
-    const leak = await Leak.findById(id).select('+fullKey');
+    let leak = null;
+    try {
+      leak = await Leak.findById(id).select('+fullKey');
+    } catch (dbErr) {
+      request.log.error({ msg: 'DB error in getLeakFullKeyHandler', error: String(dbErr) });
+      return reply.status(503).send({ error: 'Database unavailable' });
+    }
     if (!leak) {
       return reply.status(404).send({ error: 'Leak not found' });
     }

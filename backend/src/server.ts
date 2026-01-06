@@ -13,6 +13,13 @@ const server = fastify({
 });
 
 async function startServer() {
+  server.get('/health', async (_req, reply) => {
+    const mongoOk = !!require('./config/mongo').getConnectionStatus?.();
+    reply.send({
+      status: 'ok',
+      mongo: mongoOk ? 'connected' : 'unavailable'
+    });
+  });
   process.on('unhandledRejection', (reason, _promise) => {
     logger.error(`[FATAL] Unhandled Promise Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
   });
