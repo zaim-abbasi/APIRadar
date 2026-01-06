@@ -152,7 +152,7 @@ const RightColumn = React.memo(() => {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2.5 sm:gap-3 pt-1 sm:pt-2">
+      <div className="flex flex-col gap-3 sm:gap-3.5 pt-1 sm:pt-2">
         <Link
           href="/explore"
           prefetch={true}
@@ -176,6 +176,22 @@ const RightColumn = React.memo(() => {
         >
           View Leaderboard
         </Link>
+        <div className="mt-2 sm:mt-3 flex justify-end">
+          <a
+            href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="API Radar on Product Hunt"
+            className="inline-flex"
+          >
+            <img
+              alt="API Radar - See your leaked API keys before attackers do | Product Hunt"
+              width="250"
+              height="54"
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058833&theme=light&t=1767693440061"
+            />
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export const HeroSectionMobile = React.memo(() => {
         Browse leaked API keys from public GitHub repositories.
       </p>
 
-      <div className="flex flex-col gap-2.5 sm:gap-4 w-full max-w-sm mx-auto mb-6 sm:mb-10 z-10 px-2">
+      <div className="flex flex-col gap-3 sm:gap-5 w-full max-w-sm mx-auto mb-6 sm:mb-10 z-10 px-2">
         <Link
           href="/explore"
           prefetch={true}
@@ -41,6 +41,23 @@ export const HeroSectionMobile = React.memo(() => {
         >
           View Leaderboard
         </Link>
+      </div>
+
+      <div className="mb-4 sm:mb-6 z-10 w-full max-w-sm mx-auto px-2 flex justify-end">
+        <a
+          href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="API Radar on Product Hunt"
+          className="inline-flex"
+        >
+          <img
+            alt="API Radar - See your leaked API keys before attackers do | Product Hunt"
+            width="250"
+            height="54"
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058833&theme=light&t=1767693440061"
+          />
+        </a>
       </div>
 
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 sm:pt-8 pb-3 sm:pb-5 text-xs text-muted-foreground/80 z-10 tracking-wide">
