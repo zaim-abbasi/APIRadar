@@ -6,7 +6,44 @@ import { Check, ChevronRight, Circle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+type DropdownMenuProps = React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>;
+
+const DropdownMenu = ({ open: openProp, defaultOpen, onOpenChange, modal = true, children, ...props }: DropdownMenuProps) => {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
+  const isControlled = openProp !== undefined;
+  const currentOpen = isControlled ? openProp : uncontrolledOpen;
+
+  React.useEffect(() => {
+    if (isControlled) return;
+    setUncontrolledOpen(defaultOpen ?? false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isControlled, defaultOpen]);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (!currentOpen) return;
+      if (!isControlled) setUncontrolledOpen(false);
+      onOpenChange?.(false);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentOpen, isControlled, onOpenChange]);
+
+  return (
+    <DropdownMenuPrimitive.Root
+      modal={modal}
+      open={currentOpen}
+      defaultOpen={isControlled ? undefined : defaultOpen}
+      onOpenChange={(next) => {
+        if (!isControlled) setUncontrolledOpen(next);
+        onOpenChange?.(next);
+      }}
+      {...props}
+    >
+      {children}
+    </DropdownMenuPrimitive.Root>
+  );
+};
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
@@ -59,13 +96,21 @@ DropdownMenuSubContent.displayName =
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ className, sideOffset = 4, onCloseAutoFocus, onOpenAutoFocus, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}
+      onCloseAutoFocus={(event) => {
+        event.preventDefault();
+        onCloseAutoFocus?.(event);
+      }}
+      onOpenAutoFocus={(event) => {
+        event.preventDefault();
+        onOpenAutoFocus?.(event);
+      }}
       className={cn(
-        'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-card p-1 text-popover-foreground shadow-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-card p-1 text-popover-foreground shadow-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
         className
       )}
       {...props}

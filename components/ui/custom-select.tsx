@@ -79,6 +79,13 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
       }
     }, [isOpen]);
 
+    useEffect(() => {
+      if (!isOpen) return;
+      const handleScrollClose = () => setIsOpen(false);
+      window.addEventListener('scroll', handleScrollClose, true);
+      return () => window.removeEventListener('scroll', handleScrollClose, true);
+    }, [isOpen]);
+
     const contextValue = {
       value,
       onValueChange: (newValue: string) => {

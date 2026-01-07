@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { Badge } from '@/components/ui/badge';
 import { PROVIDERS } from '@/lib/constants';
@@ -10,9 +11,10 @@ import { Provider } from '@/types';
 interface ProviderFilterProps {
   selectedProvider: Provider;
   onProviderChange: (provider: Provider) => void;
+  triggerClassName?: string;
 }
 
-export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange }: ProviderFilterProps) => {
+export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange, triggerClassName }: ProviderFilterProps) => {
   const selectedProviderLabel = PROVIDERS.find(p => p.value === selectedProvider)?.label || 'All Providers';
 
   const handleValueChange = (value: string) => {
@@ -21,7 +23,7 @@ export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange }
 
   return (
     <CustomSelect value={selectedProvider} onValueChange={handleValueChange}>
-      <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
+      <CustomSelectTrigger className={cn("w-full bg-card/50 backdrop-blur-sm border-border", triggerClassName)}>
         <div className="flex items-center gap-2 w-full">
           <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
           <CustomSelectValue className="flex-1 text-center">

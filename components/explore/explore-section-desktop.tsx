@@ -20,7 +20,14 @@ const ExploreHeader = React.memo(() => (
 ExploreHeader.displayName = 'ExploreHeader';
 
 const InstructionsSection = React.memo(() => {
-  const [showInstructions, setShowInstructions] = React.useState(true);
+  const [showInstructions, setShowInstructions] = React.useState(false);
+  
+  React.useEffect(() => {
+    // Only auto-open on larger desktop screens
+    if (window.innerWidth >= 1024) {
+      setShowInstructions(true);
+    }
+  }, []);
   
   return (
     <div className="mb-2 px-3 py-2.5 bg-coral/10 border border-coral/20 rounded-md">
@@ -215,7 +222,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </div>
             
             <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-              <div className="flex items-center gap-2.5 px-3 py-1 rounded-full bg-muted/40 border border-border/80 flex-shrink-0">
+              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1 rounded-full bg-muted/40 border border-border/80 flex-shrink-0">
                 <span className="text-[12px] uppercase tracking-wider font-bold text-foreground/70">Built by Zaim</span>
                 <div className="flex items-center gap-2">
                   <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">

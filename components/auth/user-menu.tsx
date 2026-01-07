@@ -74,7 +74,7 @@ export function UserMenu() {
   }, [session, status]);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           className={cn(

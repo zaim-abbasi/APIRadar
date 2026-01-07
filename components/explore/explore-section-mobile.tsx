@@ -126,11 +126,11 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-full opacity-60" />
       </div>
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-3 sm:p-5 mb-4 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
-        <div className="flex flex-col gap-2.5 sm:gap-4">
-          <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+        <div className="flex flex-col gap-1.5 sm:gap-4">
+          <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} triggerClassName="h-9 sm:h-10 min-h-0 py-1" />
           <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border" aria-label="Select time range" tabIndex={0}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border h-9 sm:h-10 min-h-0 py-1" aria-label="Select time range" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
                 <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
@@ -149,7 +149,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             </CustomSelectContent>
           </CustomSelect>
           <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border" aria-label="Select sort order" tabIndex={0}>
+            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border h-9 sm:h-10 min-h-0 py-1" aria-label="Select sort order" tabIndex={0}>
               <div className="flex items-center gap-2 w-full">
                 <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
                 <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
@@ -169,36 +169,22 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         {/* Results Count and Refresh */}
         <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
           <InstructionsSection />
-          <div className="flex flex-row items-center gap-2 flex-wrap mt-2">
-            <div className="text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium flex-shrink-0">
-            <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
-            {selectedProvider !== 'all' && ` for ${selectedProvider}`}
-          </div>
-
-            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-              <div className="hidden sm:flex items-center gap-2.5 px-2.5 py-1 rounded-full bg-muted/40 border border-border/80 flex-shrink-0">
-                <span className="text-[11px] uppercase tracking-wider font-bold text-foreground/70">Built by Zaim</span>
-                <div className="flex items-center gap-1.5">
-                  <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Github className="h-4 w-4" />
-                  </a>
-                  <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Linkedin className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-
-              <button
-                onClick={onRefresh}
-                disabled={isLoading}
-                aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-11 sm:h-9 px-3.5 sm:px-3.5 text-xs sm:text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 flex-shrink-0 min-h-[44px] sm:min-h-0"
-                tabIndex={0}
-              >
-                <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-                {isLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
+          <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 mt-1.5 w-full">
+            <div className="min-w-0 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium truncate">
+              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
+              {selectedProvider !== 'all' && ` for ${selectedProvider}`}
             </div>
+
+            <button
+              onClick={onRefresh}
+              disabled={isLoading}
+              aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3 text-xs sm:text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
+              tabIndex={0}
+            >
+              <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              {isLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
         </div>
       </div>

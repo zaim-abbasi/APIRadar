@@ -53,6 +53,7 @@
     background-color: hsl(var(--beige));
     scroll-padding-top: 50px;
     overflow-y: scroll;
+    scrollbar-gutter: stable both-edges;
   }
 
   * {
@@ -68,6 +69,23 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1;
+    overflow-x: hidden;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  body[data-scroll-locked] {
+    padding-right: 0 !important;
+  }
+
+  body[style*="--removed-body-scroll-bar-size"] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html[data-scroll-locked],
+  html[style*="--removed-body-scroll-bar-size"] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
   }
 
   h1, h2, h3, h4, h5, h6 {

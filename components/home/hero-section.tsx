@@ -176,7 +176,7 @@ const RightColumn = React.memo(() => {
         >
           View Leaderboard
         </Link>
-        <div className="mt-2 sm:mt-3 flex justify-end">
+        <div className="mt-2 sm:mt-3 hidden lg:flex justify-end">
           <a
             href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
             target="_blank"
