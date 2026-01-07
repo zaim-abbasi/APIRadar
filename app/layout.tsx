@@ -93,8 +93,8 @@ export default function RootLayout({
             "name": "API Radar",
             "url": "https://apiradar.live",
             "sameAs": [
-              "https://www.linkedin.com/company/apiradar/",
-              "https://github.com/zaim-abbasi"
+              "https://github.com/zaim-abbasi",
+              "https://www.linkedin.com/in/zaim-abbasi/"
             ],
             "potentialAction": {
               "@type": "SearchAction",
@@ -111,8 +111,8 @@ export default function RootLayout({
             "url": "https://apiradar.live",
             "logo": "https://apiradar.live/logo/logo-webp.webp",
             "sameAs": [
-              "https://www.linkedin.com/company/apiradar/",
-              "https://github.com/zaim-abbasi"
+              "https://github.com/zaim-abbasi",
+              "https://www.linkedin.com/in/zaim-abbasi/"
             ]
           })
         }} />

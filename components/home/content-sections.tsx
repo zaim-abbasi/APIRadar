@@ -138,17 +138,8 @@ const WhatsNext = React.memo(() => {
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-white border border-coral/80 hover:brightness-90 hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
           >
-            <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>Contact the Developer</span>
-          </a>
-          <a
-            href="https://www.linkedin.com/company/apiradar/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
-            aria-label="Connect on LinkedIn"
-          >
-            <Linkedin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </a>
           <a
             href="https://github.com/zaim-abbasi"
@@ -157,7 +148,16 @@ const WhatsNext = React.memo(() => {
             className="flex items-center justify-center px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
             aria-label="Visit on GitHub"
           >
-            <Github className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Github className="h-4 w-4 sm:h-5 sm:w-5" />
+          </a>
+          <a
+            href="https://www.linkedin.com/in/zaim-abbasi/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border text-foreground hover:brightness-90 hover:border-coral/70 transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            aria-label="Connect on LinkedIn"
+          >
+            <Linkedin className="h-4 w-4 sm:h-5 sm:w-5" />
           </a>
         </div>
       </div>
