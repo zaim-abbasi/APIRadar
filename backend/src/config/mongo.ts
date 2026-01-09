@@ -44,6 +44,7 @@ export async function connectToMongoDB(): Promise<void> {
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
         bufferCommands: false,
+        family: 4,
       });
       isConnected = true;
     } catch (err: any) {
