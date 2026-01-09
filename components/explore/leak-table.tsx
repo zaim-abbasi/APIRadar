@@ -210,7 +210,7 @@ const LeakCard = React.memo(({
             {/* Provider & Key */}
             <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 min-w-0 w-full">
               <code className="text-xs sm:text-sm font-mono bg-muted/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block w-fit max-w-full sm:max-w-full text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
-                <span className="sm:hidden truncate block">{leak.redactedKey}</span>
+                <span className="sm:hidden truncate block">{leak.redactedKey.length > 20 ? `${leak.redactedKey.slice(0, 6)}${'*'.repeat(8)}${leak.redactedKey.slice(-6)}` : leak.redactedKey}</span>
                 <span className="hidden sm:inline">{leak.redactedKey}</span>
               </code>
               <div
