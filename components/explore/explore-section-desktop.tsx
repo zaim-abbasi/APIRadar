@@ -223,13 +223,13 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             
             <div className="ml-auto flex items-center gap-1 flex-shrink-0">
               <div className="hidden lg:flex items-center gap-2.5 px-3 py-1 rounded-full bg-muted/40 border border-border/80 flex-shrink-0">
-                <span className="text-[12px] uppercase tracking-wider font-bold text-foreground/70">Built by Zaim</span>
+                <span className="text-[12px] tracking-wide font-semibold text-foreground/70">Built by Zaim</span>
                 <div className="flex items-center gap-2">
                   <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Github className="h-5 w-5" />
+                    <Github className="h-4 w-4" />
                   </a>
                   <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Linkedin className="h-5 w-5" />
+                    <Linkedin className="h-4 w-4" />
                   </a>
                 </div>
               </div>

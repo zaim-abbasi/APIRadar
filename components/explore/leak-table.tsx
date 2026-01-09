@@ -47,9 +47,9 @@ const LoadingSkeleton = React.memo(() => (
             <div className="flex flex-col h-full">
               <div className="flex-1 flex flex-col gap-2.5 w-full">
                 {/* Provider & Key skeleton */}
-                <div className="flex flex-row items-center justify-between gap-2.5 min-w-0 w-full">
-                  <div className="h-6 flex-1 bg-muted/60 rounded-md" />
-                  <div className="h-6 w-16 bg-muted/60 rounded-sm" />
+                <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 min-w-0 w-full">
+                  <div className="h-6 w-3/4 sm:w-4/5 bg-muted/60 rounded-md" />
+                  <div className="h-6 w-16 bg-muted/60 rounded-sm flex-shrink-0" />
                 </div>
 
                 {/* Repository Info skeleton */}
@@ -174,17 +174,6 @@ const CopyButton = React.memo(({
 
 CopyButton.displayName = 'CopyButton';
 
-// Optimize: Pre-compute normalized keys for better performance
-// Using a simple function instead of memo to avoid React overhead for pure computation
-const normalizeRedactedKeyFn = (key: string): string => {
-  if (!key || key.length <= 8) return key;
-  const first = key.slice(0, 4);
-  const last = key.slice(-4);
-  const totalLength = 20;
-  const asterisksCount = totalLength - first.length - last.length;
-  return `${first}${'*'.repeat(asterisksCount)}${last}`;
-};
-
 const formatTimeAgo = (date: Date): string => {
   return formatDistanceToNow(date, { addSuffix: true })
     .replace(/\babout\s+/gi, '')
@@ -219,10 +208,10 @@ const LeakCard = React.memo(({
         <div className="flex flex-col h-full pr-8 sm:pr-0">
           <div className="flex-1 flex flex-col gap-2 sm:gap-2.5 w-full">
             {/* Provider & Key */}
-            <div className="flex flex-row items-center justify-between gap-2 min-w-0 w-full">
-              <code className="text-xs sm:text-sm font-mono bg-muted/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
-                <span className="sm:hidden truncate block">{normalizeRedactedKeyFn(leak.redactedKey)}</span>
-                <span className="hidden sm:inline">{normalizeRedactedKeyFn(leak.redactedKey)}</span>
+            <div className="flex flex-row items-center justify-between gap-2.5 sm:gap-3 min-w-0 w-full">
+              <code className="text-xs sm:text-sm font-mono bg-muted/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-muted-foreground md:group-hover/card:text-foreground transition-all duration-200 inline-block w-fit max-w-full sm:max-w-full text-left break-all sm:break-normal border border-border/30 md:group-hover/card:border-border/50">
+                <span className="sm:hidden truncate block">{leak.redactedKey}</span>
+                <span className="hidden sm:inline">{leak.redactedKey}</span>
               </code>
               <div
                 className={cn(

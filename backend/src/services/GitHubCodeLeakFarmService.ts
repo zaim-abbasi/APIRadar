@@ -140,9 +140,14 @@ interface GitHubRepoMetadata {
   [key: string]: any;
 }
 function redactKey(key: string): string {
-  if (key.length <= 8) return key;
-  const fixedAsterisks = 12;
-  return `${key.substring(0, 4)}${'*'.repeat(fixedAsterisks)}${key.substring(key.length - 4)}`;
+  if (key.length <= 12) return key;
+  const prefixLength = 6;
+  const suffixLength = 6;
+  const totalLength = 32;
+  const prefix = key.substring(0, prefixLength);
+  const suffix = key.substring(key.length - suffixLength);
+  const stars = totalLength - prefix.length - suffix.length;
+  return `${prefix}${'*'.repeat(Math.max(stars, 0))}${suffix}`;
 }
 
 async function fetchRawFileContent(repoFullName: string, filePath: string, ref: string): Promise<string | null> {
