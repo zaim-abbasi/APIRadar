@@ -118,8 +118,8 @@ jobs:
             npm ci --prefer-offline --no-audit --legacy-peer-deps || \
               npm install --prefer-offline --no-audit --legacy-peer-deps
             
-            cd backend && npm ci --prefer-offline --no-audit --legacy-peer-deps || \
-              npm install --prefer-offline --no-audit --legacy-peer-deps
+            (cd backend && (npm ci --prefer-offline --no-audit --legacy-peer-deps || \
+              npm install --prefer-offline --no-audit --legacy-peer-deps))
             
             pm2 list | grep -q "api-radar-backend.*online" && pm2 reload api-radar-backend --update-env 2>/dev/null || \
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
