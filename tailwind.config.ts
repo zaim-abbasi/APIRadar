@@ -97,6 +97,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", ...fontFamily.sans],
+        heading: ["var(--font-space-grotesk)", ...fontFamily.sans],
       },
     },
   },

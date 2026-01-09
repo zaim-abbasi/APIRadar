@@ -202,7 +202,7 @@ const NavbarComponent = () => {
           {/* Left: Logo */}
           <div className="flex items-center flex-1 md:flex-none md:w-1/3 justify-start">
             <Link href="/" className="flex items-center" onClick={handleNavClick}>
-              <span className="text-2xl font-semibold tracking-tight">
+              <span className="text-3xl font-bold tracking-tighter font-heading">
                 <span className="text-coral">API</span>
                 <span className="text-foreground"> Radar</span>
               </span>

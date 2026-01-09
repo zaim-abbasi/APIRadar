@@ -6,7 +6,7 @@ import Link from 'next/link';
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center">
-    <span className="text-xl font-semibold tracking-tight">
+    <span className="text-2xl font-bold tracking-tighter font-heading">
       <span className="text-coral">API</span>
       <span className="text-foreground"> Radar</span>
     </span>
