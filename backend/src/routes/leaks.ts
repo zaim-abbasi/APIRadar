@@ -65,7 +65,7 @@ export async function leaksRoutes(server: FastifyInstance) {
         200: {
           type: 'object',
           properties: {
-            fullKey: { type: 'string' }
+            redactedKey: { type: 'string' }
           }
         },
         401: {

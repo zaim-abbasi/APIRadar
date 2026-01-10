@@ -4,7 +4,6 @@ export interface LeakedKey {
   provider: string;
   repoUrl: string | null;
   filePath?: string | null;
-  fullKey?: string | null;
   leakDetectedAt: string;
   leakIntroducedAt: string;
   repoCreatedAt?: string | null;

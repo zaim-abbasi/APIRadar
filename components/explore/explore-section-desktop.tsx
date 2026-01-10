@@ -68,7 +68,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
             
             {/* Description */}
             <div className="text-sm text-muted-foreground/90 leading-relaxed">
-              Sign in to view all API key leaks, copy full keys, and access advanced features.
+              Sign in to view all API key leaks and access advanced features.
             </div>
             
             {/* Benefit text */}

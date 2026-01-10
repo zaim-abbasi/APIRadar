@@ -1,23 +1,17 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Copy, 
-  ExternalLink, 
-  Calendar, 
-  User, 
-  FileText, 
-  GitCommit,
-  Check,
+import {
+  ExternalLink,
+  Calendar,
+  User,
+  FileText,
   GitBranch,
   LogIn
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { LeakedKey, Provider } from '@/types';
-import { toast } from 'sonner';
 import { cn, parseGitHubRepoUrl } from '@/lib/utils';
 
 interface LeakTableProps {
@@ -115,7 +109,7 @@ const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provide
 
 EmptyState.displayName = 'EmptyState';
 
-// Memoized Copy Button component
+/*
 const CopyButton = React.memo(({ 
   leak, 
   copiedKey, 
@@ -133,7 +127,6 @@ const CopyButton = React.memo(({
 
   return (
     <>
-      {/* Mobile: just the icon, always visible */}
       <Button
         variant="ghost"
         size="icon"
@@ -149,7 +142,6 @@ const CopyButton = React.memo(({
           )}
         </div>
       </Button>
-      {/* Desktop: icon + text, visible on hover of card */}
       <Button
         variant="ghost"
         size="sm"
@@ -173,6 +165,7 @@ const CopyButton = React.memo(({
 });
 
 CopyButton.displayName = 'CopyButton';
+*/
 
 const formatTimeAgo = (date: Date): string => {
   return formatDistanceToNow(date, { addSuffix: true })
@@ -184,20 +177,13 @@ const formatTimeAgo = (date: Date): string => {
 // Memoized Leak Card component with optimized comparison
 const LeakCard = React.memo(({ 
   leak, 
-  index, 
-  copiedKey, 
-  onCopy,
-  plan
+  index
 }: { 
   leak: LeakedKey; 
   index: number; 
-  copiedKey: string | null; 
-  onCopy: (text: string, keyId: string) => void; 
-  plan: 'free' | 'pro';
 }) => {
   const safeRepoUrl = leak.repoUrl;
   const safeFilePath = leak.filePath;
-  const safeFullKey = leak.fullKey;
   return (
     <div 
       className="group animate-fade-in-up opacity-0"
@@ -286,7 +272,7 @@ const LeakCard = React.memo(({
             )}
           </div>
 
-          {/* Copy Button - Absolutely positioned */}
+          {/*
           <div className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-3">
             <CopyButton 
               leak={{...leak, fullKey: safeFullKey}} 
@@ -295,6 +281,7 @@ const LeakCard = React.memo(({
               plan={plan}
             />
           </div>
+          */}
         </div>
       </CardContent>
     </Card>
@@ -305,27 +292,6 @@ const LeakCard = React.memo(({
 LeakCard.displayName = 'LeakCard';
 
 const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, plan, onSignIn }: LeakTableProps) => {
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  // Memoized copy handler with optimized error handling
-  const handleCopy = useCallback(async (text: string, keyId: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKey(keyId);
-      toast.success('API key copied to clipboard!', {
-        icon: <Check className="h-4 w-4 text-coral" />,
-      });
-      // Reset copied state after 1 second
-      setTimeout(() => {
-        setCopiedKey(null);
-      }, 1000);
-    } catch (err) {
-      toast.error('Failed to copy API key', {
-        className: 'rounded-md',
-      });
-    }
-  }, []);
-
   // Filter and memoize valid leaks to prevent unnecessary re-renders
   const validLeaks = useMemo(() => leaks.filter(leak => leak !== null) as LeakedKey[], [leaks]);
   const isUnauthenticated = plan === 'free';
@@ -355,9 +321,6 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
             <LeakCard
               leak={leak}
               index={index}
-              copiedKey={copiedKey}
-              onCopy={handleCopy}
-              plan={plan}
             />
             {showGradient && index >= 4 && (
               <div className="absolute inset-0 pointer-events-none z-10 rounded-md overflow-hidden">

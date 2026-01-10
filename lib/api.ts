@@ -286,7 +286,7 @@ export async function fetchLeaks({
   });
 }
 
-export async function fetchLeakFullKey(leakId: string, session?: any): Promise<ApiResponse<{ fullKey: string }>> {
+export async function fetchLeakFullKey(leakId: string, session?: any): Promise<ApiResponse<{ redactedKey: string }>> {
   try {
     const headers = createAuthHeaders(session);
     const response = await fetch(`${API_BASE_URL}/api/leaks/${leakId}/fullkey`, {
@@ -299,7 +299,7 @@ export async function fetchLeakFullKey(leakId: string, session?: any): Promise<A
     }
     
     if (response.status === 403) {
-      return { error: 'Full key access requires login' };
+      return { error: 'Full key access is disabled. Only redacted keys are available.' };
     }
     
     if (!response.ok) {

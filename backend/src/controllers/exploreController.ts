@@ -77,7 +77,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
       const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
       leaks = await Leak.find(filter)
-        .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt fullKey')
+        .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
         .sort(sort)
         .skip(skip)
         .limit(actualLimit)
@@ -108,8 +108,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         redactedKey: leak.redactedKey,
         repoUrl: leak.repoUrl,
         filePath: leak.filePath,
-        repoCreatedAt: leak.repoCreatedAt,
-        fullKey: leak.fullKey
+        repoCreatedAt: leak.repoCreatedAt
       };
     });
     let hasMore = false;
@@ -164,13 +163,12 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
         ip: request.ip
       });
       return reply.status(403).send({ 
-        error: 'Full key access requires login',
-        loginRequired: true
+        error: 'Full key access is disabled. Only redacted keys are available.'
       });
     }
     let leak = null;
     try {
-      leak = await Leak.findById(id).select('+fullKey');
+      leak = await Leak.findById(id).lean();
     } catch (dbErr) {
       request.log.error({ msg: 'DB error in getLeakFullKeyHandler', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
@@ -185,7 +183,7 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
       ip: request.ip
     });
 
-    return reply.send({ fullKey: leak.fullKey });
+    return reply.send({ redactedKey: leak.redactedKey });
 
   } catch (error) {
     request.log.error('Error fetching full key:', error);
