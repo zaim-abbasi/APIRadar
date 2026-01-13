@@ -2,6 +2,7 @@ import React from "react";
 import { StatsCards } from "@/components/leaderboard/stats-cards";
 import { Github, Linkedin, Mail } from "lucide-react";
 import { ActivityChart } from "@/components/leaderboard/activity-chart";
+import { HallOfShame } from "@/components/leaderboard/hall-of-shame";
 
 export const LeaderboardSectionMobile = React.memo(function LeaderboardSectionMobile({ statsData }: { statsData: any }) {
 
@@ -20,6 +21,9 @@ export const LeaderboardSectionMobile = React.memo(function LeaderboardSectionMo
       </div>
       <div className="w-full max-w-md mx-auto mb-5 z-10">
         <ActivityChart />
+      </div>
+      <div className="w-full max-w-md mx-auto mb-5 z-10">
+        <HallOfShame />
       </div>
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">

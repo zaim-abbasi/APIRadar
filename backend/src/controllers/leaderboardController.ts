@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { ScanAttempt } from '../models/ScanAttempt';
+import { githubService } from '../services/github';
 
 interface LeaderboardResponse {
   totalReposScanned: number;
@@ -125,6 +126,106 @@ export async function getLeaderboardActivityHandler(request: FastifyRequest, rep
 
     return reply.status(500).send({
       error: 'Failed to fetch leaderboard activity',
+      details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined,
+    });
+  }
+}
+
+type TopLeaker = {
+  rank: number;
+  username: string;
+  avatar_url: string;
+  html_url: string;
+  total_leaks: number;
+  repos_count: number;
+};
+
+let topLeakersCache: TopLeaker[] | null = null;
+let topLeakersCacheTimestamp = 0;
+const TOP_LEAKERS_CACHE_DURATION = 5 * 60 * 1000;
+const TOP_LEAKERS_LIMIT = 10;
+
+export async function getTopLeakersHandler(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const now = Date.now();
+    if (topLeakersCache && (now - topLeakersCacheTimestamp) < TOP_LEAKERS_CACHE_DURATION) {
+      request.log.info({ msg: 'Returning cached top leakers', cacheAge: now - topLeakersCacheTimestamp });
+      return reply.send(topLeakersCache);
+    }
+
+    const raw = await Leak.aggregate([
+      {
+        $addFields: {
+          _m: { $regexFind: { input: '$repoUrl', regex: /github\.com\/([^\/]+)\/([^\/?#]+)/ } },
+        },
+      },
+      {
+        $addFields: {
+          owner: { $ifNull: [{ $arrayElemAt: ['$_m.captures', 0] }, ''] },
+        },
+      },
+      { $match: { owner: { $ne: '' } } },
+      { $project: { owner: 1, fullKey: 1, repoUrl: 1 } },
+      { $group: { _id: { owner: '$owner', key: '$fullKey' }, repoUrl: { $first: '$repoUrl' } } },
+      { $group: { _id: '$_id.owner', total_leaks: { $sum: 1 }, repos: { $addToSet: '$repoUrl' } } },
+      { $project: { _id: 0, username: '$_id', total_leaks: 1, repos_count: { $size: '$repos' } } },
+      { $sort: { total_leaks: -1 } },
+      { $limit: TOP_LEAKERS_LIMIT },
+    ]);
+
+    const usernames = raw
+      .map((r: any) => (typeof r?.username === 'string' ? r.username : ''))
+      .filter((u: string) => u.length > 0);
+
+    const profiles = await Promise.all(
+      usernames.map(async (username: string) => {
+        const profile = await githubService.getUserProfile(username);
+        return { username, profile };
+      })
+    );
+
+    const profileMap = new Map(
+      profiles.map(({ username, profile }) => [
+        username,
+        {
+          login: profile?.login || username,
+          avatar_url: profile?.avatar_url || '',
+          html_url: profile?.html_url || `https://github.com/${username}`,
+        },
+      ])
+    );
+
+    const result: TopLeaker[] = raw.map((row: any, idx: number) => {
+      const username = typeof row?.username === 'string' ? row.username : '';
+      const total_leaks = typeof row?.total_leaks === 'number' ? row.total_leaks : 0;
+      const repos_count = typeof row?.repos_count === 'number' ? row.repos_count : 0;
+      const p = profileMap.get(username);
+      return {
+        rank: idx + 1,
+        username: p?.login || username,
+        avatar_url: p?.avatar_url || '',
+        html_url: p?.html_url || `https://github.com/${username}`,
+        total_leaks,
+        repos_count,
+      };
+    });
+
+    topLeakersCache = result;
+    topLeakersCacheTimestamp = now;
+    return reply.send(result);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    request.log.error({
+      msg: 'Top leakers fetch failed',
+      error: errorMessage,
+      stack: errorStack,
+      errorObject: error,
+    });
+
+    return reply.status(500).send({
+      error: 'Failed to fetch top leakers',
       details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined,
     });
   }

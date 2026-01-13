@@ -129,10 +129,10 @@ FeatureTags.displayName = 'FeatureTags';
 export const HeroSection = React.memo(() => {
   return (
     <section className="relative min-h-screen flex items-center py-8 md:py-12 lg:py-0 lg:h-screen overflow-hidden">
-      <div className="container mx-auto relative z-10 w-full px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-7xl mx-auto">
+      <div className="container mx-auto relative z-10 w-full px-4">
+        <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
-            <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8 text-center lg:text-left">
+            <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div className="animate-fade-in-up">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
                   <span className="text-foreground">Real-Time{' '}</span>
@@ -143,7 +143,7 @@ export const HeroSection = React.memo(() => {
               </div>
 
               <div className="space-y-2 sm:space-y-2.5 animate-fade-in-up">
-                <p className="text-xs sm:text-sm md:text-base lg:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
+                <p className="text-xs sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
                   Monitor public GitHub repositories in real-time to see exactly when, where, and how often API keys are exposed.
                 </p>
               </div>

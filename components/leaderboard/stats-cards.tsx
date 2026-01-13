@@ -325,7 +325,7 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   return (
     <div
       id="stats-container"
-      className="mb-0 sm:mb-8 rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3"
+      className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3"
     >
       <div className="flex items-center justify-between px-1 pb-2">
         <span className="text-xs font-semibold tracking-wide text-foreground/80">

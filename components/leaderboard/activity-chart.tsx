@@ -86,14 +86,14 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
   const chartData = useMemo(() => data, [data]);
 
   return (
-    <Card className={cn("border-border/50 bg-card/50 backdrop-blur-sm shadow-sm w-full", className)}>
+    <Card className={cn("border-border/50 bg-card/30 backdrop-blur-sm w-full", className)}>
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
         <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
           Weekly Leak Activity
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5">
-        <div className="h-[300px] w-full relative">
+        <div className="h-[250px] w-full relative">
           {error ? (
             <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
               Failed to load activity
@@ -104,43 +104,43 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
               Loading…
             </div>
           ) : null}
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--coral))" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="hsl(var(--coral))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  vertical={false}
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                  strokeOpacity={0.2}
-                />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                  width={28}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--border) / 0.2)" }} />
-                <Area
-                  type="monotone"
-                  dataKey="count"
-                  stroke="hsl(var(--coral))"
-                  strokeWidth={2}
-                  fill="url(#activityFill)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--coral))" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="hsl(var(--coral))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+                strokeOpacity={0.2}
+              />
+              <XAxis
+                dataKey="date"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                width={28}
+                allowDecimals={false}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--border) / 0.2)" }} />
+              <Area
+                type="monotone"
+                dataKey="count"
+                stroke="hsl(var(--coral))"
+                strokeWidth={2}
+                fill="url(#activityFill)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>

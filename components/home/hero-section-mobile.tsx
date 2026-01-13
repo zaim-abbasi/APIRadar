@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export const HeroSectionMobile = React.memo(() => {
   return (
-    <section className="relative min-h-screen flex flex-col items-center py-4 sm:py-8 px-3 sm:px-4">
+    <section className="relative min-h-screen flex flex-col items-center py-4 sm:py-8 px-4">
       <div className="absolute inset-0 pointer-events-none z-0" />
 
       <h1 className="text-3xl sm:text-4xl font-semibold leading-tight text-center mb-3 sm:mb-5 text-foreground tracking-tight z-10 px-2 mt-4 sm:mt-8">

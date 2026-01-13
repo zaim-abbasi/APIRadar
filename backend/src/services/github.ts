@@ -327,6 +327,19 @@ export class GitHubService {
       throw err;
     }
   }
+
+  async getUserProfile(username: string): Promise<{ login: string; avatar_url: string; html_url: string } | null> {
+    try {
+      const response = await this.makeRequest((client) => client.get(`/users/${username}`));
+      const login = typeof response.data?.login === 'string' ? response.data.login : username;
+      const avatar_url = typeof response.data?.avatar_url === 'string' ? response.data.avatar_url : '';
+      const html_url = typeof response.data?.html_url === 'string' ? response.data.html_url : '';
+      return { login, avatar_url, html_url };
+    } catch (error) {
+      logger.error(`[GITHUB] User profile fetch failed: ${username} - ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
+  }
 }
 
 export const githubService = new GitHubService();

@@ -197,7 +197,7 @@ const NavbarComponent = () => {
 
   return (
     <nav ref={navRef} className={cn("fixed top-0 left-0 right-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200 w-full", isScrolled && "bg-beige/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4">
+      <div className="container mx-auto px-4">
         <div className="flex items-center w-full h-full" style={{ height: '50px', minHeight: '50px' }}>
           {/* Left: Logo */}
           <div className="flex items-center flex-1 md:flex-none md:w-1/3 justify-start">

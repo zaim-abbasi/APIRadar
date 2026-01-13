@@ -10,19 +10,19 @@ const WhatYouCanDo = React.memo(() => {
     {
       icon: FileSearch,
       title: 'Explore real API key leaks',
-      description: 'See a constantly updated list of leaked API keys from public GitHub code, with redacted values, repo links, and timestamps.',
+      description: 'Browse recent leaks from public GitHub. Keys are redacted and source links are included.',
       iconColor: 'text-coral'
     },
     {
       icon: TrendingUp,
       title: 'Understand leak patterns',
-      description: 'Check which providers, file types, and languages are most commonly involved in leaks to inform your own security hygiene.',
+      description: 'Filter and sort to spot where leaks happen most (provider, file type, language).',
       iconColor: 'text-coral'
     },
     {
       icon: GraduationCap,
       title: 'Use it as a training tool',
-      description: 'Security and engineering teams can use the examples in API Radar to teach developers what not to commit.',
+      description: 'Use real examples to train teams on secrets hygiene and safe committing.',
       iconColor: 'text-coral'
     }
   ];
@@ -42,8 +42,7 @@ const WhatYouCanDo = React.memo(() => {
                   {item.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  <span className="lg:hidden">{item.description.split(',')[0]}.</span>
-                  <span className="hidden lg:inline">{item.description}</span>
+                  {item.description}
                 </p>
               </div>
             </div>
@@ -58,11 +57,11 @@ WhatYouCanDo.displayName = 'WhatYouCanDo';
 
 const WhatYouSee = React.memo(() => {
   const items = [
-    { icon: Key, text: 'Provider (e.g., AI Key, etc.)', iconColor: 'text-muted-foreground/70' },
-    { icon: Lock, text: 'Redacted key (first/last characters only)', iconColor: 'text-muted-foreground/70' },
-    { icon: Github, text: 'Repository and file path', iconColor: 'text-muted-foreground/70' },
-    { icon: Calendar, text: 'Detected at time', iconColor: 'text-muted-foreground/70' },
-    { icon: ExternalLink, text: 'Link to the exact commit or file in GitHub', iconColor: 'text-muted-foreground/70' }
+    { icon: Key, text: 'Provider', iconColor: 'text-muted-foreground/70' },
+    { icon: Lock, text: 'Redacted key preview', iconColor: 'text-muted-foreground/70' },
+    { icon: Github, text: 'Repository + file path', iconColor: 'text-muted-foreground/70' },
+    { icon: Calendar, text: 'Detected timestamp', iconColor: 'text-muted-foreground/70' },
+    { icon: ExternalLink, text: 'Source link (commit/file)', iconColor: 'text-muted-foreground/70' }
   ];
 
   return (
@@ -82,7 +81,7 @@ const WhatYouSee = React.memo(() => {
       </div>
       <div className="p-2 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          All keys are shown for educational and security-awareness purposes only. You should never attempt to misuse exposed credentials.
+          For awareness only — don’t misuse exposed credentials.
         </p>
       </div>
     </div>
@@ -93,9 +92,8 @@ WhatYouSee.displayName = 'WhatYouSee';
 
 const WhyThisExists = React.memo(() => {
   const points = [
-    'Developers accidentally commit .env files and API keys to public repos every day.',
-    'Attackers scan these repos to steal keys.',
-    'API Radar surfaces real-world examples so teams can see the scale of the problem and take secrets management seriously.'
+    'Secrets still get committed to public repos every day.',
+    'Attackers harvest them quickly; visibility helps teams improve.'
   ];
 
   return (
@@ -108,8 +106,7 @@ const WhyThisExists = React.memo(() => {
           <div key={index} className="flex items-start gap-1.5 sm:gap-3">
             <div className="flex-shrink-0 w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-coral mt-1.5 sm:mt-2" />
             <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-              <span className="lg:hidden">{point.split('.')[0]}.</span>
-              <span className="hidden lg:inline">{point}</span>
+              {point}
             </p>
           </div>
         ))}
@@ -128,8 +125,7 @@ const WhatsNext = React.memo(() => {
       </h2>
       <div className="flex-1 space-y-2 sm:space-y-4">
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          <span className="lg:hidden">Public explorer for leaked API keys. More features coming soon.</span>
-          <span className="hidden lg:inline">API Radar is currently a public explorer for leaked API keys. Future plans include more providers, historical trends, and optional private monitoring for your own organizations.</span>
+          More providers, trend views, and optional private monitoring for your org.
         </p>
         <div className="flex items-center gap-2 sm:gap-3">
           <a
@@ -170,8 +166,8 @@ WhatsNext.displayName = 'WhatsNext';
 export const ContentSections = React.memo(() => {
   return (
     <section className="pt-2 sm:pt-3 pb-6 sm:pb-10">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-3 sm:space-y-6 lg:space-y-10">
+      <div className="container mx-auto px-4">
+        <div className="space-y-3 sm:space-y-6 lg:space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 lg:gap-12">
             <WhatYouCanDo />
             <WhatYouSee />
