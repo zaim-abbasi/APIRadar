@@ -66,13 +66,13 @@ function pickRandomSample(): { owner: string; repo: string } {
 
 export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
   const [logs, setLogs] = useState<TerminalLog[]>(() => {
-    const initialCount = 12;
+    const initialCount = 20;
     return Array.from({ length: initialCount }).map((_, i) => {
       const { owner, repo } = pickRandomSample();
       return { id: `init-${i}`, owner, repo };
     });
   });
-  const tickRef = useRef(12);
+  const tickRef = useRef(20);
 
   const maskStyle = useMemo(
     () => ({
@@ -91,15 +91,17 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
 
       setLogs((prev) => {
         const nextLogs = [...prev, next];
-        const MAX_LOGS = 18;
+        const MAX_LOGS = 26;
         return nextLogs.length > MAX_LOGS ? nextLogs.slice(-MAX_LOGS) : nextLogs;
       });
     };
 
     appendLog();
-    const intervalId = window.setInterval(appendLog, 250);
+    const intervalId = window.setInterval(appendLog, 400);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   return (
@@ -125,7 +127,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
       <div className="flex-1 px-4 py-3" style={maskStyle}>
         <div className="h-full flex flex-col justify-end gap-1 text-xs">
           {logs.map((log) => (
-            <div key={log.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div key={log.id} className="animate-in fade-in slide-in-from-bottom-1 duration-400 leading-4 whitespace-nowrap">
               <span className="text-stone-400">SCANNING </span>
               <span className="text-slate-100 font-bold">{log.repo}</span>
               <span className="text-slate-500"> CREATED BY </span>
