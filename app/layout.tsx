@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
+import Script from 'next/script';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { AuthProvider } from '@/components/providers/session-provider';
 import { Navbar } from '@/components/layout/navbar';
@@ -126,105 +127,38 @@ export default function RootLayout({
             gtag('config', 'G-M8WZNWWCZL');
           `
         }} />
-        {/* Set screen size cookie for middleware-based mobile/tablet redirect */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              function setScreenCookie() {
-                var width = window.innerWidth;
-                var value = 'desktop';
-                if (width < 768) value = 'mobile';
-                else if (width < 1024) value = 'tablet';
-                var existing = document.cookie.match(/(?:^|; )apiradar_screen=([^;]*)/);
-                if (!existing || existing[1] !== value) {
-                  document.cookie = 'apiradar_screen=' + value + '; path=/; max-age=86400';
-                }
-              }
-              setScreenCookie();
-              window.addEventListener('resize', setScreenCookie);
-            })();
-          `
-        }} />
-        {/* Remove browser extension attributes to prevent hydration mismatches */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              if (typeof window !== 'undefined') {
-                function removeExtensionAttributes() {
-                  var attributes = ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore'];
-                  attributes.forEach(function(attr) {
-                    var elements = document.querySelectorAll('[' + attr + ']');
-                    elements.forEach(function(el) {
-                      el.removeAttribute(attr);
-                    });
-                  });
-                }
-                if (document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', removeExtensionAttributes);
-                } else {
-                  removeExtensionAttributes();
-                }
-                var observer = new MutationObserver(function() {
-                  removeExtensionAttributes();
-                });
-                if (document.body) {
-                  observer.observe(document.body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    attributeFilter: ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore']
-                  });
-                }
-              }
-            })();
-          `
-        }} />
-        {/* Suppress hydration warnings for browser extension attributes */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              if (typeof window !== 'undefined') {
-                const observer = new MutationObserver(function(mutations) {
-                  mutations.forEach(function(mutation) {
-                    mutation.addedNodes.forEach(function(node) {
-                      if (node.nodeType === 1) {
-                        const element = node;
-                        if (element.hasAttribute && element.hasAttribute('bis_skin_checked')) {
-                          element.removeAttribute('bis_skin_checked');
-                        }
-                        if (element.querySelectorAll) {
-                          const elementsWithAttr = element.querySelectorAll('[bis_skin_checked]');
-                          elementsWithAttr.forEach(function(el) {
-                            el.removeAttribute('bis_skin_checked');
-                          });
-                        }
-                      }
-                    });
-                  });
-                });
-                if (document.body) {
-                  observer.observe(document.body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    attributeFilter: ['bis_skin_checked']
-                  });
-                } else {
-                  document.addEventListener('DOMContentLoaded', function() {
-                    observer.observe(document.body, {
-                      childList: true,
-                      subtree: true,
-                      attributes: true,
-                      attributeFilter: ['bis_skin_checked']
-                    });
-                  });
-                }
-              }
-            })();
-          `
-        }} />
       </head>
       <body className={`${inter.className} ${spaceGrotesk.variable}`} suppressHydrationWarning>
+        <Script
+          id="pre-hydration-attr-cleanup"
+          strategy="beforeInteractive"
+        >{`
+          (function () {
+            try {
+              var attrs = ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore'];
+              function removeAttrs() {
+                for (var i = 0; i < attrs.length; i++) {
+                  var attr = attrs[i];
+                  var nodes = document.querySelectorAll('[' + attr + ']');
+                  for (var j = 0; j < nodes.length; j++) {
+                    nodes[j].removeAttribute(attr);
+                  }
+                }
+              }
+              removeAttrs();
+              var observer = new MutationObserver(removeAttrs);
+              observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: attrs
+              });
+              window.addEventListener('beforeunload', function () {
+                observer.disconnect();
+              });
+            } catch (e) {}
+          })();
+        `}</Script>
         <AuthProvider>
           <ThemeProvider
             attribute="class"

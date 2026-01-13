@@ -31,8 +31,8 @@ const authSchema = z.object({
 });
 
 const RATE_LIMITS = {
-  authenticated: { requests: 200, window: 60000 },
-  unauthenticated: { requests: 10, window: 60000 }
+  authenticated: { requests: 2000, window: 60000 },
+  unauthenticated: { requests: 100, window: 60000 }
 };
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();

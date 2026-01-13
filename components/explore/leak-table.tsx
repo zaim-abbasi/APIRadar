@@ -362,8 +362,8 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
                   <div className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed">
                     You're only seeing 6 leaks. Sign in now to access <span className="font-semibold text-foreground">3,000+ leaked API keys</span> with full details, repository links, and unlimited access.
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
-                    <CircleCheck className="h-3 w-3" aria-hidden="true" focusable="false" />
+                  <div className="flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
+                    <CircleCheck className="h-3 w-3 text-coral" aria-hidden="true" focusable="false" />
                     <span>100% free. No credit card required. Instant access.</span>
                   </div>
                 </div>

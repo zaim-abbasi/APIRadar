@@ -6,7 +6,6 @@ interface LeaderboardResponse {
   totalReposScanned: number;
   totalLeaksFound: number;
   leaksFoundToday: number;
-  topProviders: { provider: string; count: number; percentage: number }[];
 }
 
 let leaderboardCache: LeaderboardResponse | null = null;
@@ -22,28 +21,15 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     }
     const nowUtc = new Date();
     const twentyFourHoursAgo = new Date(nowUtc.getTime() - 24 * 60 * 60 * 1000);
-    const [totalReposScanned, totalLeaksFound, topProviders] = await Promise.all([
+    const [totalReposScanned, totalLeaksFound] = await Promise.all([
       ScanAttempt.countDocuments(),
       Leak.countDocuments(),
-      Leak.aggregate([
-        { $match: { $and: [{ provider: { $exists: true } }, { provider: { $ne: null } }, { provider: { $ne: '' } }] } },
-        { $group: { _id: '$provider', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 10 }
-      ])
     ]);
     request.log.info({
       msg: 'Leaderboard query results',
       totalReposScanned,
       totalLeaksFound,
-      topProvidersCount: topProviders?.length || 0,
-      topProviders: topProviders?.slice(0, 3)
     });
-    const providersWithPercentage = (topProviders || []).map((provider: { _id: string; count: number }) => ({
-      provider: provider._id,
-      count: provider.count,
-      percentage: totalLeaksFound > 0 ? (provider.count / totalLeaksFound) * 100 : 0
-    }));
     const leaksFoundToday = await Leak.countDocuments({
       leakDetectedAt: {
         $gte: twentyFourHoursAgo
@@ -53,7 +39,6 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
       totalReposScanned,
       totalLeaksFound,
       leaksFoundToday,
-      topProviders: providersWithPercentage
     };
     if (totalLeaksFound > 0 || totalReposScanned > 0) {
       leaderboardCache = response;
@@ -81,3 +66,66 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     });
   }
 } 
+
+type ActivityPoint = { date: string; count: number };
+
+let activityCache: ActivityPoint[] | null = null;
+let activityCacheTimestamp = 0;
+
+export async function getLeaderboardActivityHandler(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const now = Date.now();
+    if (activityCache && (now - activityCacheTimestamp) < CACHE_DURATION) {
+      request.log.info({ msg: 'Returning cached leaderboard activity', cacheAge: now - activityCacheTimestamp });
+      return reply.send(activityCache);
+    }
+
+    const nowUtc = new Date();
+    const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
+    const startUtc = new Date(todayUtc.getTime() - 6 * 24 * 60 * 60 * 1000);
+
+    const raw = await Leak.aggregate([
+      { $match: { leakDetectedAt: { $gte: startUtc } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const counts = new Map<string, number>(
+      raw.map((r: { _id: string; count: number }) => [r._id, r.count])
+    );
+
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+    const result: ActivityPoint[] = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(startUtc.getTime() + i * 24 * 60 * 60 * 1000);
+      const yyyy = d.getUTCFullYear();
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      const key = `${yyyy}-${mm}-${dd}`;
+      return { date: weekdays[d.getUTCDay()] ?? 'Sun', count: counts.get(key) || 0 };
+    });
+
+    activityCache = result;
+    activityCacheTimestamp = now;
+    return reply.send(result);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
+    request.log.error({
+      msg: 'Leaderboard activity fetch failed',
+      error: errorMessage,
+      stack: errorStack,
+      errorObject: error,
+    });
+
+    return reply.status(500).send({
+      error: 'Failed to fetch leaderboard activity',
+      details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined,
+    });
+  }
+}

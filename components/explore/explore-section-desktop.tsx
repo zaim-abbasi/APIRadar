@@ -72,8 +72,8 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
             </div>
             
             {/* Benefit text */}
-            <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
-              <Check className="h-3.5 w-3.5" aria-hidden="true" focusable="false" />
+            <div className="flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
+              <Check className="h-3.5 w-3.5 text-coral" aria-hidden="true" focusable="false" />
               <span>No payment needed. Explore for free.</span>
             </div>
           </div>

@@ -244,13 +244,13 @@ const StatCard = React.memo(({
   
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-2 p-2.5 sm:p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-2 p-2.5 sm:p-3">
         <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
           {stat.title}
         </CardTitle>
-        <IconComponent className={`${stat.color} h-7 w-7 sm:h-9 sm:w-9`} />
+        <IconComponent className={`${stat.color} h-7 w-7 sm:h-8 sm:w-8`} />
       </CardHeader>
-      <CardContent className="p-2.5 sm:p-4 pt-0">
+      <CardContent className="p-2.5 sm:p-3 pt-0">
         <div className="text-xl sm:text-2xl font-semibold text-foreground">
           {typeof stat.value === 'number' && stat.value !== null ? (
             stat.isPercentage ? (
@@ -325,11 +325,18 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   return (
     <div
       id="stats-container"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-5 mb-0 sm:mb-8"
+      className="mb-0 sm:mb-8 rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3"
     >
-      {stats.map((stat, index) => (
-        <StatCard key={stat.title} stat={stat} index={index} />
-      ))}
+      <div className="flex items-center justify-between px-1 pb-2">
+        <span className="text-xs font-semibold tracking-wide text-foreground/80">
+          Leaderboard Stats
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-5">
+        {stats.map((stat, index) => (
+          <StatCard key={stat.title} stat={stat} index={index} />
+        ))}
+      </div>
     </div>
   );
 });

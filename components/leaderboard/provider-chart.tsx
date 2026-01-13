@@ -14,7 +14,7 @@ interface ProviderChartProps {
 
 // Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'ai-key': 'hsl(var(--chart-2))',
+  'ai-key': 'hsl(var(--coral))',
 };
 
 // Function to map database provider names to display names
@@ -114,6 +114,9 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
     if (safeData.length === 0) return [0, 1];
     const minBar = Math.min(...safeData.map(item => item.count));
     const maxBar = Math.max(...safeData.map(item => item.count));
+    if (minBar === maxBar) {
+      return [0, Math.ceil(maxBar * 1.05) || 1];
+    }
     // Crop aggressively: min just below the smallest bar, max just above the largest
     const minValue = Math.max(0, minBar - Math.ceil((maxBar - minBar) * 0.8));
     const maxValue = Math.ceil(maxBar * 1.05);
@@ -128,65 +131,72 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
   }, []);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-4" aria-live="polite">
-      {/* Chart */}
-      <div className="lg:col-span-2 w-full">
-        <Card className="border-border/50 glass-card w-full shadow-sm" aria-label="Leaks by Provider">
-          <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
-            <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Leaks by Provider</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
-              Distribution of leaked API keys across different providers
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5">
-            <div className="h-40 sm:h-48 w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
-                  <XAxis 
-                    dataKey="provider" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                    tickFormatter={(value) => getProviderDisplayName(value)}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={11}
-                    domain={yAxisDomain}
-                    tickFormatter={formatYAxisTick}
-                    tickCount={6}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="count" 
-                    radius={[3, 3, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3" aria-live="polite">
+      <div className="flex items-center justify-between px-1 pb-2">
+        <span className="text-xs font-semibold tracking-wide text-foreground/80">
+          Provider Breakdown
+        </span>
       </div>
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-4">
+        {/* Chart */}
+        <div className="lg:col-span-2 w-full">
+          <Card className="border-border/50 glass-card w-full shadow-sm" aria-label="Leaks by Provider">
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
+              <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Leaks by Provider</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
+                Distribution of leaked API keys across different providers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5">
+              <div className="h-40 sm:h-48 w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                    <XAxis 
+                      dataKey="provider" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      tickFormatter={(value) => getProviderDisplayName(value)}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={11}
+                      domain={yAxisDomain}
+                      tickFormatter={formatYAxisTick}
+                      tickCount={6}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar 
+                      dataKey="count" 
+                      radius={[3, 3, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Provider List */}
-      <div className="w-full">
-        <Card className="border-border/50 glass-card h-fit w-full shadow-sm" aria-label="Top Providers">
-          <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
-            <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">Top Providers</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
-              Most frequently leaked API providers
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5 space-y-1.5 sm:space-y-2">
-            {topProviders.length ? (
-              topProviders.map((provider, index) => (
-                <ProviderListItem key={provider.provider} provider={provider} index={index} />
-              ))
-            ) : (
-              <div className="text-muted-foreground text-center">No providers to display.</div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Provider List */}
+        <div className="w-full">
+          <Card className="border-border/50 glass-card h-fit w-full shadow-sm" aria-label="Top Providers">
+            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
+              <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Top Providers</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
+                Most frequently leaked API providers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5 space-y-1.5 sm:space-y-2">
+              {topProviders.length ? (
+                topProviders.map((provider, index) => (
+                  <ProviderListItem key={provider.provider} provider={provider} index={index} />
+                ))
+              ) : (
+                <div className="text-muted-foreground text-center">No providers to display.</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

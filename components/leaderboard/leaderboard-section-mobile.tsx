@@ -1,27 +1,9 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { StatsCards } from "@/components/leaderboard/stats-cards";
-import dynamic from "next/dynamic";
 import { Github, Linkedin, Mail } from "lucide-react";
+import { ActivityChart } from "@/components/leaderboard/activity-chart";
 
-// Optimize dynamic import with better loading state
-const ProviderChart = dynamic(
-  () => import("@/components/leaderboard/provider-chart").then(m => m.ProviderChart),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="h-64 w-full flex items-center justify-center text-muted-foreground animate-pulse">
-        <div className="text-sm">Loading chart...</div>
-      </div>
-    )
-  }
-);
-
-export const LeaderboardSectionMobile = React.memo(function LeaderboardSectionMobile({ statsData, chartData }: { statsData: any; chartData: any }) {
-  // Memoize chart props to prevent unnecessary re-renders
-  const chartProps = useMemo(() => ({
-    topProviders: chartData?.topProviders || [],
-    totalLeaks: chartData?.totalLeaks || 0
-  }), [chartData?.topProviders, chartData?.totalLeaks]);
+export const LeaderboardSectionMobile = React.memo(function LeaderboardSectionMobile({ statsData }: { statsData: any }) {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center px-3 pt-3 pb-5 bg-background">
@@ -36,9 +18,8 @@ export const LeaderboardSectionMobile = React.memo(function LeaderboardSectionMo
       <div className="w-full max-w-md mx-auto mb-3 z-10">
         <StatsCards data={statsData} />
       </div>
-      {/* Provider Chart */}
       <div className="w-full max-w-md mx-auto mb-5 z-10">
-        <ProviderChart data={chartProps.topProviders} totalLeaks={chartProps.totalLeaks} />
+        <ActivityChart />
       </div>
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">

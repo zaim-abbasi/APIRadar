@@ -26,11 +26,6 @@ export const metadata: Metadata = {
 //   todayLeaks: number;
 // }
 
-interface ChartData {
-  topProviders: ProviderStats[];
-  totalLeaks: number;
-}
-
 // Production-grade data fetching with proper error handling
 async function fetchLeaderboardData(): Promise<LeaderboardData> {
   // Use Next.js API route as proxy (similar to leaks)
@@ -133,23 +128,6 @@ const StatsSection = React.memo(({ data }: { data: LeaderboardData }) => (
 
 StatsSection.displayName = 'StatsSection';
 
-const ChartsSection = React.memo(({ data }: { data: ChartData }) => (
-  <div className="flex-1 min-h-0">
-    <Suspense fallback={
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="space-y-4 w-full max-w-md">
-          <div className="h-8 skeleton rounded-md animate-pulse"></div>
-          <div className="h-64 skeleton rounded-md animate-pulse"></div>
-        </div>
-      </div>
-    }>
-      {/* This section is now handled by LeaderboardClient */}
-    </Suspense>
-  </div>
-));
-
-ChartsSection.displayName = 'ChartsSection';
-
 // Force dynamic rendering - leaderboard data changes frequently
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Always fetch fresh data
@@ -161,13 +139,5 @@ export default async function LeaderboardPage() {
 
   // Prepare data with proper validation
   const statsData: LeaderboardData = leaderboardData;
-  const chartData = {
-    topProviders: leaderboardData.topProviders.map((p) => ({
-      ...p,
-      trend: p.trend || 'stable',
-    })),
-    totalLeaks: leaderboardData.totalLeaks
-  };
-
-  return <LeaderboardClient statsData={statsData} chartData={chartData} />;
+  return <LeaderboardClient statsData={statsData} />;
 }

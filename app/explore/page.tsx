@@ -453,7 +453,7 @@ const ActionCard = ({ title, subtitle, button, icon, socialProof }: ActionCardPr
             
             {/* Benefit text */}
             {socialProof && (
-              <div className="text-xs text-green-700 font-medium">
+              <div className="text-xs text-foreground/80 font-medium">
                 {socialProof}
               </div>
             )}
