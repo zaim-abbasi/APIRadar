@@ -303,22 +303,22 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
       title: 'Leaks Found Today',
       value: safeLeaksFoundToday,
       icon: Eye,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-600/10'
+      color: 'text-coral',
+      bgColor: 'bg-coral/10'
     },
     {
       title: 'Total Leaks Found',
       value: safeTodayLeaks,
       icon: AlertTriangle,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10'
+      color: 'text-coral',
+      bgColor: 'bg-coral/10'
     },
     {
       title: 'Total Repos Scanned',
       value: safeTotalLeaks,
       icon: Search,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10'
+      color: 'text-coral',
+      bgColor: 'bg-coral/10'
     }
   ], [safeTotalLeaks, safeTodayLeaks, safeLeaksFoundToday]);
 

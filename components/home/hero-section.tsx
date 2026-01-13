@@ -77,7 +77,7 @@ const FeatureTags = React.memo(() => {
   const features = useMemo(() => [
     {       icon: Zap, text: 'Real-Time Monitoring', color: 'text-coral', shouldSpin: true },
     { icon: Eye, text: 'Comprehensive Detection', color: 'text-foreground', shouldSpin: false },
-    { icon: Globe, text: 'Global Coverage', color: 'text-blue-500', shouldSpin: false }
+    { icon: Globe, text: 'Global Coverage', color: 'text-coral', shouldSpin: false }
   ], []);
 
   return (
@@ -115,13 +115,13 @@ const RightColumn = React.memo(() => {
       icon: Shield, 
       text: 'Understand Patterns', 
       description: 'Check which providers and file types are most commonly involved in leaks',
-      color: 'text-foreground'
+      color: 'text-coral'
     },
     { 
       icon: BookOpen, 
       text: 'Training Tool', 
       description: 'Use examples to teach developers what not to commit',
-      color: 'text-blue-500'
+      color: 'text-coral'
     }
   ], []);
 

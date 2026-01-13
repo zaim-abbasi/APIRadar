@@ -235,7 +235,7 @@ export default function RootLayout({
           >
             <div className="min-h-screen flex flex-col" suppressHydrationWarning>
               <Navbar />
-              <main className="flex-1">
+              <main className="flex-1 pt-[50px]">
                 {children}
               </main>
               <Footer />

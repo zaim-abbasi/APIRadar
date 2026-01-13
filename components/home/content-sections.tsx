@@ -11,19 +11,19 @@ const WhatYouCanDo = React.memo(() => {
       icon: FileSearch,
       title: 'Explore real API key leaks',
       description: 'See a constantly updated list of leaked API keys from public GitHub code, with redacted values, repo links, and timestamps.',
-      iconColor: 'text-blue-500'
+      iconColor: 'text-coral'
     },
     {
       icon: TrendingUp,
       title: 'Understand leak patterns',
       description: 'Check which providers, file types, and languages are most commonly involved in leaks to inform your own security hygiene.',
-      iconColor: 'text-green-500'
+      iconColor: 'text-coral'
     },
     {
       icon: GraduationCap,
       title: 'Use it as a training tool',
       description: 'Security and engineering teams can use the examples in API Radar to teach developers what not to commit.',
-      iconColor: 'text-purple-500'
+      iconColor: 'text-coral'
     }
   ];
 
@@ -58,11 +58,11 @@ WhatYouCanDo.displayName = 'WhatYouCanDo';
 
 const WhatYouSee = React.memo(() => {
   const items = [
-    { icon: Key, text: 'Provider (e.g., AI Key, etc.)', iconColor: 'text-blue-600' },
-    { icon: Lock, text: 'Redacted key (first/last characters only)', iconColor: 'text-orange-500' },
-    { icon: Github, text: 'Repository and file path', iconColor: 'text-gray-700' },
-    { icon: Calendar, text: 'Detected at time', iconColor: 'text-indigo-500' },
-    { icon: ExternalLink, text: 'Link to the exact commit or file in GitHub', iconColor: 'text-blue-500' }
+    { icon: Key, text: 'Provider (e.g., AI Key, etc.)', iconColor: 'text-muted-foreground/70' },
+    { icon: Lock, text: 'Redacted key (first/last characters only)', iconColor: 'text-muted-foreground/70' },
+    { icon: Github, text: 'Repository and file path', iconColor: 'text-muted-foreground/70' },
+    { icon: Calendar, text: 'Detected at time', iconColor: 'text-muted-foreground/70' },
+    { icon: ExternalLink, text: 'Link to the exact commit or file in GitHub', iconColor: 'text-muted-foreground/70' }
   ];
 
   return (

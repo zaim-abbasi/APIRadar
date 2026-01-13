@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CustomSelectProps {
@@ -243,9 +243,7 @@ export const CustomSelectItem = React.forwardRef<HTMLDivElement, CustomSelectIte
       >
         {isSelected && (
           <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className="h-4 w-4" aria-hidden="true" focusable="false" />
           </span>
         )}
         {children}
