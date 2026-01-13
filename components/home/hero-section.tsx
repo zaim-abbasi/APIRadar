@@ -1,10 +1,33 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { Shield, ArrowRight, FileSearch, Zap, Lock, BookOpen, Eye, Globe } from 'lucide-react';
+import { Shield, ArrowRight, FileSearch, Zap, Lock, BookOpen, Eye, Globe, Radar, Crosshair, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+
+const WorkflowPipeline = React.memo(() => (
+  <div className="flex items-center justify-center lg:justify-start">
+    <div className="flex items-center gap-2">
+      <div className="inline-flex items-center gap-2 rounded-md border bg-card border-border px-3 py-2">
+        <Radar className="h-4 w-4 text-muted-foreground" aria-hidden="true" focusable="false" />
+        <span className="text-xs font-bold tracking-widest text-muted-foreground">SCAN</span>
+      </div>
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" focusable="false" />
+      <div className="inline-flex items-center gap-2 rounded-md border bg-card border-border px-3 py-2">
+        <Crosshair className="h-4 w-4 text-muted-foreground" aria-hidden="true" focusable="false" />
+        <span className="text-xs font-bold tracking-widest text-muted-foreground">DETECT</span>
+      </div>
+      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" focusable="false" />
+      <div className="inline-flex items-center gap-2 rounded-md border bg-coral text-white border-coral/80 animate-pulse px-3 py-2">
+        <Radio className="h-4 w-4 text-white" aria-hidden="true" focusable="false" />
+        <span className="text-xs font-bold tracking-widest text-white">LIVE FEED</span>
+      </div>
+    </div>
+  </div>
+));
+
+WorkflowPipeline.displayName = 'WorkflowPipeline';
 
 // Memoized Feature Tag component
 const FeatureTag = React.memo(({ 
@@ -224,25 +247,8 @@ export const HeroSection = React.memo(() => {
                 </p>
               </div>
 
-              <div className="hidden md:block space-y-2.5 sm:space-y-3 pt-1 sm:pt-2 animate-fade-in-up">
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
-                    View newly discovered API keys from public repos in real time
-                  </p>
-                </div>
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
-                    Filter by provider (AI Key, etc.) and see where leaks come from
-                  </p>
-                </div>
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                  <p className="text-xs sm:text-sm md:text-base text-foreground/90 leading-relaxed text-left">
-                    Learn from real incidents to improve your own secrets-management practices
-                  </p>
-                </div>
+              <div className="hidden md:block pt-1 sm:pt-2 animate-fade-in-up">
+                <WorkflowPipeline />
               </div>
             </div>
 
