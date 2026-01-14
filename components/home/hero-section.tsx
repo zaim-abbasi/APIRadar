@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { ArrowRight, Zap, Eye, Globe, Radar, Crosshair, Radio } from 'lucide-react';
+import { ArrowRight, Zap, Eye, Globe, Radar, Crosshair, Radio, Trophy, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -180,9 +180,9 @@ export const HeroSection = React.memo(() => {
                     "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70"
                   )}
                 >
-                  <span className="flex items-center justify-center w-full">
+                  <span className="flex items-center justify-center w-full gap-2">
+                    <Shield className="h-4 w-4" strokeWidth={2.6} aria-hidden="true" focusable="false" />
                     Explore Leaks
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
                   </span>
                 </Link>
                 <Link
@@ -193,7 +193,10 @@ export const HeroSection = React.memo(() => {
                     "bg-card/50 backdrop-blur-sm text-foreground border-border hover:brightness-90 hover:border-coral/70"
                   )}
                 >
-                  View Leaderboard
+                  <span className="flex items-center justify-center w-full gap-2">
+                    <Trophy className="h-4 w-4 text-coral" strokeWidth={2.6} aria-hidden="true" focusable="false" />
+                    View Leaderboard
+                  </span>
                 </Link>
               </div>
             </div>

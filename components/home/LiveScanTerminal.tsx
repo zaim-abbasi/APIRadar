@@ -57,7 +57,16 @@ const REAL_DATA_SAMPLES = [
   "arturogf93/terracota-netlify",
 ] as const;
 
-type TerminalLog = { id: string; owner: string; repo: string };
+type TerminalLog = { id: string; owner: string; repo: string; timestamp: Date };
+
+const formatLogTime = (date: Date): string => {
+  return new Intl.DateTimeFormat(navigator.language, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(date);
+};
 
 function pickRandomSample(): { owner: string; repo: string } {
   const fullName = REAL_DATA_SAMPLES[Math.floor(Math.random() * REAL_DATA_SAMPLES.length)];
@@ -70,25 +79,23 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     const initialCount = 26;
     return Array.from({ length: initialCount }).map((_, i) => {
       const { owner, repo } = pickRandomSample();
-      return { id: `init-${i}`, owner, repo };
+      return { id: `init-${i}`, owner, repo, timestamp: new Date() };
     });
   });
   const tickRef = useRef(26);
 
-  const maskStyle = useMemo(
-    () => ({
-      WebkitMaskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-      maskImage: "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-    }),
-    [],
-  );
 
   useEffect(() => {
     const appendLog = () => {
       tickRef.current += 1;
 
       const { owner, repo } = pickRandomSample();
-      const next: TerminalLog = { id: `${Date.now()}-${tickRef.current}`, owner, repo };
+      const next: TerminalLog = { 
+        id: `${Date.now()}-${tickRef.current}`, 
+        owner, 
+        repo, 
+        timestamp: new Date() 
+      };
 
       setLogs((prev) => {
         const nextLogs = [...prev, next];
@@ -98,7 +105,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     };
 
     appendLog();
-    const intervalId = window.setInterval(appendLog, 400);
+    const intervalId = window.setInterval(appendLog, 1000);
 
     return () => {
       window.clearInterval(intervalId);
@@ -107,13 +114,13 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
 
   return (
     <div
-      className="w-full h-[300px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-slate-950 border border-slate-800 font-mono flex flex-col"
+      className="w-full h-[300px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-slate-950 border border-slate-800 font-mono flex flex-col relative"
       style={{
         fontFamily:
           "'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
       }}
     >
-      <div className="hidden lg:flex px-4 py-3 items-center justify-between border-b border-white/5 bg-slate-950/80">
+      <div className="hidden lg:flex px-4 py-2 items-center justify-between border-b border-white/5 bg-slate-950/80 mb-0">
         <div className="font-mono text-xs text-stone-400 tracking-widest uppercase">
           LIVE_FEED // PUBLIC_REPOS
         </div>
@@ -125,8 +132,8 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-3" style={maskStyle}>
-        <div className="h-full flex flex-col justify-end gap-1 text-xs">
+      <div className="flex-1 px-4 pt-0 overflow-auto">
+        <div className="h-full flex flex-col justify-end gap-0 text-xs pb-4">
           {logs.map((log) => (
             <div
               key={log.id}
@@ -135,6 +142,9 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 !log.id.startsWith("init-") && "animate-in fade-in slide-in-from-bottom-1 duration-400",
               )}
             >
+              <span className="text-slate-500 text-[0.7rem] mr-2">
+                [{formatLogTime(log.timestamp)}]
+              </span>
               <span className="text-stone-400">SCANNING </span>
               <span className="text-slate-100 font-bold">{log.repo}</span>
               <span className="text-slate-500"> CREATED BY </span>

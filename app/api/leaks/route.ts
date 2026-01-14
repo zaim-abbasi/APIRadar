@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
+import jwt from 'jsonwebtoken';
 import { authOptions } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
@@ -58,24 +59,29 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Create authentication headers
     const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    // Properly check if user is authenticated
-    const isAuthenticated = !!(session?.user?.email || session?.user?.id);
-    
-    if (isAuthenticated && session) {
-      authHeaders['x-user-id'] = session.user.id || session.user.email || '';
-      authHeaders['x-user-email'] = session.user.email || '';
-      authHeaders['x-user-plan'] = session.user.plan || 'pro';
-      authHeaders['x-user-authenticated'] = 'true';
-    } else {
-      authHeaders['x-user-id'] = '';
-      authHeaders['x-user-email'] = '';
-      authHeaders['x-user-plan'] = 'free';
-      authHeaders['x-user-authenticated'] = 'false';
+    let backendToken: string | undefined = session?.backendToken;
+    if (!backendToken) {
+      const token = await getToken({
+        req: request as any,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+      if (token && process.env.NEXTAUTH_SECRET) {
+        backendToken = jwt.sign(
+          {
+            id: token.id || token.sub,
+            email: token.email,
+          },
+          process.env.NEXTAUTH_SECRET,
+          { expiresIn: '30d' }
+        );
+      }
+    }
+    if (backendToken) {
+      authHeaders['Authorization'] = `Bearer ${backendToken}`;
     }
 
     let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL;

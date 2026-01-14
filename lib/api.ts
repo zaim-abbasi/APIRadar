@@ -60,15 +60,21 @@ function createAuthHeaders(session?: any) {
   let userId = 'anonymous';
   let userEmail = 'anonymous@example.com';
   let isAuthenticated = 'false';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
 
   if (session?.user) {
     userId = session.user.id || session.user.email || 'authenticated';
     userEmail = session.user.email || 'authenticated@example.com';
     isAuthenticated = 'true';
+    if (session.backendToken) {
+      headers['Authorization'] = `Bearer ${session.backendToken}`;
+    }
   }
 
   return {
-    'Content-Type': 'application/json',
+    ...headers,
     'x-user-id': userId,
     'x-user-email': userEmail,
     'x-user-authenticated': isAuthenticated,
@@ -223,8 +229,6 @@ export async function fetchLeaks({
   hasMore: boolean;
   planLimits?: {
     maxLeaks: number;
-    canInfiniteScroll: boolean;
-    maxTimeRange: string;
   };
 }>> {
   const normalizedProvider = provider ? String(provider).trim() : 'all';

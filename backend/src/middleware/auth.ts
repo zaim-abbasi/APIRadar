@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
+import jwt from 'jsonwebtoken';
+import { config } from '../config/environment';
 
 export interface AuthenticatedRequest extends FastifyRequest {
   user?: {
@@ -11,87 +12,37 @@ export interface AuthenticatedRequest extends FastifyRequest {
 
 export const ACCESS_LIMITS = {
   unauthenticated: {
-    maxLeaks: 6,
-    maxTimeRange: '15d',
-    canAccessFullKey: false,
-    canInfiniteScroll: false
+    maxLeaks: 6
   },
   authenticated: {
-    maxLeaks: Infinity,
-    maxTimeRange: 'all',
-    canAccessFullKey: true,
-    canInfiniteScroll: true
+    maxLeaks: Infinity
   }
 } as const;
 
-const authSchema = z.object({
-  'x-user-id': z.string().optional(),
-  'x-user-email': z.string().optional(),
-  'x-user-authenticated': z.string().optional(),
-});
-
-const RATE_LIMITS = {
-  authenticated: { requests: 2000, window: 60000 },
-  unauthenticated: { requests: 100, window: 60000 }
-};
-
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
 export async function authenticateUser(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
-    const authData = authSchema.safeParse({
-      'x-user-id': request.headers['x-user-id'],
-      'x-user-email': request.headers['x-user-email'],
-      'x-user-authenticated': request.headers['x-user-authenticated'],
-    });
-
-    if (!authData.success) {
-      return reply.status(401).send({ 
-        error: 'Invalid authentication headers',
-        details: authData.error.errors 
-      });
-    }
-
-    const { 'x-user-id': userId, 'x-user-email': userEmail, 'x-user-authenticated': isAuthenticated } = authData.data;
-    const normalizedUserId = userId && userId.trim() !== '' ? userId.trim() : undefined;
-    const normalizedUserEmail = userEmail && userEmail.trim() !== '' ? userEmail.trim() : undefined;
-    const isValidEmail = !!normalizedUserEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedUserEmail);
-    const isUserAuthenticated: boolean = isAuthenticated === 'true' && !!normalizedUserId && !!normalizedUserEmail && isValidEmail;
-    const clientId = userId || request.ip || 'anonymous';
-    const rateLimit = isUserAuthenticated ? RATE_LIMITS.authenticated : RATE_LIMITS.unauthenticated;
-    
-    const now = Date.now();
-    const clientData = rateLimitStore.get(clientId);
-    
-    if (clientData && now < clientData.resetTime) {
-      if (clientData.count >= rateLimit.requests) {
-        return reply.status(429).send({ 
-          error: 'Rate limit exceeded',
-          retryAfter: Math.ceil((clientData.resetTime - now) / 1000)
-        });
-      }
-      clientData.count++;
-    } else {
-      rateLimitStore.set(clientId, {
-        count: 1,
-        resetTime: now + rateLimit.window
-      });
-    }
     const user = {
-      id: normalizedUserId || 'anonymous',
-      email: normalizedUserEmail || 'anonymous@example.com',
-      isAuthenticated: isUserAuthenticated
+      id: 'anonymous',
+      email: 'anonymous@example.com',
+      isAuthenticated: false
     };
-    request.user = user;
-    request.log.info({
-      msg: 'User authenticated',
-      userId: user.id,
-      userEmail: user.email,
-      isAuthenticated: user.isAuthenticated,
-      ip: request.ip,
-      userAgent: request.headers['user-agent']
-    });
 
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      try {
+        const decoded = jwt.verify(token, config.NEXTAUTH_SECRET) as jwt.JwtPayload;
+        const decodedId = typeof decoded?.['id'] === 'string' ? decoded['id'] : undefined;
+        const decodedEmail = typeof decoded?.['email'] === 'string' ? decoded['email'] : undefined;
+        user.id = decodedId || 'authenticated';
+        user.email = decodedEmail || 'authenticated@example.com';
+        user.isAuthenticated = true;
+      } catch (err) {
+        return reply.status(401).send({ error: 'Invalid or expired token' });
+      }
+    }
+
+    request.user = user;
   } catch (error) {
     request.log.error('Authentication error:', error);
     return reply.status(500).send({ error: 'Authentication failed' });
@@ -101,12 +52,3 @@ export async function authenticateUser(request: AuthenticatedRequest, reply: Fas
 export function getAccessLimits(isAuthenticated: boolean) {
   return isAuthenticated ? ACCESS_LIMITS.authenticated : ACCESS_LIMITS.unauthenticated;
 }
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (now > value.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000);

@@ -54,6 +54,7 @@
     "eslint": "8.49.0",
     "eslint-config-next": "latest",
     "framer-motion": "^10.18.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.446.0",
     "mongodb": "^6.17.0",
     "next": "^16.1.0",
@@ -77,6 +78,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "concurrently": "^9.2.1"
   }
 }

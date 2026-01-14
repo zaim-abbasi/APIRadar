@@ -28,13 +28,9 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
     const accessLimits = getAccessLimits(isAuthenticated);
-    let enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
-    let enforcedPage = accessLimits.canInfiniteScroll ? page : 1;
-    if (!isAuthenticated) {
-      enforcedLimit = Math.min(enforcedLimit, 6);
-      enforcedPage = 1;
-    }
-    let enforcedTimeRange = timeRange;
+    const enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
+    const enforcedPage = isAuthenticated ? page : 1;
+    const enforcedTimeRange = timeRange;
     const filter: any = {};
     const validProviders = ['ai-key', 'mistral-ai', 'cohere', 'huggingface'];
     if (provider && provider !== 'all') {
@@ -74,8 +70,8 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       request.log.info({
         msg: 'LEAKS QUERY', filter, poolState, limit: enforcedLimit, page: enforcedPage, connectionState: poolState });
       total = await Leak.countDocuments(filter);
-      const skip = accessLimits.canInfiniteScroll ? (enforcedPage - 1) * enforcedLimit : 0;
-      const actualLimit = accessLimits.canInfiniteScroll ? enforcedLimit : accessLimits.maxLeaks;
+      const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
+      const actualLimit = isAuthenticated ? enforcedLimit : accessLimits.maxLeaks;
       leaks = await Leak.find(filter)
         .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
         .sort(sort)
@@ -111,10 +107,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         repoCreatedAt: leak.repoCreatedAt
       };
     });
-    let hasMore = false;
-    if (accessLimits.canInfiniteScroll && isAuthenticated) {
-      hasMore = (enforcedPage * enforcedLimit) < total;
-    }
+    const hasMore = isAuthenticated && (enforcedPage * enforcedLimit) < total;
     request.log.info({
       msg: 'Leaks accessed',
       userId: user.id,
@@ -134,9 +127,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       total,
       hasMore,
       planLimits: {
-        maxLeaks: accessLimits.maxLeaks,
-        canInfiniteScroll: accessLimits.canInfiniteScroll,
-        maxTimeRange: accessLimits.maxTimeRange
+        maxLeaks: accessLimits.maxLeaks
       }
     });
 
@@ -154,8 +145,7 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
 
     const { id } = request.params as { id: string };
     const user = request.user;
-    const accessLimits = getAccessLimits(user.isAuthenticated);
-    if (!accessLimits.canAccessFullKey || !user.isAuthenticated) {
+    if (!user.isAuthenticated) {
       request.log.warn({
         msg: 'Unauthorized full key access attempt',
         userId: user.id,

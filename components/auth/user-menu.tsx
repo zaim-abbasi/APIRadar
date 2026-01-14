@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { usePlanCheck } from '@/hooks/use-plan-check';
-import { Chrome, LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -82,7 +82,10 @@ export function UserMenu() {
             "text-foreground"
           )}
         >
-          <span className="truncate flex-1 min-w-0">{displayName || '\u00A0'}</span>
+          <div className="flex items-center flex-1 min-w-0 gap-2">
+            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" aria-hidden="true" focusable="false" />
+            <span className="truncate">{displayName || '\u00A0'}</span>
+          </div>
           <ChevronDown className="h-4 w-4 ml-2 flex-shrink-0" />
         </button>
       </DropdownMenuTrigger>
@@ -110,7 +113,6 @@ export function UserMenu() {
               onClick={() => handleSignIn()} 
               className="flex items-center gap-2 px-2 py-1 rounded-md transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer active:scale-[0.98]"
             >
-              <Chrome className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" focusable="false" />
               <span className="font-medium text-sm">Continue with Google</span>
             </DropdownMenuItem>
           </>

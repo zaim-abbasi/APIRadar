@@ -70,6 +70,8 @@ const envSchema = z.object({
       return delay;
     })
     .default('1000'),
+  NEXTAUTH_SECRET: z.string()
+    .min(1, 'NEXTAUTH_SECRET is required for token verification'),
 });
 
 function validateEnv() {

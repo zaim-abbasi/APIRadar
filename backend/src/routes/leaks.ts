@@ -28,9 +28,7 @@ export async function leaksRoutes(server: FastifyInstance) {
             planLimits: {
               type: 'object',
               properties: {
-                maxLeaks: { type: 'number' },
-                canInfiniteScroll: { type: 'boolean' },
-                maxTimeRange: { type: 'string' }
+                maxLeaks: { type: 'number' }
               }
             }
           },
