@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const REAL_DATA_SAMPLES = [
   "uddugteam/oracle-flare",
@@ -66,13 +67,13 @@ function pickRandomSample(): { owner: string; repo: string } {
 
 export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
   const [logs, setLogs] = useState<TerminalLog[]>(() => {
-    const initialCount = 20;
+    const initialCount = 26;
     return Array.from({ length: initialCount }).map((_, i) => {
       const { owner, repo } = pickRandomSample();
       return { id: `init-${i}`, owner, repo };
     });
   });
-  const tickRef = useRef(20);
+  const tickRef = useRef(26);
 
   const maskStyle = useMemo(
     () => ({
@@ -82,7 +83,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     [],
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const appendLog = () => {
       tickRef.current += 1;
 
@@ -92,7 +93,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
       setLogs((prev) => {
         const nextLogs = [...prev, next];
         const MAX_LOGS = 26;
-        return nextLogs.length > MAX_LOGS ? nextLogs.slice(-MAX_LOGS) : nextLogs;
+        return nextLogs.slice(-MAX_LOGS);
       });
     };
 
@@ -127,7 +128,13 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
       <div className="flex-1 px-4 py-3" style={maskStyle}>
         <div className="h-full flex flex-col justify-end gap-1 text-xs">
           {logs.map((log) => (
-            <div key={log.id} className="animate-in fade-in slide-in-from-bottom-1 duration-400 leading-4 whitespace-nowrap">
+            <div
+              key={log.id}
+              className={cn(
+                "leading-4 whitespace-nowrap",
+                !log.id.startsWith("init-") && "animate-in fade-in slide-in-from-bottom-1 duration-400",
+              )}
+            >
               <span className="text-stone-400">SCANNING </span>
               <span className="text-slate-100 font-bold">{log.repo}</span>
               <span className="text-slate-500"> CREATED BY </span>
