@@ -5,7 +5,7 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { waitForRateLimitIfNeeded, setRateLimit, rateLimitActive, rateLimitPauseUntil, clearRateLimit, initializeRateLimitManager, lastRateLimitResetTime, checkActualRateLimitStatus, isRateLimitStuck } from './rateLimitManager';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
-import { KEY_VALIDATORS } from './apiKeyValidator';
+import { isValidKey } from './apiKeyValidator';
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { retryWithBackoff } from '../utils/retryWithBackoff';
 import { dbResilienceManager } from '../utils/dbResilience';
@@ -23,11 +23,11 @@ const SEARCH_PATTERNS = [
 ];
 const PROVIDER_PATTERNS: { [provider: string]: RegExp } = (() => {
   const patternMap: { [provider: string]: RegExp } = {};
-  
+
   SEARCH_PATTERNS.forEach(({ provider, pattern }) => {
     patternMap[provider] = pattern;
   });
-  
+
   return patternMap;
 })();
 const HIGH_RISK_FILE_PATTERNS = [
@@ -84,7 +84,7 @@ const generateComprehensiveQueries = () => {
       queries.push(`filename:${filePattern} ${searchString}`);
     });
   });
-  
+
   return queries;
 };
 const ALL_SEARCH_QUERIES = generateComprehensiveQueries();
@@ -127,17 +127,6 @@ interface GitHubSearchItem {
     html_url: string;
   };
   path: string;
-}
-interface GitHubRepoMetadata {
-  created_at?: string;
-  createdAt?: string;
-  name?: string;
-  full_name?: string;
-  riskyFiles?: string[];
-  contributors?: number;
-  hasReadme?: boolean;
-  commitCount?: number;
-  [key: string]: any;
 }
 function redactKey(key: string): string {
   if (key.length <= 12) return key;
@@ -190,9 +179,9 @@ async function repoAlreadyScannedWithCommit(repoUrl: string, currentCommitHash: 
       return await ScanAttempt.findOne({
         repoUrl
       })
-      .sort({ scannedAt: -1 })
-      .select('commitHash')
-      .lean();
+        .sort({ scannedAt: -1 })
+        .select('commitHash')
+        .lean();
     }, {
       queueOnFailure: false,
       timeout: 10000
@@ -221,11 +210,10 @@ function extractApiKeys(content: string): { key: string, provider: string }[] {
 
     while ((match = regex.exec(content)) !== null) {
       const key = match[1] || match[0];
-      const validator = KEY_VALIDATORS[provider];
-      if (foundKeys.has(key) || !validator || !validator(key)) {
+      if (foundKeys.has(key) || !isValidKey(key)) {
         continue;
       }
-      
+
       foundKeys.add(key);
       results.push({ key, provider });
     }
@@ -286,27 +274,27 @@ async function saveResumeState() {
 async function loadResumeState(): Promise<ScanResumeState> {
   try {
     const saved = await ConfigurationService.getScanState();
-      if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
-        const defaultProviderStates = getDefaultProviderStates();
-        const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
-        if (saved.providerStates) {
-          for (const [provider, state] of Object.entries(saved.providerStates)) {
-            const stateObj = state as { queryIndex?: number; page?: number; queryEmptyPages?: { [query: string]: number } };
-            mergedProviderStates[provider] = {
-              queryIndex: stateObj.queryIndex ?? 0,
-              page: stateObj.page ?? 1,
-              queryEmptyPages: stateObj.queryEmptyPages || {}
-            };
-          }
+    if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
+      const defaultProviderStates = getDefaultProviderStates();
+      const mergedProviderStates: { [key: string]: { queryIndex: number; page: number; queryEmptyPages?: { [query: string]: number } } } = { ...defaultProviderStates };
+      if (saved.providerStates) {
+        for (const [provider, state] of Object.entries(saved.providerStates)) {
+          const stateObj = state as { queryIndex?: number; page?: number; queryEmptyPages?: { [query: string]: number } };
+          mergedProviderStates[provider] = {
+            queryIndex: stateObj.queryIndex ?? 0,
+            page: stateObj.page ?? 1,
+            queryEmptyPages: stateObj.queryEmptyPages || {}
+          };
         }
-        
-        scanResumeState = {
-          currentProviderIndex: saved.currentProviderIndex || 0,
-          currentQueryIndex: saved.currentQueryIndex || 0,
-          currentPage: saved.currentPage || 1,
-          lastProcessedTime: saved.lastProcessedTime || Date.now(),
-          providerStates: mergedProviderStates
-        };
+      }
+
+      scanResumeState = {
+        currentProviderIndex: saved.currentProviderIndex || 0,
+        currentQueryIndex: saved.currentQueryIndex || 0,
+        currentPage: saved.currentPage || 1,
+        lastProcessedTime: saved.lastProcessedTime || Date.now(),
+        providerStates: mergedProviderStates
+      };
       (global as any).scanResumeState = scanResumeState;
       if (!(global as any).scanResumeState) {
         logger.warn(`[FARM] Resuming scan: provider ${scanResumeState.currentProviderIndex}, query ${scanResumeState.currentQueryIndex}, page ${scanResumeState.currentPage}`);
@@ -329,7 +317,7 @@ async function loadResumeState(): Promise<ScanResumeState> {
           };
         }
       }
-      
+
       scanResumeState = {
         currentProviderIndex: saved.currentProviderIndex || 0,
         currentQueryIndex: saved.currentQueryIndex || 0,
@@ -407,7 +395,7 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
       const reset = headers['x-ratelimit-reset'];
       const limit = headers['x-ratelimit-limit'];
       const message = err.response.data?.message || '';
-      
+
       const shortLog = `[GITHUB] ${statusCode}: limit=${limit}, remaining=${remaining}, reset=${reset}, msg=${message.slice(0, 80)}...`;
       logger.warn(shortLog);
       if (statusCode === 429) {
@@ -497,7 +485,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
         upsert: true
       }
     }));
-    
+
     const result = await Leak.bulkWrite(ops, { ordered: false });
     const newLeaks: Partial<ILeak>[] = [];
     if (result.upsertedIds && Object.keys(result.upsertedIds).length > 0) {
@@ -622,131 +610,131 @@ export class GitHubCodeLeakFarmService {
     let firstCycle = true;
     let scanCompleted = false;
     while (this.running) {
-        if (Date.now() - lastTokenRefresh > TOKEN_REFRESH_INTERVAL) {
-          lastTokenRefresh = Date.now();
-          try {
-            await rateLimitOptimizer.refreshAllTokenStatuses();
-          } catch (error) {
-            logger.warn(`[FARM] Failed to refresh token statuses: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        }
-        if (Date.now() - lastTokenStateLog > TOKEN_STATE_LOG_INTERVAL) {
-          lastTokenStateLog = Date.now();
-          const status = rateLimitOptimizer.getStatus();
-          const tokenStates = status.tokens.map(t => 
-            t.codeSearchRemaining !== null && t.codeSearchLimit !== null
-              ? `Token ${t.index + 1}: ${t.codeSearchRemaining}/${t.codeSearchLimit}`
-              : `Token ${t.index + 1}: unknown`
-          ).join(', ');
-          logger.warn(`[RATE-LIMIT] Token states (current: ${status.currentToken + 1}): ${tokenStates}`);
-        }
-        if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
-          lastConfigCheck = Date.now();
-          try {
-            const wasReinitialized = await ConfigurationService.checkAndReinitialize();
-            if (wasReinitialized) {
-              logger.warn('[FARM] Configuration was missing and has been reinitialized');
-              scanResumeState = await loadResumeState();
-              scanCompleted = false;
-            }
-          } catch (error) {
-            logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
-          }
-        }
-        if (rateLimitActive && rateLimitPauseUntil) {
-          if (isRateLimitStuck()) {
-            logger.init('[GITHUB] Detected stuck rate limit state, force clearing...');
-            clearRateLimit();
-            continue;
-          }
-          if (Date.now() - lastRateLimitCheck > RATE_LIMIT_CHECK_INTERVAL) {
-            lastRateLimitCheck = Date.now();
-            const isStillRateLimited = await checkActualRateLimitStatus();
-            if (!isStillRateLimited) {
-              continue;
-            }
-          }
-          if (rateLimitPauseUntil < Date.now()) {
-            logger.init('[GITHUB] Detected rate limit has expired, clearing state...');
-            clearRateLimit();
-          } else {
-            await waitForRateLimitIfNeeded();
-            continue;
-          }
-        }
-        if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
-          if (Date.now() - lastRateLimitCheck > 5 * 60 * 1000) {
-            logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
-            lastRateLimitCheck = Date.now();
-          }
-          clearRateLimit();
-        }
-        if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
-          const cleaned = scannedCache.cleanExpired();
-          if (cleaned > 0) {
-            logger.warn(`[FARM] Cleaned ${cleaned} expired cache entries`);
-          }
-        }
-        if (scanCompleted) {
-          if (firstCycle) {
-            logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
-            firstCycle = false;
-            lastIdleLog = Date.now();
-          } else if (Date.now() - lastIdleLog > IDLE_LOG_INTERVAL) {
-            logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
-            lastIdleLog = Date.now();
-          }
-          await new Promise(resolve => setTimeout(resolve, 10000));
-          continue;
-        }
-        
-        let scannedAnything = false;
+      if (Date.now() - lastTokenRefresh > TOKEN_REFRESH_INTERVAL) {
+        lastTokenRefresh = Date.now();
         try {
-          scannedAnything = await this.executeScanCycle();
-          if (!scannedAnything) {
-            let state: ScanResumeState | null = null;
-            try {
-              state = await loadResumeState();
-            } catch (stateErr) {
-              logger.error('[FARM] Failed to load scan state, resetting: ' + (stateErr instanceof Error ? stateErr.stack : String(stateErr)));
-              await clearScanState();
-              scanCompleted = false;
-              continue;
-            }
-            if (!state || typeof state !== 'object' || !state.providerStates) {
-              logger.error('[FARM] Scan state is invalid or corrupted, resetting.');
-              await clearScanState();
-              scanCompleted = false;
-              continue;
-            }
-            const allDone = this.isScanStateComplete(state);
-            if (allDone) {
-              logger.warn('[FARM] Max page reached for all providers. Resetting to page 1 to catch new repos...');
-              await clearScanState();
-              scanResumeState = await loadResumeState();
-              scanCompleted = false;
-            } else {
-              logger.warn('[FARM] Scan state not complete, continuing scan...');
-              scanCompleted = false;
-            }
-          }
-          scanResumeState = await loadResumeState();
+          await rateLimitOptimizer.refreshAllTokenStatuses();
         } catch (error) {
-          logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.stack : String(error)));
-          await clearScanState();
-          scanCompleted = false;
-          continue;
-        }
-        if (!rateLimitActive && !scannedAnything) {
-          if (firstCycle) {
-            logger.init('No new files to scan. System is idle, waiting for new changes...');
-            firstCycle = false;
-          } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
-            logger.init('No new files to scan. System is idle, waiting for new changes...');
-            lastStatusLog = Date.now();
-          }
+          logger.warn(`[FARM] Failed to refresh token statuses: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
+      if (Date.now() - lastTokenStateLog > TOKEN_STATE_LOG_INTERVAL) {
+        lastTokenStateLog = Date.now();
+        const status = rateLimitOptimizer.getStatus();
+        const tokenStates = status.tokens.map(t =>
+          t.codeSearchRemaining !== null && t.codeSearchLimit !== null
+            ? `Token ${t.index + 1}: ${t.codeSearchRemaining}/${t.codeSearchLimit}`
+            : `Token ${t.index + 1}: unknown`
+        ).join(', ');
+        logger.warn(`[RATE-LIMIT] Token states (current: ${status.currentToken + 1}): ${tokenStates}`);
+      }
+      if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
+        lastConfigCheck = Date.now();
+        try {
+          const wasReinitialized = await ConfigurationService.checkAndReinitialize();
+          if (wasReinitialized) {
+            logger.warn('[FARM] Configuration was missing and has been reinitialized');
+            scanResumeState = await loadResumeState();
+            scanCompleted = false;
+          }
+        } catch (error) {
+          logger.error(`[FARM] Configuration check failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      if (rateLimitActive && rateLimitPauseUntil) {
+        if (isRateLimitStuck()) {
+          logger.init('[GITHUB] Detected stuck rate limit state, force clearing...');
+          clearRateLimit();
+          continue;
+        }
+        if (Date.now() - lastRateLimitCheck > RATE_LIMIT_CHECK_INTERVAL) {
+          lastRateLimitCheck = Date.now();
+          const isStillRateLimited = await checkActualRateLimitStatus();
+          if (!isStillRateLimited) {
+            continue;
+          }
+        }
+        if (rateLimitPauseUntil < Date.now()) {
+          logger.init('[GITHUB] Detected rate limit has expired, clearing state...');
+          clearRateLimit();
+        } else {
+          await waitForRateLimitIfNeeded();
+          continue;
+        }
+      }
+      if (lastRateLimitResetTime && (Date.now() - lastRateLimitResetTime) > 5 * 60 * 1000) {
+        if (Date.now() - lastRateLimitCheck > 5 * 60 * 1000) {
+          logger.init('[GITHUB] Clearing old rate limit state (more than 5 minutes old)...');
+          lastRateLimitCheck = Date.now();
+        }
+        clearRateLimit();
+      }
+      if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
+        const cleaned = scannedCache.cleanExpired();
+        if (cleaned > 0) {
+          logger.warn(`[FARM] Cleaned ${cleaned} expired cache entries`);
+        }
+      }
+      if (scanCompleted) {
+        if (firstCycle) {
+          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+          firstCycle = false;
+          lastIdleLog = Date.now();
+        } else if (Date.now() - lastIdleLog > IDLE_LOG_INTERVAL) {
+          logger.init('Scan cycle completed. System is idle, waiting for manual restart or configuration changes...');
+          lastIdleLog = Date.now();
+        }
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        continue;
+      }
+
+      let scannedAnything = false;
+      try {
+        scannedAnything = await this.executeScanCycle();
+        if (!scannedAnything) {
+          let state: ScanResumeState | null = null;
+          try {
+            state = await loadResumeState();
+          } catch (stateErr) {
+            logger.error('[FARM] Failed to load scan state, resetting: ' + (stateErr instanceof Error ? stateErr.stack : String(stateErr)));
+            await clearScanState();
+            scanCompleted = false;
+            continue;
+          }
+          if (!state || typeof state !== 'object' || !state.providerStates) {
+            logger.error('[FARM] Scan state is invalid or corrupted, resetting.');
+            await clearScanState();
+            scanCompleted = false;
+            continue;
+          }
+          const allDone = this.isScanStateComplete(state);
+          if (allDone) {
+            logger.warn('[FARM] Max page reached for all providers. Resetting to page 1 to catch new repos...');
+            await clearScanState();
+            scanResumeState = await loadResumeState();
+            scanCompleted = false;
+          } else {
+            logger.warn('[FARM] Scan state not complete, continuing scan...');
+            scanCompleted = false;
+          }
+        }
+        scanResumeState = await loadResumeState();
+      } catch (error) {
+        logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.stack : String(error)));
+        await clearScanState();
+        scanCompleted = false;
+        continue;
+      }
+      if (!rateLimitActive && !scannedAnything) {
+        if (firstCycle) {
+          logger.init('No new files to scan. System is idle, waiting for new changes...');
+          firstCycle = false;
+        } else if (Date.now() - lastStatusLog > STATUS_LOG_INTERVAL) {
+          logger.init('No new files to scan. System is idle, waiting for new changes...');
+          lastStatusLog = Date.now();
+        }
+      }
+    }
   }
 
   private isScanStateComplete(state: ScanResumeState): boolean {
@@ -879,7 +867,7 @@ export class GitHubCodeLeakFarmService {
       } catch (error) {
         this.handleSearchError(error, providerQueries[queryIndex] || 'unknown', page);
       }
-      
+
       return scannedAnything;
     } catch (error) {
       logger.error(`[FARM] Unhandled error in executeScanCycle: ${error instanceof Error ? error.stack : String(error)}`);
@@ -895,12 +883,12 @@ export class GitHubCodeLeakFarmService {
       const items: GitHubSearchItem[] = response.data?.items || [];
       const itemCount = items.length;
       const totalCount = response.data?.total_count || 0;
-      
+
       if (itemCount === 0) {
         logger.warn(`[FARM] Query returned 0 results (total_count: ${totalCount}) for: "${query}" (page ${page})`);
         return { hadResults: false, itemCount: 0 };
       }
-      
+
       logger.warn(`[FARM] Query returned ${itemCount} results (total_count: ${totalCount}) for: "${query}" (page ${page})`);
       await this.processSearchResults(items, query);
       return { hadResults: true, itemCount };
@@ -945,7 +933,7 @@ export class GitHubCodeLeakFarmService {
     const repoEntries = Array.from(repoGroups.entries());
     const repoConcurrency = getRepoConcurrency();
     const repoCheckManager = new ConcurrencyManager(repoConcurrency);
-    const repoCheckPromises = repoEntries.map(([repoUrl, repoItems]) => 
+    const repoCheckPromises = repoEntries.map(([repoUrl, repoItems]) =>
       repoCheckManager.execute(async () => {
         const repoName = repoItems[0]!.repository.full_name;
         let repoLatestCommit = '';
@@ -979,7 +967,7 @@ export class GitHubCodeLeakFarmService {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
       if (!this.running) return { processed: false, skipped: false };
-      
+
       const repoName: string = item.repository.full_name;
       const filePath: string = item.path;
       const docFilePatterns = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^code\_of\_conduct(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
@@ -1036,7 +1024,7 @@ export class GitHubCodeLeakFarmService {
         logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No content returned`);
         return { processed: false, skipped: true };
       }
-      
+
       try {
         if (!query) {
           logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No query provided`);
@@ -1122,9 +1110,8 @@ export class GitHubCodeLeakFarmService {
 
   private async getRepoCreationDate(repoName: string): Promise<Date> {
     try {
-      const repoMeta: GitHubRepoMetadata = await githubService.getRepoMetadata(repoName);
-      const created = repoMeta.created_at || repoMeta.createdAt;
-      return created ? new Date(created) : new Date();
+      const createdAt = await githubService.getRepoCreatedAt(repoName);
+      return new Date(createdAt);
     } catch (error) {
       logger.error('[FARM] Repo metadata error: ' + (error instanceof Error ? error.message : String(error)));
       return new Date();

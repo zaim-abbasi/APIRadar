@@ -32,7 +32,7 @@ async function startServer() {
       origin: [
         'https://apiradar.live',
         'https://www.apiradar.live',
-	'https://api.apiradar.live',
+        'https://api.apiradar.live',
         'http://localhost:3000', // For local development
       ],
       credentials: true,
@@ -60,7 +60,7 @@ async function startServer() {
       logger.init(`Leak farm failed to start: ${err?.message || err}`);
       process.exit(1);
     }
-    startBackupScheduler();
+    await startBackupScheduler();
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
     logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
     const tokenCount = (config.GITHUB_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean).length;
@@ -70,7 +70,7 @@ async function startServer() {
       stopBackupScheduler();
       gitHubCodeLeakFarmService.stop();
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       await disconnectFromMongoDB();
       await server.close();
       process.exit(0);
@@ -81,7 +81,7 @@ async function startServer() {
       stopBackupScheduler();
       gitHubCodeLeakFarmService.stop();
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       await disconnectFromMongoDB();
       await server.close();
       process.exit(0);

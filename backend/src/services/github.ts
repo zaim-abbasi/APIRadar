@@ -6,7 +6,7 @@ import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export class GitHubService {
   private readonly clients: AxiosInstance[];
-  
+
   constructor() {
     const tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
     this.clients = tokens.map(token => this.createClient(token));
@@ -67,7 +67,7 @@ export class GitHubService {
         rateLimitOptimizer.rotateToBestToken();
         const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
         const newClient = this.clients[newTokenIndex % this.clients.length]!;
-        logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1} (previous token may be invalid)`);
+        logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1}`);
         try {
           return await requestFn(newClient);
         } catch (retryError: any) {
@@ -75,7 +75,6 @@ export class GitHubService {
             rateLimitOptimizer.rotateToBestToken();
             const nextTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
             const nextClient = this.clients[nextTokenIndex % this.clients.length]!;
-            logger.warn(`[GITHUB] Token ${newTokenIndex + 1} also invalid, trying token ${nextTokenIndex + 1}`);
             return await requestFn(nextClient);
           }
           throw retryError;
@@ -92,138 +91,13 @@ export class GitHubService {
     }
   }
 
-  async getRepoMetadata(repoName: string): Promise<{
-    createdAt: string;
-    riskyFiles: string[];
-    contributors: number;
-    hasReadme: boolean;
-    commitCount: number;
-  }> {
+  async getRepoCreatedAt(repoName: string): Promise<string> {
     try {
-      const repoResponse = await this.makeRequest(client => 
-        client.get(`/repos/${repoName}`)
-      );
-      const createdAt = repoResponse.data.created_at;
-      const [riskyFiles, contributors, hasReadme, commitCount] = await Promise.all([
-        this.getRiskyFiles(repoName),
-        this.getContributorCount(repoName),
-        this.hasReadme(repoName),
-        this.getCommitCount(repoName),
-      ]);
-      return {
-        createdAt,
-        riskyFiles,
-        contributors,
-        hasReadme,
-        commitCount,
-      };
+      const response = await this.makeRequest(client => client.get(`/repos/${repoName}`));
+      return response.data.created_at || new Date().toISOString();
     } catch (error) {
-      logger.error(`Error getting metadata for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
-      return {
-        createdAt: new Date().toISOString(),
-        riskyFiles: [],
-        contributors: 1,
-        hasReadme: true,
-        commitCount: 10,
-      };
-    }
-  }
-
-  private async getRiskyFiles(repoName: string): Promise<string[]> {
-    try {
-      let defaultBranch = 'main';
-      try {
-        const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
-        defaultBranch = meta.data.default_branch || 'main';
-      } catch (err: any) {
-        const branches = ['main', 'master', 'develop'];
-        for (const branch of branches) {
-          try {
-            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
-            defaultBranch = branch;
-            break;
-          } catch {
-            continue;
-          }
-        }
-      }
-      const riskyFiles = [] as string[];
-      try {
-        const contents = await this.makeRequest(client => 
-          client.get(`/repos/${repoName}/contents?ref=${defaultBranch}`)
-        );
-        for (const file of contents.data) {
-          if ([
-            '.env',
-            'config.json',
-            'secrets.yaml',
-            'docker-compose.yml',
-          ].includes(file.name)) {
-            riskyFiles.push(file.name);
-          }
-        }
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
-        const statusCode = err.response?.status || 'N/A';
-        logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
-      }
-      return riskyFiles;
-    } catch (error) {
-      logger.error(`Error getting risky files for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
-      return [];
-    }
-  }
-
-  private async getContributorCount(repoName: string): Promise<number> {
-    try {
-      const contribs = await this.makeRequest(client => 
-        client.get(`/repos/${repoName}/contributors?per_page=2`)
-      );
-      return contribs.data.length;
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
-      const statusCode = err.response?.status || 'N/A';
-      logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
-      return 1;
-    }
-  }
-
-  private async hasReadme(repoName: string): Promise<boolean> {
-    try {
-      let defaultBranch = 'main';
-      try {
-        const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
-        defaultBranch = meta.data.default_branch || 'main';
-      } catch (err: any) {
-        const branches = ['main', 'master', 'develop'];
-        for (const branch of branches) {
-          try {
-            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
-            defaultBranch = branch;
-            break;
-          } catch {
-            continue;
-          }
-        }
-      }
-      try {
-        await this.makeRequest(client => 
-          client.get(`/repos/${repoName}/readme?ref=${defaultBranch}`)
-        );
-        return true;
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          return false;
-        } else {
-          const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
-          const statusCode = err.response?.status || 'N/A';
-          logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
-          return false;
-        }
-      }
-    } catch (error) {
-      logger.error(`Error checking README for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
-      return true;
+      logger.error(`[GITHUB] Error getting repo created_at for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
+      return new Date().toISOString();
     }
   }
 
@@ -233,43 +107,6 @@ export class GitHubService {
         params: { q: query, per_page: perPage, page }
       })
     );
-  }
-
-  private async getCommitCount(repoName: string): Promise<number> {
-    try {
-      let defaultBranch = 'main';
-      try {
-        const meta = await this.makeRequest(client => client.get(`/repos/${repoName}`));
-        defaultBranch = meta.data.default_branch || 'main';
-      } catch (err: any) {
-        const branches = ['main', 'master', 'develop'];
-        for (const branch of branches) {
-          try {
-            await this.makeRequest(client => client.get(`/repos/${repoName}/branches/${branch}`));
-            defaultBranch = branch;
-            break;
-          } catch {
-            continue;
-          }
-        }
-      }
-      try {
-        const commits = await this.makeRequest(client => 
-          client.get(`/repos/${repoName}/commits?sha=${defaultBranch}&per_page=1`)
-        );
-        const link = commits.headers['link'];
-        const totalCommits = link ? parseInt(link.match(/&page=(\d+)>; rel="last"/)?.[1] || '1', 10) : 1;
-        return totalCommits;
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || err.message || err.toString() || 'Unknown error';
-        const statusCode = err.response?.status || 'N/A';
-        logger.error(`[GITHUB] Error (${statusCode}): ${errorMsg}`);
-        return 10;
-      }
-    } catch (error) {
-      logger.error(`Error getting commit count for ${repoName}: ${error instanceof Error ? error.message : String(error)}`);
-      return 10;
-    }
   }
 
   async getFileLatestCommitDate(repoName: string, filePath: string): Promise<Date> {
@@ -283,7 +120,7 @@ export class GitHubService {
       const commit = response.data?.[0]?.commit;
       return commit?.author?.date ? new Date(commit.author.date) : new Date();
     } catch (error) {
-      logger.error(`Commit history error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`[GITHUB] Commit history error: ${repoName}/${filePath} - ${error instanceof Error ? error.message : String(error)}`);
       return new Date();
     }
   }
@@ -295,15 +132,12 @@ export class GitHubService {
         params: { path: filePath, per_page: 1 }
       })
     );
-    const commit = response.data?.[0];
-    return commit?.sha || '';
+    return response.data?.[0]?.sha || '';
   }
 
   async getRepoLatestCommitHash(repoName: string): Promise<string> {
-    const repoInfo = await this.makeRequest(client =>
-      client.get(`/repos/${repoName}`)
-    );
-    let defaultBranch = repoInfo.data?.default_branch || 'main';
+    const repoInfo = await this.makeRequest(client => client.get(`/repos/${repoName}`));
+    const defaultBranch = repoInfo.data?.default_branch || 'main';
     try {
       const response = await this.makeRequest(client =>
         client.get(`/repos/${repoName}/commits/${defaultBranch}`)
@@ -311,8 +145,7 @@ export class GitHubService {
       return response.data?.sha || '';
     } catch (err: any) {
       if (err.response?.status === 404) {
-        const branches = ['main', 'master', 'develop'];
-        for (const branch of branches) {
+        for (const branch of ['main', 'master', 'develop']) {
           if (branch === defaultBranch) continue;
           try {
             const response = await this.makeRequest(client =>
@@ -331,10 +164,11 @@ export class GitHubService {
   async getUserProfile(username: string): Promise<{ login: string; avatar_url: string; html_url: string } | null> {
     try {
       const response = await this.makeRequest((client) => client.get(`/users/${username}`));
-      const login = typeof response.data?.login === 'string' ? response.data.login : username;
-      const avatar_url = typeof response.data?.avatar_url === 'string' ? response.data.avatar_url : '';
-      const html_url = typeof response.data?.html_url === 'string' ? response.data.html_url : '';
-      return { login, avatar_url, html_url };
+      return {
+        login: response.data?.login || username,
+        avatar_url: response.data?.avatar_url || '',
+        html_url: response.data?.html_url || ''
+      };
     } catch (error) {
       logger.error(`[GITHUB] User profile fetch failed: ${username} - ${error instanceof Error ? error.message : String(error)}`);
       return null;
