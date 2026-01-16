@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
-import { waitForRateLimitIfNeeded, setRateLimit, clearRateLimit } from './rateLimitManager';
+// rateLimitManager import removed
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export class GitHubService {
@@ -27,18 +27,15 @@ export class GitHubService {
     });
 
     client.interceptors.response.use(
-      (response: any) => response,
+      (response: any) => {
+        const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+        rateLimitOptimizer.updateStateFromResponse(tokenIndex, response.headers);
+        return response;
+      },
       async (error: any) => {
-        if ((error.response?.status === 403 || error.response?.status === 429) && error.response?.headers['x-ratelimit-remaining'] === '0') {
-          const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) * 1000;
-          const now = Date.now();
-          if (resetTime <= now) {
-            clearRateLimit();
-            return client.request(error.config);
-          }
-          setRateLimit(resetTime);
-          await waitForRateLimitIfNeeded();
-          return client.request(error.config);
+        if (error.response?.headers) {
+          const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+          rateLimitOptimizer.updateStateFromResponse(tokenIndex, error.response.headers);
         }
         throw error;
       }
@@ -48,23 +45,17 @@ export class GitHubService {
   }
 
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    if (rateLimitOptimizer.shouldRotateToken()) {
-      rateLimitOptimizer.rotateToBestToken();
+    if (rateLimitOptimizer.shouldRotate()) {
+      rateLimitOptimizer.rotate();
     }
     const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
     const client = this.clients[tokenIndex % this.clients.length]!;
     try {
       const response = await requestFn(client);
-      if (response && (response as any).headers) {
-        rateLimitOptimizer.updateFromHeaders((response as any).headers, tokenIndex);
-      }
       return response;
     } catch (error: any) {
-      if (error.response?.headers) {
-        rateLimitOptimizer.updateFromHeaders(error.response.headers, tokenIndex);
-      }
       if (error.response?.status === 401 && this.clients.length > 1) {
-        rateLimitOptimizer.rotateToBestToken();
+        rateLimitOptimizer.rotate();
         const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
         const newClient = this.clients[newTokenIndex % this.clients.length]!;
         logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1}`);
@@ -72,7 +63,7 @@ export class GitHubService {
           return await requestFn(newClient);
         } catch (retryError: any) {
           if (retryError.response?.status === 401 && this.clients.length > 1) {
-            rateLimitOptimizer.rotateToBestToken();
+            rateLimitOptimizer.rotate();
             const nextTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
             const nextClient = this.clients[nextTokenIndex % this.clients.length]!;
             return await requestFn(nextClient);
@@ -81,7 +72,7 @@ export class GitHubService {
         }
       }
       if ((error.response?.status === 403 || error.response?.status === 429) && this.clients.length > 1) {
-        rateLimitOptimizer.rotateToBestToken();
+        rateLimitOptimizer.rotate();
         const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
         const newClient = this.clients[newTokenIndex % this.clients.length]!;
         logger.warn(`[GITHUB] Rotated to token ${newTokenIndex + 1} due to rate limit`);

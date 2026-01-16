@@ -1,196 +1,128 @@
 import { logger } from '../utils/logger';
-import axios from 'axios';
 import { config } from '../config/environment';
 
-export interface RateLimitInfo {
+interface RateLimitInfo {
   limit: number;
   remaining: number;
   reset: number;
   resetTime: number;
 }
 
-interface TokenRateLimitState {
-  tokenIndex: number;
-  codeSearch: RateLimitInfo | null;
-  core: RateLimitInfo | null;
+interface TokenStatus {
+  index: number;
+  info: RateLimitInfo | null;
   lastUpdated: number;
-  requestCount: number;
-  lastRequestTime: number;
 }
 
 export class RateLimitOptimizer {
-  private tokenStates: Map<number, TokenRateLimitState> = new Map();
+  private states = new Map<number, TokenStatus>();
   private tokens: string[] = [];
-  private currentTokenIndex: number = 0;
-  private readonly LOW_THRESHOLD = 0.5;
-  private readonly CRITICAL_THRESHOLD = 0.1;
-  private readonly MIN_DELAY = 100;
-  private readonly MAX_DELAY = 10000;
-  private readonly BASE_DELAY = 1000;
-  private usageHistory: Array<{ timestamp: number; remaining: number; limit: number }> = [];
-  private lastRotationTime = 0;
+  private currentTokenIndex = 0;
+  private lastRotation = Date.now(); // Initialize to avoid immediate rotation issues
 
   constructor() {
     this.tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
-    if (this.tokens.length === 0) {
-      throw new Error('No valid GitHub tokens provided');
-    }
+    if (!this.tokens.length) throw new Error('No valid GitHub tokens provided');
+
     this.tokens.forEach((_, index) => {
-      this.tokenStates.set(index, {
-        tokenIndex: index,
-        codeSearch: null,
-        core: null,
-        lastUpdated: 0,
-        requestCount: 0,
-        lastRequestTime: 0
-      });
+      this.states.set(index, { index, info: null, lastUpdated: 0 });
     });
-    logger.warn(`[RATE-LIMIT] Initialized optimizer with ${this.tokens.length} token(s)`);
+    logger.init(`[RATE-LIMIT] Initialized with ${this.tokens.length} tokens`);
   }
 
-  updateFromHeaders(_headers: any, _tokenIndex?: number): void {
-  }
-
-  getCurrentTokenState(): TokenRateLimitState | null {
-    return this.tokenStates.get(this.currentTokenIndex) || null;
+  getCurrentTokenState(): TokenStatus | null {
+    return this.states.get(this.currentTokenIndex) || null;
   }
 
   getBestToken(): number {
     let bestIndex = this.currentTokenIndex;
-    let bestScore = -1;
-    const now = Date.now();
-    for (const [index, state] of this.tokenStates.entries()) {
-      if (!state.codeSearch) {
-        if (bestScore === -1) {
-          bestIndex = index;
-        }
-        continue;
-      }
-      const remaining = state.codeSearch.remaining;
-      const timeUntilReset = Math.max(0, state.codeSearch.resetTime - now);
-      const score = remaining + (3600000 - Math.min(timeUntilReset, 3600000)) / 1000;
-      if (score > bestScore) {
-        bestScore = score;
+    let maxRemaining = -1;
+
+    const current = this.getCurrentTokenState();
+    if (current?.info) {
+      maxRemaining = current.info.remaining;
+    }
+
+    for (const [index, state] of this.states.entries()) {
+      if (!state.info) continue;
+      if (state.info.remaining > maxRemaining) {
+        maxRemaining = state.info.remaining;
         bestIndex = index;
       }
     }
     return bestIndex;
   }
 
-  shouldRotateToken(): boolean {
+  shouldRotate(): boolean {
     const now = Date.now();
-    if (now - this.lastRotationTime < 10000) return false;
-    const currentState = this.getCurrentTokenState();
-    if (!currentState || !currentState.codeSearch) return false;
-    if (currentState.codeSearch.remaining === 0) {
-      return true;
-    }
-    const currentRemaining = currentState.codeSearch.remaining;
-    const currentLimit = currentState.codeSearch.limit;
-    const currentRatio = currentRemaining / currentLimit;
-    const bestTokenIndex = this.getBestToken();
-    if (bestTokenIndex === this.currentTokenIndex) return false;
-    const bestState = this.tokenStates.get(bestTokenIndex);
-    if (!bestState?.codeSearch) return false;
-    const bestRemaining = bestState.codeSearch.remaining;
-    const remainingDiff = bestRemaining - currentRemaining;
-    if (currentRatio < this.LOW_THRESHOLD) {
-      return remainingDiff >= Math.max(2, currentLimit * 0.2);
-    }
-    if (bestRemaining > currentRemaining * 1.5 || remainingDiff >= 3) {
-      return true;
-    }
-    if (bestState.codeSearch.resetTime < currentState.codeSearch.resetTime && bestRemaining > currentRemaining * 1.1) {
-      return true;
-    }
-    return false;
+    if (now - this.lastRotation < 2000) return false;
+
+    const current = this.getCurrentTokenState();
+    if (!current?.info) return true;
+    if (current.info.remaining === 0) return true;
+
+    const bestIndex = this.getBestToken();
+    if (bestIndex === this.currentTokenIndex) return false;
+
+    const best = this.states.get(bestIndex);
+    return (best?.info?.remaining || 0) > (current.info.remaining + 10); // Hysteresis buffer
   }
 
-  rotateToBestToken(): void {
-    const bestIndex = this.getBestToken();
-    if (bestIndex !== this.currentTokenIndex) {
-      const oldIndex = this.currentTokenIndex;
-      this.currentTokenIndex = bestIndex;
-      this.lastRotationTime = Date.now();
-      const newState = this.tokenStates.get(bestIndex);
-      const remaining = newState?.codeSearch?.remaining;
-      const limit = newState?.codeSearch?.limit;
-      if (remaining !== undefined && limit !== undefined) {
-        logger.warn(
-          `[RATE-LIMIT] Rotated from token ${oldIndex + 1} to token ${this.currentTokenIndex + 1} ` +
-          `(remaining: ${remaining}/${limit})`
-        );
-      } else {
-        logger.warn(
-          `[RATE-LIMIT] Rotated from token ${oldIndex + 1} to token ${this.currentTokenIndex + 1} ` +
-          `(state: ${remaining !== undefined ? remaining : 'unknown'})`
-        );
+  rotate() {
+    const best = this.getBestToken();
+    if (best !== this.currentTokenIndex) {
+      this.currentTokenIndex = best;
+      this.lastRotation = Date.now();
+      const info = this.states.get(best)?.info;
+      logger.init(`[RATE-LIMIT] Rotated to token ${best + 1} (${info?.remaining ?? '?'} remaining)`);
+    }
+  }
+
+  getResetWaitTime(): number {
+    const current = this.getCurrentTokenState();
+    if (!current?.info) return 0;
+
+    // Budget available? No wait.
+    if (current.info.remaining > 0) return 0;
+
+    // Others available? No wait (rotation will happen).
+    if (this.shouldRotate()) {
+      this.rotate();
+      if ((this.getCurrentTokenState()?.info?.remaining || 0) > 0) return 0;
+    }
+
+    // All exhausted: Find global minimum reset time
+    let minReset = Number.MAX_SAFE_INTEGER;
+    let foundValidReset = false;
+
+    for (const state of this.states.values()) {
+      if (state.info) {
+        minReset = Math.min(minReset, state.info.resetTime);
+        foundValidReset = true;
       }
     }
+
+    if (!foundValidReset) return 60000; // Fallback if no data
+
+    const wait = minReset - Date.now();
+    return wait > 0 ? wait + 1000 : 0;
   }
 
-  calculateAdaptiveDelay(): number {
-    const state = this.getCurrentTokenState();
-    if (!state || !state.codeSearch) {
-      return this.BASE_DELAY;
-    }
-    const { remaining, limit } = state.codeSearch;
-    const remainingRatio = remaining / limit;
-    let delay = this.BASE_DELAY;
-    if (remainingRatio <= this.CRITICAL_THRESHOLD) {
-      delay = this.MAX_DELAY;
-    } else if (remainingRatio <= this.LOW_THRESHOLD) {
-      delay = this.BASE_DELAY * 5;
-    } else if (remainingRatio <= 0.5) {
-      delay = this.BASE_DELAY * 2;
-    } else {
-      delay = this.BASE_DELAY;
-    }
-    return Math.max(this.MIN_DELAY, Math.min(delay, this.MAX_DELAY));
-  }
+  getDelay(): number {
+    const current = this.getCurrentTokenState();
+    if (!current?.info) return 1000;
 
-
-  predictResetTime(): number | null {
-    const state = this.getCurrentTokenState();
-    if (!state || !state.codeSearch) return null;
-    if (state.codeSearch.resetTime > Date.now()) {
-      return state.codeSearch.resetTime;
-    }
-    if (this.usageHistory.length < 2) return null;
-    const recentHistory = this.usageHistory.slice(-10);
-    if (recentHistory.length < 2) return null;
-    const lastEntry = recentHistory[recentHistory.length - 1];
-    const firstEntry = recentHistory[0];
-    if (!lastEntry || !firstEntry) return null;
-    const avgTimeBetweenRequests = 
-      (lastEntry.timestamp - firstEntry.timestamp) / 
-      (recentHistory.length - 1);
-    const currentRemaining = state.codeSearch.remaining;
-    const estimatedTimeToExhaustion = avgTimeBetweenRequests * currentRemaining;
-    return Date.now() + estimatedTimeToExhaustion;
+    const ratio = current.info.remaining / current.info.limit;
+    if (ratio < 0.1) return 2000; // Throttling logic simplified
+    return 1000;
   }
 
   async waitWithThrottling(): Promise<void> {
-    if (this.shouldRotateToken()) {
-      this.rotateToBestToken();
-    }
-    const delay = this.calculateAdaptiveDelay();
-    if (delay > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    const currentState = this.getCurrentTokenState();
-    if (currentState) {
-      currentState.lastRequestTime = Date.now();
-      currentState.requestCount++;
-    }
+    if (this.shouldRotate()) this.rotate();
+    await new Promise(r => setTimeout(r, this.getDelay()));
   }
 
   getCurrentTokenIndex(): number {
-    const currentState = this.tokenStates.get(this.currentTokenIndex);
-    if (currentState?.codeSearch && currentState.codeSearch.remaining > 0) {
-      return this.currentTokenIndex;
-    }
-    this.rotateToBestToken();
     return this.currentTokenIndex;
   }
 
@@ -198,67 +130,94 @@ export class RateLimitOptimizer {
     return this.tokens.length;
   }
 
-  getStatus(): {
-    currentToken: number;
-    tokenCount: number;
-    tokens: Array<{
-      index: number;
-      codeSearchRemaining: number | null;
-      codeSearchLimit: number | null;
-      codeSearchReset: number | null;
-      lastUpdated: number;
-    }>;
-    adaptiveDelay: number;
-    predictedReset: number | null;
-  } {
-    const tokens = Array.from(this.tokenStates.entries()).map(([index, state]) => ({
-      index,
-      codeSearchRemaining: state.codeSearch?.remaining ?? null,
-      codeSearchLimit: state.codeSearch?.limit ?? null,
-      codeSearchReset: state.codeSearch?.resetTime ?? null,
-      lastUpdated: state.lastUpdated
-    }));
+  getStatus() {
     return {
       currentToken: this.currentTokenIndex,
       tokenCount: this.tokens.length,
-      tokens,
-      adaptiveDelay: this.calculateAdaptiveDelay(),
-      predictedReset: this.predictResetTime()
+      tokens: Array.from(this.states.values()).map(s => ({
+        index: s.index,
+        codeSearchRemaining: s.info?.remaining ?? null,
+        codeSearchLimit: s.info?.limit ?? null,
+        codeSearchReset: s.info?.resetTime ?? null,
+        lastUpdated: s.lastUpdated
+      })),
+      adaptiveDelay: this.getDelay(),
+      predictedReset: null
     };
   }
 
+  updateStateFromResponse(index: number, headers: any) {
+    if (!headers) return;
 
-  async refreshTokenStatus(tokenIndex: number): Promise<void> {
-    if (tokenIndex >= this.tokens.length) return;
-    try {
-      const response = await axios.get('https://api.github.com/rate_limit', {
-        headers: {
-          'Authorization': `Bearer ${this.tokens[tokenIndex]}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'API-Radar-Scanner/1.0',
-        },
-        timeout: 5000,
-      });
-      const state = this.tokenStates.get(tokenIndex);
-      if (!state) return;
-      const codeSearchLimit = response.data.resources.code_search;
-      if (codeSearchLimit) {
-        state.codeSearch = {
-          limit: codeSearchLimit.limit,
-          remaining: codeSearchLimit.remaining,
-          reset: codeSearchLimit.reset,
-          resetTime: codeSearchLimit.reset * 1000
+    const resource = headers['x-ratelimit-resource'];
+    const remaining = headers['x-ratelimit-remaining'];
+    const reset = headers['x-ratelimit-reset'];
+    const limit = headers['x-ratelimit-limit'];
+
+    if (resource && resource !== 'search' && resource !== 'code_search') {
+      return;
+    }
+
+    if (remaining !== undefined && reset !== undefined) {
+      const state = this.states.get(index);
+      if (state) {
+        const parsedLimit = parseInt(limit, 10);
+        if (parsedLimit > 100) {
+          return;
+        }
+
+        state.info = {
+          limit: parsedLimit || 10,
+          remaining: parseInt(remaining, 10),
+          reset: parseInt(reset, 10),
+          resetTime: parseInt(reset, 10) * 1000
         };
         state.lastUpdated = Date.now();
       }
-    } catch (error) {
-      logger.warn(`[RATE-LIMIT] Failed to refresh token ${tokenIndex + 1} status: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   async refreshAllTokenStatuses(): Promise<void> {
-    const promises = this.tokens.map((_, index) => this.refreshTokenStatus(index));
-    await Promise.all(promises);
+    // Smart Refresh: Only refresh tokens that are expired or have unknown status
+    // or every 5 minutes regardless to detect drift.
+    const now = Date.now();
+
+    await Promise.all(this.tokens.map(async (token, i) => {
+      const state = this.states.get(i);
+
+      // Optimization: Don't refresh if we have recent data (>5m old) and plenty of budget
+      if (state?.info &&
+        state.info.remaining > 5 &&
+        (now - state.lastUpdated) < 300000) {
+        return;
+      }
+
+      try {
+        const res = await fetch('https://api.github.com/rate_limit', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+
+        const data: any = await res.json();
+        const cs = data.resources?.code_search;
+
+        if (cs && state) {
+          state.info = {
+            limit: cs.limit,
+            remaining: cs.remaining,
+            reset: cs.reset,
+            resetTime: cs.reset * 1000
+          };
+          state.lastUpdated = now;
+        }
+      } catch (e) {
+        logger.warn(`[RATE-LIMIT] Refresh failed for token ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }));
   }
 }
 
