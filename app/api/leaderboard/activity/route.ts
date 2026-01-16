@@ -22,8 +22,10 @@ export async function GET(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+    const searchParams = request.nextUrl.search;
+
     try {
-      const response = await fetch(`${backendUrl}/api/leaderboard/activity`, {
+      const response = await fetch(`${backendUrl}/api/leaderboard/activity${searchParams}`, {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
@@ -69,5 +71,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 

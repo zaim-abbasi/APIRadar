@@ -43,3 +43,7 @@ next-env.d.ts
 
 # docs
 /docs
+
+#rules
+.agent
+.cursor

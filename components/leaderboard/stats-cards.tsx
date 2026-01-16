@@ -18,7 +18,6 @@ interface AnimatedDateProps {
   dateString: string | null;
 }
 
-// Optimized animated counter using CSS transitions
 const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
@@ -45,10 +44,8 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
     return () => observer.disconnect();
   }, [value, isVisible]);
 
-  // Handle value changes after initial animation
   useEffect(() => {
     if (isVisible && hasAnimated && displayValue !== value && value !== null && value !== undefined) {
-      // If the value changes after initial animation, animate to new value
       animateValue(displayValue, value);
     }
   }, [value, isVisible, hasAnimated, displayValue]);
@@ -61,7 +58,6 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      // Use easing function for smoother animation
       const easedProgress = 1 - Math.pow(1 - progress, 3);
       const currentValue = Math.floor(from + (to - from) * easedProgress);
       setDisplayValue(currentValue);
@@ -83,7 +79,6 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
     return displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 });
   }, [displayValue, isPercentage]);
 
-  // Handle null value (loading state) - show skeleton instead of empty space
   if (value === null || value === undefined) {
     return (
       <span className="transition-all duration-600 ease-out">
@@ -101,9 +96,7 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
 
 AnimatedCounter.displayName = 'AnimatedCounter';
 
-// Optimized animated date component
 const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
-  // Initialize with target date for SSR consistency
   const [displayDate, setDisplayDate] = useState<string>(() => {
     if (!dateString || isNaN(new Date(dateString).getTime())) return '';
     return new Date(dateString).toISOString().slice(0, 10);
@@ -135,10 +128,8 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
 
   useEffect(() => {
     if (dateString && !displayDate) {
-      // Initial date setting - animate immediately
       animateDate(dateString);
     } else if (isVisible && hasAnimated && displayDate !== dateString && dateString) {
-      // If the date changes after initial animation, animate to new date
       animateDate(dateString);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,14 +145,11 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      // Use easing function for smoother animation
       const easedProgress = 1 - Math.pow(1 - progress, 3);
       
-      // Interpolate between dates
       const currentTimeStamp = startDate.getTime() + (endDate.getTime() - startDate.getTime()) * easedProgress;
       const currentDate = new Date(currentTimeStamp);
       
-      // Format the date as YYYY-MM-DD (SSR-safe)
       const formattedDate = currentDate.toISOString().slice(0, 10);
       
       setDisplayDate(formattedDate);
@@ -176,7 +164,6 @@ const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
     requestAnimationFrame(animate);
   };
 
-  // Only return null after all hooks have been called
   if (!dateString || isNaN(new Date(dateString).getTime())) {
     return null;
   }
@@ -199,14 +186,12 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
     'July', 'August', 'September', 'October', 'November', 'December'
   ][date.getUTCMonth()];
 
-  // Initialize with target values for SSR consistency
   const [day, setDay] = useState(targetDay);
   const [year, setYear] = useState(targetYear);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Only animate if we're starting from initial values
     if (day === targetDay && year === targetYear) {
       let frame: number;
       let start: number | null = null;
@@ -224,7 +209,6 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
     }
   }, [targetDay, targetYear, day, year]);
 
-  // Always render the same structure for SSR consistency
   return (
     <span className="transition-all duration-600 ease-out" suppressHydrationWarning>
       {mounted ? `${day} ${month}, ${year}` : `${targetDay} ${month}, ${targetYear}`}
@@ -232,7 +216,6 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
   );
 }
 
-// Memoized Stat Card component
 const StatCard = React.memo(({ 
   stat, 
   index 
@@ -284,15 +267,45 @@ function StatsErrorFallback() {
 }
 
 export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsProps) {
-  // Defensive: fallback for missing/null data
   if (!data || typeof data !== 'object') {
     return <StatsErrorFallback />;
   }
+
+  const [displayData, setDisplayData] = useState<LeaderboardData>(data);
+
+  useEffect(() => {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    document.cookie = `timezone=${timeZone}; path=/; max-age=31536000`;
+  }, []);
+
+  useEffect(() => {
+    const fetchPersonalizedData = async () => {
+      try {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const response = await fetch(`/api/leaderboard?timezone=${encodeURIComponent(timeZone)}`);
+        if (response.ok) {
+          const freshData = await response.json();
+          setDisplayData({
+             topProviders: data.topProviders,
+             totalLeaks: Number(freshData.totalReposScanned) || 0,
+             todayLeaks: Number(freshData.totalLeaksFound) || 0,
+             weeklyGrowth: data.weeklyGrowth,
+             leaksFoundToday: Number(freshData.leaksFoundToday) || 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch personalized stats:", error);
+      }
+    };
+
+    fetchPersonalizedData();
+  }, [data]);
+
   const {
     totalLeaks,
     todayLeaks,
     leaksFoundToday
-  } = data;
+  } = displayData;
 
   const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
   const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;

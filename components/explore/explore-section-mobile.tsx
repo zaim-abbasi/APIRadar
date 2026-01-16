@@ -191,7 +191,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               isLoading={isLoading} 
               selectedProvider={selectedProvider} 
               plan={plan}
-              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href }) : undefined}
+              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href, redirect: true }) : undefined}
             />
             
             {/* Fade-out blur effect for unauthenticated users - suggests more content */}

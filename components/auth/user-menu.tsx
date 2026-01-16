@@ -24,7 +24,7 @@ export function UserMenu() {
   const handleSignIn = useCallback(async () => {
     try {
       await signIn('google', { 
-        callbackUrl: '/',
+        callbackUrl: window.location.href,
         redirect: true 
       });
     } catch (error) {

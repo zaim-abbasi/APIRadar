@@ -31,7 +31,7 @@ export interface FilterOptions {
   sortBy: string;
 }
 
-export type Provider = 
+export type Provider =
   | 'ai-key'
   | 'stripe'
   | 'github'

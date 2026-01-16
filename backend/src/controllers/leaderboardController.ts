@@ -9,87 +9,108 @@ interface LeaderboardResponse {
   leaksFoundToday: number;
 }
 
-let leaderboardCache: LeaderboardResponse | null = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 30 * 1000; // 30 seconds
+const CACHE_DURATION = 30 * 1000;
 
 export async function getLeaderboardDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
+    const { timezone } = request.query as { timezone?: string };
+    const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const targetTimezone = timezone || systemTimezone || 'UTC';
+
     const now = Date.now();
-    if (leaderboardCache && (now - cacheTimestamp) < CACHE_DURATION) {
-      request.log.info({ msg: 'Returning cached leaderboard data', cacheAge: now - cacheTimestamp });
-      return reply.send(leaderboardCache);
+    const cacheKey = `leaderboard-${targetTimezone}`;
+
+    if (cacheMap.has(cacheKey)) {
+      const cached = cacheMap.get(cacheKey);
+      if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+        request.log.info({ msg: 'Returning cached leaderboard data', cacheAge: now - cached.timestamp, timezone: targetTimezone });
+        return reply.send(cached.data);
+      }
     }
-    const nowUtc = new Date();
-    const twentyFourHoursAgo = new Date(nowUtc.getTime() - 24 * 60 * 60 * 1000);
+
     const [totalReposScanned, totalLeaksFound] = await Promise.all([
       ScanAttempt.countDocuments(),
       Leak.countDocuments(),
     ]);
-    request.log.info({
-      msg: 'Leaderboard query results',
-      totalReposScanned,
-      totalLeaksFound,
-    });
-    const leaksFoundToday = await Leak.countDocuments({
-      leakDetectedAt: {
-        $gte: twentyFourHoursAgo
+
+    let leaksFoundToday = 0;
+
+    const result = await Leak.aggregate([
+      {
+        $project: {
+          localDate: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$leakDetectedAt",
+              timezone: targetTimezone
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          localDate: new Intl.DateTimeFormat('en-CA', {
+            timeZone: targetTimezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).format(new Date())
+        }
+      },
+      {
+        $count: "count"
       }
-    });
+    ]);
+    leaksFoundToday = result[0]?.count || 0;
+
     const response: LeaderboardResponse = {
       totalReposScanned,
       totalLeaksFound,
       leaksFoundToday,
     };
-    if (totalLeaksFound > 0 || totalReposScanned > 0) {
-      leaderboardCache = response;
-      cacheTimestamp = now;
-    } else {
-      leaderboardCache = null;
-      request.log.warn({ msg: 'Leaderboard database appears empty, cache cleared' });
-    }
+
+    cacheMap.set(cacheKey, { data: response, timestamp: now });
 
     return reply.send(response);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    request.log.error({
-      msg: 'Leaderboard data fetch failed',
-      error: errorMessage,
-      stack: errorStack,
-      errorObject: error
-    });
-    
-    return reply.status(500).send({ 
-      error: 'Failed to fetch leaderboard data',
-      details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined
-    });
+    request.log.error({ msg: 'Leaderboard data fetch failed', error: errorMessage });
+    return reply.status(500).send({ error: 'Failed to fetch leaderboard data' });
   }
-} 
+}
+
+const cacheMap = new Map<string, { data: any, timestamp: number }>();
+const activityCacheMap = new Map<string, { data: any, timestamp: number }>();
 
 type ActivityPoint = { date: string; count: number };
 
-let activityCache: ActivityPoint[] | null = null;
-let activityCacheTimestamp = 0;
-
 export async function getLeaderboardActivityHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
+    const { timezone } = request.query as { timezone?: string };
+    const systemTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const targetTimezone = timezone || systemTimezone || 'UTC';
+
     const now = Date.now();
-    if (activityCache && (now - activityCacheTimestamp) < CACHE_DURATION) {
-      request.log.info({ msg: 'Returning cached leaderboard activity', cacheAge: now - activityCacheTimestamp });
-      return reply.send(activityCache);
+    const cacheKey = `activity-${targetTimezone}`;
+
+    if (activityCacheMap.has(cacheKey)) {
+      const cached = activityCacheMap.get(cacheKey);
+      if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+        request.log.info({ msg: 'Returning cached leaderboard activity', cacheAge: now - cached.timestamp, timezone: targetTimezone });
+        return reply.send(cached.data);
+      }
     }
 
+    const tz = targetTimezone;
+
     const nowUtc = new Date();
-    const todayUtc = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate()));
-    const startUtc = new Date(todayUtc.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgoUtc = new Date(nowUtc.getTime() - 8 * 24 * 60 * 60 * 1000); // 8 days buffer
 
     const raw = await Leak.aggregate([
-      { $match: { leakDetectedAt: { $gte: startUtc } } },
+      { $match: { leakDetectedAt: { $gte: sevenDaysAgoUtc } } },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt' } },
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt', timezone: tz } },
           count: { $sum: 1 },
         },
       },
@@ -100,33 +121,39 @@ export async function getLeaderboardActivityHandler(request: FastifyRequest, rep
       raw.map((r: { _id: string; count: number }) => [r._id, r.count])
     );
 
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-    const result: ActivityPoint[] = Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(startUtc.getTime() + i * 24 * 60 * 60 * 1000);
-      const yyyy = d.getUTCFullYear();
-      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const dd = String(d.getUTCDate()).padStart(2, '0');
-      const key = `${yyyy}-${mm}-${dd}`;
-      return { date: weekdays[d.getUTCDay()] ?? 'Sun', count: counts.get(key) || 0 };
-    });
+    const result: ActivityPoint[] = [];
 
-    activityCache = result;
-    activityCacheTimestamp = now;
+    for (let i = 6; i >= 0; i--) {
+      const t = new Date(now - i * 24 * 60 * 60 * 1000);
+
+      const dateKey = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(t);
+
+      const dayName = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        weekday: 'short'
+      }).format(t);
+
+      result.push({
+        date: dayName,
+        count: counts.get(dateKey) || 0
+      });
+    }
+
+    activityCacheMap.set(cacheKey, { data: result, timestamp: now });
     return reply.send(result);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-
     request.log.error({
       msg: 'Leaderboard activity fetch failed',
       error: errorMessage,
-      stack: errorStack,
-      errorObject: error,
     });
-
     return reply.status(500).send({
       error: 'Failed to fetch leaderboard activity',
-      details: process.env['NODE_ENV'] === 'development' ? errorMessage : undefined,
     });
   }
 }

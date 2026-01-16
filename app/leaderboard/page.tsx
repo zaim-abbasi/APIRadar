@@ -3,7 +3,7 @@ import { StatsCards } from '@/components/leaderboard/stats-cards';
 import { LeaderboardData, ProviderStats } from '@/types';
 import type { Metadata } from 'next';
 import LeaderboardClient from "@/components/leaderboard/leaderboard-client";
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 
 // Page-specific metadata
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 // }
 
 // Production-grade data fetching with proper error handling
-async function fetchLeaderboardData(): Promise<LeaderboardData> {
+async function fetchLeaderboardData(timezone?: string): Promise<LeaderboardData> {
   // Use Next.js API route as proxy (similar to leaks)
   // Get the base URL for server-side requests
   let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -46,7 +46,12 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
   }
   
   try {
-    const response = await fetch(`${baseUrl}/api/leaderboard`, {
+    const url = new URL(`${baseUrl}/api/leaderboard`);
+    if (timezone) {
+      url.searchParams.set('timezone', timezone);
+    }
+
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -83,8 +88,8 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
 
     return {
       topProviders,
-      totalLeaks: Number(data.totalReposScanned) || 0, // map to totalReposScanned
-      todayLeaks: Number(data.totalLeaksFound) || 0,  // map to totalLeaksFound
+      totalLeaks: Number(data.totalReposScanned) || 0,
+      todayLeaks: Number(data.totalLeaksFound) || 0,
       weeklyGrowth: Number(data.weeklyGrowth) || 0,
       leaksFoundToday: Number(data.leaksFoundToday) || 0,
     };
@@ -134,10 +139,11 @@ export const revalidate = 0; // Always fetch fresh data
 
 // Main page component
 export default async function LeaderboardPage() {
-  // Fetch data server-side (at request time, not build time)
-  const leaderboardData = await fetchLeaderboardData();
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('timezone')?.value;
 
-  // Prepare data with proper validation
+  const leaderboardData = await fetchLeaderboardData(timezone);
+
   const statsData: LeaderboardData = leaderboardData;
   return <LeaderboardClient statsData={statsData} />;
 }

@@ -256,7 +256,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               isLoading={isLoading}
               selectedProvider={selectedProvider}
               plan={plan}
-              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href }) : undefined}
+              onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href, redirect: true }) : undefined}
             />
             
             {/* Fade-out blur effect for unauthenticated users - suggests more content */}

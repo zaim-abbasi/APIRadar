@@ -47,7 +47,8 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
     let cancelled = false;
     setError(null);
     setIsLoading(true);
-    fetch("/api/leaderboard/activity")
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    fetch(`/api/leaderboard/activity?timezone=${encodeURIComponent(timeZone)}`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text().catch(() => "");
