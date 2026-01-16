@@ -72,6 +72,8 @@ const config: Config = {
           '5': 'hsl(var(--chart-5))',
         },
 
+        coral: 'hsl(var(--coral))',
+
       },
       keyframes: {
         'accordion-down': {

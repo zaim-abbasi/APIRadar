@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-// Optimize icon imports - only import what's needed
 import { Menu, X, LogOut, Radar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -196,13 +195,13 @@ const NavbarComponent = () => {
   };
 
   return (
-    <nav ref={navRef} className={cn("fixed top-0 left-0 right-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200 w-full", isScrolled && "bg-beige/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
+    <nav ref={navRef} className={cn("fixed top-0 left-0 right-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200 w-full", isScrolled && "bg-background/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
       <div className="container mx-auto px-4">
         <div className="flex items-center w-full h-full" style={{ height: '50px', minHeight: '50px' }}>
           {/* Left: Logo */}
           <div className="flex items-center flex-1 md:flex-none md:w-1/3 justify-start">
             <Link href="/" className="flex items-center gap-1" onClick={handleNavClick}>
-              <Radar className="h-6 w-6 sm:h-7 sm:w-7 text-coral" strokeWidth={2.5} aria-hidden="true" focusable="false" />
+              <Radar className="h-6 w-6 sm:h-7 sm:w-7 text-coral" strokeWidth={1.5} aria-hidden="true" focusable="false" />
               <span className="text-xl sm:text-2xl font-semibold tracking-tighter font-heading whitespace-nowrap leading-none">
                 <span className="text-coral">API</span>
                 <span className="text-foreground"> Radar</span>

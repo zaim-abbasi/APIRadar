@@ -7,7 +7,7 @@ import { Radar } from 'lucide-react';
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center gap-1">
-    <Radar className="h-6 w-6 text-coral" strokeWidth={2.5} aria-hidden="true" focusable="false" />
+    <Radar className="h-6 w-6 text-coral" strokeWidth={1.5} aria-hidden="true" focusable="false" />
     <span className="text-xl font-semibold tracking-tighter font-heading">
       <span className="text-coral">API</span>
       <span className="text-foreground"> Radar</span>

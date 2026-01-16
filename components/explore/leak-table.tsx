@@ -25,7 +25,7 @@ interface LeakTableProps {
 
 const providerColors: Record<string, string> = {
   'ai-key':
-    "bg-beige text-coral"
+    "bg-coral/10 text-coral"
 }
 
 // Memoized Loading Skeleton component
@@ -329,16 +329,16 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
                   className="absolute inset-0 backdrop-blur-[4px]"
                   style={{
                     background: index === 4 
-                      ? 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--beige) / 0.2) 60%, hsl(var(--beige) / 0.45) 75%, hsl(var(--beige) / 0.7) 87%, hsl(var(--beige) / 0.88) 94%, hsl(var(--beige) / 0.96) 98%, hsl(var(--beige)) 100%)'
-                      : 'linear-gradient(to bottom, transparent 0%, transparent 30%, hsl(var(--beige) / 0.25) 50%, hsl(var(--beige) / 0.55) 70%, hsl(var(--beige) / 0.8) 85%, hsl(var(--beige) / 0.93) 93%, hsl(var(--beige) / 0.98) 97%, hsl(var(--beige)) 100%)'
+                      ? 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--background) / 0.2) 60%, hsl(var(--background) / 0.45) 75%, hsl(var(--background) / 0.7) 87%, hsl(var(--background) / 0.88) 94%, hsl(var(--background) / 0.96) 98%, hsl(var(--background)) 100%)'
+                      : 'linear-gradient(to bottom, transparent 0%, transparent 30%, hsl(var(--background) / 0.25) 50%, hsl(var(--background) / 0.55) 70%, hsl(var(--background) / 0.8) 85%, hsl(var(--background) / 0.93) 93%, hsl(var(--background) / 0.98) 97%, hsl(var(--background)) 100%)'
                   }}
                 />
                 <div 
                   className="absolute inset-0"
                   style={{
                     background: index === 4
-                      ? 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--beige) / 0.12) 70%, hsl(var(--beige) / 0.35) 82%, hsl(var(--beige) / 0.6) 91%, hsl(var(--beige) / 0.82) 96%, hsl(var(--beige) / 0.94) 99%, hsl(var(--beige)) 100%)'
-                      : 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--beige) / 0.18) 60%, hsl(var(--beige) / 0.45) 75%, hsl(var(--beige) / 0.72) 87%, hsl(var(--beige) / 0.9) 94%, hsl(var(--beige) / 0.97) 98%, hsl(var(--beige)) 100%)'
+                      ? 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--background) / 0.12) 70%, hsl(var(--background) / 0.35) 82%, hsl(var(--background) / 0.6) 91%, hsl(var(--background) / 0.82) 96%, hsl(var(--background) / 0.94) 99%, hsl(var(--background)) 100%)'
+                      : 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--background) / 0.18) 60%, hsl(var(--background) / 0.45) 75%, hsl(var(--background) / 0.72) 87%, hsl(var(--background) / 0.9) 94%, hsl(var(--background) / 0.97) 98%, hsl(var(--background)) 100%)'
                   }}
                 />
               </div>

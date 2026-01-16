@@ -114,19 +114,19 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
 
   return (
     <div
-      className="w-full h-[300px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-slate-950 border border-slate-800 font-mono flex flex-col relative"
+      className="w-full h-[300px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
       style={{
         fontFamily:
           "'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
       }}
     >
-      <div className="hidden lg:flex px-4 py-2 items-center justify-between border-b border-white/5 bg-slate-950/80 mb-0">
-        <div className="font-mono text-xs text-stone-400 tracking-widest uppercase">
-          LIVE_FEED // PUBLIC_REPOS
+      <div className="hidden lg:flex px-4 py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
+        <div className="font-mono text-xs text-muted-foreground tracking-widest uppercase">
+          GLOBAL_SCAN // ACTIVE
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden="true" />
-          <div className="text-emerald-500/80 text-xs font-mono tracking-wider">
+          <div className="w-2 h-2 rounded-full bg-coral shadow-[0_0_8px_hsl(var(--coral)/0.6)]" aria-hidden="true" />
+          <div className="text-coral text-xs font-mono tracking-wider">
             SYSTEM: ONLINE
           </div>
         </div>
@@ -142,13 +142,13 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 !log.id.startsWith("init-") && "animate-in fade-in slide-in-from-bottom-1 duration-400",
               )}
             >
-              <span className="text-slate-500 text-[0.7rem] mr-2">
+              <span className="text-muted-foreground/60 text-[0.7rem] mr-2">
                 [{formatLogTime(log.timestamp)}]
               </span>
-              <span className="text-stone-400">SCANNING </span>
-              <span className="text-slate-100 font-bold">{log.repo}</span>
-              <span className="text-slate-500"> CREATED BY </span>
-              <span className="text-orange-200/80">{log.owner}</span>
+              <span className="text-muted-foreground">SCANNING </span>
+              <span className="text-foreground font-bold">{log.repo}</span>
+              <span className="text-muted-foreground/80"> CREATED BY </span>
+              <span className="text-coral">{log.owner}</span>
             </div>
           ))}
         </div>

@@ -264,9 +264,9 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               <>
                 <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
                   {/* Gradient fade that keeps last row visible - starts transparent at top */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--beige)) 0%, hsl(var(--beige) / 0.98) 20%, hsl(var(--beige) / 0.90) 40%, hsl(var(--beige) / 0.70) 60%, hsl(var(--beige) / 0.40) 75%, transparent 100%)' }} />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
                   {/* Subtle blur overlay - lighter at top to keep last row visible */}
-                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--beige) / 0.90) 0%, hsl(var(--beige) / 0.75) 30%, hsl(var(--beige) / 0.50) 55%, hsl(var(--beige) / 0.25) 75%, transparent 100%)' }} />
+                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
                 </div>
               </>
             )}
