@@ -5,7 +5,7 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
-import { isValidKey } from './apiKeyValidator';
+import { regexRouter } from './RegexRouter';
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { retryWithBackoff } from '../utils/retryWithBackoff';
 import { dbResilienceManager } from '../utils/dbResilience';
@@ -25,12 +25,25 @@ async function waitForRateLimitIfNeeded(): Promise<void> {
   }
 }
 
-const PROVIDER_PATTERNS: { [provider: string]: RegExp } = (() => {
-  const patternMap: { [provider: string]: RegExp } = {};
-  // Currently only ai-key provider is supported
-  patternMap['ai-key'] = /\b(sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}))\b/g;
-  return patternMap;
-})();
+const RESILIENCE = {
+  FAILURE_THRESHOLD: 10,
+  SUCCESS_THRESHOLD: 2,
+  TIMEOUT: 20000,
+  RESET_TIMEOUT: 60000,
+  MONITORING_PERIOD: 60000
+};
+
+const RECOVERY = {
+  MAX_ATTEMPTS: 5,
+  BACKOFF_BASE: 10000,
+  BACKOFF_MAX: 300000
+};
+
+const REDACTION = {
+  PREFIX_LEN: 6,
+  SUFFIX_LEN: 6,
+  TOTAL_LEN: 32
+};
 
 const ALL_SEARCH_QUERIES = (() => {
   const queries: string[] = [];
@@ -58,16 +71,16 @@ const MAX_RETRIES = 2;
 const MAX_PAGE = FARM_CONSTANTS.SEARCH.MAX_PAGE;
 
 const githubApiCircuitBreaker = new CircuitBreaker('github-api', {
-  failureThreshold: 5,
-  successThreshold: 2,
-  timeout: 60000,
-  resetTimeout: 120000,
-  monitoringPeriod: 60000
+  failureThreshold: RESILIENCE.FAILURE_THRESHOLD,
+  successThreshold: RESILIENCE.SUCCESS_THRESHOLD,
+  timeout: RESILIENCE.TIMEOUT,
+  resetTimeout: RESILIENCE.RESET_TIMEOUT,
+  monitoringPeriod: RESILIENCE.MONITORING_PERIOD
 });
 const fatalErrorRecovery = new FatalErrorRecoveryManager({
-  maxRestartAttempts: 5,
-  restartBackoffBase: 10000,
-  restartBackoffMax: 300000,
+  maxRestartAttempts: RECOVERY.MAX_ATTEMPTS,
+  restartBackoffBase: RECOVERY.BACKOFF_BASE,
+  restartBackoffMax: RECOVERY.BACKOFF_MAX,
   fatalErrorWindow: FARM_CONSTANTS.LIMITS.FATAL_ERROR_WINDOW,
   maxFatalErrorsInWindow: FARM_CONSTANTS.LIMITS.MAX_FATAL_ERRORS,
   statePreservationEnabled: true
@@ -81,12 +94,9 @@ interface GitHubSearchItem {
 }
 function redactKey(key: string): string {
   if (key.length <= 12) return key;
-  const prefixLength = 6;
-  const suffixLength = 6;
-  const totalLength = 32;
-  const prefix = key.substring(0, prefixLength);
-  const suffix = key.substring(key.length - suffixLength);
-  const stars = totalLength - prefix.length - suffix.length;
+  const prefix = key.substring(0, REDACTION.PREFIX_LEN);
+  const suffix = key.substring(key.length - REDACTION.SUFFIX_LEN);
+  const stars = REDACTION.TOTAL_LEN - prefix.length - suffix.length;
   return `${prefix}${'*'.repeat(Math.max(stars, 0))}${suffix}`;
 }
 
@@ -152,24 +162,7 @@ async function repoAlreadyScannedWithCommit(repoUrl: string, currentCommitHash: 
 }
 
 function extractApiKeys(content: string): { key: string, provider: string }[] {
-  const results: { key: string, provider: string }[] = [];
-  const foundKeys = new Set<string>();
-
-  for (const [provider, regex] of Object.entries(PROVIDER_PATTERNS)) {
-    regex.lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(content)) !== null) {
-      const key = match[1] || match[0];
-      if (foundKeys.has(key) || !isValidKey(key)) {
-        continue;
-      }
-
-      foundKeys.add(key);
-      results.push({ key, provider });
-    }
-  }
-  return results;
+  return regexRouter.scan(content);
 }
 const scannedCache = new LRUCache<string, boolean>(FARM_CONSTANTS.CACHE.SIZE_SCANNED, FARM_CONSTANTS.CACHE.TTL_SCANNED);
 const repoLastCommitCache = new LRUCache<string, string>(FARM_CONSTANTS.CACHE.SIZE_COMMIT, FARM_CONSTANTS.CACHE.TTL_COMMIT);
@@ -761,7 +754,16 @@ export class GitHubCodeLeakFarmService {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
       if (!this.running) return { hadResults: false, itemCount: 0 };
-      const response = await retry(() => githubService.searchCode(query, page, FARM_CONSTANTS.SEARCH.PER_PAGE), 'SEARCH');
+      const response = await retry(async () => {
+        try {
+          return await githubService.searchCode(query, page, FARM_CONSTANTS.SEARCH.PER_PAGE);
+        } catch (err: any) {
+          if (err.response?.status === 422) {
+            return { data: { items: [], total_count: 0 } };
+          }
+          throw err;
+        }
+      }, 'SEARCH');
       const items: GitHubSearchItem[] = response.data?.items || [];
       const itemCount = items.length;
       const totalCount = response.data?.total_count || 0;
@@ -822,7 +824,16 @@ export class GitHubCodeLeakFarmService {
         try {
           await waitForRateLimitIfNeeded();
           await rateLimitOptimizer.waitWithThrottling();
-          repoLatestCommit = await retry(() => githubService.getRepoLatestCommitHash(repoName), 'REPO-COMMIT');
+          repoLatestCommit = await retry(async () => {
+            try {
+              return await githubService.getRepoLatestCommitHash(repoName);
+            } catch (err: any) {
+              if (err.response?.status === 422) {
+                return '';
+              }
+              throw err;
+            }
+          }, 'REPO-COMMIT');
         } catch (error) {
           logger.warn(`[FARM] Failed to get repo commit for ${repoName}, processing files individually: ${error instanceof Error ? error.message : String(error)}`);
           return { repoUrl, items: repoItems, repoName, skip: false };
@@ -890,7 +901,16 @@ export class GitHubCodeLeakFarmService {
     try {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
-      commitHash = await retry(() => githubService.getFileLatestCommitHash(repoName, filePath), 'COMMIT-HASH');
+      commitHash = await retry(async () => {
+        try {
+          return await githubService.getFileLatestCommitHash(repoName, filePath);
+        } catch (err: any) {
+          if (err.response?.status === 422) {
+            return '';
+          }
+          throw err;
+        }
+      }, 'COMMIT-HASH');
     } catch (error) {
       logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to get commit hash: ${error instanceof Error ? error.message : String(error)}`);
       return { processed: false, skipped: true };
