@@ -123,7 +123,7 @@ export async function getLeaderboardActivityHandler(request: FastifyRequest, rep
 
     const result: ActivityPoint[] = [];
 
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 7; i >= 1; i--) {
       const t = new Date(now - i * 24 * 60 * 60 * 1000);
 
       const dateKey = new Intl.DateTimeFormat('en-CA', {
@@ -183,15 +183,24 @@ export async function getTopLeakersHandler(request: FastifyRequest, reply: Fasti
     const raw = await Leak.aggregate([
       {
         $addFields: {
-          _m: { $regexFind: { input: '$repoUrl', regex: /github\.com\/([^\/]+)\/([^\/?#]+)/ } },
-        },
+          owner: {
+            $let: {
+              vars: {
+                parts: { $split: ['$repoUrl', 'github.com/'] }
+              },
+              in: {
+                $let: {
+                  vars: {
+                    pathParts: { $split: [{ $arrayElemAt: ['$$parts', 1] }, '/'] }
+                  },
+                  in: { $arrayElemAt: ['$$pathParts', 0] }
+                }
+              }
+            }
+          }
+        }
       },
-      {
-        $addFields: {
-          owner: { $ifNull: [{ $arrayElemAt: ['$_m.captures', 0] }, ''] },
-        },
-      },
-      { $match: { owner: { $ne: '' } } },
+      { $match: { owner: { $nin: [null, ''] } } },
       { $project: { owner: 1, fullKey: 1, repoUrl: 1 } },
       { $group: { _id: { owner: '$owner', key: '$fullKey' }, repoUrl: { $first: '$repoUrl' } } },
       { $group: { _id: '$_id.owner', total_leaks: { $sum: 1 }, repos: { $addToSet: '$repoUrl' } } },
