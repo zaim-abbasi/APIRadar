@@ -1,5 +1,15 @@
 import { logger } from '../utils/logger';
 import { config } from '../config/environment';
+import { FARM_CONSTANTS } from './farmConstants';
+
+const TUNING = {
+  HYSTERESIS_BUFFER: 10,
+  ROTATION_COOLDOWN: 2000,
+  FALLBACK_WAIT: 60000,
+  RESET_PADDING: 1000,
+  THROTTLE_LOW: 2000,
+  THROTTLE_NORMAL: 1000
+};
 
 interface RateLimitInfo {
   limit: number;
@@ -18,7 +28,7 @@ export class RateLimitOptimizer {
   private states = new Map<number, TokenStatus>();
   private tokens: string[] = [];
   private currentTokenIndex = 0;
-  private lastRotation = Date.now(); // Initialize to avoid immediate rotation issues
+  private lastRotation = Date.now();
 
   constructor() {
     this.tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
@@ -55,7 +65,7 @@ export class RateLimitOptimizer {
 
   shouldRotate(): boolean {
     const now = Date.now();
-    if (now - this.lastRotation < 2000) return false;
+    if (now - this.lastRotation < TUNING.ROTATION_COOLDOWN) return false;
 
     const current = this.getCurrentTokenState();
     if (!current?.info) return true;
@@ -65,7 +75,7 @@ export class RateLimitOptimizer {
     if (bestIndex === this.currentTokenIndex) return false;
 
     const best = this.states.get(bestIndex);
-    return (best?.info?.remaining || 0) > (current.info.remaining + 10); // Hysteresis buffer
+    return (best?.info?.remaining || 0) > (current.info.remaining + TUNING.HYSTERESIS_BUFFER);
   }
 
   rotate() {
@@ -82,16 +92,13 @@ export class RateLimitOptimizer {
     const current = this.getCurrentTokenState();
     if (!current?.info) return 0;
 
-    // Budget available? No wait.
     if (current.info.remaining > 0) return 0;
 
-    // Others available? No wait (rotation will happen).
     if (this.shouldRotate()) {
       this.rotate();
       if ((this.getCurrentTokenState()?.info?.remaining || 0) > 0) return 0;
     }
 
-    // All exhausted: Find global minimum reset time
     let minReset = Number.MAX_SAFE_INTEGER;
     let foundValidReset = false;
 
@@ -102,19 +109,19 @@ export class RateLimitOptimizer {
       }
     }
 
-    if (!foundValidReset) return 60000; // Fallback if no data
+    if (!foundValidReset) return TUNING.FALLBACK_WAIT;
 
     const wait = minReset - Date.now();
-    return wait > 0 ? wait + 1000 : 0;
+    return wait > 0 ? wait + TUNING.RESET_PADDING : 0;
   }
 
   getDelay(): number {
     const current = this.getCurrentTokenState();
-    if (!current?.info) return 1000;
+    if (!current?.info) return TUNING.THROTTLE_NORMAL;
 
     const ratio = current.info.remaining / current.info.limit;
-    if (ratio < 0.1) return 2000; // Throttling logic simplified
-    return 1000;
+    if (ratio < 0.1) return TUNING.THROTTLE_LOW;
+    return TUNING.THROTTLE_NORMAL;
   }
 
   async waitWithThrottling(): Promise<void> {
@@ -178,17 +185,14 @@ export class RateLimitOptimizer {
   }
 
   async refreshAllTokenStatuses(): Promise<void> {
-    // Smart Refresh: Only refresh tokens that are expired or have unknown status
-    // or every 5 minutes regardless to detect drift.
     const now = Date.now();
 
     await Promise.all(this.tokens.map(async (token, i) => {
       const state = this.states.get(i);
 
-      // Optimization: Don't refresh if we have recent data (>5m old) and plenty of budget
       if (state?.info &&
         state.info.remaining > 5 &&
-        (now - state.lastUpdated) < 300000) {
+        (now - state.lastUpdated) < FARM_CONSTANTS.SCAN.TOKEN_REFRESH_INTERVAL) {
         return;
       }
 
