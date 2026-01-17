@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
-// rateLimitManager import removed
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export class GitHubService {
@@ -45,41 +44,33 @@ export class GitHubService {
   }
 
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    if (rateLimitOptimizer.shouldRotate()) {
-      rateLimitOptimizer.rotate();
-    }
-    const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-    const client = this.clients[tokenIndex % this.clients.length]!;
-    try {
-      const response = await requestFn(client);
-      return response;
-    } catch (error: any) {
-      if (error.response?.status === 401 && this.clients.length > 1) {
+    const maxAttempts = Math.min(3, this.clients.length);
+    let lastError: any;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (rateLimitOptimizer.shouldRotate()) {
         rateLimitOptimizer.rotate();
-        const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-        const newClient = this.clients[newTokenIndex % this.clients.length]!;
-        logger.warn(`[GITHUB] 401 Unauthorized - Rotated to token ${newTokenIndex + 1}`);
-        try {
-          return await requestFn(newClient);
-        } catch (retryError: any) {
-          if (retryError.response?.status === 401 && this.clients.length > 1) {
-            rateLimitOptimizer.rotate();
-            const nextTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-            const nextClient = this.clients[nextTokenIndex % this.clients.length]!;
-            return await requestFn(nextClient);
-          }
-          throw retryError;
+      }
+      const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
+      const client = this.clients[tokenIndex % this.clients.length]!;
+
+      try {
+        return await requestFn(client);
+      } catch (error: any) {
+        lastError = error;
+        const status = error.response?.status;
+
+        if (status === 401 || status === 403 || status === 429) {
+          rateLimitOptimizer.rotate();
+          logger.warn(`[GITHUB] Token ${tokenIndex + 1} failed (${status}), rotating...`);
+          continue;
         }
+
+        throw error;
       }
-      if ((error.response?.status === 403 || error.response?.status === 429) && this.clients.length > 1) {
-        rateLimitOptimizer.rotate();
-        const newTokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-        const newClient = this.clients[newTokenIndex % this.clients.length]!;
-        logger.warn(`[GITHUB] Rotated to token ${newTokenIndex + 1} due to rate limit`);
-        return await requestFn(newClient);
-      }
-      throw error;
     }
+
+    throw lastError;
   }
 
   async getRepoCreatedAt(repoName: string): Promise<string> {
@@ -127,29 +118,18 @@ export class GitHubService {
   }
 
   async getRepoLatestCommitHash(repoName: string): Promise<string> {
-    const repoInfo = await this.makeRequest(client => client.get(`/repos/${repoName}`));
-    const defaultBranch = repoInfo.data?.default_branch || 'main';
-    try {
-      const response = await this.makeRequest(client =>
-        client.get(`/repos/${repoName}/commits/${defaultBranch}`)
-      );
-      return response.data?.sha || '';
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        for (const branch of ['main', 'master', 'develop']) {
-          if (branch === defaultBranch) continue;
-          try {
-            const response = await this.makeRequest(client =>
-              client.get(`/repos/${repoName}/commits/${branch}`)
-            );
-            return response.data?.sha || '';
-          } catch {
-            continue;
-          }
-        }
+    for (const branch of ['main', 'master']) {
+      try {
+        const response = await this.makeRequest(client =>
+          client.get(`/repos/${repoName}/commits/${branch}`)
+        );
+        return response.data?.sha || '';
+      } catch (err: any) {
+        if (err.response?.status === 404) continue;
+        throw err;
       }
-      throw err;
     }
+    return '';
   }
 
   async getUserProfile(username: string): Promise<{ login: string; avatar_url: string; html_url: string } | null> {
