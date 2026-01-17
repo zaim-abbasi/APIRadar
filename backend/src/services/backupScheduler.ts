@@ -1,48 +1,52 @@
 import { runBackup } from '../scripts/backup-database';
 import { logger } from '../utils/logger';
-import { ConfigurationService } from './ConfigurationService';
 
-const BACKUP_INTERVAL_DAYS = 7;
-const BACKUP_INTERVAL_MS = BACKUP_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
-const BACKUP_STATE_KEY = 'backup_state';
+const BACKUP_HOUR_UTC = 8;
 
 let backupTimer: NodeJS.Timeout | null = null;
-
-async function getLastBackupTime(): Promise<number> {
-  const state = await ConfigurationService.getConfig(BACKUP_STATE_KEY);
-  return state?.lastBackupTime ?? 0;
-}
-
-async function setLastBackupTime(time: number): Promise<void> {
-  await ConfigurationService.setConfig(BACKUP_STATE_KEY, { lastBackupTime: time });
-}
+let isBackupRunning = false;
 
 async function scheduleNextBackup(): Promise<void> {
-  if (backupTimer) {
-    clearTimeout(backupTimer);
+  if (backupTimer) clearTimeout(backupTimer);
+
+  const now = new Date();
+  const dayOfWeek = now.getUTCDay();
+  const currentHour = now.getUTCHours();
+
+  let daysUntilSunday = (7 - dayOfWeek) % 7;
+  if (dayOfWeek === 0 && currentHour >= BACKUP_HOUR_UTC) {
+    daysUntilSunday = 7;
   }
 
-  const lastBackupTime = await getLastBackupTime();
-  const timeSinceLastBackup = Date.now() - lastBackupTime;
-  const delay = Math.max(0, BACKUP_INTERVAL_MS - timeSinceLastBackup);
+  const targetDate = new Date(now);
+  targetDate.setUTCDate(targetDate.getUTCDate() + daysUntilSunday);
+  targetDate.setUTCHours(BACKUP_HOUR_UTC, 0, 0, 0);
+
+  const delay = targetDate.getTime() - Date.now();
 
   backupTimer = setTimeout(async () => {
+    if (isBackupRunning) {
+      logger.warn('[BACKUP] Backup in progress, skipping task and rescheduling');
+      return scheduleNextBackup();
+    }
+
     try {
+      isBackupRunning = true;
       await runBackup();
-      await setLastBackupTime(Date.now());
-      scheduleNextBackup();
     } catch (error) {
-      logger.error(`[BACKUP] Scheduled backup failed, retrying in 1 hour: ${error instanceof Error ? error.message : String(error)}`);
-      backupTimer = setTimeout(() => scheduleNextBackup(), 60 * 60 * 1000);
+      logger.error(`[BACKUP] Backup task failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      isBackupRunning = false;
+      await scheduleNextBackup();
     }
   }, delay);
 
-  const nextBackupDate = new Date(Date.now() + delay);
-  logger.warn(`[BACKUP] Next backup scheduled for: ${nextBackupDate.toISOString()}`);
+  const scheduledTime = new Date(Date.now() + delay);
+  logger.warn(`[BACKUP] Next backup scheduled for: ${scheduledTime.toISOString()}`);
 }
 
 export async function startBackupScheduler(): Promise<void> {
-  logger.warn(`[BACKUP] Backup scheduler started (interval: ${BACKUP_INTERVAL_DAYS} days)`);
+  logger.warn(`[BACKUP] Backup scheduler active (Every Sunday at ${BACKUP_HOUR_UTC}:00 UTC)`);
   await scheduleNextBackup();
 }
 
@@ -51,5 +55,6 @@ export function stopBackupScheduler(): void {
     clearTimeout(backupTimer);
     backupTimer = null;
   }
+  isBackupRunning = false;
   logger.warn('[BACKUP] Backup scheduler stopped');
 }
