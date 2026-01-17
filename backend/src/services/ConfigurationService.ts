@@ -5,20 +5,14 @@ const DEFAULT_SCAN_STATE = {
   currentProviderIndex: 0,
   currentQueryIndex: 0,
   currentPage: 1,
-  lastProcessedTime: Date.now(),
   providerStates: {},
   scanStatus: 'idle'
 };
 
 export class ConfigurationService {
   static async getConfig(key: string): Promise<any> {
-    try {
-      const config = await Configuration.findOne({ key });
-      return config ? config.value : null;
-    } catch (error) {
-      logger.error(`[CONFIG] Error getting config for key ${key}: ${error instanceof Error ? error.message : String(error)}`);
-      return null;
-    }
+    const config = await Configuration.findOne({ key });
+    return config ? config.value : null;
   }
 
   static async setConfig(key: string, value: any): Promise<boolean> {
@@ -44,35 +38,19 @@ export class ConfigurationService {
   }
 
   static async checkAndReinitialize(): Promise<boolean> {
-    try {
-      const scanState = await this.getScanState();
-      if (!scanState) {
-        await this.forceReinitialize();
-        return true;
-      }
-      return false;
-    } catch (error) {
-      logger.error(`[CONFIG] Error checking configurations: ${error instanceof Error ? error.message : String(error)}`);
-      return false;
+    const scanState = await this.getScanState();
+    if (!scanState) {
+      await this.initializeDefaults();
+      return true;
     }
-  }
-
-  static async forceReinitialize(): Promise<void> {
-    const success = await this.setScanState({ ...DEFAULT_SCAN_STATE, lastProcessedTime: Date.now() });
-    if (!success) {
-      throw new Error('Failed to set scan state');
-    }
-    logger.warn('[CONFIG] Scan state reinitialized to defaults');
+    return false;
   }
 
   static async initializeDefaults(): Promise<void> {
-    const scanState = await this.getScanState();
-    if (!scanState) {
-      const success = await this.setScanState({ ...DEFAULT_SCAN_STATE, lastProcessedTime: Date.now() });
-      if (!success) {
-        throw new Error('Failed to initialize scan state');
-      }
-      logger.warn('[CONFIG] Initialized scan state to defaults');
+    const success = await this.setScanState({ ...DEFAULT_SCAN_STATE, lastProcessedTime: Date.now() });
+    if (!success) {
+      throw new Error('Failed to initialize scan state');
     }
+    logger.warn('[CONFIG] Scan state initialized to defaults');
   }
 }
