@@ -1,6 +1,6 @@
 export const FARM_CONSTANTS = {
   SEARCH: {
-    PER_PAGE: 50,
+    PER_PAGE: 10,
     MAX_PAGE: 100,
     PAGE_CONCURRENCY: 5,
     RETRY_BASE_DELAY: 2000,

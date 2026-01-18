@@ -983,6 +983,12 @@ export class GitHubCodeLeakFarmService {
       try {
         await rateLimitOptimizer.waitWithThrottling();
         const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        if (leakIntroducedAt < ninetyDaysAgo) {
+          logger.warn(`[SKIP] Key too old: ${leakIntroducedAt.toISOString().split('T')[0]} | ${repoName}/${filePath}`);
+          continue;
+        }
         const leakData: Partial<ILeak> = {
           redactedKey: redactKey(key),
           fullKey: key,
