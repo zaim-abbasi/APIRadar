@@ -31,11 +31,4 @@ export interface FilterOptions {
   sortBy: string;
 }
 
-export type Provider =
-  | 'ai-key'
-  | 'stripe'
-  | 'github'
-  | 'discord'
-  | 'twilio'
-  | 'sendgrid'
-  | 'all';
+export type { Provider } from '@/lib/constants';

@@ -1,6 +1,9 @@
+export const PROVIDER_NAMES = ['ai-key'] as const;
+export const PROVIDER_LABELS = [{ value: 'ai-key', label: 'AI Key' }] as const;
+
 export const PROVIDERS = [
   { value: 'all', label: 'All Providers' },
-  { value: 'ai-key', label: 'AI Key' },
+  ...PROVIDER_LABELS
 ] as const;
 
 export const TIME_RANGES = [
@@ -16,8 +19,4 @@ export const SORT_OPTIONS = [
   { value: 'provider', label: 'Provider' }
 ] as const;
 
-// Add a mapping for frontend-to-backend provider values
-export const PROVIDER_API_MAP: Record<string, string> = {
-  'ai-key': 'ai-key',
-  all: 'all',
-};
+export type Provider = typeof PROVIDER_NAMES[number] | 'all';

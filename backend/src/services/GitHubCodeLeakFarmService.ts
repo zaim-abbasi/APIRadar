@@ -5,7 +5,7 @@ import { ScanAttempt } from '../models/ScanAttempt';
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
-import { regexRouter } from './RegexRouter';
+import { regexRouter, PROVIDER_QUERIES } from './RegexRouter';
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { retryWithBackoff } from '../utils/retryWithBackoff';
 import { dbResilienceManager } from '../utils/dbResilience';
@@ -44,20 +44,6 @@ const REDACTION = {
   SUFFIX_LEN: 6,
   TOTAL_LEN: 32
 };
-
-const ALL_SEARCH_QUERIES = (() => {
-  const queries: string[] = [];
-  FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.forEach(filePattern => {
-    queries.push(`filename:${filePattern} sk-`);
-  });
-  return queries;
-})();
-
-const PROVIDER_QUERIES = (() => {
-  const queries: { [key: string]: string[] } = {};
-  queries['ai-key'] = ALL_SEARCH_QUERIES;
-  return queries;
-})();
 
 function getDefaultProviderStates(): { [key: string]: { queryIndex: number; page: number; queryEmptyPages: { [query: string]: number } } } {
   const states: { [key: string]: { queryIndex: number; page: number; queryEmptyPages: { [query: string]: number } } } = {};

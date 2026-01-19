@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { PROVIDER_NAMES } from '../services/RegexRouter';
 
 export interface ILeak extends Document {
   redactedKey: string;
@@ -31,12 +32,7 @@ const LeakSchema = new Schema<ILeak>(
       required: true,
       trim: true,
       lowercase: true,
-      enum: [
-        'ai-key',
-        'mistral-ai',
-        'cohere',
-        'huggingface',
-      ],
+      enum: PROVIDER_NAMES,
       index: true,
     },
     repoUrl: {
