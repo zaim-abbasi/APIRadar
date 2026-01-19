@@ -11,7 +11,7 @@ function deduplicateRequest<T>(
 ): Promise<T> {
   const cached = requestCache.get(key);
   const now = Date.now();
-  
+
   // Clear expired cache entries periodically
   if (now % 10000 < 100) { // Cleanup every ~10 seconds
     for (const [k, v] of Array.from(requestCache.entries())) {
@@ -20,17 +20,17 @@ function deduplicateRequest<T>(
       }
     }
   }
-  
+
   // Root fix: Only use cache if very recent (within 500ms) to prevent stale filter results
   if (cached && now - cached.timestamp < CACHE_DURATION) {
     return cached.promise;
   }
-  
+
   const promise = requestFn().finally(() => {
     // Remove from cache immediately after completion to prevent stale data
     setTimeout(() => requestCache.delete(key), CACHE_DURATION);
   });
-  
+
   requestCache.set(key, { promise, timestamp: now });
   return promise;
 }
@@ -188,7 +188,7 @@ export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
 }>> {
   try {
     const headers = createAuthHeaders(session);
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard-data`, {
+    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
       method: 'GET',
       headers,
     });
@@ -205,11 +205,11 @@ export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
   }
 }
 
-export async function fetchLeaks({ 
-  provider, 
-  timeRange, 
-  sortBy, 
-  page = 1, 
+export async function fetchLeaks({
+  provider,
+  timeRange,
+  sortBy,
+  page = 1,
   limit = 10,
   session,
   signal,
@@ -223,9 +223,9 @@ export async function fetchLeaks({
   session?: any;
   signal?: AbortSignal;
   bypassCache?: boolean;
-}): Promise<ApiResponse<{ 
-  leaks: any[]; 
-  total: number; 
+}): Promise<ApiResponse<{
+  leaks: any[];
+  total: number;
   hasMore: boolean;
   planLimits?: {
     maxLeaks: number;
@@ -236,7 +236,7 @@ export async function fetchLeaks({
   const normalizedSortBy = sortBy || 'newest';
   const userId = session?.user?.id || 'anonymous';
   const cacheKey = `leaks:${normalizedProvider}:${normalizedTimeRange}:${normalizedSortBy}:${page}:${limit}:${userId}`;
-  
+
   const fetchFn = async () => {
     const headers = createAuthHeaders(session);
     const params = new URLSearchParams();
@@ -247,23 +247,23 @@ export async function fetchLeaks({
     if (sortBy) params.append('sortBy', sortBy);
     params.append('page', String(page));
     params.append('limit', String(limit));
-    
+
     const response = await fetch(`/api/leaks?${params.toString()}`, {
       method: 'GET',
       headers,
       signal,
       cache: 'no-store' as RequestCache
     });
-  
+
     if (response.status === 401) {
       return { error: 'Authentication required' };
     }
-    
+
     if (response.status === 429) {
       const data = await response.json();
       return { error: `Rate limit exceeded. Retry after ${data.retryAfter} seconds.` };
     }
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -272,7 +272,7 @@ export async function fetchLeaks({
     const data = await response.json();
     return { data };
   };
-  
+
   if (bypassCache) {
     try {
       return await fetchFn();
@@ -280,7 +280,7 @@ export async function fetchLeaks({
       return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
     }
   }
-  
+
   return deduplicateRequest(cacheKey, async () => {
     try {
       return await fetchFn();
@@ -297,20 +297,20 @@ export async function fetchLeakFullKey(leakId: string, session?: any): Promise<A
       method: 'GET',
       headers,
     });
-    
+
     if (response.status === 401) {
       return { error: 'Authentication required' };
     }
-    
+
     if (response.status === 403) {
       return { error: 'Full key access is disabled. Only redacted keys are available.' };
     }
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
-    
+
     const data = await response.json();
     return { data };
   } catch (error) {

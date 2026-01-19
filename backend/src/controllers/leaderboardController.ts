@@ -35,6 +35,19 @@ interface LeaderboardResponse {
   leaksFoundToday: number;
 }
 
+export const leaderboardDataSchema = {
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        totalReposScanned: { type: 'number' },
+        totalLeaksFound: { type: 'number' },
+        leaksFoundToday: { type: 'number' }
+      }
+    }
+  }
+};
+
 export async function getLeaderboardDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
     const tz = resolveTimezone((request.query as any).timezone);
@@ -58,6 +71,21 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
 }
 
 type ActivityPoint = { date: string; count: number };
+
+export const activitySchema = {
+  response: {
+    200: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          date: { type: 'string' },
+          count: { type: 'number' }
+        }
+      }
+    }
+  }
+};
 
 export async function getLeaderboardActivityHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -93,6 +121,25 @@ type TopLeaker = {
   html_url: string;
   total_leaks: number;
   repos_count: number;
+};
+
+export const topLeakersSchema = {
+  response: {
+    200: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          rank: { type: 'number' },
+          username: { type: 'string' },
+          avatar_url: { type: 'string' },
+          html_url: { type: 'string' },
+          total_leaks: { type: 'number' },
+          repos_count: { type: 'number' }
+        }
+      }
+    }
+  }
 };
 
 const TOP_LEAKERS_LIMIT = 10;

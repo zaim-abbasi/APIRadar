@@ -4,7 +4,7 @@ import { leaderboardRoutes } from './leaderboard';
 import { configurationRoutes } from './configuration';
 
 export async function registerRoutes(server: FastifyInstance) {
-  await leaksRoutes(server);
-  await leaderboardRoutes(server);
-  await configurationRoutes(server);
-} 
+  server.register(leaksRoutes, { prefix: '/api' });
+  server.register(leaderboardRoutes, { prefix: '/api' });
+  server.register(configurationRoutes, { prefix: '/api' });
+}

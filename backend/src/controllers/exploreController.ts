@@ -14,6 +14,78 @@ const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
 });
 
+const errorSchema = {
+  type: 'object',
+  properties: { error: { type: 'string' } }
+};
+
+const leakItemSchema = {
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    provider: { type: 'string' },
+    redactedKey: { type: 'string' },
+    repoUrl: { type: 'string' },
+    filePath: { type: 'string' },
+    leakIntroducedAt: { type: 'string', format: 'date-time' },
+    leakDetectedAt: { type: 'string', format: 'date-time' },
+    repoCreatedAt: { type: 'string', format: 'date-time' },
+    isLocked: { type: 'boolean' }
+  }
+};
+
+export const getLeaksSchema = {
+  querystring: {
+    type: 'object',
+    properties: {
+      provider: { type: 'string' },
+      timeRange: { type: 'string', enum: ['all', '7d', '15d', '30d'] },
+      sortBy: { type: 'string', enum: ['newest', 'oldest', 'provider'] },
+      limit: { type: 'integer', minimum: 1, maximum: 100 },
+      page: { type: 'integer', minimum: 1 }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        leaks: { type: 'array', items: leakItemSchema },
+        total: { type: 'number' },
+        hasMore: { type: 'boolean' },
+        planLimits: {
+          type: 'object',
+          properties: { maxLeaks: { type: 'number' } }
+        }
+      }
+    },
+    401: errorSchema,
+    429: {
+      type: 'object',
+      properties: { error: { type: 'string' }, retryAfter: { type: 'number' } }
+    }
+  }
+};
+
+export const getLeakFullKeySchema = {
+  params: {
+    type: 'object',
+    properties: { id: { type: 'string' } },
+    required: ['id']
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: { redactedKey: { type: 'string' } }
+    },
+    401: errorSchema,
+    403: {
+      type: 'object',
+      properties: { error: { type: 'string' }, upgradeRequired: { type: 'boolean' } }
+    },
+    404: errorSchema
+  }
+};
+
 function buildQueryFilter(provider?: string, timeRange?: string): Record<string, any> {
   const filter: Record<string, any> = {};
   if (provider && provider !== 'all') {

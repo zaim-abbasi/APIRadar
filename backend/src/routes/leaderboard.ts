@@ -1,12 +1,15 @@
 import { FastifyInstance } from 'fastify';
-import { 
+import {
   getLeaderboardActivityHandler,
   getLeaderboardDataHandler,
-  getTopLeakersHandler
+  getTopLeakersHandler,
+  leaderboardDataSchema,
+  activitySchema,
+  topLeakersSchema
 } from '../controllers/leaderboardController';
 
 export async function leaderboardRoutes(server: FastifyInstance) {
-  server.get('/api/leaderboard-data', getLeaderboardDataHandler);
-  server.get('/api/leaderboard/activity', getLeaderboardActivityHandler);
-  server.get('/api/leaderboard/top-leakers', getTopLeakersHandler);
-} 
+  server.get('/leaderboard', { schema: leaderboardDataSchema }, getLeaderboardDataHandler);
+  server.get('/leaderboard/activity', { schema: activitySchema }, getLeaderboardActivityHandler);
+  server.get('/leaderboard/top-leakers', { schema: topLeakersSchema }, getTopLeakersHandler);
+}

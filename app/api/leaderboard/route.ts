@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.search;
 
     try {
-      const response = await fetch(`${backendUrl}/api/leaderboard-data${searchParams}`, {
+      const response = await fetch(`${backendUrl}/api/leaderboard${searchParams}`, {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
