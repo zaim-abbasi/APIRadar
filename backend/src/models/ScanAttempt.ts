@@ -12,18 +12,16 @@ export interface IScanAttempt extends Document {
 }
 
 const ScanAttemptSchema = new Schema<IScanAttempt>({
-  repoUrl: { type: String, required: true, trim: true },
+  repoUrl: { type: String, required: true, trim: true, immutable: true },
   fullName: { type: String, required: true, trim: true },
-  filePath: { type: String, required: true, trim: true },
-  commitHash: { type: String, required: true, trim: true },
-  scannedAt: { type: Date, required: true },
+  filePath: { type: String, required: true, trim: true, immutable: true },
+  commitHash: { type: String, required: true, trim: true, immutable: true },
   leakFound: { type: Boolean, required: true },
   leakTypes: { type: [String], default: [] },
   queryUsed: { type: String, required: true, trim: true },
 }, {
   versionKey: false,
-  _id: true,
-  timestamps: false,
+  timestamps: { createdAt: 'scannedAt', updatedAt: false },
   toJSON: {
     transform: (_doc: any, ret: any) => {
       ret.id = ret._id;
@@ -37,4 +35,4 @@ ScanAttemptSchema.index({ repoUrl: 1, filePath: 1, commitHash: 1 }, { unique: tr
 ScanAttemptSchema.index({ scannedAt: -1 });
 ScanAttemptSchema.index({ leakFound: 1, scannedAt: -1 });
 
-export const ScanAttempt = mongoose.model<IScanAttempt>('ScanAttempt', ScanAttemptSchema); 
+export const ScanAttempt = mongoose.model<IScanAttempt>('ScanAttempt', ScanAttemptSchema);

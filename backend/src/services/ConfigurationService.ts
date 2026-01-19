@@ -1,4 +1,4 @@
-import { Configuration } from '../models/Configuration';
+import { Configuration, ConfigKey } from '../models/Configuration';
 import { logger } from '../utils/logger';
 
 const DEFAULT_SCAN_STATE = {
@@ -19,7 +19,7 @@ export class ConfigurationService {
     try {
       await Configuration.findOneAndUpdate(
         { key },
-        { value, updatedAt: new Date() },
+        { value },
         { upsert: true, new: true }
       );
       return true;
@@ -30,11 +30,11 @@ export class ConfigurationService {
   }
 
   static async getScanState(): Promise<any> {
-    return this.getConfig('scan_state');
+    return this.getConfig(ConfigKey.SCAN_STATE);
   }
 
   static async setScanState(scanState: any): Promise<boolean> {
-    return this.setConfig('scan_state', scanState);
+    return this.setConfig(ConfigKey.SCAN_STATE, scanState);
   }
 
   static async checkAndReinitialize(): Promise<boolean> {

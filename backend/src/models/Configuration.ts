@@ -1,31 +1,46 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IConfiguration extends Document {
-  key: string;
-  value: any;
-  updatedAt: Date;
+export enum ConfigKey {
+  SCAN_STATE = 'scan_state'
 }
+
+export interface ScanState {
+  currentProviderIndex: number;
+  currentQueryIndex: number;
+  currentPage: number;
+  lastProcessedTime: number;
+  providerStates: Record<string, {
+    queryIndex: number;
+    page: number;
+    queryEmptyPages?: Record<string, number>;
+  }>;
+  scanStatus?: string;
+  savedAt?: Date;
+}
+
+type TypedConfig =
+  | { key: ConfigKey.SCAN_STATE; value: ScanState };
+
+export type IConfiguration = Document & TypedConfig & {
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 const ConfigurationSchema = new Schema<IConfiguration>({
   key: {
     type: String,
     required: true,
     unique: true,
-    enum: ['scan_state']
+    enum: Object.values(ConfigKey),
+    index: true
   },
   value: {
     type: Schema.Types.Mixed,
     required: true
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
+}, {
+  timestamps: true,
+  autoIndex: true
 });
 
-ConfigurationSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-export const Configuration = mongoose.model<IConfiguration>('Configuration', ConfigurationSchema); 
+export const Configuration = mongoose.model<IConfiguration>('Configuration', ConfigurationSchema);
