@@ -25,9 +25,8 @@ export class DatabaseResilienceManager {
     this.circuitBreaker = new CircuitBreaker('database', {
       failureThreshold: 5,
       successThreshold: 2,
-      timeout: 30000, // 30s before testing recovery
-      resetTimeout: 60000,
-      monitoringPeriod: 60000
+      timeout: 30000,
+      resetTimeout: 60000
     });
     this.setupConnectionMonitoring();
     this.startQueueProcessor();
@@ -87,7 +86,7 @@ export class DatabaseResilienceManager {
       } catch (error) {
         if (error instanceof CircuitBreakerError) {
           logger.error(`[DB] Circuit breaker is OPEN. ${queueOnFailure ? 'Queuing operation.' : 'Operation failed.'}`);
-          
+
           if (queueOnFailure) {
             return this.queueOperation(operation);
           }

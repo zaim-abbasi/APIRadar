@@ -60,8 +60,7 @@ const githubApiCircuitBreaker = new CircuitBreaker('github-api', {
   failureThreshold: RESILIENCE.FAILURE_THRESHOLD,
   successThreshold: RESILIENCE.SUCCESS_THRESHOLD,
   timeout: RESILIENCE.TIMEOUT,
-  resetTimeout: RESILIENCE.RESET_TIMEOUT,
-  monitoringPeriod: RESILIENCE.MONITORING_PERIOD
+  resetTimeout: RESILIENCE.RESET_TIMEOUT
 });
 const fatalErrorRecovery = new FatalErrorRecoveryManager({
   maxRestartAttempts: RECOVERY.MAX_ATTEMPTS,

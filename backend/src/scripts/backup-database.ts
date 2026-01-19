@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, readdirSync, statSync, rmSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { spawn } from 'child_process';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 
-const BACKUP_DIR = join(process.cwd(), 'db_backup');
+const BACKUP_DIR = resolve(process.cwd(), 'db_backup');
 const BACKUP_RETENTION = 2;
 const DUMP_BINARY = process.env['MONGODUMP_PATH'] || 'mongodump';
 const BACKUP_PREFIX = 'api-radar_backup';
@@ -24,7 +24,6 @@ function runMongodump(archivePath: string): Promise<void> {
       `--uri=${config.MONGODB_URI}`,
       `--archive=${archivePath}`,
       '--gzip',
-      '--oplog',
     ]);
 
     let stderr = '';
@@ -35,11 +34,12 @@ function runMongodump(archivePath: string): Promise<void> {
 
     dump.on('error', (error: NodeJS.ErrnoException) => {
       if (error.code === 'ENOENT') {
-        reject(new Error(`mongodump not found. Install MongoDB Database Tools or set MONGODUMP_PATH to the binary location.`));
+        reject(new Error(`mongodump not found. Install MongoDB Database Tools or set MONGODUMP_PATH.`));
         return;
       }
       reject(error);
     });
+
     dump.on('close', (code) => {
       if (code === 0) {
         resolve();
@@ -50,7 +50,7 @@ function runMongodump(archivePath: string): Promise<void> {
   });
 }
 
-async function createBackup(): Promise<string> {
+async function createBackup(): Promise<{ path: string; sizeMB: string; dbName: string }> {
   const dbName = getDatabaseName(config.MONGODB_URI);
   const dateStr = formatDate(new Date());
   const backupName = `${BACKUP_PREFIX}_${dateStr}`;
@@ -60,21 +60,20 @@ async function createBackup(): Promise<string> {
     mkdirSync(BACKUP_DIR, { recursive: true });
   }
 
-  logger.warn(`[BACKUP] Starting backup for database: ${dbName}`);
-
   try {
     if (existsSync(archiveFile)) {
       rmSync(archiveFile, { force: true });
     }
 
     await runMongodump(archiveFile);
-    logger.warn(`[BACKUP] Backup created: ${archiveFile}`);
 
     const stats = statSync(archiveFile);
-    const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-    logger.warn(`[BACKUP] Backup completed: ${archiveFile} (${sizeMB} MB)`);
+    if (stats.size === 0) {
+      throw new Error('Backup file is empty');
+    }
 
-    return archiveFile;
+    const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+    return { path: archiveFile, sizeMB, dbName };
   } catch (error) {
     if (existsSync(archiveFile)) {
       rmSync(archiveFile, { force: true });
@@ -84,12 +83,10 @@ async function createBackup(): Promise<string> {
 }
 
 function cleanupOldBackups(): void {
-  if (!existsSync(BACKUP_DIR)) {
-    return;
-  }
+  if (!existsSync(BACKUP_DIR)) return;
 
   const backupPattern = new RegExp(`^${BACKUP_PREFIX}_\\d{4}-\\d{2}-\\d{2}\\.gz$`);
-  
+
   const backups = readdirSync(BACKUP_DIR)
     .filter(file => backupPattern.test(file))
     .map(file => ({
@@ -100,8 +97,7 @@ function cleanupOldBackups(): void {
     .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
   if (backups.length > BACKUP_RETENTION) {
-    const toDelete = backups.slice(BACKUP_RETENTION);
-    toDelete.forEach(backup => {
+    backups.slice(BACKUP_RETENTION).forEach(backup => {
       rmSync(backup.path, { force: true });
       logger.warn(`[BACKUP] Deleted old backup: ${backup.name}`);
     });
@@ -110,17 +106,26 @@ function cleanupOldBackups(): void {
 
 async function runBackup(): Promise<void> {
   try {
-    logger.warn('[BACKUP] Starting scheduled database backup');
-    await createBackup();
+    const { path, sizeMB, dbName } = await createBackup();
+    const filename = path.split(/[/\\]/).pop();
+    logger.warn(`[BACKUP] Success: ${filename} | Size: ${sizeMB}MB | Database: ${dbName}`);
     cleanupOldBackups();
-    logger.warn('[BACKUP] Backup process completed successfully');
   } catch (error) {
-    logger.error(`[BACKUP] Backup failed: ${error instanceof Error ? error.message : String(error)}`);
+    logger.error(`[BACKUP] Failed: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
 
 if (require.main === module) {
+  process.on('unhandledRejection', (err) => {
+    logger.error(`[BACKUP] Unhandled rejection: ${err}`);
+    process.exit(1);
+  });
+  process.on('uncaughtException', (err) => {
+    logger.error(`[BACKUP] Uncaught exception: ${err.message}`);
+    process.exit(1);
+  });
+
   runBackup()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
