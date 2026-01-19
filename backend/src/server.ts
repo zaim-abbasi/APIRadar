@@ -38,7 +38,7 @@ async function startServer() {
       credentials: true,
     });
     await registerRoutes(server);
-    if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length < 10) {
+    if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length === 0) {
       logger.init('GitHub token invalid or missing. Exiting.');
       process.exit(1);
     }
@@ -63,8 +63,7 @@ async function startServer() {
     await startBackupScheduler();
     await server.listen({ port: config.PORT, host: '0.0.0.0' });
     logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
-    const tokenCount = (config.GITHUB_TOKEN || '').split(',').map(t => t.trim()).filter(Boolean).length;
-    logger.init(`All systems operational. GitHub tokens loaded: ${tokenCount}`);
+    logger.init(`All systems operational. GitHub tokens loaded: ${config.GITHUB_TOKEN.length}`);
     process.on('SIGINT', async () => {
       logger.status('Shutting Down', 'Gracefully...');
       stopBackupScheduler();

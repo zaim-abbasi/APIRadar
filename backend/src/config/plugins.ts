@@ -7,59 +7,33 @@ import { config } from './environment';
 import { logger } from '../utils/logger';
 
 export async function registerPlugins(server: FastifyInstance): Promise<void> {
-  await server.register(helmet, {
-    contentSecurityPolicy: false,
-  });
-  await server.register(cors, {
-    origin: true,
-    credentials: true,
-  });
-  await server.register(compress, {
-    global: true,
-  });
+  await server.register(helmet, { contentSecurityPolicy: false });
+  await server.register(cors, { origin: true, credentials: true });
+  await server.register(compress);
   await server.register(rateLimit, {
     max: config.RATE_LIMIT_MAX,
     timeWindow: config.RATE_LIMIT_WINDOW,
-    errorResponseBuilder: (_request, context) => {
-      return {
-        code: 429,
-        error: 'Too Many Requests',
-        message: `Rate limit exceeded, retry in ${Math.round(context.ttl / 1000)} seconds`,
-        expiresIn: Math.round(context.ttl / 1000),
-      };
-    },
+    errorResponseBuilder: (_req, ctx) => ({
+      error: 'Too Many Requests',
+      message: `Rate limit exceeded, retry in ${Math.round(ctx.ttl / 1000)}s`,
+    }),
   });
+
   server.setErrorHandler(async (error, _request, reply) => {
-    logger.error(`Fastify error: ${error.message}`);
     if (error.validation) {
-      return reply.status(400).send({
-        error: 'Validation Error',
-        message: 'Invalid request data',
-        details: error.validation,
-      });
-    }
-    if (error.name === 'MongoError' || error.name === 'ValidationError') {
-      return reply.status(400).send({
-        error: 'Database Error',
-        message: 'Invalid data provided',
-      });
+      return reply.status(400).send({ error: 'Validation Error', message: 'Invalid request data' });
     }
     const statusCode = error.statusCode || 500;
-    const message = statusCode === 500 ? 'Internal Server Error' : error.message;
+    if (statusCode >= 500) logger.error(`[${statusCode}] ${error.message}`);
     return reply.status(statusCode).send({
-      error: 'Server Error',
-      message,
-      ...(config.NODE_ENV === 'development' && { stack: error.stack }),
+      error: statusCode >= 500 ? 'Server Error' : 'Bad Request',
+      message: statusCode >= 500 ? 'Internal Server Error' : error.message,
     });
   });
+
   server.setNotFoundHandler(async (request, reply) => {
-    if (request.url === '/favicon.ico') {
-      return reply.status(204).send();
-    }
-    logger.warn(`404 Not Found: ${request.method} ${request.url}`);
-    return reply.status(404).send({
-      error: 'Not Found',
-      message: `Route ${request.method} ${request.url} not found`,
-    });
+    if (request.url === '/favicon.ico') return reply.status(204).send();
+    logger.warn(`[404] ${request.method} ${request.url}`);
+    return reply.status(404).send({ error: 'Not Found', message: 'Route not found' });
   });
 }

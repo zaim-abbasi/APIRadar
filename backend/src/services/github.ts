@@ -7,7 +7,7 @@ export class GitHubService {
   private readonly clients: AxiosInstance[];
 
   constructor() {
-    const tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
+    const tokens = config.GITHUB_TOKEN;
     this.clients = tokens.map(token => this.createClient(token));
     if (this.clients.length === 0) {
       throw new Error('No valid GitHub tokens provided');

@@ -31,7 +31,7 @@ export class RateLimitOptimizer {
   private lastRotation = Date.now();
 
   constructor() {
-    this.tokens = config.GITHUB_TOKEN.split(',').map(t => t.trim()).filter(Boolean);
+    this.tokens = config.GITHUB_TOKEN;
     if (!this.tokens.length) throw new Error('No valid GitHub tokens provided');
 
     this.tokens.forEach((_, index) => {
