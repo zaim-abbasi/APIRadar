@@ -2,6 +2,9 @@ import { FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { z } from 'zod';
 import { AuthenticatedRequest, getAccessLimits } from '../middleware/auth';
+import { PROVIDER_NAMES, TIME_RANGE_DAYS } from '../services/RegexRouter';
+
+const MS_PER_DAY = 86400000;
 
 const querySchema = z.object({
   provider: z.string().optional(),
@@ -11,15 +14,32 @@ const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
 });
 
+function buildQueryFilter(provider?: string, timeRange?: string): Record<string, any> {
+  const filter: Record<string, any> = {};
+  if (provider && provider !== 'all') {
+    const normalized = provider.trim().toLowerCase();
+    if (PROVIDER_NAMES.includes(normalized)) {
+      filter['provider'] = normalized;
+    }
+  }
+  const days = TIME_RANGE_DAYS[timeRange || ''];
+  if (days) {
+    filter['leakIntroducedAt'] = { $gte: new Date(Date.now() - days * MS_PER_DAY) };
+  }
+  return filter;
+}
+
+function buildSort(sortBy?: string): Record<string, 1 | -1> {
+  if (sortBy === 'oldest') return { leakIntroducedAt: 1 };
+  if (sortBy === 'provider') return { provider: 1, leakIntroducedAt: -1 };
+  return { leakIntroducedAt: -1 };
+}
+
 export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
     if (!request.user) {
-      request.log.warn({ msg: 'Request user not set by middleware', ip: request.ip });
       return reply.status(500).send({ error: 'Internal server error' });
     }
-
-    const user = request.user;
-    const isAuthenticated = user.isAuthenticated;
 
     const parsed = querySchema.safeParse(request.query);
     if (!parsed.success) {
@@ -27,110 +47,52 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     }
 
     const { provider, timeRange, sortBy, limit, page } = parsed.data;
+    const { isAuthenticated, id: userId } = request.user;
     const accessLimits = getAccessLimits(isAuthenticated);
     const enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
     const enforcedPage = isAuthenticated ? page : 1;
-    const enforcedTimeRange = timeRange;
-    const filter: any = {};
-    const validProviders = ['ai-key', 'mistral-ai', 'cohere', 'huggingface'];
-    if (provider && provider !== 'all') {
-      const normalizedProvider = String(provider).trim().toLowerCase();
-      if (validProviders.includes(normalizedProvider)) {
-        filter.provider = normalizedProvider;
-      } else {
-        request.log.warn({ msg: 'Invalid provider requested; treating as no filter', provider: normalizedProvider, userId: user.id });
-        // Do not filter by provider if unknown, just show all.
-      }
-    }
-    if (enforcedTimeRange && enforcedTimeRange !== 'all') {
-      const now = new Date();
-      let days = 0;
-      if (enforcedTimeRange === '7d') days = 7;
-      else if (enforcedTimeRange === '15d') days = 15;
-      else if (enforcedTimeRange === '30d') days = 30;
-      if (days > 0) {
-        const fromDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-        filter.leakIntroducedAt = { $gte: fromDate };
-      }
-    }
-    let sort: any = { leakIntroducedAt: -1 };
-    if (sortBy === 'oldest') sort = { leakIntroducedAt: 1 };
-    else if (sortBy === 'provider') sort = { provider: 1, leakIntroducedAt: -1 };
-    request.log.info({ 
-      msg: 'Leak filter applied', 
-      filter, 
-      provider, 
-      normalizedProvider: provider ? String(provider).trim().toLowerCase() : 'all',
-      userId: user.id 
-    });
+
+    const filter = buildQueryFilter(provider, timeRange);
+    const sort = buildSort(sortBy);
+
     let total = 0;
     let leaks: any[] = [];
     try {
-      const poolState = typeof require('mongoose').connection?.readyState !== 'undefined' ? require('mongoose').connection.readyState : 'unknown';
-      request.log.info({
-        msg: 'LEAKS QUERY', filter, poolState, limit: enforcedLimit, page: enforcedPage, connectionState: poolState });
       total = await Leak.countDocuments(filter);
       const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
-      const actualLimit = isAuthenticated ? enforcedLimit : accessLimits.maxLeaks;
       leaks = await Leak.find(filter)
         .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
         .sort(sort)
         .skip(skip)
-        .limit(actualLimit)
+        .limit(enforcedLimit)
         .lean();
-      request.log.info({ msg: 'LEAKS QUERY RESULT', rowCount: leaks.length });
     } catch (dbErr) {
-      request.log.error({ msg: 'DB error in getLeaksHandler', error: String(dbErr) });
+      request.log.error({ msg: 'DB error', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
     }
-    if (filter.provider) {
-      const mismatched = leaks.filter((leak: any) => leak.provider !== filter.provider);
-      if (mismatched.length > 0) {
-        request.log.error({ 
-          msg: 'Filter mismatch detected', 
-          expectedProvider: filter.provider, 
-          mismatchedCount: mismatched.length,
-          sampleMismatched: mismatched.slice(0, 3).map((l: any) => ({ id: l.id, provider: l.provider }))
-        });
-      }
-    }
-    const mappedLeaks = leaks.map((leak: any) => {
-      return {
-        id: leak.id || leak._id,
-        provider: leak.provider,
-        leakDetectedAt: leak.leakDetectedAt,
-        leakIntroducedAt: leak.leakIntroducedAt,
-        isLocked: false,
-        redactedKey: leak.redactedKey,
-        repoUrl: leak.repoUrl,
-        filePath: leak.filePath,
-        repoCreatedAt: leak.repoCreatedAt
-      };
-    });
-    const hasMore = isAuthenticated && (enforcedPage * enforcedLimit) < total;
-    request.log.info({
-      msg: 'Leaks accessed',
-      userId: user.id,
-      isAuthenticated: isAuthenticated,
-      requestedLimit: limit,
-      enforcedLimit: enforcedLimit,
-      requestedPage: page,
-      enforcedPage: enforcedPage,
-      totalResults: total,
-      returnedResults: mappedLeaks.length,
-      hasMore,
-      ip: request.ip
-    });
 
-    return reply.send({ 
-      leaks: mappedLeaks, 
+    const mappedLeaks = leaks.map((l: any) => ({
+      id: l._id,
+      provider: l.provider,
+      leakDetectedAt: l.leakDetectedAt,
+      leakIntroducedAt: l.leakIntroducedAt,
+      isLocked: false,
+      redactedKey: l.redactedKey,
+      repoUrl: l.repoUrl,
+      filePath: l.filePath,
+      repoCreatedAt: l.repoCreatedAt
+    }));
+
+    const hasMore = isAuthenticated && (enforcedPage * enforcedLimit) < total;
+
+    request.log.info({ msg: 'Leaks accessed', userId, total, returned: mappedLeaks.length });
+
+    return reply.send({
+      leaks: mappedLeaks,
       total,
       hasMore,
-      planLimits: {
-        maxLeaks: accessLimits.maxLeaks
-      }
+      planLimits: { maxLeaks: accessLimits.maxLeaks }
     });
-
   } catch (error) {
     request.log.error('Error fetching leaks:', error);
     return reply.status(500).send({ error: 'Failed to fetch leaks' });
@@ -139,44 +101,28 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
 export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
-    if (!request.user) {
-      return reply.status(401).send({ error: 'Authentication required' });
+    if (!request.user?.isAuthenticated) {
+      return reply.status(403).send({ error: 'Full key access requires authentication' });
     }
 
     const { id } = request.params as { id: string };
-    const user = request.user;
-    if (!user.isAuthenticated) {
-      request.log.warn({
-        msg: 'Unauthorized full key access attempt',
-        userId: user.id,
-        leakId: id,
-        ip: request.ip
-      });
-      return reply.status(403).send({ 
-        error: 'Full key access is disabled. Only redacted keys are available.'
-      });
-    }
+
     let leak = null;
     try {
-      leak = await Leak.findById(id).lean();
+      leak = await Leak.findById(id).select('redactedKey').lean();
     } catch (dbErr) {
-      request.log.error({ msg: 'DB error in getLeakFullKeyHandler', error: String(dbErr) });
+      request.log.error({ msg: 'DB error', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
     }
+
     if (!leak) {
       return reply.status(404).send({ error: 'Leak not found' });
     }
-    request.log.info({
-      msg: 'Full key accessed',
-      userId: user.id,
-      leakId: id,
-      ip: request.ip
-    });
 
+    request.log.info({ msg: 'Full key accessed', userId: request.user.id, leakId: id });
     return reply.send({ redactedKey: leak.redactedKey });
-
   } catch (error) {
     request.log.error('Error fetching full key:', error);
     return reply.status(500).send({ error: 'Failed to fetch full key' });
   }
-} 
+}

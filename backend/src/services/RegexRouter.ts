@@ -30,6 +30,18 @@ function buildSearchQueries(): Record<string, string[]> {
 export const PROVIDER_NAMES = PROVIDER_RULES.map(r => r.name);
 export const PROVIDER_LABELS = PROVIDER_RULES.map(r => ({ value: r.name, label: r.label }));
 export const PROVIDER_QUERIES = buildSearchQueries();
+export const TIME_RANGE_DAYS: Record<string, number> = { '7d': 7, '15d': 15, '30d': 30 };
+export const TIME_RANGE_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: '7d', label: 'Last 7 Days' },
+  { value: '15d', label: 'Last 15 Days' },
+  { value: '30d', label: 'Last 30 Days' },
+];
+export const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'provider', label: 'Provider' }
+];
 
 export class RegexRouter {
   private prefixMap: Map<string, ProviderRule[]> = new Map();

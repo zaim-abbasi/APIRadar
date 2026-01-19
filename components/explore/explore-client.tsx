@@ -11,7 +11,6 @@ import { useIsMobile } from "@/components/home/use-is-mobile";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { usePlanCheck } from "@/hooks/use-plan-check";
-import { PROVIDER_API_MAP } from "@/lib/constants";
 import { fetchLeaks, clearLeaksCache } from "@/lib/api";
 import { LeakedKey, Provider } from "@/types";
 
@@ -194,12 +193,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       } else {
         setLoadingState((prev) => ({ ...prev, isLoadingMore: true }));
       }
-      // Map frontend provider to backend provider value using latest state
-      const backendProvider =
-        currentFilterState.selectedProvider === "all"
-          ? "all"
-          : PROVIDER_API_MAP[currentFilterState.selectedProvider] ||
-            currentFilterState.selectedProvider;
+      const backendProvider = currentFilterState.selectedProvider;
 
       const { data, error } = await fetchLeaks({
         provider: backendProvider,
