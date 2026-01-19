@@ -1,97 +1,137 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import { config } from './config/environment';
-import { connectToMongoDB, disconnectFromMongoDB } from './config/mongo';
+import { connectToMongoDB, disconnectFromMongoDB, getConnectionStatus } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
 import { ConfigurationService } from './services/ConfigurationService';
 import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler';
 import { registerRoutes } from './routes';
+import { fatalErrorRecoveryManager } from './utils/fatalErrorRecovery';
+
+// 1. Top-level Error Handling (Fail Fast & log)
+process.on('unhandledRejection', (reason, _promise) => {
+  logger.error(`[FATAL] Unhandled Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error(`[FATAL] Uncaught Exception: ${error.stack || error.message}`);
+  // We opt to crash here to let the process manager (Docker/PM2) restart us clean
+  // attempting to recover from uncaught exception state is risky.
+  process.exit(1);
+});
 
 const server = fastify({
   logger: false,
+  disableRequestLogging: true
 });
 
-async function startServer() {
-  server.get('/health', async (_req, reply) => {
-    const mongoOk = !!require('./config/mongo').getConnectionStatus?.();
-    reply.send({
-      status: 'ok',
-      mongo: mongoOk ? 'connected' : 'unavailable'
-    });
-  });
-  process.on('unhandledRejection', (reason, _promise) => {
-    logger.error(`[FATAL] Unhandled Promise Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
-  });
-  process.on('uncaughtException', (error) => {
-    logger.error(`[FATAL] Uncaught Exception: ${error.stack || error.message}`);
-    process.exit(1);
-  });
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.status('Shutting Down', `Signal: ${signal}`);
+
   try {
-    await server.register(cors, {
-      origin: [
-        'https://apiradar.live',
-        'https://www.apiradar.live',
-        'https://api.apiradar.live',
-        'http://localhost:3000', // For local development
-      ],
-      credentials: true,
-    });
-    await registerRoutes(server);
-    if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length === 0) {
-      logger.init('GitHub token invalid or missing. Exiting.');
-      process.exit(1);
-    }
-    try {
-      await connectToMongoDB();
-    } catch (err: any) {
-      logger.init(`MongoDB connection failed: ${err?.message || err}`);
-      process.exit(1);
-    }
-    try {
-      await ConfigurationService.initializeDefaults();
-      logger.init('Configuration initialized successfully');
-    } catch (err: any) {
-      logger.init(`Configuration initialization failed: ${err?.message || err}`);
-    }
-    try {
-      await gitHubCodeLeakFarmService.start();
-    } catch (err: any) {
-      logger.init(`Leak farm failed to start: ${err?.message || err}`);
-      process.exit(1);
-    }
-    await startBackupScheduler();
-    await server.listen({ port: config.PORT, host: '0.0.0.0' });
-    logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
-    logger.init(`All systems operational. GitHub tokens loaded: ${config.GITHUB_TOKEN.length}`);
-    process.on('SIGINT', async () => {
-      logger.status('Shutting Down', 'Gracefully...');
-      stopBackupScheduler();
-      gitHubCodeLeakFarmService.stop();
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // 1. Stop accepting new requests (if possible) or just close server
+    // 2. Stop services
+    logger.init('Stopping services...');
 
-      await disconnectFromMongoDB();
-      await server.close();
-      process.exit(0);
-    });
+    // Stop Scheduler
+    stopBackupScheduler();
 
-    process.on('SIGTERM', async () => {
-      logger.status('Shutting Down', 'Gracefully...');
-      stopBackupScheduler();
-      gitHubCodeLeakFarmService.stop();
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Stop Leak Farm
+    gitHubCodeLeakFarmService.stop();
 
-      await disconnectFromMongoDB();
-      await server.close();
-      process.exit(0);
-    });
+    // 3. Close Server
+    await server.close();
+    logger.init('HTTP Server closed');
 
-  } catch (error) {
-    logger.init(`Startup failed: ${error instanceof Error ? error.message : String(error)}`);
+    // 4. Close Database
+    await disconnectFromMongoDB();
+
+    logger.status('System', 'Shutdown Complete');
+    process.exit(0);
+  } catch (err) {
+    logger.error(`[FATAL] Error during shutdown: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
 }
 
-startServer();
+async function bootstrap() {
+  // 1. Register Plugins & Routes
+  await server.register(cors, {
+    origin: config.CORS_ORIGINS,
+    credentials: true,
+  });
+
+  await registerRoutes(server);
+
+  // 2. Health Check (Titan Grade: Real DB Status)
+  server.get('/health', async (_req, reply) => {
+    const mongoConnected = getConnectionStatus();
+    if (!mongoConnected) {
+      return reply.code(503).send({ status: 'error', mongo: 'disconnected' });
+    }
+    return reply.send({ status: 'ok', mongo: 'connected' });
+  });
+
+  // 3. Validation: GitHub Token
+  if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length === 0) {
+    throw new Error('GitHub token invalid or missing in configuration.');
+  }
+  logger.init(`Loaded ${config.GITHUB_TOKEN.length} GitHub tokens`);
+
+  // 4. Connect to Database (Critical Dependency)
+  try {
+    await connectToMongoDB();
+  } catch (dbError) {
+    throw new Error(`Failed to connect to MongoDB: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+  }
+
+  // 5. Initialize Configuration
+  try {
+    await ConfigurationService.initializeDefaults();
+    logger.init('Configuration initialized');
+  } catch (configError) {
+    logger.error(`Configuration init failed: ${configError instanceof Error ? configError.message : String(configError)}`);
+    // Non-fatal? Maybe, but risky. Let's proceed but warn.
+  }
+
+  // 6. Start Background Services
+  try {
+    await gitHubCodeLeakFarmService.start();
+    await startBackupScheduler();
+  } catch (serviceError) {
+    throw new Error(`Failed to start services: ${serviceError instanceof Error ? serviceError.message : String(serviceError)}`);
+  }
+
+  // 7. Start Server
+  await server.listen({ port: config.PORT, host: '0.0.0.0' });
+  logger.init(`Server listening at http://0.0.0.0:${config.PORT}`);
+  logger.status('System', 'Operational');
+}
+
+// Start Server
+bootstrap().catch(err => {
+  logger.error(`[FATAL] Initial startup failed: ${err.message}`);
+  // If initial startup fails, we enter recovery mode immediately
+  fatalErrorRecoveryManager.handleFatalError(
+    err,
+    async () => {
+      logger.warn('[FATAL] Retrying startup...');
+      await bootstrap();
+    }
+  ).catch(fatalErr => {
+    logger.error(`[FATAL] Startup recovery exhausted: ${fatalErr.message}`);
+    process.exit(1);
+  });
+});
+
+// Signal Handling
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 export { server };

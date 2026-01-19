@@ -6,121 +6,195 @@ export interface FatalRecoveryConfig {
   restartBackoffMax: number;
   fatalErrorWindow: number;
   maxFatalErrorsInWindow: number;
+  stabilityThreshold: number; // Time in ms app must run error-free to reset attempts
   statePreservationEnabled: boolean;
 }
 
 const DEFAULT_CONFIG: FatalRecoveryConfig = {
   maxRestartAttempts: 5,
-  restartBackoffBase: 10000,
-  restartBackoffMax: 300000,
-  fatalErrorWindow: 3600000,
+  restartBackoffBase: 1000,
+  restartBackoffMax: 60000,
+  fatalErrorWindow: 3600000, // 1 hour
   maxFatalErrorsInWindow: 10,
+  stabilityThreshold: 300000, // 5 minutes
   statePreservationEnabled: true
 };
 
-class FatalErrorTracker {
-  private fatalErrors: number[] = [];
+class BucketedErrorTracker {
+  private buckets: number[] = new Array(60).fill(0); // 1-minute buckets for 1 hour window
+  private lastRotationTime: number = Date.now();
   private readonly config: FatalRecoveryConfig;
+  private totalErrors: number = 0;
 
   constructor(config: FatalRecoveryConfig) {
     this.config = config;
   }
 
-  recordFatalError(): void {
-    const now = Date.now();
-    this.fatalErrors.push(now);
-    this.cleanOldErrors();
-  }
-
-  shouldStop(): boolean {
-    this.cleanOldErrors();
-    return this.fatalErrors.length >= this.config.maxFatalErrorsInWindow;
+  recordError(): void {
+    this.rotateBuckets();
+    const lastIndex = this.buckets.length - 1;
+    this.buckets[lastIndex] = (this.buckets[lastIndex] || 0) + 1;
+    this.totalErrors++;
   }
 
   getFatalErrorCount(): number {
-    this.cleanOldErrors();
-    return this.fatalErrors.length;
-  }
-
-  private cleanOldErrors(): void {
-    const now = Date.now();
-    const cutoff = now - this.config.fatalErrorWindow;
-    this.fatalErrors = this.fatalErrors.filter(timestamp => timestamp > cutoff);
+    this.rotateBuckets();
+    return this.totalErrors;
   }
 
   reset(): void {
-    this.fatalErrors = [];
+    this.buckets.fill(0);
+    this.totalErrors = 0;
+    this.lastRotationTime = Date.now();
+  }
+
+  private rotateBuckets(): void {
+    const now = Date.now();
+    const bucketDuration = this.config.fatalErrorWindow / this.buckets.length; // e.g., 60s
+    const elapsed = now - this.lastRotationTime;
+
+    if (elapsed >= bucketDuration) {
+      const bucketsToShift = Math.floor(elapsed / bucketDuration);
+
+      if (bucketsToShift >= this.buckets.length) {
+        this.reset();
+      } else {
+        for (let i = 0; i < bucketsToShift; i++) {
+          this.totalErrors -= this.buckets.shift() || 0;
+          this.buckets.push(0);
+        }
+        this.lastRotationTime += bucketsToShift * bucketDuration;
+      }
+    }
   }
 }
 
 export class FatalErrorRecoveryManager {
   private restartAttempts = 0;
-  private fatalErrorTracker: FatalErrorTracker;
+  private fatalErrorTracker: BucketedErrorTracker;
   private readonly config: FatalRecoveryConfig;
   private lastFatalError: Error | null = null;
   private lastFatalErrorTime: number = 0;
+  private stabilityTimeout: NodeJS.Timeout | null = null;
 
   constructor(config: Partial<FatalRecoveryConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.fatalErrorTracker = new FatalErrorTracker(this.config);
+    this.fatalErrorTracker = new BucketedErrorTracker(this.config);
   }
 
   async handleFatalError(
     error: Error,
     recoveryFn: () => Promise<void>,
-    statePreservationFn?: () => Promise<void>
+    options: {
+      statePreservationFn?: () => Promise<void>;
+      abortSignal?: AbortSignal;
+    } = {}
   ): Promise<void> {
+    const { statePreservationFn, abortSignal } = options;
+
+    // Clear stability timer if active - we just crashed again!
+    this.clearStabilityTimer();
+
     this.lastFatalError = error;
     this.lastFatalErrorTime = Date.now();
-    this.fatalErrorTracker.recordFatalError();
-    if (this.fatalErrorTracker.shouldStop()) {
-      logger.error(
-        `[FATAL] Too many fatal errors (${this.fatalErrorTracker.getFatalErrorCount()}) in window. ` +
-        `Stopping recovery attempts. Last error: ${error.message}`
-      );
-      throw new Error(
-        `Fatal error recovery exhausted. ${this.fatalErrorTracker.getFatalErrorCount()} ` +
-        `fatal errors in ${this.config.fatalErrorWindow / 1000}s window. Last error: ${error.message}`
-      );
+    this.fatalErrorTracker.recordError();
+
+    // Check circuit breaker (too many crashes in window)
+    if (this.fatalErrorTracker.getFatalErrorCount() >= this.config.maxFatalErrorsInWindow) {
+      const msg = `[FATAL] Too many fatal errors (${this.fatalErrorTracker.getFatalErrorCount()}) in window. Stopping.`;
+      logger.error(msg);
+      throw new Error(msg);
     }
-    if (this.restartAttempts >= this.config.maxRestartAttempts) {
-      logger.error(
-        `[FATAL] Max restart attempts (${this.config.maxRestartAttempts}) exceeded. ` +
-        `Last error: ${error.message}`
-      );
-      throw new Error(
-        `Fatal error recovery exhausted. ${this.restartAttempts} restart attempts. ` +
-        `Last error: ${error.message}`
-      );
-    }
-    if (this.config.statePreservationEnabled && statePreservationFn) {
+
+    // Retry loop
+    while (true) {
+      // Check limits
+      if (this.restartAttempts >= this.config.maxRestartAttempts) {
+        const msg = `[FATAL] Max restart attempts (${this.config.maxRestartAttempts}) exceeded.`;
+        logger.error(msg);
+        throw new Error(msg);
+      }
+
+      // Check cancellation
+      if (abortSignal?.aborted) {
+        throw new Error('Fatal error recovery aborted by signal');
+      }
+
+      // Preserve state
+      if (this.config.statePreservationEnabled && statePreservationFn) {
+        try {
+          await statePreservationFn();
+          logger.warn('[FATAL] State preserved before recovery attempt');
+        } catch (e) {
+          logger.error(`[FATAL] Failed to preserve state: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+
+      // Backoff delay
+      const delay = this.calculateRestartDelay();
+      logger.error(`[FATAL] Attempt ${this.restartAttempts + 1}/${this.config.maxRestartAttempts}. Restarting in ${(delay / 1000).toFixed(1)}s.`);
+
       try {
-        await statePreservationFn();
-        logger.warn('[FATAL] State preserved before recovery attempt');
-      } catch (stateError) {
-        logger.error(`[FATAL] Failed to preserve state: ${stateError instanceof Error ? stateError.message : String(stateError)}`);
+        await this.wait(delay, abortSignal);
+      } catch (e: any) {
+        if (e.message === 'Aborted') throw new Error('Recovery aborted during backoff');
+        throw e;
+      }
+
+      this.restartAttempts++;
+
+      try {
+        await recoveryFn();
+
+        // Success! But we don't reset attempts yet. We start stability timer.
+        logger.warn(`[FATAL] Recovery successful. Entering stability period (${(this.config.stabilityThreshold / 1000).toFixed(0)}s).`);
+        this.startStabilityTimer();
+        return; // Exit retry loop and return control to application
+      } catch (recoveryError) {
+        logger.error(`[FATAL] Recovery attempt ${this.restartAttempts} failed: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`);
+        // Loop continues to next attempt
       }
     }
-    const delay = this.calculateRestartDelay();
-    const delaySeconds = (delay / 1000).toFixed(2);
+  }
 
-    logger.error(
-      `[FATAL] Fatal error encountered (attempt ${this.restartAttempts + 1}/${this.config.maxRestartAttempts}). ` +
-      `Restarting in ${delaySeconds}s. Error: ${error.message}\n${error.stack}`
-    );
-    await new Promise(resolve => setTimeout(resolve, delay));
-    this.restartAttempts++;
-    try {
-      await recoveryFn();
-      this.restartAttempts = 0;
-      logger.warn(`[FATAL] Recovery successful after ${this.restartAttempts} attempts`);
-    } catch (recoveryError) {
-      logger.error(
-        `[FATAL] Recovery attempt ${this.restartAttempts} failed: ` +
-        `${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`
-      );
-      throw recoveryError;
+  private startStabilityTimer(): void {
+    this.clearStabilityTimer();
+    this.stabilityTimeout = setTimeout(() => {
+      logger.init(`[FATAL] Application stable for ${(this.config.stabilityThreshold / 1000).toFixed(0)}s. Resetting restart attempts.`);
+      this.resetRestartAttempts();
+    }, this.config.stabilityThreshold);
+    // Unref so this timer doesn't keep process alive if everything else stops
+    this.stabilityTimeout.unref();
+  }
+
+  private clearStabilityTimer(): void {
+    if (this.stabilityTimeout) {
+      clearTimeout(this.stabilityTimeout);
+      this.stabilityTimeout = null;
     }
+  }
+
+  private wait(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) return reject(new Error('Aborted'));
+
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, ms);
+
+      const onAbort = () => {
+        cleanup();
+        reject(new Error('Aborted'));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+      };
+
+      signal?.addEventListener('abort', onAbort);
+    });
   }
 
   private calculateRestartDelay(): number {
@@ -132,7 +206,6 @@ export class FatalErrorRecoveryManager {
 
   resetRestartAttempts(): void {
     if (this.restartAttempts > 0) {
-      logger.warn(`[FATAL] Resetting restart attempts (was ${this.restartAttempts})`);
       this.restartAttempts = 0;
     }
   }
@@ -142,22 +215,14 @@ export class FatalErrorRecoveryManager {
     logger.warn('[FATAL] Fatal error tracking reset');
   }
 
-  getStatus(): {
-    restartAttempts: number;
-    maxRestartAttempts: number;
-    fatalErrorsInWindow: number;
-    maxFatalErrorsInWindow: number;
-    lastFatalError: string | null;
-    lastFatalErrorTime: number | null;
-  } {
+  getStatus() {
     return {
       restartAttempts: this.restartAttempts,
-      maxRestartAttempts: this.config.maxRestartAttempts,
       fatalErrorsInWindow: this.fatalErrorTracker.getFatalErrorCount(),
-      maxFatalErrorsInWindow: this.config.maxFatalErrorsInWindow,
-      lastFatalError: this.lastFatalError?.message || null,
-      lastFatalErrorTime: this.lastFatalErrorTime || null
+      lastError: this.lastFatalError?.message,
+      lastErrorTime: this.lastFatalErrorTime
     };
   }
 }
 
+export const fatalErrorRecoveryManager = new FatalErrorRecoveryManager();

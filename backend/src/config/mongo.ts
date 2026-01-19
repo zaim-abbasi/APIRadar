@@ -101,12 +101,3 @@ export function getConnectionStatus(): boolean {
   return isConnected;
 }
 
-process.on('SIGINT', async () => {
-  await disconnectFromMongoDB();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await disconnectFromMongoDB();
-  process.exit(0);
-});

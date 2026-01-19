@@ -384,7 +384,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
     if (result.upsertedIds && Object.keys(result.upsertedIds).length > 0) {
       for (let i = 0; i < leaks.length; i++) {
         const leak = leaks[i];
-        if (result.upsertedIds[i] && leak) {
+        if (result.upsertedIds && result.upsertedIds[i] && leak) {
           newLeaks.push(leak);
         }
       }
@@ -476,9 +476,11 @@ export class GitHubCodeLeakFarmService {
           await new Promise(resolve => setTimeout(resolve, FARM_CONSTANTS.LIMITS.RECOVERY_WAIT));
           this.scanLoop();
         },
-        async () => {
-          await saveResumeState();
-          logger.warn('[FARM] State preserved before recovery attempt');
+        {
+          statePreservationFn: async () => {
+            await saveResumeState();
+            logger.warn('[FARM] State preserved before recovery attempt');
+          }
         }
       );
     }
@@ -850,8 +852,10 @@ export class GitHubCodeLeakFarmService {
       itemsToProcess.map(item => () => this.processSingleItem(item, query))
     );
     results.forEach(result => {
-      if (result?.processed) processedCount++;
-      if (result?.skipped) skippedCount++;
+      if (result.status === 'fulfilled') {
+        if (result.value.processed) processedCount++;
+        if (result.value.skipped) skippedCount++;
+      }
     });
     const leakCount = processedCount;
     queryPrioritizer.recordExecution(query, true, leakCount, 0);
