@@ -9,92 +9,44 @@ export interface RetryConfig {
   jitterFactor: number;
 }
 
-const DEFAULT_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 3,
-  baseDelay: 1000,
-  maxDelay: 60000,
-  exponentialBase: 2,
-  jitter: true,
-  jitterFactor: 0.3
-};
+const DEFAULT = { maxRetries: 5, baseDelay: 1000, maxDelay: 120000, exponentialBase: 2, jitter: true, jitterFactor: 0.3 };
 
-function calculateDelay(attempt: number, config: RetryConfig): number {
-  const exponentialDelay = config.baseDelay * Math.pow(config.exponentialBase, attempt);
-  const cappedDelay = Math.min(exponentialDelay, config.maxDelay);
-  if (config.jitter) {
-    const jitterAmount = cappedDelay * config.jitterFactor;
-    const jitter = (Math.random() * 2 - 1) * jitterAmount;
-    return Math.max(0, cappedDelay + jitter);
+function getDelay(i: number, c: RetryConfig, e: any) {
+  const h = e.response?.headers;
+  if (h && h['retry-after']) {
+    const s = parseInt(h['retry-after'], 10);
+    if (!isNaN(s)) return (s * 1000) + (Math.random() * 500);
   }
-  return cappedDelay;
+  const d = Math.min(c.baseDelay * Math.pow(c.exponentialBase, i), c.maxDelay);
+  return c.jitter ? Math.max(0, d + (Math.random() * 2 - 1) * d * c.jitterFactor) : d;
 }
 
-function isRetryableError(error: any): boolean {
-  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
-    return true;
+function isRetryable(e: any) {
+  const c = e.code, s = e.response?.status, h = e.response?.headers;
+  if (h && h['retry-after']) return true;
+  if (s === 403) {
+    const msg = (e.response?.data?.message || '').toLowerCase();
+    if (msg.includes('secondary rate limit') || msg.includes('abuse detection')) return true;
+    if (h && h['x-ratelimit-remaining'] === '0') return true;
   }
-  if (error.response?.status >= 500 && error.response?.status < 600) {
-    return true;
-  }
-  if (error.response?.status === 429) {
-    return true;
-  }
-  if (error.response?.status === 408) {
-    return true;
-  }
-  if (error.response?.status === 503) {
-    return true;
-  }
-  if (error.response?.status === 502) {
-    return true;
-  }
-  if (error.response?.status === 403 && error.response?.headers['x-ratelimit-remaining'] === '0') {
-    return true;
-  }
-  return false;
+  return ['ECONNABORTED', 'ETIMEDOUT', 'ENOTFOUND'].includes(c) || (s >= 500 && s < 600) || [429, 408].includes(s);
 }
 
-export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  config: Partial<RetryConfig> = {},
-  context?: string
-): Promise<T> {
-  const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config };
-  let lastError: any;
-  let attempt = 0;
-  while (attempt <= finalConfig.maxRetries) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      lastError = error;
-      if (!isRetryableError(error)) {
-        throw error;
+export async function retryWithBackoff<T>(fn: () => Promise<T>, config: Partial<RetryConfig> = {}, ctx = ''): Promise<T> {
+  const c = { ...DEFAULT, ...config };
+  for (let i = 0; i <= c.maxRetries; i++) {
+    try { return await fn(); }
+    catch (e: any) {
+      if (!isRetryable(e) || i >= c.maxRetries) {
+        logger.error(`${ctx ? `[${ctx}] ` : ''}Exhausted retries (${c.maxRetries}). Last: ${e instanceof Error ? e.message : String(e)}`);
+        throw e;
       }
-      if (attempt >= finalConfig.maxRetries) {
-        break;
-      }
-      const delay = calculateDelay(attempt, finalConfig);
-      const delaySeconds = (delay / 1000).toFixed(2);
-      const contextStr = context ? `[${context}] ` : '';
-      logger.warn(
-        `${contextStr}Retry attempt ${attempt + 1}/${finalConfig.maxRetries} after ${delaySeconds}s. ` +
-        `Error: ${error instanceof Error ? error.message : String(error)}`
-      );
-      await new Promise(resolve => setTimeout(resolve, Math.round(delay)));
-      attempt++;
+      const d = getDelay(i, c, e);
+      logger.warn(`${ctx ? `[${ctx}] ` : ''}Retry ${i + 1}/${c.maxRetries} after ${(d / 1000).toFixed(2)}s. Error: ${e instanceof Error ? e.message : String(e)}`);
+      await new Promise(r => setTimeout(r, Math.round(d)));
     }
   }
-  const contextStr = context ? `[${context}] ` : '';
-  logger.error(
-    `${contextStr}All retry attempts exhausted (${finalConfig.maxRetries + 1} total). ` +
-    `Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
-  );
-  throw lastError;
+  throw new Error('Unreachable');
 }
 
-export function createRetryFunction<T>(
-  config: Partial<RetryConfig> = {},
-  context?: string
-) {
-  return (fn: () => Promise<T>) => retryWithBackoff(fn, config, context);
-}
+export const createRetryFunction = <T>(c: Partial<RetryConfig> = {}, ctx?: string) => (fn: () => Promise<T>) => retryWithBackoff(fn, c, ctx);

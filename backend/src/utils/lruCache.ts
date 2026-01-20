@@ -1,166 +1,103 @@
-class LRUNode<K, V> {
-  key: K;
-  value: V;
-  prev: LRUNode<K, V> | null = null;
-  next: LRUNode<K, V> | null = null;
-  timestamp: number;
-  ttl: number | undefined;
-
-  constructor(key: K, value: V, ttl?: number) {
-    this.key = key;
-    this.value = value;
-    this.timestamp = Date.now();
-    this.ttl = ttl ?? undefined;
-  }
-
-  isExpired(): boolean {
-    if (!this.ttl) return false;
-    return Date.now() - this.timestamp > this.ttl;
-  }
+class Node<K, V> {
+  prev: Node<K, V> | null = null;
+  next: Node<K, V> | null = null;
+  timestamp = Date.now();
+  constructor(public key: K, public value: V, public ttl: number | undefined) { }
+  isExpired() { return this.ttl ? Date.now() - this.timestamp > this.ttl : false; }
 }
 
 export class LRUCache<K, V> {
-  private readonly maxSize: number;
-  private readonly defaultTTL: number | undefined;
-  private cache: Map<K, LRUNode<K, V>> = new Map();
-  private head: LRUNode<K, V> | null = null;
-  private tail: LRUNode<K, V> | null = null;
+  private cache = new Map<K, Node<K, V>>();
+  private head: Node<K, V> | null = null;
+  private tail: Node<K, V> | null = null;
   private hits = 0;
   private misses = 0;
+  private janitor: NodeJS.Timeout | null = null;
 
-  constructor(maxSize: number = 10000, defaultTTL?: number) {
-    this.maxSize = maxSize;
-    this.defaultTTL = defaultTTL;
-  }
+  constructor(private maxSize = 10000, private defaultTTL?: number) { }
 
   get(key: K): V | null {
-    const node = this.cache.get(key);
-    if (!node) {
-      this.misses++;
-      return null;
-    }
-    if (node.isExpired()) {
-      this.delete(key);
-      this.misses++;
-      return null;
-    }
-    this.moveToHead(node);
+    const n = this.cache.get(key);
+    if (!n) { this.misses++; return null; }
+    if (n.isExpired()) { this.delete(key); this.misses++; return null; }
+    this.moveToHead(n);
     this.hits++;
-    return node.value;
+    return n.value;
   }
 
-  set(key: K, value: V, ttl?: number): void {
-    const node = this.cache.get(key);
-    if (node) {
-      node.value = value;
-      node.timestamp = Date.now();
-      if (ttl !== undefined) node.ttl = ttl;
-      this.moveToHead(node);
+  set(key: K, value: V, ttl?: number) {
+    const n = this.cache.get(key);
+    if (n) {
+      n.value = value; n.timestamp = Date.now();
+      if (ttl !== undefined) n.ttl = ttl;
+      this.moveToHead(n);
     } else {
-      const newNode = new LRUNode(key, value, ttl ?? this.defaultTTL);
-      if (this.cache.size >= this.maxSize) {
-        this.evictLRU();
-      }
-      this.cache.set(key, newNode);
-      this.addToHead(newNode);
+      if (this.cache.size >= this.maxSize) this.evict();
+      const node = new Node(key, value, ttl ?? this.defaultTTL);
+      this.cache.set(key, node);
+      this.addToHead(node);
     }
   }
 
   has(key: K): boolean {
-    const node = this.cache.get(key);
-    if (!node) return false;
-    if (node.isExpired()) {
-      this.delete(key);
-      return false;
-    }
+    const n = this.cache.get(key);
+    if (!n) return false;
+    if (n.isExpired()) { this.delete(key); return false; }
     return true;
   }
 
   delete(key: K): boolean {
-    const node = this.cache.get(key);
-    if (!node) return false;
-    this.removeNode(node);
+    const n = this.cache.get(key);
+    if (!n) return false;
+    this.remove(n);
     this.cache.delete(key);
     return true;
   }
 
-  clear(): void {
-    this.cache.clear();
-    this.head = null;
-    this.tail = null;
-    this.hits = 0;
-    this.misses = 0;
-  }
+  clear() { this.cache.clear(); this.head = this.tail = null; this.hits = this.misses = 0; }
 
-  getStats(): {
-    size: number;
-    maxSize: number;
-    hits: number;
-    misses: number;
-    hitRate: number;
-    utilization: number;
-  } {
+  getStats() {
     const total = this.hits + this.misses;
     return {
-      size: this.cache.size,
-      maxSize: this.maxSize,
-      hits: this.hits,
-      misses: this.misses,
-      hitRate: total > 0 ? (this.hits / total) * 100 : 0,
-      utilization: (this.cache.size / this.maxSize) * 100
+      size: this.cache.size, maxSize: this.maxSize, hits: this.hits, misses: this.misses,
+      hitRate: total > 0 ? (this.hits / total) * 100 : 0, utilization: (this.cache.size / this.maxSize) * 100
     };
   }
 
   cleanExpired(): number {
     let cleaned = 0;
-    const keysToDelete: K[] = [];
-    for (const [key, node] of this.cache.entries()) {
-      if (node.isExpired()) {
-        keysToDelete.push(key);
-      }
+    for (const [key, node] of this.cache) {
+      if (node.isExpired()) { this.delete(key); cleaned++; }
     }
-    keysToDelete.forEach(key => {
-      this.delete(key);
-      cleaned++;
-    });
     return cleaned;
   }
 
-  private moveToHead(node: LRUNode<K, V>): void {
-    if (node === this.head) return;
-    this.removeNode(node);
-    this.addToHead(node);
+  startJanitor(intervalMs: number) {
+    this.stopJanitor();
+    this.janitor = setInterval(() => this.cleanExpired(), intervalMs);
+    this.janitor.unref();
   }
 
-  private addToHead(node: LRUNode<K, V>): void {
-    node.prev = null;
-    node.next = this.head;
-    if (this.head) {
-      this.head.prev = node;
-    }
-    this.head = node;
-    if (!this.tail) {
-      this.tail = node;
-    }
+  stopJanitor() { if (this.janitor) { clearInterval(this.janitor); this.janitor = null; } }
+
+  resize(newSize: number) {
+    this.maxSize = newSize;
+    while (this.cache.size > this.maxSize) this.evict();
   }
 
-  private removeNode(node: LRUNode<K, V>): void {
-    if (node.prev) {
-      node.prev.next = node.next;
-    } else {
-      this.head = node.next;
-    }
-    if (node.next) {
-      node.next.prev = node.prev;
-    } else {
-      this.tail = node.prev;
-    }
+  private moveToHead(n: Node<K, V>) { if (n !== this.head) { this.remove(n); this.addToHead(n); } }
+
+  private addToHead(n: Node<K, V>) {
+    n.prev = null; n.next = this.head;
+    if (this.head) this.head.prev = n;
+    this.head = n;
+    if (!this.tail) this.tail = n;
   }
 
-  private evictLRU(): void {
-    if (!this.tail) return;
-    const lru = this.tail;
-    this.removeNode(lru);
-    this.cache.delete(lru.key);
+  private remove(n: Node<K, V>) {
+    if (n.prev) n.prev.next = n.next; else this.head = n.next;
+    if (n.next) n.next.prev = n.prev; else this.tail = n.prev;
   }
+
+  private evict() { if (this.tail) { const k = this.tail.key; this.remove(this.tail); this.cache.delete(k); } }
 }

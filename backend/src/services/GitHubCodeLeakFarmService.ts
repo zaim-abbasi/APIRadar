@@ -13,8 +13,15 @@ import { FatalErrorRecoveryManager } from '../utils/fatalErrorRecovery';
 import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { queryPrioritizer } from '../utils/queryPrioritizer';
+import mongoose, { Schema } from 'mongoose';
 
 import { FARM_CONSTANTS } from './farmConstants';
+
+const ScannedRepoSchema = new Schema({ fullName: { type: String, unique: true, index: true }, lastScannedAt: Date });
+let ScannedRepo: mongoose.Model<any>;
+try { ScannedRepo = mongoose.model('ScannedRepo'); } catch { ScannedRepo = mongoose.model('ScannedRepo', ScannedRepoSchema); }
+
+const DOC_PATTERNS = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
 
 async function waitForRateLimitIfNeeded(): Promise<void> {
   const waitTime = rateLimitOptimizer.getResetWaitTime();
@@ -97,67 +104,20 @@ async function fetchRawFileContent(repoFullName: string, filePath: string, ref: 
     return null;
   }
 }
-async function alreadyScanned(repoUrl: string, filePath: string, commitHash: string): Promise<boolean> {
-  try {
-    const recentScan = await dbResilienceManager.execute(async () => {
-      return await ScanAttempt.findOne({
-        repoUrl,
-        filePath,
-        commitHash
-      }).lean();
-    }, {
-      queueOnFailure: false,
-      timeout: FARM_CONSTANTS.LIMITS.DB_READ
-    });
-    return !!recentScan;
-  } catch (error) {
-    logger.warn(`[FARM] Database query failed for duplicate check: ${error instanceof Error ? error.message : String(error)}`);
-    return false;
-  }
-}
-async function repoAlreadyScannedWithCommit(repoUrl: string, currentCommitHash: string): Promise<boolean> {
-  try {
-    const cachedCommit = repoLastCommitCache.get(repoUrl);
-    if (cachedCommit === currentCommitHash) {
-      return true;
-    }
-    const latestScan = await dbResilienceManager.execute(async () => {
-      return await ScanAttempt.findOne({
-        repoUrl
-      })
-        .sort({ scannedAt: -1 })
-        .select('commitHash')
-        .lean();
-    }, {
-      queueOnFailure: false,
-      timeout: FARM_CONSTANTS.LIMITS.DB_READ
-    });
-    if (latestScan && latestScan.commitHash === currentCommitHash) {
-      repoLastCommitCache.set(repoUrl, currentCommitHash);
-      return true;
-    }
-    if (currentCommitHash) {
-      repoLastCommitCache.set(repoUrl, currentCommitHash);
-    }
-    return false;
-  } catch (error) {
-    logger.warn(`[FARM] Database query failed for repo-level check: ${error instanceof Error ? error.message : String(error)}`);
-    return false;
-  }
-}
 
 function extractApiKeys(content: string): { key: string, provider: string }[] {
   return regexRouter.scan(content);
 }
-const scannedCache = new LRUCache<string, boolean>(FARM_CONSTANTS.CACHE.SIZE_SCANNED, FARM_CONSTANTS.CACHE.TTL_SCANNED);
-const repoLastCommitCache = new LRUCache<string, string>(FARM_CONSTANTS.CACHE.SIZE_COMMIT, FARM_CONSTANTS.CACHE.TTL_COMMIT);
-function getFileConcurrency(): number {
-  const tokenCount = rateLimitOptimizer.getTokenCount();
-  return Math.max(FARM_CONSTANTS.CONCURRENCY.FILE_MIN, Math.min(tokenCount * 3, FARM_CONSTANTS.CONCURRENCY.FILE_MAX));
-}
-function getRepoConcurrency(): number {
-  const tokenCount = rateLimitOptimizer.getTokenCount();
-  return Math.max(FARM_CONSTANTS.CONCURRENCY.REPO_MIN, Math.min(tokenCount, FARM_CONSTANTS.CONCURRENCY.REPO_MAX));
+const scannedCache = new LRUCache<string, boolean>(100000, 259200000);
+scannedCache.startJanitor(60000);
+const FILE_CONCURRENCY = 50;
+
+function updateRepoStats(repoName: string): void {
+  ScannedRepo.updateOne(
+    { fullName: repoName },
+    { $set: { fullName: repoName, lastScannedAt: new Date() } },
+    { upsert: true }
+  ).exec().catch(() => { });
 }
 interface ScanResumeState {
   currentProviderIndex: number;
@@ -639,6 +599,16 @@ export class GitHubCodeLeakFarmService {
       try {
         const query = providerQueries[queryIndex];
         if (query) {
+          if (queryPrioritizer.shouldSkipQuery(query)) {
+            logger.warn(`[FARM] Bouncer: Skipping low-yield query "${query}"`);
+            queryIndex++;
+            if (queryIndex >= providerQueries.length) { queryIndex = 0; page++; }
+            scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page, queryEmptyPages: scanResumeState.providerStates[typedCurrentProvider]?.queryEmptyPages || {} };
+            scanResumeState.currentQueryIndex = queryIndex;
+            scanResumeState.currentPage = page;
+            await saveResumeState();
+            return scannedAnything;
+          }
           const startTime = Date.now();
           try {
             logger.warn(`[FARM] Executing query: "${query}" (page ${page})`);
@@ -792,64 +762,9 @@ export class GitHubCodeLeakFarmService {
   private async processSearchResults(items: GitHubSearchItem[], query: string): Promise<void> {
     let processedCount = 0;
     let skippedCount = 0;
-    const repoGroups = new Map<string, GitHubSearchItem[]>();
-    for (const item of items) {
-      const repoUrl = item.repository.html_url;
-      if (!repoGroups.has(repoUrl)) {
-        repoGroups.set(repoUrl, []);
-      }
-      repoGroups.get(repoUrl)!.push(item);
-    }
-    const reposToProcess: { repoUrl: string; items: GitHubSearchItem[]; repoName: string }[] = [];
-    const repoEntries = Array.from(repoGroups.entries());
-    const repoConcurrency = getRepoConcurrency();
-    const repoCheckManager = new ConcurrencyManager(repoConcurrency);
-    const repoCheckPromises = repoEntries.map(([repoUrl, repoItems]) =>
-      repoCheckManager.execute(async () => {
-        const repoName = repoItems[0]!.repository.full_name;
-        let repoLatestCommit = '';
-        try {
-          await waitForRateLimitIfNeeded();
-          await rateLimitOptimizer.waitWithThrottling();
-          repoLatestCommit = await retry(async () => {
-            try {
-              return await githubService.getRepoLatestCommitHash(repoName);
-            } catch (err: any) {
-              if (err.response?.status === 422) {
-                return '';
-              }
-              throw err;
-            }
-          }, 'REPO-COMMIT');
-        } catch (error) {
-          logger.warn(`[FARM] Failed to get repo commit for ${repoName}, processing files individually: ${error instanceof Error ? error.message : String(error)}`);
-          return { repoUrl, items: repoItems, repoName, skip: false };
-        }
-        if (!repoLatestCommit) {
-          return { repoUrl, items: repoItems, repoName, skip: false };
-        }
-        if (await repoAlreadyScannedWithCommit(repoUrl, repoLatestCommit)) {
-          logger.warn(`[FARM] SKIP REPO: ${repoName} - Already scanned with commit ${repoLatestCommit.substring(0, 8)}... (${repoItems.length} files skipped)`);
-          return { repoUrl, items: repoItems, repoName, skip: true };
-        }
-        return { repoUrl, items: repoItems, repoName, skip: false };
-      }).catch(() => ({ repoUrl, items: repoItems, repoName: repoItems[0]!.repository.full_name, skip: false }))
-    );
-    const repoCheckResults = await Promise.all(repoCheckPromises);
-    for (const result of repoCheckResults) {
-      if (result.skip) {
-        skippedCount += result.items.length;
-      } else {
-        reposToProcess.push({ repoUrl: result.repoUrl, items: result.items, repoName: result.repoName });
-      }
-    }
-    const itemsToProcess: GitHubSearchItem[] = [];
-    for (const { items } of reposToProcess) {
-      itemsToProcess.push(...items);
-    }
-    const fileConcurrencyManager = new ConcurrencyManager(getFileConcurrency());
+    const fileConcurrencyManager = new ConcurrencyManager(FILE_CONCURRENCY);
     const results = await fileConcurrencyManager.executeAll(
-      itemsToProcess.map(item => () => this.processSingleItem(item, query))
+      items.map(item => () => this.processSingleItem(item, query))
     );
     results.forEach(result => {
       if (result.status === 'fulfilled') {
@@ -857,8 +772,7 @@ export class GitHubCodeLeakFarmService {
         if (result.value.skipped) skippedCount++;
       }
     });
-    const leakCount = processedCount;
-    queryPrioritizer.recordExecution(query, true, leakCount, 0);
+    queryPrioritizer.recordExecution(query, true, processedCount, 0);
     if (processedCount > 0 || skippedCount > 0) {
       logger.warn(`[FARM] Query "${query}" summary: ${processedCount} files processed, ${skippedCount} files skipped`);
     }
@@ -869,79 +783,47 @@ export class GitHubCodeLeakFarmService {
     await rateLimitOptimizer.waitWithThrottling();
     if (!this.running) return { processed: false, skipped: false };
 
-    const repoName: string = item.repository.full_name;
-    const filePath: string = item.path;
-    const docFilePatterns = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^code\_of\_conduct(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
+    const repoName = item.repository.full_name;
+    const filePath = item.path;
     const fileName = filePath.split('/').pop() || '';
-    if (docFilePatterns.some(pattern => pattern.test(fileName))) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Documentation file (${fileName})`);
+    if (DOC_PATTERNS.some(p => p.test(fileName)) || /[#?&]/.test(fileName)) {
       return { processed: false, skipped: true };
     }
-    if (fileName.includes('#') || fileName.includes('?') || fileName.includes('&')) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Problematic characters in filename (${fileName})`);
-      return { processed: false, skipped: true };
-    }
-    const cacheKey = `${item.repository.html_url}|${filePath}|${query}`;
-    if (scannedCache.has(cacheKey)) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in cache (query: ${query})`);
-      return { processed: false, skipped: true };
-    }
+
     let commitHash = '';
     try {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
       commitHash = await retry(async () => {
-        try {
-          return await githubService.getFileLatestCommitHash(repoName, filePath);
-        } catch (err: any) {
-          if (err.response?.status === 422) {
-            return '';
-          }
-          throw err;
-        }
+        try { return await githubService.getFileLatestCommitHash(repoName, filePath); }
+        catch (err: any) { if (err.response?.status === 422) return ''; throw err; }
       }, 'COMMIT-HASH');
-    } catch (error) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to get commit hash: ${error instanceof Error ? error.message : String(error)}`);
+    } catch { return { processed: false, skipped: true }; }
+
+    if (!commitHash) return { processed: false, skipped: true };
+
+    const cacheKey = `file:${item.repository.html_url}:${commitHash}`;
+    if (scannedCache.has(cacheKey)) {
+      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned (${commitHash.substring(0, 8)}...)`);
       return { processed: false, skipped: true };
     }
-    if (!commitHash) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No commit hash returned`);
-      return { processed: false, skipped: true };
-    }
-    const cacheKeyWithCommit = `${item.repository.html_url}|${filePath}|${query}|${commitHash}`;
-    if (scannedCache.has(cacheKeyWithCommit)) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned with this commit (${commitHash.substring(0, 8)}...)`);
-      return { processed: false, skipped: true };
-    }
-    if (await alreadyScanned(item.repository.html_url, filePath, commitHash)) {
-      scannedCache.set(cacheKeyWithCommit, true);
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already in database (commit: ${commitHash.substring(0, 8)}...)`);
-      return { processed: false, skipped: true };
-    }
+    scannedCache.set(cacheKey, true);
+
     await waitForRateLimitIfNeeded();
     await rateLimitOptimizer.waitWithThrottling();
     logger.scan(repoName, filePath);
+
     let content;
     try {
       await waitForRateLimitIfNeeded();
       await rateLimitOptimizer.waitWithThrottling();
       content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'), 'FILE-CONTENT');
-    } catch (error) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Failed to fetch content: ${error instanceof Error ? error.message : String(error)}`);
-      return { processed: false, skipped: true };
-    }
-    if (!content) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No content returned`);
-      return { processed: false, skipped: true };
-    }
+    } catch { return { processed: false, skipped: true }; }
+
+    if (!content) return { processed: false, skipped: true };
 
     try {
-      if (!query) {
-        logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - No query provided`);
-        return { processed: false, skipped: true };
-      }
       await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, commitHash);
-      scannedCache.set(cacheKeyWithCommit, true);
       return { processed: true, skipped: false };
     } catch (error) {
       logger.error(`[FARM] Failed to process leaks for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
@@ -972,12 +854,6 @@ export class GitHubCodeLeakFarmService {
       try {
         await rateLimitOptimizer.waitWithThrottling();
         const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
-        const ninetyDaysAgo = new Date();
-        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-        if (leakIntroducedAt < ninetyDaysAgo) {
-          logger.warn(`[SKIP] Key too old: ${leakIntroducedAt.toISOString().split('T')[0]} | ${repoName}/${filePath}`);
-          continue;
-        }
         const leakData: Partial<ILeak> = {
           redactedKey: redactKey(key),
           fullKey: key,
@@ -1029,19 +905,13 @@ export class GitHubCodeLeakFarmService {
     leakFound: boolean,
     leakTypes: string[]
   ): Promise<void> {
+    updateRepoStats(repoName);
+    if (!leakFound) return;
     try {
-      await batchInsertScanAttempts([
-        {
-          repoUrl,
-          fullName: repoName,
-          filePath,
-          commitHash,
-          scannedAt: new Date(),
-          leakFound,
-          leakTypes,
-          queryUsed: query
-        }
-      ]);
+      await batchInsertScanAttempts([{
+        repoUrl, fullName: repoName, filePath, commitHash,
+        scannedAt: new Date(), leakFound, leakTypes, queryUsed: query
+      }]);
     } catch (error) {
       logger.error('[FARM] ScanAttempt save failed: ' + (error instanceof Error ? error.message : String(error)));
     }

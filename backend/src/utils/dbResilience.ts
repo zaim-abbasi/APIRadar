@@ -1,225 +1,99 @@
 import { logger } from './logger';
 import mongoose from 'mongoose';
-import { CircuitBreaker, CircuitBreakerError, CircuitState } from './circuitBreaker';
+import { CircuitBreaker, CircuitBreakerError } from './circuitBreaker';
 import { retryWithBackoff } from './retryWithBackoff';
 
-interface QueuedOperation<T = any> {
-  operation: () => Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: any) => void;
-  timestamp: number;
+interface QueuedOp<T = any> {
+  op: () => Promise<T>;
+  resolve: (v: T) => void;
+  reject: (e: any) => void;
+  ts: number;
 }
 
 export class DatabaseResilienceManager {
-  private circuitBreaker: CircuitBreaker;
-  private operationQueue: QueuedOperation[] = [];
-  private isProcessingQueue = false;
-  private readonly maxQueueSize = 1000;
-  private readonly maxQueuedOperationAge = 3600000; // 1 hour
-  private cleanupInterval: NodeJS.Timeout | null = null;
-  private connectionState: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
+  private cb = new CircuitBreaker('database', { failureThreshold: 5, successThreshold: 2, timeout: 30000, resetTimeout: 60000 });
+  private queue: QueuedOp[] = [];
+  private processing = false;
+  private readonly maxQueue = 1000;
+  private readonly maxAge = 3600000;
+  private cleanupTimer: NodeJS.Timeout | null = null;
+  private connState: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
 
   constructor() {
-    this.circuitBreaker = new CircuitBreaker('database', {
-      failureThreshold: 5,
-      successThreshold: 2,
-      timeout: 30000,
-      resetTimeout: 60000
-    });
-    this.setupConnectionMonitoring();
-    this.startCleanupInterval();
+    if (mongoose.connection.readyState === 1) this.connState = 'connected';
+    mongoose.connection.on('connected', () => { this.connState = 'connected'; logger.warn('[DB] MongoDB connection established'); this.processQueue(); });
+    mongoose.connection.on('disconnected', () => { this.connState = 'disconnected'; logger.error('[DB] MongoDB connection lost'); });
+    mongoose.connection.on('connecting', () => { this.connState = 'connecting'; logger.warn('[DB] MongoDB connecting...'); });
+    mongoose.connection.on('error', e => logger.error(`[DB] MongoDB connection error: ${e.message}`));
+    this.cleanupTimer = setInterval(() => this.cleanup(), 60000);
   }
 
-  private setupConnectionMonitoring(): void {
-    if (mongoose.connection.readyState === 1) this.connectionState = 'connected';
+  private available() { return mongoose.connection.readyState === 1 && !this.cb.isOpen(); }
 
-    mongoose.connection.on('connected', () => {
-      this.connectionState = 'connected';
-      logger.warn('[DB] MongoDB connection established');
-      this.triggerProcessing();
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      this.connectionState = 'disconnected';
-      logger.error('[DB] MongoDB connection lost');
-    });
-
-    mongoose.connection.on('connecting', () => {
-      this.connectionState = 'connecting';
-      logger.warn('[DB] MongoDB connecting...');
-    });
-
-    mongoose.connection.on('error', (error) => {
-      logger.error(`[DB] MongoDB connection error: ${error.message}`);
-    });
-  }
-
-  private isDatabaseAvailable(): boolean {
-    return mongoose.connection.readyState === 1 && !this.circuitBreaker.isOpen();
-  }
-
-  async execute<T>(
-    operation: () => Promise<T>,
-    options: {
-      queueOnFailure?: boolean;
-      timeout?: number;
-    } = {}
-  ): Promise<T> {
-    const { queueOnFailure = true, timeout = 30000 } = options;
-
-    if (this.isDatabaseAvailable()) {
+  async execute<T>(op: () => Promise<T>, opts: { queueOnFailure?: boolean; timeout?: number } = {}): Promise<T> {
+    const { queueOnFailure = true, timeout = 30000 } = opts;
+    if (this.available()) {
       try {
-        // Use Titan Grade CircuitBreaker with native timeout support
-        return await this.circuitBreaker.execute(operation, timeout);
-      } catch (error) {
-        if (error instanceof CircuitBreakerError) {
-          logger.error(`[DB] Circuit breaker is OPEN. ${queueOnFailure ? 'Queuing operation.' : 'Operation failed.'}`);
-          if (queueOnFailure) return this.queueOperation(operation);
-        } else if (this.isRetryableError(error)) {
-          try {
-            return await retryWithBackoff(
-              () => this.circuitBreaker.execute(operation, timeout),
-              { maxRetries: 3, baseDelay: 1000 },
-              'DB'
-            );
-          } catch (retryError) {
-            if (queueOnFailure) return this.queueOperation(operation);
-            throw retryError;
-          }
+        return await this.cb.execute(op, timeout);
+      } catch (e) {
+        if (e instanceof CircuitBreakerError) {
+          logger.error(`[DB] Circuit breaker is OPEN. ${queueOnFailure ? 'Queuing.' : 'Failed.'}`);
+          if (queueOnFailure) return this.enqueue(op);
+        } else if (this.retryable(e)) {
+          try { return await retryWithBackoff(() => this.cb.execute(op, timeout), { maxRetries: 3, baseDelay: 1000 }, 'DB'); }
+          catch { if (queueOnFailure) return this.enqueue(op); throw e; }
         }
-        throw error;
+        throw e;
       }
     }
-
-    if (queueOnFailure) {
-      logger.warn('[DB] Database unavailable, queuing operation');
-      return this.queueOperation(operation);
-    }
-    throw new Error('Database is not available and queueOnFailure is false');
+    if (queueOnFailure) { logger.warn('[DB] Database unavailable, queuing'); return this.enqueue(op); }
+    throw new Error('Database unavailable');
   }
 
-  private queueOperation<T>(operation: () => Promise<T>): Promise<T> {
-    return new Promise<T>((resolve, reject) => {
-      if (this.operationQueue.length >= this.maxQueueSize) {
-        logger.error(`[DB] Operation queue is full (${this.maxQueueSize}). Dropping operation.`);
-        reject(new Error('Database operation queue is full'));
-        return;
-      }
-
-      this.operationQueue.push({
-        operation,
-        resolve,
-        reject,
-        timestamp: Date.now()
-      });
-
-      logger.warn(`[DB] Operation queued. Queue size: ${this.operationQueue.length}/${this.maxQueueSize}`);
-
-      // Attempt to process immediately if connection just came back
-      if (this.isDatabaseAvailable()) this.triggerProcessing();
+  private enqueue<T>(op: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      if (this.queue.length >= this.maxQueue) { logger.error(`[DB] Queue full (${this.maxQueue})`); reject(new Error('Queue full')); return; }
+      this.queue.push({ op, resolve, reject, ts: Date.now() });
+      logger.warn(`[DB] Queued. Size: ${this.queue.length}/${this.maxQueue}`);
+      if (this.available()) this.processQueue();
     });
   }
 
-  private triggerProcessing(): void {
-    void this.processQueue();
-  }
-
-  private async processQueue(): Promise<void> {
-    if (this.isProcessingQueue || this.operationQueue.length === 0 || !this.isDatabaseAvailable()) return;
-
-    this.isProcessingQueue = true;
+  private async processQueue() {
+    if (this.processing || !this.queue.length || !this.available()) return;
+    this.processing = true;
     try {
-      while (this.operationQueue.length > 0 && this.isDatabaseAvailable()) {
-        const op = this.operationQueue.shift();
-        if (!op) break;
-
-        // Check age before processing
-        if (Date.now() - op.timestamp > this.maxQueuedOperationAge) {
-          op.reject(new Error('Queued operation expired'));
-          continue;
-        }
-
+      while (this.queue.length && this.available()) {
+        const item = this.queue.shift()!;
+        if (Date.now() - item.ts > this.maxAge) { item.reject(new Error('Expired')); continue; }
         try {
-          // Don't queue again on failure to avoid infinite loops
-          const result = await this.execute(op.operation, { queueOnFailure: false });
-          op.resolve(result);
-          logger.warn(`[DB] Processed queued op. Remaining: ${this.operationQueue.length}`);
-        } catch (error) {
-          logger.error('[DB] Queued operation failed during processing');
-          op.reject(error);
-        }
+          item.resolve(await this.execute(item.op, { queueOnFailure: false }));
+          logger.warn(`[DB] Processed. Remaining: ${this.queue.length}`);
+        } catch (e) { item.reject(e); }
       }
     } finally {
-      this.isProcessingQueue = false;
-      // If items remain, trigger again (maybe partial batch processed or connection flicker)
-      if (this.operationQueue.length > 0 && this.isDatabaseAvailable()) {
-        this.triggerProcessing();
-      }
+      this.processing = false;
+      if (this.queue.length && this.available()) void this.processQueue();
     }
   }
 
-  private startCleanupInterval(): void {
-    // Janitor loop: runs every 60s independently of connection state
-    this.cleanupInterval = setInterval(() => {
-      if (this.operationQueue.length === 0) return;
-
-      const now = Date.now();
-      const initialSize = this.operationQueue.length;
-
-      // Filter in place is tricky, better to build new array or iterate backwards
-      // For simplicity/safety, we'll iterate and reject expired ones
-      let validOps: QueuedOperation[] = [];
-
-      for (const op of this.operationQueue) {
-        if (now - op.timestamp > this.maxQueuedOperationAge) {
-          op.reject(new Error('Queued operation expired'));
-        } else {
-          validOps.push(op);
-        }
-      }
-
-      if (validOps.length < initialSize) {
-        this.operationQueue = validOps;
-        logger.warn(`[DB] Cleaned up ${initialSize - validOps.length} expired operations`);
-      }
-    }, 60000);
+  private cleanup() {
+    if (!this.queue.length) return;
+    const now = Date.now();
+    const before = this.queue.length;
+    this.queue = this.queue.filter(o => { if (now - o.ts > this.maxAge) { o.reject(new Error('Expired')); return false; } return true; });
+    if (this.queue.length < before) logger.warn(`[DB] Cleaned ${before - this.queue.length} expired ops`);
   }
 
-  stop(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
+  private retryable(e: any): boolean {
+    if (['MongoNetworkError', 'MongoServerSelectionError', 'MongoTimeoutError'].includes(e.name)) return true;
+    if (e.code === 11000) return false;
+    return e.message?.includes('connection') || e.message?.includes('timeout') || false;
   }
 
-  private isRetryableError(error: any): boolean {
-    if (error.name === 'MongoNetworkError' || error.name === 'MongoServerSelectionError') return true;
-    if (error.name === 'MongoTimeoutError') return true;
-    if (error.code === 11000) return false;
-    if (error.message?.includes('connection') || error.message?.includes('timeout')) return true;
-    return false;
-  }
-
-  getQueueStatus(): {
-    size: number;
-    maxSize: number;
-    circuitBreakerState: CircuitState;
-    connectionState: string;
-  } {
-    return {
-      size: this.operationQueue.length,
-      maxSize: this.maxQueueSize,
-      circuitBreakerState: this.circuitBreaker.getState(),
-      connectionState: this.connectionState
-    };
-  }
-
-  clearQueue(): void {
-    const size = this.operationQueue.length;
-    this.operationQueue.forEach(op => op.reject(new Error('Operation queue cleared')));
-    this.operationQueue = [];
-    logger.warn(`[DB] Cleared ${size} queued operations`);
-  }
+  stop() { if (this.cleanupTimer) { clearInterval(this.cleanupTimer); this.cleanupTimer = null; } }
+  getQueueStatus() { return { size: this.queue.length, maxSize: this.maxQueue, circuitBreakerState: this.cb.getState(), connectionState: this.connState }; }
+  clearQueue() { const n = this.queue.length; this.queue.forEach(o => o.reject(new Error('Cleared'))); this.queue = []; logger.warn(`[DB] Cleared ${n} ops`); }
 }
 
 export const dbResilienceManager = new DatabaseResilienceManager();
