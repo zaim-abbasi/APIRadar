@@ -5,7 +5,7 @@ import { CircuitBreaker, CircuitBreakerError } from './circuitBreaker';
 interface Op<T> { fn: () => Promise<T>; resolve: (v: T) => void; reject: (e: any) => void; ts: number; }
 
 export class DatabaseResilienceManager {
-  private cb = new CircuitBreaker('database', { failureThreshold: 5, timeout: 30000 });
+  private cb = new CircuitBreaker('database', { failureThreshold: 15, timeout: 30000 });
   private queue: Op<any>[] = [];
   private processing = false;
 

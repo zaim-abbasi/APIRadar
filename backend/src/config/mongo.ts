@@ -27,8 +27,8 @@ export async function connectToMongoDB(): Promise<void> {
   await retryWithBackoff(async () => {
     try {
       await mongoose.connect(mongoUri, {
-        minPoolSize: 10,
-        maxPoolSize: 200,
+        minPoolSize: 2,
+        maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
         bufferCommands: false,

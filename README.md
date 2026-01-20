@@ -64,7 +64,7 @@ flowchart TD
   A["GitHub Code Search (REST API)"] --> B["Code Leak Farm Service"]
   B --> C["Regex & Entropy Detection"]
   C --> D{"Secret Found?"}
-  D -- "Yes" --> E["Deduplication (scanattempts)"]
+  D -- "Yes" --> E["Deduplication (leaks) & Track Repo (scannedrepos)"]
   E -- "Not Duplicate" --> F["Store Leak (leaks, redacted & full key)"]
   E -- "Duplicate" --> G["Log Scan Attempt"]
   F --> H["Redacted Key API"]

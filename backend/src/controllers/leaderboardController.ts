@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
-import { ScanAttempt } from '../models/ScanAttempt';
+import { ScannedRepo } from '../models/ScannedRepo';
 import { githubService } from '../services/github';
 
 const MS_PER_DAY = 86_400_000;
@@ -13,16 +13,22 @@ function resolveTimezone(tz?: string): string {
   return tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
-async function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: any): Promise<T> {
+function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: any): Promise<T> {
   const now = Date.now();
   const cached = cache.get(key);
   if (cached && (now - cached.timestamp) < ttl) {
     log.info({ msg: 'Cache hit', key, age: now - cached.timestamp });
     return cached.data;
   }
-  const data = await fetcher();
+  const data = fetcher(); // Note: Removed await as we wrap it in withCache which is awaited
+  if (data instanceof Promise) {
+    return data.then(d => {
+      cache.set(key, { data: d, timestamp: now });
+      return d;
+    });
+  }
   cache.set(key, { data, timestamp: now });
-  return data;
+  return Promise.resolve(data);
 }
 
 function formatLocalDate(date: Date, tz: string): string {
@@ -53,7 +59,7 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     const tz = resolveTimezone((request.query as any).timezone);
     const data = await withCache<LeaderboardResponse>(`leaderboard-${tz}`, CACHE_TTL.SHORT, async () => {
       const [totalReposScanned, totalLeaksFound] = await Promise.all([
-        ScanAttempt.countDocuments(),
+        ScannedRepo.countDocuments(),
         Leak.countDocuments(),
       ]);
       const result = await Leak.aggregate([

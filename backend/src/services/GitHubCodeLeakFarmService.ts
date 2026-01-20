@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import { githubService } from './github';
 import { ILeak, Leak } from '../models/Leak';
-import { ScanAttempt } from '../models/ScanAttempt';
+import { ScannedRepo } from '../models/ScannedRepo';
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
@@ -13,13 +13,10 @@ import { FatalErrorRecoveryManager } from '../utils/fatalErrorRecovery';
 import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { queryPrioritizer } from '../utils/queryPrioritizer';
-import mongoose, { Schema } from 'mongoose';
 
 import { FARM_CONSTANTS } from './farmConstants';
 
-const ScannedRepoSchema = new Schema({ fullName: { type: String, unique: true, index: true }, lastScannedAt: Date });
-let ScannedRepo: mongoose.Model<any>;
-try { ScannedRepo = mongoose.model('ScannedRepo'); } catch { ScannedRepo = mongoose.model('ScannedRepo', ScannedRepoSchema); }
+
 
 const DOC_PATTERNS = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
 
@@ -108,17 +105,11 @@ async function fetchRawFileContent(repoFullName: string, filePath: string, ref: 
 function extractApiKeys(content: string): { key: string, provider: string }[] {
   return regexRouter.scan(content);
 }
-const scannedCache = new LRUCache<string, boolean>(100000, 259200000);
+const scannedCache = new LRUCache<string, boolean>(100000, 345600000);
 scannedCache.startJanitor(60000);
-const FILE_CONCURRENCY = 50;
+const FILE_CONCURRENCY = 20;
 
-function updateRepoStats(repoName: string): void {
-  ScannedRepo.updateOne(
-    { fullName: repoName },
-    { $set: { fullName: repoName, lastScannedAt: new Date() } },
-    { upsert: true }
-  ).exec().catch(() => { });
-}
+
 interface ScanResumeState {
   currentProviderIndex: number;
   currentQueryIndex: number;
@@ -364,21 +355,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
     }
   });
 }
-async function batchInsertScanAttempts(attempts: any[]) {
-  if (!attempts.length) return;
-  await dbResilienceManager.execute(async () => {
-    await ScanAttempt.insertMany(attempts, { ordered: false });
-  }, {
-    queue: true,
-    timeout: FARM_CONSTANTS.LIMITS.DB_WRITE
-  }).catch((error: any) => {
-    if (error.code === 11000) {
-      logger.warn(`[FARM] Duplicate scan attempt detected (expected): ${error.message}`);
-    } else {
-      logger.error(`[FARM] Failed to save scan attempts: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  });
-}
+
 export class GitHubCodeLeakFarmService {
   private running = false;
   constructor() {
@@ -761,6 +738,10 @@ export class GitHubCodeLeakFarmService {
     }
   }
   private async processSearchResults(items: GitHubSearchItem[], query: string): Promise<void> {
+    const uniqueRepos = Array.from(new Set(items.map(i => i.repository.full_name)));
+    for (const repoName of uniqueRepos) {
+      ScannedRepo.updateOne({ fullName: repoName }, { $set: { lastScannedAt: new Date() } }, { upsert: true }).exec().catch(() => { });
+    }
     let processedCount = 0;
     let skippedCount = 0;
     const fileConcurrencyManager = new ConcurrencyManager(FILE_CONCURRENCY);
@@ -837,7 +818,7 @@ export class GitHubCodeLeakFarmService {
     repoUrl: string,
     filePath: string,
     query: string,
-    commitHash: string
+    _commitHash: string
   ): Promise<void> {
     const leaks = extractApiKeys(content);
     const foundLeaks: Partial<ILeak>[] = [];
@@ -848,7 +829,7 @@ export class GitHubCodeLeakFarmService {
       repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName), 'REPO-METADATA');
     } catch (error) {
       logger.error('[FARM] Failed to get repo creation date: ' + (error instanceof Error ? error.message : String(error)));
-      await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, false, []);
+
       return;
     }
     for (const { key, provider } of leaks) {
@@ -877,11 +858,12 @@ export class GitHubCodeLeakFarmService {
     if (foundLeaks.length > 0) {
       await batchUpsertLeaks(foundLeaks);
     }
-    await this.saveScanAttempt(repoUrl, repoName, filePath, commitHash, query, foundLeaks.length > 0, foundLeaks.map(l => l.provider as string));
     if (leakCount > 0) {
       queryPrioritizer.recordExecution(query, true, leakCount, 0);
     }
   }
+
+
 
   private async getRepoCreationDate(repoName: string): Promise<Date> {
     try {
@@ -895,27 +877,6 @@ export class GitHubCodeLeakFarmService {
 
   private async getLeakIntroductionDate(repoName: string, filePath: string): Promise<Date> {
     return githubService.getFileLatestCommitDate(repoName, filePath);
-  }
-
-  private async saveScanAttempt(
-    repoUrl: string,
-    repoName: string,
-    filePath: string,
-    commitHash: string,
-    query: string,
-    leakFound: boolean,
-    leakTypes: string[]
-  ): Promise<void> {
-    updateRepoStats(repoName);
-    if (!leakFound) return;
-    try {
-      await batchInsertScanAttempts([{
-        repoUrl, fullName: repoName, filePath, commitHash,
-        scannedAt: new Date(), leakFound, leakTypes, queryUsed: query
-      }]);
-    } catch (error) {
-      logger.error('[FARM] ScanAttempt save failed: ' + (error instanceof Error ? error.message : String(error)));
-    }
   }
 
   private handleSearchError(error: any, query: string, page: number): void {
