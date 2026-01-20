@@ -70,12 +70,12 @@ const githubApiCircuitBreaker = new CircuitBreaker('github-api', {
   resetTimeout: RESILIENCE.RESET_TIMEOUT
 });
 const fatalErrorRecovery = new FatalErrorRecoveryManager({
-  maxRestartAttempts: RECOVERY.MAX_ATTEMPTS,
-  restartBackoffBase: RECOVERY.BACKOFF_BASE,
-  restartBackoffMax: RECOVERY.BACKOFF_MAX,
-  fatalErrorWindow: FARM_CONSTANTS.LIMITS.FATAL_ERROR_WINDOW,
-  maxFatalErrorsInWindow: FARM_CONSTANTS.LIMITS.MAX_FATAL_ERRORS,
-  statePreservationEnabled: true
+  maxAttempts: RECOVERY.MAX_ATTEMPTS,
+  backoffBase: RECOVERY.BACKOFF_BASE,
+  backoffMax: RECOVERY.BACKOFF_MAX,
+  errorWindow: FARM_CONSTANTS.LIMITS.FATAL_ERROR_WINDOW,
+  maxErrors: FARM_CONSTANTS.LIMITS.MAX_FATAL_ERRORS,
+  stability: 300000
 });
 interface GitHubSearchItem {
   repository: {
@@ -274,7 +274,7 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
   } catch (err: any) {
     if (err.response) {
       if (err.response.status === 401) {
-        if (githubApiCircuitBreaker.getFailureCount() > 0) githubApiCircuitBreaker.reset();
+        if (githubApiCircuitBreaker.failureCount > 0) githubApiCircuitBreaker.reset();
         logger.error(`[GITHUB] 401 Unauthorized - Rotating token...`);
         rateLimitOptimizer.rotate();
         throw err;
@@ -292,7 +292,7 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
         maxRetries: MAX_RETRIES,
         baseDelay: 1000,
         maxDelay: 30000,
-        exponentialBase: 2,
+        exp: 2,
         jitter: true,
         jitterFactor: 0.3
       },
@@ -350,7 +350,7 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
       }
     }
   }, {
-    queueOnFailure: true,
+    queue: true,
     timeout: FARM_CONSTANTS.LIMITS.DB_WRITE
   }).catch((error: any) => {
     if (error.code === 11000) {
@@ -369,7 +369,7 @@ async function batchInsertScanAttempts(attempts: any[]) {
   await dbResilienceManager.execute(async () => {
     await ScanAttempt.insertMany(attempts, { ordered: false });
   }, {
-    queueOnFailure: true,
+    queue: true,
     timeout: FARM_CONSTANTS.LIMITS.DB_WRITE
   }).catch((error: any) => {
     if (error.code === 11000) {
@@ -422,25 +422,18 @@ export class GitHubCodeLeakFarmService {
   }
 
   private async scanLoop(): Promise<void> {
-    fatalErrorRecovery.resetRestartAttempts();
+    fatalErrorRecovery.reset();
     try {
       await this.scanLoopInternal();
     } catch (fatalError) {
-      logger.error(
-        `[FARM] FATAL: Unhandled error in scanLoop: ${fatalError instanceof Error ? fatalError.stack : String(fatalError)}`
-      );
+      logger.error(`[FARM] FATAL: Unhandled error in scanLoop: ${fatalError instanceof Error ? fatalError.stack : String(fatalError)}`);
+      await saveResumeState();
       await fatalErrorRecovery.handleFatalError(
         fatalError instanceof Error ? fatalError : new Error(String(fatalError)),
         async () => {
           logger.warn('[FARM] Attempting to recover from fatal error...');
           await new Promise(resolve => setTimeout(resolve, FARM_CONSTANTS.LIMITS.RECOVERY_WAIT));
           this.scanLoop();
-        },
-        {
-          statePreservationFn: async () => {
-            await saveResumeState();
-            logger.warn('[FARM] State preserved before recovery attempt');
-          }
         }
       );
     }
@@ -452,6 +445,7 @@ export class GitHubCodeLeakFarmService {
     let lastTokenRefresh = Date.now();
     let lastTokenStateLog = Date.now();
     let lastIdleLog = Date.now();
+    let lastWeeklyMaintenance = Date.now();
     const STATUS_LOG_INTERVAL = FARM_CONSTANTS.SCAN.IDLE_LOG_INTERVAL; // Repurposed for status log
     const IDLE_LOG_INTERVAL = FARM_CONSTANTS.SCAN.IDLE_LOG_INTERVAL;
     const CONFIG_CHECK_INTERVAL = FARM_CONSTANTS.SCAN.CONFIG_CHECK_INTERVAL;
@@ -460,6 +454,11 @@ export class GitHubCodeLeakFarmService {
     let firstCycle = true;
     let scanCompleted = false;
     while (this.running) {
+      if (Date.now() - lastWeeklyMaintenance > 604800000) { // 7 Days
+        logger.init('[MAINTENANCE] Resetting Blacklist to discover new leaks in old paths...');
+        queryPrioritizer.unblacklistAll();
+        lastWeeklyMaintenance = Date.now();
+      }
       if (Date.now() - lastTokenRefresh > TOKEN_REFRESH_INTERVAL) {
         lastTokenRefresh = Date.now();
         try {
@@ -596,61 +595,63 @@ export class GitHubCodeLeakFarmService {
       scanResumeState.currentProviderIndex = validProviderIndex;
       scanResumeState.currentQueryIndex = queryIndex;
       scanResumeState.currentPage = page;
+      let query: string | undefined;
       try {
-        const query = providerQueries[queryIndex];
-        if (query) {
-          if (queryPrioritizer.shouldSkipQuery(query)) {
-            logger.warn(`[FARM] Bouncer: Skipping low-yield query "${query}"`);
-            queryIndex++;
-            if (queryIndex >= providerQueries.length) { queryIndex = 0; page++; }
-            scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page, queryEmptyPages: scanResumeState.providerStates[typedCurrentProvider]?.queryEmptyPages || {} };
-            scanResumeState.currentQueryIndex = queryIndex;
-            scanResumeState.currentPage = page;
-            await saveResumeState();
-            return scannedAnything;
-          }
-          const startTime = Date.now();
-          try {
-            logger.warn(`[FARM] Executing query: "${query}" (page ${page})`);
-            const result = await this.processOnePageForQuery(query, page);
-            if (result.hadResults) {
-              scannedAnything = true;
-              if (!scanResumeState.providerStates[typedCurrentProvider]) {
-                scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
-              }
-              if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
-                scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
-              }
-              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = 0;
-              const responseTime = Date.now() - startTime;
-              queryPrioritizer.recordExecution(query, true, result.itemCount, responseTime);
-              logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
-            } else {
-              if (!scanResumeState.providerStates[typedCurrentProvider]) {
-                scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
-              }
-              if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
-                scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
-              }
-              const currentEmptyCount = scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] || 0;
-              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = currentEmptyCount + 1;
-              const responseTime = Date.now() - startTime;
-              queryPrioritizer.recordExecution(query, true, 0, responseTime);
-            }
-          } catch (error) {
-            const startTime = Date.now();
-            const responseTime = Date.now() - startTime;
-            queryPrioritizer.recordExecution(query, false, 0, responseTime);
-            throw error;
-          }
+        query = providerQueries[queryIndex];
+        if (!query) return false;
+
+        if (queryPrioritizer.shouldSkipQuery(query)) {
+          logger.warn(`[FARM] Bouncer: Skipping low-yield query "${query}"`);
+          queryIndex++;
+          if (queryIndex >= providerQueries.length) { queryIndex = 0; page++; }
+          scanResumeState.providerStates[typedCurrentProvider] = { queryIndex, page, queryEmptyPages: scanResumeState.providerStates[typedCurrentProvider]?.queryEmptyPages || {} };
+          scanResumeState.currentQueryIndex = queryIndex;
+          scanResumeState.currentPage = page;
+          await saveResumeState();
+          return false;
         }
+        const startTime = Date.now();
+        try {
+          logger.warn(`[FARM] Executing query: "${query}" (page ${page})`);
+          const result = await this.processOnePageForQuery(query, page);
+          if (result.hadResults) {
+            scannedAnything = true;
+            if (!scanResumeState.providerStates[typedCurrentProvider]) {
+              scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+            }
+            if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
+              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
+            }
+            scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = 0;
+            const responseTime = Date.now() - startTime;
+            queryPrioritizer.recordExecution(query, true, result.itemCount, responseTime);
+            logger.warn(`[FARM] Processed ${typedCurrentProvider} (query ${queryIndex + 1}/${providerQueries.length}, page ${page})`);
+          } else {
+            if (!scanResumeState.providerStates[typedCurrentProvider]) {
+              scanResumeState.providerStates[typedCurrentProvider] = { queryIndex: 0, page: 1, queryEmptyPages: {} };
+            }
+            if (!scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages) {
+              scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages = {};
+            }
+            const currentEmptyCount = scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] || 0;
+            scanResumeState.providerStates[typedCurrentProvider].queryEmptyPages![query] = currentEmptyCount + 1;
+            const responseTime = Date.now() - startTime;
+            queryPrioritizer.recordExecution(query, true, 0, responseTime);
+          }
+        } catch (error) {
+          const startTime = Date.now();
+          const responseTime = Date.now() - startTime;
+          if (query) queryPrioritizer.recordExecution(query, false, 0, responseTime);
+          throw error;
+        }
+
         const EMPTY_PAGE_THRESHOLD = 3;
-        const providerState = scanResumeState.providerStates[typedCurrentProvider];
-        const emptyPagesCount = (query && providerState?.queryEmptyPages) ? (providerState.queryEmptyPages[query] ?? 0) : 0;
+        const updatedProviderState = scanResumeState.providerStates[typedCurrentProvider];
+        const emptyPagesCount = (query && updatedProviderState?.queryEmptyPages) ? (updatedProviderState.queryEmptyPages[query] ?? 0) : 0;
         if (query && emptyPagesCount >= EMPTY_PAGE_THRESHOLD) {
           logger.warn(`[FARM] Skipping query "${query}" after ${EMPTY_PAGE_THRESHOLD} consecutive empty pages (current page: ${page})`);
-          if (providerState && providerState.queryEmptyPages) {
-            providerState.queryEmptyPages[query] = 0;
+          if (updatedProviderState && updatedProviderState.queryEmptyPages) {
+            updatedProviderState.queryEmptyPages[query] = 0;
           }
           queryIndex++;
           if (queryIndex >= providerQueries.length) {
