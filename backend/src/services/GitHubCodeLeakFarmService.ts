@@ -172,11 +172,6 @@ async function loadResumeState(): Promise<ScanResumeState> {
   try {
     const saved = await ConfigurationService.getScanState();
 
-    // Check if we have a global state in memory to fallback or prefer? 
-    // The original logic checked DB, if valid returned it. 
-    // If invalid DB, it logged error. 
-    // Then it checked global state.
-
     if (saved && typeof saved.currentQueryIndex === 'number' && typeof saved.currentPage === 'number') {
       scanResumeState = {
         currentProviderIndex: saved.currentProviderIndex || 0,
@@ -516,7 +511,6 @@ export class GitHubCodeLeakFarmService {
             scanCompleted = false;
           }
         }
-        scanResumeState = await loadResumeState();
       } catch (error) {
         logger.error('[FARM] Scan cycle error: ' + (error instanceof Error ? error.stack : String(error)));
         await clearScanState();
