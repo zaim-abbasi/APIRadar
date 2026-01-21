@@ -17,7 +17,7 @@ export class DatabaseResilienceManager {
 
   async execute<T>(fn: () => Promise<T>, opts: { queue?: boolean; timeout?: number } = {}): Promise<T> {
     const { queue = true, timeout = 30000 } = opts;
-    if (mongoose.connection.readyState === 1 && !this.cb.isOpen()) {
+    if (mongoose.connection.readyState === 1) {
       try { return await this.cb.execute(fn, timeout); }
       catch (e) {
         if (!queue || (!this.retryable(e) && !(e instanceof CircuitBreakerError))) throw e;
@@ -46,6 +46,8 @@ export class DatabaseResilienceManager {
     const s = this.queue.length;
     this.queue = this.queue.filter(op => Date.now() - op.ts <= 3600000);
     if (s > this.queue.length) logger.warn(`[DB] Cleaned ${s - this.queue.length} expired ops`);
+    if (this.processing) { this.processing = false; logger.warn('[DB] Reset stale processing flag'); }
+    this.process();
   }
 
   private retryable(e: any): boolean {
