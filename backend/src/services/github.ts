@@ -1,17 +1,12 @@
 import axios, { AxiosInstance } from 'axios';
-import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 
 export class GitHubService {
-  private readonly clients: AxiosInstance[];
+  private readonly clientMap: Map<string, AxiosInstance> = new Map();
 
   constructor() {
-    const tokens = config.GITHUB_TOKEN;
-    this.clients = tokens.map(token => this.createClient(token));
-    if (this.clients.length === 0) {
-      throw new Error('No valid GitHub tokens provided');
-    }
+    // Clients will be created lazily to support DB-loaded tokens
   }
 
   private createClient(token: string): AxiosInstance {
@@ -44,15 +39,21 @@ export class GitHubService {
   }
 
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    const maxAttempts = Math.min(3, this.clients.length);
+    const maxAttempts = 3;
     let lastError: any;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (rateLimitOptimizer.shouldRotate()) {
-        rateLimitOptimizer.rotate();
+      const token = rateLimitOptimizer.getCurrentToken();
+      if (!token) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
       }
-      const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-      const client = this.clients[tokenIndex % this.clients.length]!;
+
+      let client = this.clientMap.get(token);
+      if (!client) {
+        client = this.createClient(token);
+        this.clientMap.set(token, client);
+      }
 
       try {
         return await requestFn(client);
@@ -62,7 +63,7 @@ export class GitHubService {
 
         if (status === 401 || status === 403 || status === 429) {
           rateLimitOptimizer.rotate();
-          logger.warn(`[GITHUB] Token ${tokenIndex + 1} failed (${status}), rotating...`);
+          logger.warn(`[GITHUB] Token rotation triggered by ${status}`);
           continue;
         }
 
@@ -70,7 +71,7 @@ export class GitHubService {
       }
     }
 
-    throw lastError;
+    throw lastError || new Error('All tokens exhausted or request failed');
   }
 
   async getRepoCreatedAt(repoName: string): Promise<string> {
@@ -108,13 +109,18 @@ export class GitHubService {
   }
 
   async getFileLatestCommitHash(repoName: string, filePath: string): Promise<string> {
-    const [owner, repo] = repoName.split('/');
-    const response = await this.makeRequest(client =>
-      client.get(`/repos/${owner}/${repo}/commits`, {
-        params: { path: filePath, per_page: 1 }
-      })
-    );
-    return response.data?.[0]?.sha || '';
+    try {
+      const [owner, repo] = repoName.split('/');
+      const response = await this.makeRequest(client =>
+        client.get(`/repos/${owner}/${repo}/commits`, {
+          params: { path: filePath, per_page: 1 }
+        })
+      );
+      return response.data?.[0]?.sha || '';
+    } catch (error: any) {
+      if (error.response?.status === 422 || error.response?.status === 404) return '';
+      throw error;
+    }
   }
 
   async getRepoLatestCommitHash(repoName: string): Promise<string> {

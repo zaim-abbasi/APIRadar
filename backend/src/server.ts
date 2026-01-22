@@ -79,10 +79,7 @@ async function bootstrap() {
   });
 
   // 3. Validation: GitHub Token
-  if (!config.GITHUB_TOKEN || config.GITHUB_TOKEN.length === 0) {
-    throw new Error('GitHub token invalid or missing in configuration.');
-  }
-  logger.init(`Loaded ${config.GITHUB_TOKEN.length} GitHub tokens`);
+  logger.init(`Initialized with ${config.GITHUB_TOKEN.length} static and dynamic pool enabled`);
 
   // 4. Connect to Database (Critical Dependency)
   try {

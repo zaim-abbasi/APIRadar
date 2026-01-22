@@ -7,9 +7,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().pipe(z.number().min(1).max(65535)).default(3001),
   MONGODB_URI: z.string().min(1).refine(uri => uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://')),
-  GITHUB_TOKEN: z.string().min(1)
-    .refine(val => val.split(',').every(t => t.trim().startsWith('ghp_') || t.trim().startsWith('github_pat_')))
-    .transform(val => val.split(',').map(t => t.trim())),
+  GITHUB_TOKEN: z.string().optional()
+    .transform(val => val ? val.split(',').map(t => t.trim()) : []),
   MAX_REPOS_PER_SCAN: z.coerce.number().pipe(z.number().min(1).max(1000)).default(10),
   MAX_PAGES_PER_QUERY: z.coerce.number().pipe(z.number().min(1).max(1000)).default(100),
   RATE_LIMIT_MAX: z.coerce.number().pipe(z.number().min(1)).default(100),

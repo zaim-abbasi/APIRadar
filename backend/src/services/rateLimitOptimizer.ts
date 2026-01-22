@@ -56,11 +56,6 @@ export class RateLimitOptimizer {
     this.rebuildStates();
     logger.init(`[RATE-LIMIT] Loaded ${dbTokenStrings.length} tokens from DB`);
 
-    const envTokenString = process.env['GITHUB_TOKEN'] || '';
-    const envTokens = envTokenString.split(',').map(t => t.trim()).filter(t => t);
-    for (const token of envTokens) {
-      await this.onboardToken(token);
-    }
   }
 
   async onboardToken(token: string): Promise<void> {

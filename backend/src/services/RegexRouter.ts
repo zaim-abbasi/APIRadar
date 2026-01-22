@@ -14,12 +14,6 @@ const PROVIDER_RULES: ProviderRule[] = [
     label: 'AI Key',
     regex: /\b(sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}))\b/,
     prefixes: ['sk-']
-  },
-  {
-    name: 'github-token',
-    label: 'GitHub Token',
-    regex: /\b((?:ghp|gho)_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})\b/,
-    prefixes: ['ghp_', 'gho_', 'github_pat_']
   }
 ];
 
