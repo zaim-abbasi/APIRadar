@@ -663,8 +663,8 @@ export class GitHubCodeLeakFarmService {
         scanResumeState.currentQueryIndex = queryIndex;
         scanResumeState.currentPage = page;
         scanResumeState.lastProcessedTime = Date.now();
-        await saveResumeState();
         scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
+        await saveResumeState();
         if (scanResumeState.currentProviderIndex === 0) {
           logger.warn(`[FARM] Completed scan cycle - all providers processed for current page`);
         }
