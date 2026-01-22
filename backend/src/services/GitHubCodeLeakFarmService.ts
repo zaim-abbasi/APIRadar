@@ -850,8 +850,12 @@ export class GitHubCodeLeakFarmService {
           `${repoName} | ${filePath} | ${redactKey(key)}`
         );
         foundLeaks.push(leakData);
-      } catch (error) {
-        logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
+      } catch (error: any) {
+        if (error.code === 11000) {
+          logger.warn(`[FARM] Duplicate key skipped: ${redactKey(key)}`);
+        } else {
+          logger.error('[FARM] Failed to save leak: ' + (error instanceof Error ? error.message : String(error)));
+        }
       }
     }
     if (foundLeaks.length > 0) {

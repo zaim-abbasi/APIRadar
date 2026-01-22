@@ -5,7 +5,7 @@ export interface ProviderRule {
   name: string;
   label: string;
   regex: RegExp;
-  prefix?: string;
+  prefixes: string[];
 }
 
 const PROVIDER_RULES: ProviderRule[] = [
@@ -13,22 +13,27 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'ai-key',
     label: 'AI Key',
     regex: /\b(sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}))\b/,
-    prefix: 'sk-'
+    prefixes: ['sk-']
   },
   {
     name: 'github-token',
     label: 'GitHub Token',
     regex: /\b((?:ghp|gho)_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59})\b/,
-    prefix: 'gh'
+    prefixes: ['ghp_', 'gho_', 'github_pat_']
   }
 ];
 
 function buildSearchQueries(): Record<string, string[]> {
   const queries: Record<string, string[]> = {};
   for (const rule of PROVIDER_RULES) {
-    queries[rule.name] = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
-      file => `filename:${file} ${rule.prefix || ''}`
-    ).filter(q => q.trim());
+    const allQueries: string[] = [];
+    for (const prefix of rule.prefixes) {
+      const prefixQueries = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
+        file => `filename:${file} ${prefix}`
+      );
+      allQueries.push(...prefixQueries);
+    }
+    queries[rule.name] = allQueries.filter(q => q.trim());
   }
   return queries;
 }
@@ -55,11 +60,13 @@ export class RegexRouter {
 
   constructor() {
     for (const rule of PROVIDER_RULES) {
-      if (rule.prefix) {
-        if (!this.prefixMap.has(rule.prefix)) {
-          this.prefixMap.set(rule.prefix, []);
+      if (rule.prefixes.length > 0) {
+        for (const prefix of rule.prefixes) {
+          if (!this.prefixMap.has(prefix)) {
+            this.prefixMap.set(prefix, []);
+          }
+          this.prefixMap.get(prefix)!.push(rule);
         }
-        this.prefixMap.get(rule.prefix)!.push(rule);
       } else {
         this.wildcardRules.push(rule);
       }

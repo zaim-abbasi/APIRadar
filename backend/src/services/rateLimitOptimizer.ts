@@ -79,6 +79,11 @@ export class RateLimitOptimizer {
     } catch (err: any) {
       const status = err.response?.status;
       if (status === 403) {
+        const message = err.response?.data?.message?.toLowerCase() || '';
+        if (message.includes('suspended') || message.includes('account')) {
+          logger.warn(`[TOKEN] Discarded suspended account token: ${token.substring(0, 10)}...`);
+          return;
+        }
         await GithubToken.updateOne({ token }, { token }, { upsert: true });
         this.tokens.push(token);
         this.states.set(this.tokens.length - 1, { index: this.tokens.length - 1, info: null, lastUpdated: 0 });
@@ -111,13 +116,16 @@ export class RateLimitOptimizer {
   }
 
   private calculateCooldownExpiry(headers?: any): number {
+    const now = Date.now();
     if (headers?.['retry-after']) {
-      return Date.now() + parseInt(headers['retry-after'], 10) * 1000;
+      return now + Math.max(parseInt(headers['retry-after'], 10) * 1000, 600000);
     }
     if (headers?.['x-ratelimit-reset']) {
-      return parseInt(headers['x-ratelimit-reset'], 10) * 1000;
+      const resetAt = parseInt(headers['x-ratelimit-reset'], 10) * 1000;
+      // If reset is in the future, use it. If past/stale, bench for 1 hour.
+      return resetAt > now ? resetAt : now + 3600000;
     }
-    return Date.now() + 600000;
+    return now + 3600000; // Default 1 hour for unspecified 403s
   }
 
   getCurrentToken(): string | null {
