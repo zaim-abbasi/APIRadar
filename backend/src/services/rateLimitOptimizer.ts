@@ -1,6 +1,8 @@
 import { logger } from '../utils/logger';
 import { config } from '../config/environment';
 import { FARM_CONSTANTS } from './farmConstants';
+import { GithubToken } from '../models/GithubToken';
+import axios from 'axios';
 
 const TUNING = {
   HYSTERESIS_BUFFER: 10,
@@ -27,17 +29,110 @@ interface TokenStatus {
 export class RateLimitOptimizer {
   private states = new Map<number, TokenStatus>();
   private tokens: string[] = [];
+  private cooldowns = new Map<string, number>();
   private currentTokenIndex = 0;
   private lastRotation = Date.now();
 
   constructor() {
-    this.tokens = config.GITHUB_TOKEN;
-    if (!this.tokens.length) throw new Error('No valid GitHub tokens provided');
+    this.tokens = config.GITHUB_TOKEN || [];
+    this.rebuildStates();
+    if (this.tokens.length) {
+      logger.init(`[RATE-LIMIT] Initialized with ${this.tokens.length} env tokens`);
+    }
+  }
 
+  private rebuildStates() {
+    this.states.clear();
     this.tokens.forEach((_, index) => {
       this.states.set(index, { index, info: null, lastUpdated: 0 });
     });
-    logger.init(`[RATE-LIMIT] Initialized with ${this.tokens.length} tokens`);
+    this.currentTokenIndex = 0;
+  }
+
+  async initialize(): Promise<void> {
+    const dbTokens = await GithubToken.find().lean();
+    const dbTokenStrings = dbTokens.map(t => t.token);
+    this.tokens = [...new Set(dbTokenStrings)];
+    this.rebuildStates();
+    logger.init(`[RATE-LIMIT] Loaded ${dbTokenStrings.length} tokens from DB`);
+
+    const envTokenString = process.env['GITHUB_TOKEN'] || '';
+    const envTokens = envTokenString.split(',').map(t => t.trim()).filter(t => t);
+    for (const token of envTokens) {
+      await this.onboardToken(token);
+    }
+  }
+
+  async onboardToken(token: string): Promise<void> {
+    if (this.tokens.includes(token)) return;
+    try {
+      const res = await axios.get('https://api.github.com/rate_limit', {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+        timeout: 10000
+      });
+      if (res.status === 200) {
+        await GithubToken.updateOne({ token }, { token }, { upsert: true });
+        this.tokens.push(token);
+        this.states.set(this.tokens.length - 1, { index: this.tokens.length - 1, info: null, lastUpdated: 0 });
+        logger.init(`[TOKEN] Onboarded new token: ${token.substring(0, 10)}...`);
+      }
+    } catch (err: any) {
+      const status = err.response?.status;
+      if (status === 403) {
+        await GithubToken.updateOne({ token }, { token }, { upsert: true });
+        this.tokens.push(token);
+        this.states.set(this.tokens.length - 1, { index: this.tokens.length - 1, info: null, lastUpdated: 0 });
+        const expiry = this.calculateCooldownExpiry(err.response?.headers);
+        this.cooldowns.set(token, expiry);
+        logger.init(`[TOKEN] Onboarded tired token (benched until ${new Date(expiry).toISOString()}): ${token.substring(0, 10)}...`);
+      } else if (status === 401) {
+        logger.warn(`[TOKEN] Discarded invalid token: ${token.substring(0, 10)}...`);
+      } else {
+        logger.warn(`[TOKEN] Onboard failed (${status || 'network'}): ${token.substring(0, 10)}...`);
+      }
+    }
+  }
+
+  async reportError(token: string, status: number, headers?: any): Promise<void> {
+    if (status === 401) {
+      await GithubToken.deleteOne({ token });
+      const idx = this.tokens.indexOf(token);
+      if (idx !== -1) {
+        this.tokens.splice(idx, 1);
+        this.rebuildStates();
+      }
+      this.cooldowns.delete(token);
+      logger.warn(`[TOKEN] Hard fail - removed dead token: ${token.substring(0, 10)}...`);
+    } else if (status === 403) {
+      const expiry = this.calculateCooldownExpiry(headers);
+      this.cooldowns.set(token, expiry);
+      logger.warn(`[TOKEN] Soft fail - benched until ${new Date(expiry).toISOString()}: ${token.substring(0, 10)}...`);
+    }
+  }
+
+  private calculateCooldownExpiry(headers?: any): number {
+    if (headers?.['retry-after']) {
+      return Date.now() + parseInt(headers['retry-after'], 10) * 1000;
+    }
+    if (headers?.['x-ratelimit-reset']) {
+      return parseInt(headers['x-ratelimit-reset'], 10) * 1000;
+    }
+    return Date.now() + 600000;
+  }
+
+  getCurrentToken(): string | null {
+    const now = Date.now();
+    for (let i = 0; i < this.tokens.length; i++) {
+      const idx = (this.currentTokenIndex + i) % this.tokens.length;
+      const token = this.tokens[idx];
+      if (!token) continue;
+      const cooldownExpiry = this.cooldowns.get(token) || 0;
+      if (cooldownExpiry <= now) {
+        this.currentTokenIndex = idx;
+        return token;
+      }
+    }
+    return null;
   }
 
   getCurrentTokenState(): TokenStatus | null {
@@ -45,16 +140,19 @@ export class RateLimitOptimizer {
   }
 
   getBestToken(): number {
+    const now = Date.now();
     let bestIndex = this.currentTokenIndex;
     let maxRemaining = -1;
 
-    const current = this.getCurrentTokenState();
-    if (current?.info) {
-      maxRemaining = current.info.remaining;
-    }
-
     for (const [index, state] of this.states.entries()) {
-      if (!state.info) continue;
+      const token = this.tokens[index];
+      if (!token) continue;
+      const cooldownExpiry = this.cooldowns.get(token) || 0;
+      if (cooldownExpiry > now) continue;
+      if (!state.info) {
+        if (maxRemaining < 0) bestIndex = index;
+        continue;
+      }
       if (state.info.remaining > maxRemaining) {
         maxRemaining = state.info.remaining;
         bestIndex = index;

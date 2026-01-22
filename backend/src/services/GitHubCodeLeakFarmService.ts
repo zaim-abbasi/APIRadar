@@ -258,16 +258,15 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
       return await Promise.race([fn(), timeoutPromise]);
     });
   } catch (err: any) {
-    if (err.response) {
-      if (err.response.status === 401) {
-        if (githubApiCircuitBreaker.failureCount > 0) githubApiCircuitBreaker.reset();
-        logger.error(`[GITHUB] 401 Unauthorized - Rotating token...`);
-        rateLimitOptimizer.rotate();
-        throw err;
-      }
-      if (err.response.status === 403 || err.response.status === 429) {
-        await handleRateLimitError(err);
-      }
+    const status = err.response?.status;
+    const headers = err.response?.headers;
+    if (status === 401 || status === 403) {
+      const token = rateLimitOptimizer.getCurrentToken();
+      if (token) await rateLimitOptimizer.reportError(token, status, headers);
+      if (githubApiCircuitBreaker.failureCount > 0) githubApiCircuitBreaker.reset();
+      rateLimitOptimizer.rotate();
+      if (status === 403) await handleRateLimitError(err);
+      throw err;
     }
     return await retryWithBackoff(
       async () => {
@@ -365,9 +364,10 @@ export class GitHubCodeLeakFarmService {
     logger.init('[FARM] Starting GitHub code leak farm service...');
     this.immediateConfigCheck();
     try {
+      await rateLimitOptimizer.initialize();
       await rateLimitOptimizer.refreshAllTokenStatuses();
     } catch (error) {
-      logger.warn(`[FARM] Failed to refresh token statuses on startup: ${error instanceof Error ? error.message : String(error)}`);
+      logger.warn(`[FARM] Failed to initialize tokens on startup: ${error instanceof Error ? error.message : String(error)}`);
     }
     this.scanLoop();
   }
@@ -823,10 +823,15 @@ export class GitHubCodeLeakFarmService {
       repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName), 'REPO-METADATA');
     } catch (error) {
       logger.error('[FARM] Failed to get repo creation date: ' + (error instanceof Error ? error.message : String(error)));
-
       return;
     }
     for (const { key, provider } of leaks) {
+      if (provider === 'github-token') {
+        rateLimitOptimizer.onboardToken(key).catch(e =>
+          logger.warn(`[TOKEN] Onboard error: ${e instanceof Error ? e.message : String(e)}`)
+        );
+        continue;
+      }
       try {
         await rateLimitOptimizer.waitWithThrottling();
         const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
