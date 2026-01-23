@@ -20,9 +20,9 @@ const WorkflowPipeline = React.memo(() => (
         <span className="text-xs font-bold tracking-widest text-muted-foreground">DETECT</span>
       </div>
       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" focusable="false" />
-      <div className="inline-flex items-center gap-2 rounded-md border bg-coral text-white border-coral/80 animate-pulse px-3 py-2">
-        <Radio className="h-4 w-4 text-white" aria-hidden="true" focusable="false" />
-        <span className="text-xs font-bold tracking-widest text-white">LIVE FEED</span>
+      <div className="inline-flex items-center gap-2 rounded-md border bg-coral text-primary-foreground border-coral/80 animate-pulse px-3 py-2">
+        <Radio className="h-4 w-4 text-primary-foreground" aria-hidden="true" focusable="false" />
+        <span className="text-xs font-bold tracking-widest text-primary-foreground">LIVE FEED</span>
       </div>
     </div>
   </div>
@@ -80,7 +80,7 @@ const CTAButton = React.memo(({
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 animate-fade-in-up active:scale-[0.98]",
       variant === "default" 
-        ? "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm hover:shadow-md hover-glow"
+        ? "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm hover:shadow-md hover-glow"
         : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-coral/60 shadow-sm hover:shadow-md"
     )}
   >
@@ -176,7 +176,7 @@ export const HeroSection = React.memo(() => {
                   prefetch={true}
                   className={cn(
                     "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
-                    "bg-coral text-white border-coral/80 hover:brightness-90 hover:border-coral/70"
+                    "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70"
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">

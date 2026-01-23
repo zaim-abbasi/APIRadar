@@ -70,7 +70,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+              className="text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
               aria-label="Sign in with Google"
             >
               <Chrome className="h-4 w-4" aria-hidden="true" focusable="false" />
@@ -163,7 +163,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
           <InstructionsSection />
           <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 mt-1.5 w-full">
-            <div className="min-w-0 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium truncate">
+            <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/80 min-w-0 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium truncate">
               <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
               {selectedProvider !== 'all' && ` for ${selectedProvider}`}
             </div>
@@ -172,7 +172,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               onClick={onRefresh}
               disabled={isLoading}
               aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3 text-xs sm:text-sm font-medium text-white bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3 text-xs sm:text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
               tabIndex={0}
             >
               <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />

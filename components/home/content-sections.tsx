@@ -132,7 +132,7 @@ const WhatsNext = React.memo(() => {
             href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=Contact%20API%20Radar%20Developer"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-white border border-coral/80 hover:brightness-90 hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-primary-foreground border border-coral/80 hover:brightness-90 hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
           >
             <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
             <span>Contact the Developer</span>

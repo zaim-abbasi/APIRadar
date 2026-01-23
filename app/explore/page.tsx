@@ -110,7 +110,7 @@ const ResultsCount = React.memo(({
         )}
       </div>
       <div className="flex flex-row items-center gap-2 flex-wrap">
-        <div className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
+        <div className="inline-flex items-center px-3 py-1 rounded-md bg-muted/40 border border-border/80 text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
           {isClient && !error && (
             <>
               <span className="block sm:hidden"><span className="font-bold">{total}</span> leaks found</span>
@@ -129,7 +129,7 @@ const ResultsCount = React.memo(({
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-white bg-coral border-none rounded-md flex items-center gap-1 transition-all duration-200 hover:bg-coral/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-auto"
+          className="h-8 pl-2 pr-2 py-1 text-xs font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center gap-1 transition-all duration-200 hover:bg-coral/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-auto"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           {isLoading ? 'Refreshing...' : 'Refresh'}
