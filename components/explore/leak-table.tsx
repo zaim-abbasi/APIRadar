@@ -364,7 +364,7 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
                 <div className="flex-shrink-0 sm:self-center">
                   <button
                     onClick={onSignIn}
-                    className="text-xs sm:text-sm font-medium text-white bg-coral border-none rounded-md flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+                    className="text-xs sm:text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
                     aria-label="Sign in with Google"
                   >
                     <span>Continue with Google</span>
