@@ -274,21 +274,19 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   const [displayData, setDisplayData] = useState<LeaderboardData>(data);
 
   useEffect(() => {
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    document.cookie = `timezone=${timeZone}; path=/; max-age=31536000`;
+    // No-op: Stats are now standard UTC for everyone
   }, []);
 
   useEffect(() => {
     const fetchPersonalizedData = async () => {
       try {
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const response = await fetch(`/api/leaderboard?timezone=${encodeURIComponent(timeZone)}`);
+        const response = await fetch(`/api/leaderboard`);
         if (response.ok) {
           const freshData = await response.json();
           setDisplayData({
              topProviders: data.topProviders,
-             totalLeaks: Number(freshData.totalReposScanned) || 0,
-             todayLeaks: Number(freshData.totalLeaksFound) || 0,
+             totalReposScanned: Number(freshData.totalReposScanned) || 0,
+             totalLeaksFound: Number(freshData.totalLeaksFound) || 0,
              weeklyGrowth: data.weeklyGrowth,
              leaksFoundToday: Number(freshData.leaksFoundToday) || 0,
           });
@@ -302,13 +300,13 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   }, [data]);
 
   const {
-    totalLeaks,
-    todayLeaks,
+    totalReposScanned,
+    totalLeaksFound,
     leaksFoundToday
   } = displayData;
 
-  const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
-  const safeTodayLeaks = typeof todayLeaks === 'number' && isFinite(todayLeaks) ? todayLeaks : 0;
+  const safeTotalReposScanned = typeof totalReposScanned === 'number' && isFinite(totalReposScanned) ? totalReposScanned : 0;
+  const safeTotalLeaksFound = typeof totalLeaksFound === 'number' && isFinite(totalLeaksFound) ? totalLeaksFound : 0;
   const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
 
   const stats = useMemo(() => [
@@ -321,19 +319,19 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     },
     {
       title: 'Total Leaks Found',
-      value: safeTodayLeaks,
+      value: safeTotalLeaksFound,
       icon: AlertTriangle,
       color: 'text-coral',
       bgColor: 'bg-coral/10'
     },
     {
       title: 'Total Repos Scanned',
-      value: safeTotalLeaks,
+      value: safeTotalReposScanned,
       icon: Search,
       color: 'text-coral',
       bgColor: 'bg-coral/10'
     }
-  ], [safeTotalLeaks, safeTodayLeaks, safeLeaksFoundToday]);
+  ], [safeTotalReposScanned, safeTotalLeaksFound, safeLeaksFoundToday]);
 
   return (
     <div

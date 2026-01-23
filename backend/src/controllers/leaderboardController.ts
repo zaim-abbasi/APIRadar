@@ -4,14 +4,14 @@ import { ScannedRepo } from '../models/ScannedRepo';
 import { githubService } from '../services/github';
 
 const MS_PER_DAY = 86_400_000;
-const ACTIVITY_DAYS = 7;
+
 const CACHE_TTL = { SHORT: 30_000, LONG: 300_000 };
 
 const cache = new Map<string, { data: any; timestamp: number }>();
 
-function resolveTimezone(tz?: string): string {
-  return tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-}
+// function resolveTimezone(tz?: string): string {
+//   return tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+// }
 
 function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: any): Promise<T> {
   const now = Date.now();
@@ -31,9 +31,9 @@ function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: 
   return Promise.resolve(data);
 }
 
-function formatLocalDate(date: Date, tz: string): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-}
+// function formatLocalDate(date: Date, tz: string): string {
+//   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+// }
 
 interface LeaderboardResponse {
   totalReposScanned: number;
@@ -56,18 +56,20 @@ export const leaderboardDataSchema = {
 
 export async function getLeaderboardDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const tz = resolveTimezone((request.query as any).timezone);
-    const data = await withCache<LeaderboardResponse>(`leaderboard-${tz}`, CACHE_TTL.SHORT, async () => {
+    // Use 'UTC' for static global caching (independent of user timezone)
+    const data = await withCache<LeaderboardResponse>('leaderboard-global', CACHE_TTL.SHORT, async () => {
       const [totalReposScanned, totalLeaksFound] = await Promise.all([
         ScannedRepo.countDocuments(),
         Leak.countDocuments(),
       ]);
-      const result = await Leak.aggregate([
-        { $project: { localDate: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt', timezone: tz } } } },
-        { $match: { localDate: formatLocalDate(new Date(), tz) } },
-        { $count: 'count' }
-      ]);
-      return { totalReposScanned, totalLeaksFound, leaksFoundToday: result[0]?.count || 0 };
+
+      // Last 24 hours rolling window
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const leaksFoundToday = await Leak.countDocuments({
+        leakDetectedAt: { $gte: oneDayAgo }
+      });
+
+      return { totalReposScanned, totalLeaksFound, leaksFoundToday };
     }, request.log);
     return reply.send(data);
   } catch (error) {
@@ -95,20 +97,36 @@ export const activitySchema = {
 
 export async function getLeaderboardActivityHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const tz = resolveTimezone((request.query as any).timezone);
-    const data = await withCache<ActivityPoint[]>(`activity-${tz}`, CACHE_TTL.SHORT, async () => {
-      const now = Date.now();
+    // const tz = 'UTC'; // Standardize on UTC for everyone
+    const data = await withCache<ActivityPoint[]>('activity-global', CACHE_TTL.SHORT, async () => {
+      const now = new Date();
+      // Calculate start of "Today" in UTC (00:00:00.000)
+      const todayStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const sixDaysAgoStartUTC = new Date(todayStartUTC.getTime() - 6 * MS_PER_DAY);
+
       const raw = await Leak.aggregate([
-        { $match: { leakDetectedAt: { $gte: new Date(now - (ACTIVITY_DAYS + 1) * MS_PER_DAY) } } },
-        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt', timezone: tz } }, count: { $sum: 1 } } },
+        { $match: { leakDetectedAt: { $gte: sixDaysAgoStartUTC } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt', timezone: 'UTC' } },
+            count: { $sum: 1 }
+          }
+        },
         { $sort: { _id: 1 } }
       ]);
+
       const counts = new Map(raw.map((r: any) => [r._id, r.count]));
       const result: ActivityPoint[] = [];
-      for (let i = ACTIVITY_DAYS; i >= 1; i--) {
-        const t = new Date(now - i * MS_PER_DAY);
-        const dateKey = formatLocalDate(t, tz);
-        const dayName = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(t);
+
+      // Iterate from 6 days ago up to and including today (0 days ago)
+      for (let i = 6; i >= 0; i--) {
+        const t = new Date(todayStartUTC.getTime() - i * MS_PER_DAY);
+        // Format to YYYY-MM-DD for key lookup
+        const dateKey = t.toISOString().split('T')[0];
+
+        // Format label (e.g., "Mon", "Tue")
+        const dayName = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' }).format(t);
+
         result.push({ date: dayName, count: counts.get(dateKey) || 0 });
       }
       return result;

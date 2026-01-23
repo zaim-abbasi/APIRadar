@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 // }
 
 // Production-grade data fetching with proper error handling
-async function fetchLeaderboardData(timezone?: string): Promise<LeaderboardData> {
+async function fetchLeaderboardData(): Promise<LeaderboardData> {
   // Use Next.js API route as proxy (similar to leaks)
   // Get the base URL for server-side requests
   let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -47,9 +47,6 @@ async function fetchLeaderboardData(timezone?: string): Promise<LeaderboardData>
   
   try {
     const url = new URL(`${baseUrl}/api/leaderboard`);
-    if (timezone) {
-      url.searchParams.set('timezone', timezone);
-    }
 
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -88,8 +85,8 @@ async function fetchLeaderboardData(timezone?: string): Promise<LeaderboardData>
 
     return {
       topProviders,
-      totalLeaks: Number(data.totalReposScanned) || 0,
-      todayLeaks: Number(data.totalLeaksFound) || 0,
+      totalReposScanned: Number(data.totalReposScanned) || 0,
+      totalLeaksFound: Number(data.totalLeaksFound) || 0,
       weeklyGrowth: Number(data.weeklyGrowth) || 0,
       leaksFoundToday: Number(data.leaksFoundToday) || 0,
     };
@@ -109,8 +106,8 @@ async function fetchLeaderboardData(timezone?: string): Promise<LeaderboardData>
     // Return safe fallback data
     return {
       topProviders: [{ provider: 'unknown', count: 0, percentage: 0, trend: 'stable' }],
-      totalLeaks: 0,
-      todayLeaks: 0,
+      totalReposScanned: 0,
+      totalLeaksFound: 0,
       weeklyGrowth: 0,
       leaksFoundToday: 0,
     };
@@ -139,10 +136,7 @@ export const revalidate = 0; // Always fetch fresh data
 
 // Main page component
 export default async function LeaderboardPage() {
-  const cookieStore = await cookies();
-  const timezone = cookieStore.get('timezone')?.value;
-
-  const leaderboardData = await fetchLeaderboardData(timezone);
+  const leaderboardData = await fetchLeaderboardData();
 
   const statsData: LeaderboardData = leaderboardData;
   return <LeaderboardClient statsData={statsData} />;

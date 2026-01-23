@@ -19,8 +19,8 @@ export interface ProviderStats {
 
 export interface LeaderboardData {
   topProviders: ProviderStats[];
-  totalLeaks: number;
-  todayLeaks: number;
+  totalReposScanned: number;
+  totalLeaksFound: number;
   weeklyGrowth: number;
   leaksFoundToday: number;
 }

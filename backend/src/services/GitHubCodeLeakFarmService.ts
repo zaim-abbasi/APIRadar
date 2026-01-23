@@ -319,7 +319,9 @@ async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
     const ops = leaks.map(leak => ({
       updateOne: {
         filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider, filePath: leak.filePath },
-        update: leak,
+        update: {
+          $setOnInsert: { ...leak, leakDetectedAt: new Date() }
+        },
         upsert: true
       }
     }));
@@ -842,7 +844,6 @@ export class GitHubCodeLeakFarmService {
           repoUrl,
           filePath,
           leakIntroducedAt,
-          leakDetectedAt: new Date(),
           repoCreatedAt
         };
         logger.leak(
