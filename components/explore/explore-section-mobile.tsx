@@ -29,7 +29,7 @@ const InstructionsSection = memo(() => {
       </button>
       {showInstructions && (
         <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          The <span className="font-medium text-foreground">AI Key</span> category includes keys from OpenAI, Anthropic, DeepSeek, OpenRouter, and similar providers. To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
+          To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
         </p>
       )}
     </div>

@@ -8,14 +8,7 @@ export interface ProviderRule {
   prefixes: string[];
 }
 
-const PROVIDER_RULES: ProviderRule[] = [
-  {
-    name: 'ai-key',
-    label: 'AI Key',
-    regex: /\b(sk-(?:ant-api\d{2}-[a-zA-Z0-9+/=]{30,150}|(?!ant-)(?:proj-)?[a-zA-Z0-9_-]{20,}))\b/,
-    prefixes: ['sk-']
-  }
-];
+const PROVIDER_RULES: ProviderRule[] = [];
 
 function buildSearchQueries(): Record<string, string[]> {
   const queries: Record<string, string[]> = {};
