@@ -24,8 +24,12 @@ interface LeakTableProps {
 }
 
 const providerColors: Record<string, string> = {
-  'ai-key':
-    "bg-coral/10 text-coral"
+  'openai': "bg-green-500/10 text-green-500",
+  'anthropic': "bg-orange-500/10 text-orange-500",
+  'google': "bg-blue-500/10 text-blue-500",
+  'mistral': "bg-orange-600/10 text-orange-600",
+  'grok': "bg-foreground/10 text-foreground",
+  'deepseek': "bg-indigo-500/10 text-indigo-500",
 }
 
 // Memoized Loading Skeleton component

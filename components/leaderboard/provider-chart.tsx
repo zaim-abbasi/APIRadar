@@ -14,7 +14,12 @@ interface ProviderChartProps {
 
 // Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'ai-key': 'hsl(var(--coral))',
+  'openai': '#10a37f',     // OpenAI Green
+  'anthropic': '#da7756',  // Anthropic Orange
+  'google': '#4285f4',     // Google blue
+  'mistral': '#f5d76e',    // Mistral Yellow
+  'grok': '#ffffff',       // Grok/X-ish White
+  'deepseek': '#6366f1',   // DeepSeek Indigo
 };
 
 // Function to map database provider names to display names
