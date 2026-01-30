@@ -213,6 +213,21 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 <span className="font-bold mr-1">{total}</span> leak{total !== 1 ? 's' : ''} found
                 {selectedProvider !== 'all' && ` for ${selectedProvider}`}
             </div>
+
+            <div className="hidden xl:flex flex-1 justify-center items-center px-4">
+              <span className="text-sm font-medium text-muted-foreground italic text-center animate-pulse-slow">
+                "Deploying next-gen upgrades. Have a feature request?{" "}
+                <a 
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-coral hover:underline underline-offset-4 pointer-events-auto"
+                >
+                  Ping the lab here.
+                </a>
+                "
+              </span>
+            </div>
             
             <div className="ml-auto flex items-center gap-1 flex-shrink-0">
               <div className="hidden lg:flex items-center gap-2.5 px-3 py-1 rounded-md bg-muted/40 border border-border/80 flex-shrink-0">

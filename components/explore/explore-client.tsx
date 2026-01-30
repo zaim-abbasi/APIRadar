@@ -317,7 +317,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       ...prev,
       page: 1,
       hasMore: false,
-      total: 0,
     }));
     setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
     fetchAndSetLeaksRef.current?.().finally(() => {
