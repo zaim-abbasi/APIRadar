@@ -403,7 +403,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Premium API Radar utilities */
+/* Premium APIRadar utilities */
 @layer utilities {
   .glass-card {
     background: hsl(var(--glass-white));

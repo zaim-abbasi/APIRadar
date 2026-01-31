@@ -99,12 +99,12 @@ LoadingSkeleton.displayName = 'LoadingSkeleton';
 // Memoized Empty State component
 const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provider }) => (
   <div className="text-center py-16 animate-fade-in-up opacity-0 animate-delay-10">
-    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/30 mb-4">
-      <FileText className="h-8 w-8 text-muted-foreground/70" />
+    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-coral/10 border border-coral/20 mb-4">
+      <FileText className="h-8 w-8 text-coral animate-pulse-slow" />
     </div>
-    <h3 className="text-lg font-semibold mb-2 text-foreground">No leaks found?</h3>
-    <p className="text-muted-foreground/80 max-w-md mx-auto">
-      Probably the backend is offline or the system is under development for a while. Please come back later 🚧
+    <h3 className="text-lg font-semibold mb-2 text-foreground">Sensors are clear</h3>
+    <p className="text-muted-foreground/80 max-w-md mx-auto text-sm leading-relaxed px-4">
+      No leaks found for current filters. This could mean the system is updating or the backend is currently processing new scans. Check back shortly.
     </p>
   </div>
 ));

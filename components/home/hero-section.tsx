@@ -159,7 +159,7 @@ export const HeroSection = React.memo(() => {
                   className="inline-flex"
                 >
                   <img
-                    alt="API Radar - See your leaked API keys before attackers do | Product Hunt"
+                    alt="APIRadar - See your leaked API keys before attackers do | Product Hunt"
                     width="250"
                     height="54"
                     src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058833&theme=dark&t=1768563980516"

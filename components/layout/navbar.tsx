@@ -204,7 +204,7 @@ const NavbarComponent = () => {
               <Radar className="h-6 w-6 sm:h-7 sm:w-7 text-coral" strokeWidth={1.5} aria-hidden="true" focusable="false" />
               <span className="text-xl sm:text-2xl font-semibold tracking-tighter font-heading whitespace-nowrap leading-none">
                 <span className="text-coral">API</span>
-                <span className="text-foreground"> Radar</span>
+                <span className="text-foreground">Radar</span>
               </span>
             </Link>
           </div>

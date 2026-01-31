@@ -172,7 +172,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               onClick={onRefresh}
               disabled={isLoading}
               aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3 text-xs sm:text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-8 px-2.5 text-xs sm:text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
               tabIndex={0}
             >
               <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -215,7 +215,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-3">
-          <span id="footer-label-mobile" className="font-semibold">API Radar</span>
+          <span id="footer-label-mobile" className="font-semibold">APIRadar</span>
           <a href="mailto:zaim.k.abbasi@gmail.com" className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center" aria-label="Email" tabIndex={0}>
             <Mail className="h-5 w-5 transition-transform duration-200 hover:scale-110" />
           </a>

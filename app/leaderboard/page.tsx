@@ -7,15 +7,15 @@ import { headers, cookies } from 'next/headers';
 
 // Page-specific metadata
 export const metadata: Metadata = {
-  title: 'Security Leaderboard - API Radar',
+  title: 'Security Leaderboard - APIRadar',
   description: '',
   openGraph: {
-    title: 'Security Leaderboard - API Radar',
+    title: 'Security Leaderboard - APIRadar',
     description: '',
     url: 'https://apiradar.live/leaderboard',
   },
   twitter: {
-    title: 'Security Leaderboard - API Radar',
+    title: 'Security Leaderboard - APIRadar',
     description: '',
   },
 };

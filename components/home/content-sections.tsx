@@ -121,7 +121,7 @@ const WhatsNext = React.memo(() => {
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold text-foreground mb-1.5 sm:mb-4">
-        What's Next for API Radar?
+        What's Next for APIRadar?
       </h2>
       <div className="flex-1 space-y-2 sm:space-y-4">
         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">

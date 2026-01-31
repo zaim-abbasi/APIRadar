@@ -1,7 +1,7 @@
 {
   "name": "api-radar-backend",
   "version": "1.0.0",
-  "description": "Backend API for API Radar - Real-time API key leak monitoring",
+  "description": "Backend API for APIRadar - Real-time API key leak monitoring",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
@@ -23,7 +23,7 @@
     "fastify",
     "typescript"
   ],
-  "author": "API Radar Team",
+  "author": "APIRadar Team",
   "license": "MIT",
   "dependencies": {
     "@fastify/compress": "^6.5.0",

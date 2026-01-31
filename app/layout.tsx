@@ -28,12 +28,12 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://apiradar.live'),
-  title: 'API Radar',
+  title: 'APIRadar',
   description: 'Live tracking of exposed API keys from millions of GitHub repositories. Discover leaks as they happen with unmatched detail and speed.',
   keywords: 'API keys, security, GitHub, leaks, monitoring, detection, OpenAI, Google Cloud, Gemini, API leak detector',
   authors: [{ name: 'Zaim Abbasi' }],
   creator: 'Zaim Abbasi',
-  publisher: 'API Radar',
+  publisher: 'APIRadar',
   robots: 'index, follow',
   alternates: {
     canonical: '/',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'API Radar - Real-time API Key Leak Detection',
+    title: 'APIRadar - Real-time API Key Leak Detection',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
     type: 'website',
     locale: 'en_US',
@@ -52,13 +52,13 @@ export const metadata: Metadata = {
         url: 'https://apiradar.live/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'API Radar Open Graph Image',
+        alt: 'APIRadar Open Graph Image',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'API Radar - Real-time API Key Leak Detection',
+    title: 'APIRadar - Real-time API Key Leak Detection',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
     images: ['https://apiradar.live/og-image.png'],
     site: '@apiradar',
@@ -91,7 +91,7 @@ export default function RootLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
-            "name": "API Radar",
+            "name": "APIRadar",
             "url": "https://apiradar.live",
             "sameAs": [
               "https://github.com/zaim-abbasi",
@@ -108,7 +108,7 @@ export default function RootLayout({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
-            "name": "API Radar",
+            "name": "APIRadar",
             "url": "https://apiradar.live",
             "logo": "https://apiradar.live/logo/logo-webp.webp",
             "sameAs": [

@@ -148,7 +148,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               "description": "Comprehensive database of API key leaks from public repositories",
               "provider": {
                 "@type": "Organization",
-                "name": "API Radar"
+                "name": "APIRadar"
               }
             }
           })
@@ -229,30 +229,16 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               </span>
             </div>
             
-            <div className="ml-auto flex items-center gap-1 flex-shrink-0">
-              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1 rounded-md bg-muted/40 border border-border/80 flex-shrink-0">
-                <span className="text-[12px] tracking-wide font-semibold text-foreground/70">Built by Zaim</span>
-                <div className="flex items-center gap-2">
-                  <a href="https://github.com/zaim-abbasi" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Github className="h-4 w-4" />
-                  </a>
-                  <a href="https://www.linkedin.com/in/zaim-abbasi/" target="_blank" rel="noopener noreferrer" className="text-foreground/60 hover:text-coral transition-colors duration-200">
-                    <Linkedin className="h-4 w-4" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="w-[140px] flex justify-end flex-shrink-0">
-                <button
-                  onClick={onRefresh}
-                  disabled={isLoading}
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-3.5 text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5"
-                  aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-                  {isLoading ? 'Refreshing...' : 'Refresh'}
-                </button>
-              </div>
+            <div className="w-[120px] flex justify-end flex-shrink-0">
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-8 px-3 text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5"
+                aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+                {isLoading ? 'Refreshing...' : 'Refresh'}
+              </button>
             </div>
           </div>
         </div>

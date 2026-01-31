@@ -10,7 +10,7 @@ const FooterLogo = React.memo(() => (
     <Radar className="h-6 w-6 text-coral" strokeWidth={1.5} aria-hidden="true" focusable="false" />
     <span className="text-xl font-semibold tracking-tighter font-heading">
       <span className="text-coral">API</span>
-      <span className="text-foreground"> Radar</span>
+      <span className="text-foreground">Radar</span>
     </span>
   </Link>
 ));
@@ -55,10 +55,22 @@ const FooterComponent = () => {
           </div>
 
           {/* Center: Copyright */}
-          <div className="w-full md:w-auto flex justify-center">
+          <div className="flex-1 flex justify-center">
             <span id="footer-label" className="text-xs text-muted-foreground/80 text-center font-medium">
-              © 2025 API Radar. Real-time detection and tracking of API key leaks.
+              © 2026 APIRadar. Real-time detection and tracking of API key leaks.
             </span>
+          </div>
+
+          <div className="flex items-center justify-end w-full md:w-auto text-xs font-semibold text-foreground/70 tracking-wide">
+            <span>Engineered by&nbsp;</span>
+            <a 
+              href="https://github.com/zaim-abbasi" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-coral hover:underline underline-offset-4 transition-all duration-200"
+            >
+              Zaim Abbasi
+            </a>
           </div>
         </div>
       </div>

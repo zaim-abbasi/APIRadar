@@ -45,7 +45,7 @@ export const HeroSectionMobile = React.memo(() => {
 
       <footer role="contentinfo" aria-labelledby="footer-label-mobile" className="w-full text-center mt-auto pt-4 sm:pt-8 pb-3 sm:pb-5 text-xs text-muted-foreground/80 z-10 tracking-wide">
         <div className="flex items-center justify-center gap-2 sm:gap-3">
-          <span id="footer-label-mobile" className="font-semibold">API Radar</span>
+          <span id="footer-label-mobile" className="font-semibold">APIRadar</span>
           <a href="mailto:zaim.k.abbasi@gmail.com" className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center" aria-label="Email" tabIndex={0}>
             <Mail className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-200 hover:scale-110" />
           </a>

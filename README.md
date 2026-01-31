@@ -1,4 +1,4 @@
-# 🛡️ API Radar
+# 🛡️ APIRadar
 
 > **Find and track leaked API keys on GitHub.**
 >
@@ -27,7 +27,7 @@
 
 ## 📝 About
 
-API Radar is a large, multi-component system. It scans GitHub for secrets, detects leaks, and tracks everything in a database. The frontend lets you explore leaks, see stats, and learn about security. The backend is built for speed, reliability, and scale.
+APIRadar is a large, multi-component system. It scans GitHub for secrets, detects leaks, and tracks everything in a database. The frontend lets you explore leaks, see stats, and learn about security. The backend is built for speed, reliability, and scale.
 
 ---
 
@@ -138,7 +138,7 @@ GITHUB_RATE_LIMIT_DELAY=1000
 ## SEO Backlinks & Monitoring Checklist
 
 ### Backlinks Strategy
-- Submit API Radar to developer directories (Product Hunt, Dev.to, Indie Hackers, etc.)
+- Submit APIRadar to developer directories (Product Hunt, Dev.to, Indie Hackers, etc.)
 - Write guest posts or tutorials on tech blogs and link back to https://apiradar.live
 - Share on social media (Twitter, LinkedIn, Reddit, Hacker News)
 - Engage in relevant forums (Stack Overflow, GitHub Discussions) and include your link in your profile or signature

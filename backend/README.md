@@ -1,4 +1,4 @@
-# API Radar Backend
+# APIRadar Backend
 
 ## GitHub Issue Creation for New Leaks
 
@@ -8,7 +8,7 @@ The backend now automatically creates GitHub issues in repositories where new AP
 
 - **Automatic Detection**: When a new leak is detected (not an update to an existing leak), the system creates a GitHub issue
 - **Smart Deduplication**: Only creates one issue per repository per provider to avoid spam
-- **Friendly Messages**: Uses randomized, human-like messages that mention API Radar as the detection tool
+- **Friendly Messages**: Uses randomized, human-like messages that mention APIRadar as the detection tool
 - **Error Handling**: Gracefully handles cases where issues are disabled, repos are archived, or permissions are denied
 
 ### Configuration
@@ -40,7 +40,7 @@ The system uses 6 randomized templates to keep messages natural and varied:
 All messages:
 - Mention the specific provider (OpenAI, Anthropic, etc.)
 - Include the file path if available
-- Include the API Radar website link (https://apiradar.live)
+- Include the APIRadar website link (https://apiradar.live)
 - Provide contact email (zaim.k.abbasi@gmail.com) for questions
 - Include the `api-radar-alert` label
 - Use friendly, helpful tone without being spammy
