@@ -322,10 +322,10 @@ const ResultsSection = React.memo(({
         <div className="min-h-[200px] flex items-center justify-center">
           <div className="text-center">
             <div className="text-lg font-semibold mb-2">
-              No leaks found
+              No leaks found?
             </div>
             <div className="text-muted-foreground text-sm">
-              No leaked keys match your current filters.
+              Probably the backend is offline or the system is under development for a while. Please come back later 🚧
             </div>
           </div>
         </div>

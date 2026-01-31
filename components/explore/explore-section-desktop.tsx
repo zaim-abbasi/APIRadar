@@ -216,7 +216,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 
             <div className="hidden xl:flex flex-1 justify-center items-center px-4">
               <span className="text-sm font-medium text-muted-foreground italic text-center animate-pulse-slow">
-                "Deploying next-gen upgrades. Have a feature request?{" "}
+                "Shipping useful features. Have a feature request?{" "}
                 <a 
                   href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com" 
                   target="_blank"

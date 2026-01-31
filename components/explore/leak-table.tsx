@@ -102,12 +102,9 @@ const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provide
     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/30 mb-4">
       <FileText className="h-8 w-8 text-muted-foreground/70" />
     </div>
-    <h3 className="text-lg font-semibold mb-2 text-foreground">No leaks found</h3>
+    <h3 className="text-lg font-semibold mb-2 text-foreground">No leaks found?</h3>
     <p className="text-muted-foreground/80 max-w-md mx-auto">
-      {selectedProvider === 'all' 
-        ? "No leaked keys match your current filters."
-        : `No leaked keys found for ${selectedProvider}.`
-      }
+      Probably the backend is offline or the system is under development for a while. Please come back later 🚧
     </p>
   </div>
 ));
