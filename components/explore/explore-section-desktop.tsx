@@ -218,7 +218,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               <span className="text-sm font-medium text-muted-foreground italic text-center animate-pulse-slow">
                 "Shipping useful features. Have a feature request?{" "}
                 <a 
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com" 
+                  href="https://github.com/zaim-abbasi/apiradar-community/discussions" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-coral hover:underline underline-offset-4 pointer-events-auto"
