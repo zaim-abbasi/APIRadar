@@ -15,23 +15,12 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
 });
 
 const InstructionsSection = memo(() => {
-  const [showInstructions, setShowInstructions] = React.useState(false);
-  
   return (
-    <div className="mb-2 px-2.5 sm:px-3 py-2 sm:py-2.5 bg-coral/10 border border-coral/20 rounded-md">
-      <button
-        onClick={() => setShowInstructions(!showInstructions)}
-        className="w-full flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-foreground"
-      >
-        <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral flex-shrink-0" />
-        <span className="font-medium flex-1 text-left">How to identify provider</span>
-        <ChevronDown className={`h-3.5 w-3.5 sm:h-4 sm:w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
-      </button>
-      {showInstructions && (
-        <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
-        </p>
-      )}
+    <div className="mb-2 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-coral/10 border border-coral/20 rounded-md flex items-start gap-2">
+      <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral flex-shrink-0 mt-0.5" />
+      <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
+        To check provider details, click the <span className="text-coral font-medium">repository name</span> to directly open the leak location and code context.
+      </p>
     </div>
   );
 });
@@ -192,18 +181,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               plan={plan}
               onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href, redirect: true }) : undefined}
             />
-            
-            {/* Fade-out blur effect for unauthenticated users - suggests more content */}
-            {isUnauthenticated && total > 6 && (
-              <>
-                <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
-                  {/* Gradient fade that keeps last row visible - starts transparent at top */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
-                  {/* Subtle blur overlay - lighter at top to keep last row visible */}
-                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
-                </div>
-              </>
-            )}
+
           </div>
         </Suspense>
         {/* Infinite scroll sentinel for pro users */}

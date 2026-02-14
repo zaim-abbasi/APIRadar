@@ -193,7 +193,7 @@ const LeakCard = React.memo(({
       className="group animate-fade-in-up opacity-0"
       style={{ animationDelay: `${index * 30}ms` }}
     >
-      <Card className="group/card border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border/80 hover:bg-card/70">
+      <Card className="group/card border-border/50 bg-card/50 transition-all duration-200 hover:border-border/80 hover:bg-card/70">
       <CardContent className="p-2.5 sm:p-4 relative"> 
         <div className="flex flex-col h-full pr-8 sm:pr-0">
           <div className="flex-1 flex flex-col gap-2 sm:gap-2.5 w-full">
@@ -228,7 +228,7 @@ const LeakCard = React.memo(({
                       <GitBranch className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-coral" />
                       <span className="text-xs sm:text-sm text-coral font-medium whitespace-nowrap flex-shrink-0">Repo Name:</span>
                       <a
-                        href={safeRepoUrl}
+                        href={safeFilePath ? `${safeRepoUrl}/blob/HEAD/${safeFilePath}` : safeRepoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1 min-w-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
@@ -299,7 +299,7 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
   // Filter and memoize valid leaks to prevent unnecessary re-renders
   const validLeaks = useMemo(() => leaks.filter(leak => leak !== null) as LeakedKey[], [leaks]);
   const isUnauthenticated = plan === 'free';
-  const showGradient = isUnauthenticated && validLeaks.length === 6;
+  const showGradient = isUnauthenticated && validLeaks.length === 4;
 
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -318,34 +318,14 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
           <div
             key={leak.id || `leak-${index}`}
             className={cn(
-              "relative",
-              showGradient && index >= 4 && "overflow-hidden"
+              "relative"
             )}
           >
             <LeakCard
               leak={leak}
               index={index}
             />
-            {showGradient && index >= 4 && (
-              <div className="absolute inset-0 pointer-events-none z-10 rounded-md overflow-hidden">
-                <div 
-                  className="absolute inset-0 backdrop-blur-[4px]"
-                  style={{
-                    background: index === 4 
-                      ? 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--background) / 0.2) 60%, hsl(var(--background) / 0.45) 75%, hsl(var(--background) / 0.7) 87%, hsl(var(--background) / 0.88) 94%, hsl(var(--background) / 0.96) 98%, hsl(var(--background)) 100%)'
-                      : 'linear-gradient(to bottom, transparent 0%, transparent 30%, hsl(var(--background) / 0.25) 50%, hsl(var(--background) / 0.55) 70%, hsl(var(--background) / 0.8) 85%, hsl(var(--background) / 0.93) 93%, hsl(var(--background) / 0.98) 97%, hsl(var(--background)) 100%)'
-                  }}
-                />
-                <div 
-                  className="absolute inset-0"
-                  style={{
-                    background: index === 4
-                      ? 'linear-gradient(to bottom, transparent 0%, transparent 50%, hsl(var(--background) / 0.12) 70%, hsl(var(--background) / 0.35) 82%, hsl(var(--background) / 0.6) 91%, hsl(var(--background) / 0.82) 96%, hsl(var(--background) / 0.94) 99%, hsl(var(--background)) 100%)'
-                      : 'linear-gradient(to bottom, transparent 0%, transparent 40%, hsl(var(--background) / 0.18) 60%, hsl(var(--background) / 0.45) 75%, hsl(var(--background) / 0.72) 87%, hsl(var(--background) / 0.9) 94%, hsl(var(--background) / 0.97) 98%, hsl(var(--background)) 100%)'
-                  }}
-                />
-              </div>
-            )}
+
           </div>
         ))}
       </div>
@@ -355,22 +335,23 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
             <CardContent className="p-3 sm:p-5">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
                 <div className="flex-1 space-y-1.5 sm:space-y-2 min-w-0">
-                  <span className="text-xs sm:text-base font-medium text-foreground">Don't miss out on thousands of leaks</span>
+                  <span className="text-xs sm:text-base font-medium text-foreground">Public Preview Limit Reached</span>
                   <div className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed">
-                    You're only seeing 6 leaks. Sign in now to access <span className="font-semibold text-foreground">3,000+ leaked API keys</span> with full details, repository links, and unlimited access.
+                    You are seeing 4 of 19,000+ active leaks. Sign in for full access to the live feed and repository details.
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
                     <CircleCheck className="h-3 w-3 text-coral" aria-hidden="true" focusable="false" />
-                    <span>100% free. No credit card required. Instant access.</span>
+                    <span>100% Free. Instant Access.</span>
                   </div>
                 </div>
                 <div className="flex-shrink-0 sm:self-center">
                   <button
                     onClick={onSignIn}
-                    className="text-xs sm:text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+                    className="text-xs sm:text-sm font-medium text-foreground bg-background border border-border rounded-md shadow-sm flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
                     aria-label="Sign in with Google"
                   >
-                    <span>Continue with Google</span>
+                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    <span>Sign in with Google</span>
                   </button>
                 </div>
               </div>

@@ -92,10 +92,10 @@ export function UserMenu() {
       <DropdownMenuContent 
         align="end" 
         sideOffset={4} 
-        className="w-56 max-w-xs rounded-md border border-border/60 p-1"
+        className="w-56 max-w-xs overflow-hidden rounded-md border border-border/60 bg-card text-popover-foreground shadow-sm p-1"
       >
         {/* If signed in, show user info, else show Guest */}
-        <DropdownMenuLabel className="font-medium px-2 py-1 rounded-md bg-coral/5 mb-0.5 transition-colors duration-200">
+        <DropdownMenuLabel className="font-medium px-2 py-1.5 rounded-sm mb-0.5">
           <div className="flex flex-col space-y-0.5">
             {session && userName ? (
               <>
@@ -111,25 +111,25 @@ export function UserMenu() {
           <>
             <DropdownMenuItem 
               onClick={() => handleSignIn()} 
-              className="flex items-center gap-2 px-2 py-1 rounded-md transition-all duration-200 bg-transparent hover:bg-coral/10 hover:text-coral focus:bg-coral/10 focus:text-coral cursor-pointer active:scale-[0.98]"
+              className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
             >
-              <span className="font-medium text-sm">Continue with Google</span>
+              <span className="font-medium">Continue with Google</span>
             </DropdownMenuItem>
           </>
         )}
         {session && (
           <>
-            <DropdownMenuSeparator className="my-0.5" />
+            <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-muted" />
           </>
         )}
         {session && (
           <DropdownMenuItem 
             onClick={handleSignOut} 
             disabled={isSigningOut}
-            className="flex items-center gap-2 px-2 py-1 rounded-md transition-all duration-200 bg-transparent hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+            className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
           >
-            <LogOut className="h-4 w-4 text-destructive transition-transform duration-200 group-hover:scale-110" />
-            <span className="font-medium text-sm">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span className="font-medium">{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

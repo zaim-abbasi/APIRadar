@@ -20,30 +20,12 @@ const ExploreHeader = React.memo(() => (
 ExploreHeader.displayName = 'ExploreHeader';
 
 const InstructionsSection = React.memo(() => {
-  const [showInstructions, setShowInstructions] = React.useState(false);
-  
-  React.useEffect(() => {
-    // Only auto-open on larger desktop screens
-    if (window.innerWidth >= 1024) {
-      setShowInstructions(true);
-    }
-  }, []);
-  
   return (
-    <div className="mb-2 px-3 py-2.5 bg-coral/10 border border-coral/20 rounded-md">
-      <button
-        onClick={() => setShowInstructions(!showInstructions)}
-        className="w-full flex items-center gap-2 text-sm text-foreground"
-      >
-        <Info className="h-4 w-4 text-coral flex-shrink-0" />
-        <span className="font-medium flex-1 text-left">How to identify provider</span>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-200 flex-shrink-0 ${showInstructions ? 'rotate-180' : ''}`} />
-      </button>
-      {showInstructions && (
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          To identify the specific provider and available models, click the <span className="text-coral font-medium">repository name</span> and open the <span className="text-coral font-medium">Key path</span> to view how the key is placed. The code context will reveal the provider name and model configurations.
-        </p>
-      )}
+    <div className="mb-2 px-2.5 py-1.5 bg-coral/10 border border-coral/20 rounded-md flex items-start sm:items-center gap-2.5">
+      <Info className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
+      <p className="text-sm text-foreground/90 leading-relaxed">
+        To check provider details, click the <span className="text-coral font-medium">repository name</span> to directly open the leak location and code context.
+      </p>
     </div>
   );
 });
@@ -232,7 +214,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               <button
                 onClick={onRefresh}
                 disabled={isLoading}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-8 px-3 text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-4 text-sm font-medium text-foreground bg-background border border-border shadow-sm transition-all duration-200 ease-in-out hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-2"
                 aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
               >
                 <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -258,18 +240,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               plan={plan}
               onSignIn={isUnauthenticated ? () => signIn('google', { callbackUrl: window.location.href, redirect: true }) : undefined}
             />
-            
-            {/* Fade-out blur effect for unauthenticated users - suggests more content */}
-            {isUnauthenticated && total > 6 && (
-              <>
-                <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
-                  {/* Gradient fade that keeps last row visible - starts transparent at top */}
-                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
-                  {/* Subtle blur overlay - lighter at top to keep last row visible */}
-                  <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
-                </div>
-              </>
-            )}
+
           </div>
         </Suspense>
         {/* Infinite scroll sentinel for pro users */}

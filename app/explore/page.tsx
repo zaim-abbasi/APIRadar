@@ -278,12 +278,12 @@ const ResultsSection = React.memo(({
     visibleLeaks = filteredLeaks;
     tileLimit = filteredLeaks.length;
   } else {
-    // Free users (unauthenticated) get exactly 6 tiles (fill with nulls if needed)
-    visibleLeaks = filteredLeaks.slice(0, 6);
-    while (visibleLeaks.length < 6) {
+    // Free users (unauthenticated) get exactly 4 tiles (fill with nulls if needed)
+    visibleLeaks = filteredLeaks.slice(0, 4);
+    while (visibleLeaks.length < 4) {
       visibleLeaks.push(null);
     }
-    tileLimit = 6;
+    tileLimit = 4;
   }
 
   // Show error state
@@ -383,14 +383,9 @@ const ResultsSection = React.memo(({
           </div>
           
           {/* Fade-out blur effect for unauthenticated users - suggests more content */}
-          {isUnauthenticated && filteredLeaks.length > 6 && (
+          {isUnauthenticated && filteredLeaks.length > 4 && (
             <>
-              <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-10">
-                {/* Gradient fade that keeps last row visible - starts transparent at top */}
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.98) 20%, hsl(var(--background) / 0.90) 40%, hsl(var(--background) / 0.70) 60%, hsl(var(--background) / 0.40) 75%, transparent 100%)' }} />
-                {/* Subtle blur overlay - lighter at top to keep last row visible */}
-                <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'linear-gradient(to top, hsl(var(--background) / 0.90) 0%, hsl(var(--background) / 0.75) 30%, hsl(var(--background) / 0.50) 55%, hsl(var(--background) / 0.25) 75%, transparent 100%)' }} />
-              </div>
+
               {/* Sign in hint - outside pointer-events-none container */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20">
                 <button

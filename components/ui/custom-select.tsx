@@ -107,7 +107,7 @@ export const CustomSelect = React.forwardRef<HTMLDivElement, CustomSelectProps>(
                   ref: triggerRef,
                   disabled,
                   className: cn(
-                    'flex h-11 sm:h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 sm:px-3 py-2.5 sm:py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 min-h-[44px] sm:min-h-0',
+                    'flex h-10 sm:h-9 w-full items-center justify-between rounded-md border border-input bg-background px-2.5 sm:px-2.5 py-2 sm:py-1.5 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 min-h-[40px] sm:min-h-0',
                     triggerClassName,
                     existingClassName
                   ),
