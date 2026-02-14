@@ -204,7 +204,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   rel="noopener noreferrer"
                   className="text-coral hover:underline underline-offset-4 pointer-events-auto"
                 >
-                  Join the discussion in the Lab.
+                  Join the GitHub Discussion.
                 </a>
                 "
               </span>
