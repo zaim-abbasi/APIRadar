@@ -164,8 +164,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           <InstructionsSection />
           <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 mt-1.5 w-full">
             <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/80 min-w-0 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium truncate">
-              <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
-              {selectedProvider !== 'all' && ` for ${selectedProvider}`}
+                <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
             </div>
 
             <button

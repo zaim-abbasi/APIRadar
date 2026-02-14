@@ -211,19 +211,18 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           <div className="flex flex-row items-center gap-2 flex-wrap">
             <div className="inline-flex items-center px-3 py-1 rounded-md bg-muted/40 border border-border/80 text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
                 <span className="font-bold mr-1">{total}</span> leak{total !== 1 ? 's' : ''} found
-                {selectedProvider !== 'all' && ` for ${selectedProvider}`}
             </div>
 
             <div className="hidden xl:flex flex-1 justify-center items-center px-4">
               <span className="text-sm font-medium text-muted-foreground italic text-center animate-pulse-slow">
-                "Shipping useful features. Have a feature request?{" "}
+                "Found a bug or have a feature request?{" "}
                 <a 
                   href="https://github.com/zaim-abbasi/apiradar-community/discussions" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-coral hover:underline underline-offset-4 pointer-events-auto"
                 >
-                  Ping the lab here.
+                  Join the discussion in the Lab.
                 </a>
                 "
               </span>
