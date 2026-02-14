@@ -2,6 +2,8 @@ import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import jwt from "jsonwebtoken";
 
+import clientPromise from "./mongodb";
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -10,7 +12,22 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn() {
+    async signIn({ user }) {
+      try {
+        const client = await clientPromise;
+        const db = client.db();
+        const now = new Date();
+        await db.collection("users").updateOne(
+          { email: user.email },
+          {
+            $set: { name: user.name, updatedAt: now },
+            $setOnInsert: { email: user.email, createdAt: now },
+          },
+          { upsert: true }
+        );
+      } catch (e) {
+        console.error("User upsert failed:", e);
+      }
       return true;
     },
 

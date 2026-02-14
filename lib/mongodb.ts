@@ -1,4 +1,10 @@
 import { MongoClient } from "mongodb";
+import { resolve } from "path";
+import { config as loadEnv } from "dotenv";
+
+if (!process.env.MONGODB_URI) {
+  loadEnv({ path: resolve(process.cwd(), "backend", ".env") });
+}
 
 const options = {
   serverSelectionTimeoutMS: 5000,
