@@ -18,8 +18,10 @@ const providerColors: Record<string, string> = {
   'anthropic': '#da7756',  // Anthropic Orange
   'google': '#4285f4',     // Google blue
   'mistral': '#f5d76e',    // Mistral Yellow
-  'grok': '#ffffff',       // Grok/X-ish White
+  'groq': '#ffffff',       // Groq White
   'deepseek': '#6366f1',   // DeepSeek Indigo
+  'xai': '#ffffff',         // xAI White
+  'cerebras': '#a855f7',    // Cerebras Purple
 };
 
 // Function to map database provider names to display names

@@ -10,22 +10,16 @@ export interface ProviderRule {
 
 const PROVIDER_RULES: ProviderRule[] = [
   {
-    name: 'anthropic',
-    label: 'Anthropic',
-    regex: /\bsk-ant-(?:api\d{0,2}-|v\d+-|[a-zA-Z0-9]+-)?[a-zA-Z0-9\-_]{20,120}\b/,
-    prefixes: ['sk-ant-']
-  },
-  {
     name: 'openai',
     label: 'OpenAI',
     regex: /\b(sk-(?:proj-|svcacct-)?[A-Za-z0-9\-]{20,}|sk-[A-Za-z0-9]{48})\b/,
     prefixes: ['sk-']
   },
   {
-    name: 'deepseek',
-    label: 'DeepSeek',
-    regex: /\b(sk-[a-zA-Z0-9]{32,48}|deepseek-[a-zA-Z0-9]{32,48})\b/,
-    prefixes: ['sk-', 'deepseek-']
+    name: 'anthropic',
+    label: 'Anthropic',
+    regex: /\bsk-ant-(?:api\d{0,2}-|v\d+-|[a-zA-Z0-9]+-)?[a-zA-Z0-9\-_]{20,120}\b/,
+    prefixes: ['sk-ant-']
   },
   {
     name: 'google',
@@ -34,16 +28,34 @@ const PROVIDER_RULES: ProviderRule[] = [
     prefixes: ['AIza']
   },
   {
+    name: 'deepseek',
+    label: 'DeepSeek',
+    regex: /\b(sk-[a-zA-Z0-9]{32,48}|deepseek-[a-zA-Z0-9]{32,48})\b/,
+    prefixes: ['sk-', 'deepseek-']
+  },
+  {
     name: 'mistral',
     label: 'Mistral',
     regex: /\bmis_[a-zA-Z0-9]{32,}\b/,
     prefixes: ['mis_']
   },
   {
-    name: 'grok',
-    label: 'Grok',
+    name: 'xai',
+    label: 'xAI (Grok)',
+    regex: /\bxai-[a-zA-Z0-9]{32,}\b/,
+    prefixes: ['xai-']
+  },
+  {
+    name: 'groq',
+    label: 'Groq',
     regex: /\b(gsk_[a-zA-Z0-9]{52,56}|groq_[a-zA-Z0-9]{32,64})\b/,
     prefixes: ['gsk_', 'groq_']
+  },
+  {
+    name: 'cerebras',
+    label: 'Cerebras',
+    regex: /\bcsk-[a-zA-Z0-9]{32,64}\b/,
+    prefixes: ['csk-']
   }
 ];
 

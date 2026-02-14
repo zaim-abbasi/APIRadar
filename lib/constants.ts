@@ -1,11 +1,13 @@
-export const PROVIDER_NAMES = ['openai', 'anthropic', 'google', 'mistral', 'grok', 'deepseek'] as const;
+export const PROVIDER_NAMES = ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'xai', 'groq', 'cerebras'] as const;
 export const PROVIDER_LABELS = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'google', label: 'Google' },
-  { value: 'mistral', label: 'Mistral' },
-  { value: 'grok', label: 'Grok' },
   { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'mistral', label: 'Mistral' },
+  { value: 'xai', label: 'xAI (Grok)' },
+  { value: 'groq', label: 'Groq' },
+  { value: 'cerebras', label: 'Cerebras' },
 ] as const;
 
 export const TIME_RANGE_DAYS: Record<string, number> = { '7d': 7, '15d': 15, '30d': 30 };

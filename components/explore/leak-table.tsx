@@ -28,8 +28,10 @@ const providerColors: Record<string, string> = {
   'anthropic': "bg-orange-500/10 text-orange-500",
   'google': "bg-blue-500/10 text-blue-500",
   'mistral': "bg-orange-600/10 text-orange-600",
-  'grok': "bg-foreground/10 text-foreground",
+  'groq': "bg-foreground/10 text-foreground",
   'deepseek': "bg-indigo-500/10 text-indigo-500",
+  'xai': "bg-foreground/10 text-foreground",
+  'cerebras': "bg-purple-500/10 text-purple-500",
 }
 
 // Memoized Loading Skeleton component
