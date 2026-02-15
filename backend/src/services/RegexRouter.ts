@@ -6,6 +6,7 @@ export interface ProviderRule {
   label: string;
   regex: RegExp;
   prefixes: string[];
+  keywords?: string[];
 }
 
 const PROVIDER_RULES: ProviderRule[] = [
@@ -56,6 +57,13 @@ const PROVIDER_RULES: ProviderRule[] = [
     label: 'Cerebras',
     regex: /\bcsk-[a-zA-Z0-9]{32,64}\b/,
     prefixes: ['csk-']
+  },
+  {
+    name: 'bip39_seed_phrase',
+    label: 'Crypto Wallet Seed Phrase',
+    regex: /((?:mnemonic|seed[_-]?phrase|secret[_-]?recovery[_-]?phrase|wallet[_-]?secret|wallet[_-]?mnemonic|master[_-]?key)[\s"':=]+)((?:[a-z]{3,}\s+){11,23}[a-z]{3,})\b/i,
+    prefixes: [],
+    keywords: ['mnemonic', 'seed', 'recovery', 'bip39', 'wallet', 'master']
   }
 ];
 
@@ -63,11 +71,12 @@ function buildSearchQueries(): Record<string, string[]> {
   const queries: Record<string, string[]> = {};
   for (const rule of PROVIDER_RULES) {
     const allQueries: string[] = [];
-    for (const prefix of rule.prefixes) {
-      const prefixQueries = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
-        file => `filename:${file} ${prefix}`
+    const searchTerms = rule.prefixes.length > 0 ? rule.prefixes : (rule.keywords || []);
+    for (const term of searchTerms) {
+      const termQueries = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
+        file => `filename:${file} ${term}`
       );
-      allQueries.push(...prefixQueries);
+      allQueries.push(...termQueries);
     }
     queries[rule.name] = allQueries.filter(q => q.trim());
   }
@@ -92,7 +101,7 @@ export const SORT_OPTIONS = [
 
 export class RegexRouter {
   private prefixMap: Map<string, ProviderRule[]> = new Map();
-  private wildcardRules: ProviderRule[] = [];
+  private keywordRules: ProviderRule[] = [];
   private triggerRegex: RegExp;
 
   constructor() {
@@ -100,18 +109,16 @@ export class RegexRouter {
     for (const rule of PROVIDER_RULES) {
       if (rule.prefixes.length > 0) {
         for (const prefix of rule.prefixes) {
-          // Escape prefix for regex
           prefixes.add(prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
           if (!this.prefixMap.has(prefix)) {
             this.prefixMap.set(prefix, []);
           }
           this.prefixMap.get(prefix)!.push(rule);
         }
-      } else {
-        this.wildcardRules.push(rule);
+      } else if (rule.keywords && rule.keywords.length > 0) {
+        this.keywordRules.push(rule);
       }
     }
-    // Build a global trigger regex from all unique prefixes
     this.triggerRegex = new RegExp(Array.from(prefixes).join('|'), 'g');
   }
 
@@ -168,8 +175,18 @@ export class RegexRouter {
       }
     }
 
-    // Wildcard rules would still require a full content scan if we had any.
-    // Currently, all AI providers use prefixes, so we optimize for those.
+    for (const rule of this.keywordRules) {
+      const lower = content.toLowerCase();
+      if (!rule.keywords!.some(kw => lower.includes(kw))) continue;
+      const match = rule.regex.exec(content);
+      if (match && match[2]) {
+        const phrase = match[2].trim();
+        if (!foundKeys.has(phrase)) {
+          results.push({ key: phrase, provider: rule.name });
+          foundKeys.add(phrase);
+        }
+      }
+    }
 
     return results;
   }

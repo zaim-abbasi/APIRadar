@@ -42,6 +42,16 @@ export const FARM_CONSTANTS = {
   PATTERNS: {
     IGNORED_DIRS: ['.git', 'node_modules', 'vendor', 'dist', 'build'],
     HIGH_RISK_FILES: [
+
+
+      // --- WEB3 / CRYPTO MONEY TIER ---
+      'hardhat.config.js', 'hardhat.config.ts',
+      'truffle-config.js', 'truffle.js',
+      'foundry.toml',
+      'brownie-config.yaml',
+      'remix-backup-at.json',
+
+      // --- EXISTING CONFIGS ---
       '.env', '.env.local', '.env.development', '.env.production', '.env.test',
       'config.json', 'config.yaml', 'config.yml', 'secrets.json', 'secrets.yaml', 'secrets.yml',
       'appsettings.json', 'application.yml', 'application.yaml', 'database.yml',
