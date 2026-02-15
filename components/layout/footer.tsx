@@ -60,9 +60,10 @@ const FooterComponent = () => {
           </span>
         </div>
 
-        {/* Right: Built by */}
-        <div className="ml-auto flex items-center justify-end text-xs font-medium text-muted-foreground tracking-wide gap-1">
-          <span>Built by</span>
+        <div className="ml-auto flex items-center justify-end text-xs font-medium text-muted-foreground tracking-wide gap-4">
+          <Link href="/#about" className="hover:text-foreground transition-colors">About</Link>
+          <div className="flex items-center gap-1">
+            <span>Built by</span>
           <a
             href="https://github.com/zaim-abbasi"
             target="_blank"
@@ -72,6 +73,7 @@ const FooterComponent = () => {
             <Github className="h-3.5 w-3.5" />
             <span className="font-bold">Zaim Abbasi</span>
           </a>
+          </div>
         </div>
       </div>
     </footer>
