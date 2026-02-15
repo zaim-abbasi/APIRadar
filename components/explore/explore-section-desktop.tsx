@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket, Info, ChevronDown, Github, Linkedin, Check, Chrome } from 'lucide-react';
+import { Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -21,11 +21,19 @@ ExploreHeader.displayName = 'ExploreHeader';
 
 const InstructionsSection = React.memo(() => {
   return (
-    <div className="mb-2 px-2.5 py-1.5 bg-coral/10 border border-coral/20 rounded-md flex items-start sm:items-center gap-2.5">
-      <Info className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
-      <p className="text-sm text-foreground/90 leading-relaxed">
-        To check provider details, click the <span className="text-coral font-medium">repository name</span> to directly open the leak location and code context.
-      </p>
+    <div className="mb-2 px-3 py-1.5 bg-coral/10 border border-coral/20 rounded-md flex flex-col gap-1">
+      <div className="flex items-start sm:items-center gap-2.5">
+        <Sparkles className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
+        <p className="text-sm text-foreground/90 leading-relaxed">
+          System Update: We've upgraded our dashboard. Please <span className="text-coral font-medium">Sign in</span> again to get full access to all leak cards.
+        </p>
+      </div>
+      <div className="flex items-start sm:items-center gap-2.5">
+        <Info className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
+        <p className="text-sm text-foreground/90 leading-relaxed">
+          To check provider details, click the <span className="text-coral font-medium">Repo Name</span> to directly open the leak location and code context.
+        </p>
+      </div>
     </div>
   );
 });
