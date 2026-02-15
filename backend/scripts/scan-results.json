@@ -1,0 +1,108 @@
+{
+  "scannedAt": "2026-02-15T13:17:46.996Z",
+  "seeds": 56,
+  "funded": 2,
+  "results": [
+    {
+      "repo": "across-protocol/relayer",
+      "file": "hardhat.config.ts",
+      "btc": [],
+      "sol": [],
+      "evm": [
+        {
+          "address": "0x627306090abaB3A6e1400e9345bC60c78a8BEf57",
+          "chains": [
+            {
+              "chain": "bsc",
+              "assets": [
+                {
+                  "symbol": "MSVP",
+                  "balance": "0.7671",
+                  "usd": 0.04497705553966436
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tron": [
+        {
+          "address": "TMmHjoMi3N7JH2YWUrFV6HMC94AEjxxFgG",
+          "assets": [
+            {
+              "symbol": "TRX",
+              "balance": "1.0000",
+              "usd": 0.28100828100799996
+            },
+            {
+              "symbol": "TJ7C9a...",
+              "balance": "999998000000000000.00",
+              "usd": 999998000000000000
+            },
+            {
+              "symbol": "TUrbTk...",
+              "balance": "16888.00",
+              "usd": 16888
+            },
+            {
+              "symbol": "TN7zQd...",
+              "balance": "143846.84",
+              "usd": 143846.843035
+            },
+            {
+              "symbol": "THyrPF...",
+              "balance": "235.48",
+              "usd": 235.482216
+            },
+            {
+              "symbol": "TAWoCP...",
+              "balance": "5888.00",
+              "usd": 5888
+            }
+          ]
+        }
+      ],
+      "totalUsd": 999998000000166900
+    },
+    {
+      "repo": "PISAresearch/pisa",
+      "file": "docker/loadTests.docker-compose.yml",
+      "btc": [],
+      "sol": [],
+      "evm": [
+        {
+          "address": "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1",
+          "chains": [
+            {
+              "chain": "bsc",
+              "assets": [
+                {
+                  "symbol": "MSVP",
+                  "balance": "0.7177",
+                  "usd": 0.04197135133874871
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "address": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+          "chains": [
+            {
+              "chain": "bsc",
+              "assets": [
+                {
+                  "symbol": "MSVP",
+                  "balance": "0.7346",
+                  "usd": 0.042960431677499904
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "tron": [],
+      "totalUsd": 0.08493178301624861
+    }
+  ]
+}
