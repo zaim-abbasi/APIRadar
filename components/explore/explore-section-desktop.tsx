@@ -25,13 +25,13 @@ const InstructionsSection = React.memo(() => {
       <div className="flex items-start sm:items-center gap-2.5">
         <Sparkles className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
         <p className="text-sm text-foreground/90 leading-relaxed">
-          System Update: We've upgraded our dashboard. Please <span className="text-coral font-medium">Sign in</span> again to get full access to all leak cards.
+          <span className="font-semibold">System Update:</span> We've upgraded our dashboard. Please <span className="text-coral font-medium">Sign in</span> again to get full access to all leak cards.
         </p>
       </div>
       <div className="flex items-start sm:items-center gap-2.5">
         <Info className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
         <p className="text-sm text-foreground/90 leading-relaxed">
-          To check provider details, click the <span className="text-coral font-medium">Repo Name</span> to directly open the leak location and code context.
+          <span className="font-semibold">Info:</span> To check provider details, click the <span className="text-coral font-medium">Repo Name</span> to directly open the leak location and code context.
         </p>
       </div>
     </div>
