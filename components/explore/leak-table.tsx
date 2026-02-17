@@ -24,14 +24,13 @@ interface LeakTableProps {
 }
 
 const providerColors: Record<string, string> = {
-  'openai': "bg-green-500/10 text-green-500",
-  'anthropic': "bg-orange-500/10 text-orange-500",
+  'openai': "bg-emerald-500/10 text-emerald-500",
+  'anthropic': "bg-amber-600/10 text-amber-600",
   'google': "bg-blue-500/10 text-blue-500",
-  'mistral': "bg-orange-600/10 text-orange-600",
-  'groq': "bg-foreground/10 text-foreground",
-  'deepseek': "bg-indigo-500/10 text-indigo-500",
-  'xai': "bg-foreground/10 text-foreground",
-  'cerebras': "bg-purple-500/10 text-purple-500",
+  'openrouter': "bg-fuchsia-500/10 text-fuchsia-500",
+  'groq': "bg-orange-600/10 text-orange-600",
+  'xai': "bg-slate-500/10 text-slate-500",
+  'cerebras': "bg-violet-600/10 text-violet-600",
 }
 
 // Memoized Loading Skeleton component

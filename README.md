@@ -34,7 +34,7 @@ APIRadar is a large, multi-component system. It scans GitHub for secrets, detect
 ## ✨ Features
 
 - Parallel code search queries (multi-token, rate-limited)
-- Regex and entropy-based secret detection (OpenAI, Google, Anthropic, Mistral, Cohere, and more)
+- Regex and entropy-based secret detection (OpenAI, Google, Anthropic, OpenRouter, and more)
 - Deduplication and scan tracking
 - Redacted keys by default; secure full-key endpoint
 - Full audit logging

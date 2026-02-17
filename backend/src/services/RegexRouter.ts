@@ -29,16 +29,10 @@ const PROVIDER_RULES: ProviderRule[] = [
     prefixes: ['AIza']
   },
   {
-    name: 'deepseek',
-    label: 'DeepSeek',
-    regex: /\b(sk-[a-zA-Z0-9]{32,48}|deepseek-[a-zA-Z0-9]{32,48})\b/,
-    prefixes: ['sk-', 'deepseek-']
-  },
-  {
-    name: 'mistral',
-    label: 'Mistral',
-    regex: /\bmis_[a-zA-Z0-9]{32,}\b/,
-    prefixes: ['mis_']
+    name: 'openrouter',
+    label: 'OpenRouter',
+    regex: /\bsk-or-(?:v1-)?[a-zA-Z0-9\-]{20,}\b/,
+    prefixes: ['sk-or-']
   },
   {
     name: 'xai',

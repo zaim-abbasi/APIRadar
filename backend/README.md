@@ -79,7 +79,7 @@ The scanning service now automatically saves its progress to the database (`conf
 - **Automatic Saving**: The scan state is saved before each major operation (query processing, page requests, rate limit pauses)
 - **Database Storage**: `configurations` collection with key `scan_state`
 - **State Information**: 
-  - `currentProviderIndex`: Which provider is being processed (0-2 for openai, google, anthropic)
+  - `currentProviderIndex`: Which provider is being processed (0-7 for openai, anthropic, google, etc.)
   - `currentQueryIndex`: Which search query is being processed (0-49, etc.)
   - `currentPage`: Which page of results is being processed (1, 2, 3, etc.)
   - `lastProcessedTime`: Timestamp of last activity
@@ -110,8 +110,9 @@ curl -X POST http://localhost:3001/api/config/scan-state \
       "lastProcessedTime": 1703123456789,
       "providerStates": {
         "openai": { "queryIndex": 0, "page": 1 },
+        "anthropic": { "queryIndex": 0, "page": 1 },
         "google": { "queryIndex": 0, "page": 1 },
-        "anthropic": { "queryIndex": 0, "page": 1 }
+        "openrouter": { "queryIndex": 0, "page": 1 }
       },
       "scanStatus": "idle"
     }
@@ -161,8 +162,9 @@ The `scan_state` configuration contains:
   "lastProcessedTime": 1703123456789,
   "providerStates": {
     "openai": { "queryIndex": 0, "page": 1 },
+    "anthropic": { "queryIndex": 0, "page": 1 },
     "google": { "queryIndex": 15, "page": 7 },
-    "anthropic": { "queryIndex": 0, "page": 1 }
+    "openrouter": { "queryIndex": 0, "page": 1 }
   },
   "scanStatus": "scanning"
 }
