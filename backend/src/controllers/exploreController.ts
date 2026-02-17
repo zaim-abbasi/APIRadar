@@ -110,7 +110,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     const enforcedPage = isAuthenticated ? page : 1;
 
     const filter = buildQueryFilter(provider);
-    console.log('DEBUG_EXPLORE:', { provider, filter, isAuthenticated, page, limit, enforcedLimit, userId });
 
     const sort = { leakIntroducedAt: -1 as const };
 
@@ -118,7 +117,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
     let leaks: any[] = [];
     try {
       total = await Leak.countDocuments(filter);
-      console.log('DEBUG_EXPLORE_TOTAL:', total);
       const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
       leaks = await Leak.find(filter)
         .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
@@ -148,7 +146,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       (enforcedPage * enforcedLimit) < accessLimits.maxLeaks;
 
     request.log.info({ msg: 'Leaks accessed', userId, total, returned: mappedLeaks.length });
-    console.log('DEBUG_EXPLORE_RETURN:', { total, leaksLength: mappedLeaks.length, hasMore });
 
     return reply.send({
       leaks: mappedLeaks,

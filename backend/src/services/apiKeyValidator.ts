@@ -1,7 +1,7 @@
 const PLACEHOLDER_WORDS = [
   'placeholder', 'changeme', 'example', 'sample', 'demo',
   'xxxx', 'yyyy', 'zzzz', 'fake', 'dummy', 'mock', 'fixme', 'todo',
-  'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here', 'insert_key'
+  'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here', 'insert_key', 'adapter', 'production', 'development', 'test'
 ];
 
 const MIN_KEY_LENGTH = 8;
