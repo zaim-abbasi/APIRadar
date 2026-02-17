@@ -2,14 +2,11 @@ import { FastifyReply } from 'fastify';
 import { Leak } from '../models/Leak';
 import { z } from 'zod';
 import { AuthenticatedRequest, getAccessLimits } from '../middleware/auth';
-import { PROVIDER_NAMES, TIME_RANGE_DAYS } from '../services/RegexRouter';
+import { PROVIDER_NAMES } from '../services/RegexRouter';
 
-const MS_PER_DAY = 86400000;
 
 const querySchema = z.object({
   provider: z.string().optional(),
-  timeRange: z.string().optional(),
-  sortBy: z.string().optional(),
   limit: z.coerce.number().min(1).max(100).default(20),
   page: z.coerce.number().min(1).default(1),
 });
@@ -39,8 +36,6 @@ export const getLeaksSchema = {
     type: 'object',
     properties: {
       provider: { type: 'string' },
-      timeRange: { type: 'string', enum: ['all', '7d', '15d', '30d'] },
-      sortBy: { type: 'string', enum: ['newest', 'oldest', 'provider'] },
       limit: { type: 'integer', minimum: 1, maximum: 100 },
       page: { type: 'integer', minimum: 1 }
     }
@@ -86,7 +81,7 @@ export const getLeakFullKeySchema = {
   }
 };
 
-function buildQueryFilter(provider?: string, timeRange?: string): Record<string, any> {
+function buildQueryFilter(provider?: string): Record<string, any> {
   const filter: Record<string, any> = {};
   if (provider && provider !== 'all') {
     const normalized = provider.trim().toLowerCase();
@@ -94,17 +89,7 @@ function buildQueryFilter(provider?: string, timeRange?: string): Record<string,
       filter['provider'] = normalized;
     }
   }
-  const days = TIME_RANGE_DAYS[timeRange || ''];
-  if (days) {
-    filter['leakIntroducedAt'] = { $gte: new Date(Date.now() - days * MS_PER_DAY) };
-  }
   return filter;
-}
-
-function buildSort(sortBy?: string): Record<string, 1 | -1> {
-  if (sortBy === 'oldest') return { leakIntroducedAt: 1 };
-  if (sortBy === 'provider') return { provider: 1, leakIntroducedAt: -1 };
-  return { leakIntroducedAt: -1 };
 }
 
 export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
@@ -118,19 +103,22 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       return reply.status(400).send({ error: 'Invalid query', details: parsed.error.errors });
     }
 
-    const { provider, timeRange, sortBy, limit, page } = parsed.data;
+    const { provider, limit, page } = parsed.data;
     const { isAuthenticated, id: userId } = request.user;
     const accessLimits = getAccessLimits(isAuthenticated);
     const enforcedLimit = Math.min(limit, accessLimits.maxLeaks);
     const enforcedPage = isAuthenticated ? page : 1;
 
-    const filter = buildQueryFilter(provider, timeRange);
-    const sort = buildSort(sortBy);
+    const filter = buildQueryFilter(provider);
+    console.log('DEBUG_EXPLORE:', { provider, filter, isAuthenticated, page, limit, enforcedLimit, userId });
+
+    const sort = { leakIntroducedAt: -1 as const };
 
     let total = 0;
     let leaks: any[] = [];
     try {
       total = await Leak.countDocuments(filter);
+      console.log('DEBUG_EXPLORE_TOTAL:', total);
       const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
       leaks = await Leak.find(filter)
         .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
@@ -160,6 +148,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       (enforcedPage * enforcedLimit) < accessLimits.maxLeaks;
 
     request.log.info({ msg: 'Leaks accessed', userId, total, returned: mappedLeaks.length });
+    console.log('DEBUG_EXPLORE_RETURN:', { total, leaksLength: mappedLeaks.length, hasMore });
 
     return reply.send({
       leaks: mappedLeaks,

@@ -46,8 +46,7 @@ const FeatureTag = React.memo(({
 }) => (
   <div 
     className={cn(
-      "flex items-center gap-2 px-3 py-1.5 rounded-full border glass-card border-border/50 shadow-sm",
-      "transition-all duration-200 ease-in-out animate-fade-in-up opacity-0",
+      "flex items-center gap-2 px-3 py-1.5 rounded-full border glass-card border-border/50 shadow-sm transition-all duration-200 ease-in-out",
       delayClass
     )}
   >
@@ -78,10 +77,10 @@ const CTAButton = React.memo(({
     href={href} 
     prefetch={true}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 animate-fade-in-up active:scale-[0.98]",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
       variant === "default" 
-        ? "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm hover:shadow-md hover-glow"
-        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-coral/60 shadow-sm hover:shadow-md"
+        ? "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm"
+        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-coral/60 shadow-sm"
     )}
   >
     {Icon && <Icon className="mr-2 h-5 w-5" />}
@@ -133,7 +132,7 @@ export const HeroSection = React.memo(() => {
         <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
-              <div className="animate-fade-in-up">
+              <div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
                   <span className="text-foreground">Real-Time{' '}</span>
                   <span className="text-coral">API Key</span>
@@ -142,16 +141,16 @@ export const HeroSection = React.memo(() => {
                 </h1>
               </div>
 
-              <div className="space-y-2 sm:space-y-2.5 animate-fade-in-up">
+              <div className="space-y-2 sm:space-y-2.5">
                 <p className="text-xs sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
                   Monitor public GitHub repositories in real-time to see exactly when, where, and how often API keys are exposed.
                 </p>
               </div>
 
-              <div className="hidden md:block pt-1 sm:pt-2 animate-fade-in-up">
+              <div className="hidden md:block pt-1 sm:pt-2">
                 <WorkflowPipeline />
               </div>
-              <div className="hidden lg:flex pt-2 justify-center lg:justify-start animate-fade-in-up">
+              <div className="hidden lg:flex pt-2 justify-center lg:justify-start">
                 <a
                   href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
                   target="_blank"
@@ -168,14 +167,14 @@ export const HeroSection = React.memo(() => {
               </div>
             </div>
 
-            <div className="flex flex-col justify-center animate-fade-in-up mt-6 lg:mt-0">
+            <div className="flex flex-col justify-center mt-6 lg:mt-0">
               <LiveScanTerminal />
               <div className="mt-4 flex flex-col gap-4 sm:gap-4.5">
                 <Link
                   href="/explore"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
                     "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70"
                   )}
                 >
@@ -188,7 +187,7 @@ export const HeroSection = React.memo(() => {
                   href="/leaderboard"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
                     "bg-card/50 backdrop-blur-sm text-foreground border-border hover:brightness-90 hover:border-coral/70"
                   )}
                 >

@@ -35,7 +35,7 @@ function WantedPoster({ user }: { user: TopLeaker }) {
       rel="noopener noreferrer"
       className={cn(
         "group inline-flex flex-col items-center text-center gap-2.5 w-fit p-1 rounded-md",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200 ease-out hover:-translate-y-0.5"
       )}
       aria-label={`Open GitHub profile for ${user.username}`}
     >

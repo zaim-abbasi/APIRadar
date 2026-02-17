@@ -1,52 +1,58 @@
 "use client";
 
-import React from 'react';
-import { Layers } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
-import { Badge } from '@/components/ui/badge';
-import { PROVIDERS } from '@/lib/constants';
-import { Provider } from '@/types';
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { PROVIDERS } from "@/lib/constants";
+import { Provider } from "@/types";
 
 interface ProviderFilterProps {
   selectedProvider: Provider;
   onProviderChange: (provider: Provider) => void;
-  triggerClassName?: string;
+  className?: string;
 }
 
-export const ProviderFilter = React.memo(({ selectedProvider, onProviderChange, triggerClassName }: ProviderFilterProps) => {
-  const selectedProviderLabel = PROVIDERS.find(p => p.value === selectedProvider)?.label || 'All Providers';
-
-  const handleValueChange = (value: string) => {
-    onProviderChange(value as Provider);
-  };
-
-  return (
-    <CustomSelect value={selectedProvider} onValueChange={handleValueChange}>
-      <CustomSelectTrigger className={cn("w-full bg-card/50 backdrop-blur-sm border-border", triggerClassName)}>
-        <div className="flex items-center gap-2 w-full">
-          <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
-          <CustomSelectValue className="flex-1 text-center">
-            <span className="truncate block">{selectedProviderLabel}</span>
-          </CustomSelectValue>
-        </div>
-      </CustomSelectTrigger>
-      <CustomSelectContent>
-        {PROVIDERS.map((provider) => (
-          <CustomSelectItem key={provider.value} value={provider.value}>
-            <div className="flex items-center gap-2">
-              <span className="truncate block text-left">{provider.label}</span>
-              {provider.value !== 'all' && (
-                <Badge variant="outline" className="text-xs">
-                  {provider.value}
-                </Badge>
+export const ProviderFilter = React.memo(
+  ({
+    selectedProvider,
+    onProviderChange,
+    className,
+  }: ProviderFilterProps) => {
+    return (
+      <div
+        className={cn(
+          "relative grid grid-cols-3 sm:flex sm:flex-wrap items-center w-full p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1 sm:gap-0",
+          className
+        )}
+      >
+        {PROVIDERS.map((provider) => {
+          const isSelected = selectedProvider === provider.value;
+          return (
+            <button
+              key={provider.value}
+              onClick={() => onProviderChange(provider.value as Provider)}
+              className={cn(
+                "relative flex items-center justify-center py-1.5 px-2 text-sm font-medium transition-all duration-200 z-10 sm:flex-1 min-w-[fit-content] rounded-md sm:rounded-none first:sm:rounded-l-md last:sm:rounded-r-md active:scale-95",
+                isSelected ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
-            </div>
-          </CustomSelectItem>
-        ))}
-      </CustomSelectContent>
-    </CustomSelect>
-  );
-});
+            >
+              {isSelected && (
+                <motion.div
+                  layoutId="activeProvider"
+                  className="absolute inset-0 bg-background rounded-md shadow-sm border border-border/50"
+                  initial={false}
+                  transition={{ duration: 0 }}
+                />
+              )}
+              <span className="relative z-10 truncate px-1">
+                {provider.label === "All Providers" ? "All" : provider.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+);
 
-ProviderFilter.displayName = 'ProviderFilter';
+ProviderFilter.displayName = "ProviderFilter";

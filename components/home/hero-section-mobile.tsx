@@ -24,7 +24,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/explore"
           prefetch={true}
           aria-label="Explore Leaks"
-          className="flex items-center justify-center rounded-md h-11 sm:h-14 px-5 sm:px-7 text-base sm:text-lg font-semibold w-full bg-coral text-primary-foreground hover:bg-coral/90 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
+          className="flex items-center justify-center rounded-md h-11 sm:h-14 px-5 sm:px-7 text-base sm:text-lg font-semibold w-full bg-coral text-primary-foreground hover:bg-coral/90 transition-all duration-200 shadow-md active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
           tabIndex={0}
         >
           <span className="flex items-center justify-center w-full">
@@ -36,7 +36,7 @@ export const HeroSectionMobile = React.memo(() => {
           href="/leaderboard"
           prefetch={true}
           aria-label="View Leaderboard"
-          className="flex items-center justify-center rounded-md h-11 sm:h-14 px-5 sm:px-7 text-base sm:text-lg font-semibold w-full border border-border bg-background text-foreground hover:bg-muted/80 hover:border-coral/30 transition-all duration-200 shadow-sm hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98]"
+          className="flex items-center justify-center rounded-md h-11 sm:h-14 px-5 sm:px-7 text-base sm:text-lg font-semibold w-full border border-border bg-background text-foreground hover:bg-muted/80 hover:border-coral/30 transition-all duration-200 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95"
           tabIndex={0}
         >
           View Leaderboard

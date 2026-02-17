@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const LOG = path.join(process.cwd(), 'logs', 'logs.txt');
-const COLORS: Record<string, chalk.Chalk> = { INIT: chalk.hex('#B24BF3'), SCAN: chalk.hex('#39FF14'), LEAK: chalk.hex('#00F3FF').bold, WARN: chalk.hex('#FFD700'), ERROR: chalk.hex('#FF0055') };
+const COLORS: Record<string, any> = { INIT: chalk.hex('#B24BF3'), SCAN: chalk.hex('#39FF14'), LEAK: chalk.hex('#00F3FF').bold, WARN: chalk.hex('#FFD700'), ERROR: chalk.hex('#FF0055') };
 
 class TitanLogger {
   private buf: string[] = [];

@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useMemo, Suspense, useCallback, useEffect, useRef } from 'react';
-import { ArrowDown, Calendar, ArrowUpDown, Chrome, RefreshCw, Loader2, LogIn, Rocket, Info, ChevronDown } from 'lucide-react';
+import { ArrowDown, Chrome, RefreshCw, Loader2, LogIn, Rocket, Info, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { ProviderFilter } from '@/components/explore/provider-filter';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
-import { TIME_RANGES, SORT_OPTIONS, PROVIDERS } from '@/lib/constants';
+import { PROVIDERS } from '@/lib/constants';
 import { Provider } from '@/types';
 import { LeakedKey } from '@/types';
 import { fetchLeaks } from '@/lib/api';
@@ -34,7 +34,6 @@ interface LeaksResponse {
 interface FilterState {
   selectedProvider: Provider;
   timeRange: string;
-  sortBy: string;
 }
 
 interface LoadingState {
@@ -145,10 +144,6 @@ ResultsCount.displayName = 'ResultsCount';
 const FiltersSection = React.memo(({ 
   selectedProvider, 
   onProviderChange, 
-  timeRange, 
-  setTimeRange, 
-  sortBy, 
-  setSortBy, 
   filteredLeaks, 
   isClient, 
   isLoading, 
@@ -160,10 +155,6 @@ const FiltersSection = React.memo(({
 }: { 
   selectedProvider: Provider; 
   onProviderChange: (provider: Provider) => void; 
-  timeRange: string; 
-  setTimeRange: (range: string) => void; 
-  sortBy: string; 
-  setSortBy: (sort: string) => void; 
   filteredLeaks: LeakedKey[]; 
   isClient: boolean; 
   isLoading: boolean; 
@@ -192,49 +183,7 @@ const FiltersSection = React.memo(({
           />
         </div>
 
-        {/* Time Range */}
-        <div className="flex-1 lg:w-[33.333%]">
-          <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
-              <div className="flex items-center gap-2 w-full">
-                <Calendar className="h-4 w-4 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center">
-                  {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
-                </CustomSelectValue>
-              </div>
-            </CustomSelectTrigger>
-            <CustomSelectContent>
-              {TIME_RANGES.map((range) => {
-                return (
-                  <CustomSelectItem key={range.value} value={range.value}>
-                    {range.label}
-                  </CustomSelectItem>
-                );
-              })}
-            </CustomSelectContent>
-          </CustomSelect>
-        </div>
 
-        {/* Sort */}
-        <div className="flex-1 lg:w-[33.333%]">
-          <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
-              <div className="flex items-center gap-2 w-full">
-                <ArrowUpDown className="h-4 w-4 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center">
-                  {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
-                </CustomSelectValue>
-              </div>
-            </CustomSelectTrigger>
-            <CustomSelectContent>
-              {SORT_OPTIONS.map((option) => (
-                <CustomSelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </CustomSelectItem>
-              ))}
-            </CustomSelectContent>
-          </CustomSelect>
-        </div>
       </div>
 
       {/* Results Count */}

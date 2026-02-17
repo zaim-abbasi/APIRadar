@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { Calendar, ArrowUpDown, LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome, Twitter } from 'lucide-react';
+import { LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome, Twitter } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 const LeakTable = React.lazy(() => import('@/components/explore/leak-table').then(m => ({ default: m.LeakTable })));
 import { Card, CardContent } from '@/components/ui/card';
-import { TIME_RANGES, SORT_OPTIONS, PROVIDERS } from '@/lib/constants';
+import { PROVIDERS } from '@/lib/constants';
 import { Provider } from '@/types';
 
 const ExploreHeader = React.memo(() => (
@@ -73,10 +73,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   plan,
   session,
   onProviderChange,
-  timeRange,
-  setTimeRange,
-  sortBy,
-  setSortBy,
   total,
   error,
   loadingRef,
@@ -88,10 +84,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   plan: 'free' | 'pro';
   session: any;
   onProviderChange: (provider: Provider) => void;
-  timeRange: string;
-  setTimeRange: (range: string) => void;
-  sortBy: string;
-  setSortBy: (sort: string) => void;
   total: number;
   error: string | null;
   loadingRef: React.RefObject<HTMLDivElement>;
@@ -127,60 +119,22 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       {/* Filters */}
       <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
         <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-          <div className="flex-1 lg:w-[33.333%]">
-            <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} />
-          </div>
-          {/* Time Range */}
-          <div className="flex-1 lg:w-[33.333%]">
-            <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-              <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
-                <div className="flex items-center gap-2 w-full">
-                  <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
-                  <CustomSelectValue className="flex-1 text-center">
-                    {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
-                  </CustomSelectValue>
-                </div>
-              </CustomSelectTrigger>
-              <CustomSelectContent>
-                {TIME_RANGES.map((range) => {
-                  return (
-                    <CustomSelectItem key={range.value} value={range.value}>
-                      {range.label}
-                    </CustomSelectItem>
-                  );
-                })}
-              </CustomSelectContent>
-            </CustomSelect>
-          </div>
-          {/* Sort */}
-          <div className="flex-1 lg:w-[33.333%]">
-            <CustomSelect value={sortBy} onValueChange={setSortBy}>
-              <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border">
-                <div className="flex items-center gap-2 w-full">
-                  <ArrowUpDown className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
-                  <CustomSelectValue className="flex-1 text-center">
-                    {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
-                  </CustomSelectValue>
-                </div>
-              </CustomSelectTrigger>
-              <CustomSelectContent>
-                {SORT_OPTIONS.map((option) => (
-                  <CustomSelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </CustomSelectItem>
-                ))}
-              </CustomSelectContent>
-            </CustomSelect>
+          <div className="w-full">
+            <ProviderFilter 
+              selectedProvider={selectedProvider} 
+              onProviderChange={onProviderChange}
+            />
           </div>
         </div>
         {/* Results Count and Refresh */}
         <div className="mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
           <div className="flex flex-row items-center justify-between gap-4 flex-wrap">
             {/* Left Side: Stats */}
-            <div className="flex flex-row items-center gap-3 text-sm text-muted-foreground whitespace-nowrap">
-              <span className="font-bold text-foreground">{total}</span>
-              <span>leaks found</span>
-              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
+            <div className="flex flex-row items-center gap-4 text-sm text-muted-foreground whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <span className="font-bold text-foreground">{total}</span>
+                <span>leaks found</span>
+              </div>
               <div className="inline-flex items-center gap-2">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
@@ -203,7 +157,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               </a>
               <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
               <a
-                href="https://x.com/apiradar"
+                href="https://x.com/APIRadarLive"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"

@@ -1,11 +1,10 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
-import { Github, Linkedin, Mail, Calendar, ArrowUpDown, LogIn, Rocket, Info, ChevronDown, Check, Chrome } from "lucide-react";
+import { Github, Linkedin, Mail, LogIn, Rocket, Info, ChevronDown, Check, Chrome } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { Card, CardContent } from '@/components/ui/card';
-import { TIME_RANGES, SORT_OPTIONS } from '@/lib/constants';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
@@ -72,10 +71,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     plan,
     session,
     onProviderChange,
-    timeRange,
-    setTimeRange,
-    sortBy,
-    setSortBy,
     total,
     error,
     loadingRef,
@@ -96,64 +91,23 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       </div>
       {/* Filters */}
       <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
-        <div className="flex flex-col gap-1.5 sm:gap-4">
-          <ProviderFilter selectedProvider={selectedProvider} onProviderChange={onProviderChange} triggerClassName="h-9 sm:h-10 min-h-0 py-1" />
-          <CustomSelect value={timeRange} onValueChange={setTimeRange}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border h-9 sm:h-10 min-h-0 py-1" aria-label="Select time range" tabIndex={0}>
-              <div className="flex items-center gap-2 w-full">
-                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
-                  {TIME_RANGES.find(r => r.value === timeRange)?.label || 'All'}
-                </CustomSelectValue>
-              </div>
-            </CustomSelectTrigger>
-            <CustomSelectContent>
-              {TIME_RANGES.map((range) => {
-                return (
-                  <CustomSelectItem key={range.value} value={range.value} aria-label={range.label}>
-                    {range.label}
-                  </CustomSelectItem>
-                );
-              })}
-            </CustomSelectContent>
-          </CustomSelect>
-          <CustomSelect value={sortBy} onValueChange={setSortBy}>
-            <CustomSelectTrigger className="w-full bg-card/50 backdrop-blur-sm border-border h-9 sm:h-10 min-h-0 py-1" aria-label="Select sort order" tabIndex={0}>
-              <div className="flex items-center gap-2 w-full">
-                <ArrowUpDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/70 flex-shrink-0" />
-                <CustomSelectValue className="flex-1 text-center text-sm sm:text-base">
-                  {SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest First'}
-                </CustomSelectValue>
-              </div>
-            </CustomSelectTrigger>
-            <CustomSelectContent>
-              {SORT_OPTIONS.map((option) => (
-                <CustomSelectItem key={option.value} value={option.value} aria-label={option.label}>
-                  {option.label}
-                </CustomSelectItem>
-              ))}
-            </CustomSelectContent>
-          </CustomSelect>
+        <div className="flex flex-col gap-3 sm:gap-4 w-full">
+          <ProviderFilter 
+            selectedProvider={selectedProvider} 
+            onProviderChange={onProviderChange} 
+          />
         </div>
         {/* Results Count and Refresh */}
-        <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
-          <div className="flex flex-col gap-2 mt-1.5 w-full">
-            {/* Row 1: Stats */}
-            <div className="flex flex-row items-center gap-2 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium">
+        <div className="mt-2 pt-2 border-t border-border/40">
+          <div className="flex flex-row items-center justify-between gap-2 w-full">
+            {/* Left side: Stats */}
+            <div className="flex flex-row items-center gap-1 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium">
               <span className="font-bold text-foreground">{total}</span>
               <span>leaks</span>
-              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
-              <div className="inline-flex items-center gap-1.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
-                </span>
-                <span>Live</span>
-              </div>
             </div>
 
-            {/* Row 2: Links (Right aligned) */}
-            <div className="flex flex-row items-center justify-end gap-3 text-xs sm:text-sm font-medium ml-auto">
+            {/* Right side: Links */}
+            <div className="flex flex-row items-center gap-3 text-xs sm:text-sm font-medium">
               <a
                 href="https://github.com/zaim-abbasi/apiradar-community/discussions"
                 target="_blank"
@@ -166,7 +120,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
               </a>
               <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
               <a
-                href="https://x.com/apiradar"
+                href="https://x.com/APIRadarLive"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"

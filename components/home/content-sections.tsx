@@ -34,7 +34,7 @@ const WhatYouCanDo = React.memo(() => {
       </h2>
       <div className="space-y-1.5 sm:space-y-3 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="p-1.5 sm:p-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border">
+          <div key={index} className="p-1.5 sm:p-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out hover:border-border/80 hover:-translate-y-0.5">
             <div className="flex items-start gap-2 sm:gap-2.5">
               <item.icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5", item.iconColor)} />
               <div className="flex-1 min-w-0">
@@ -71,7 +71,7 @@ const WhatYouSee = React.memo(() => {
       </h2>
       <div className="space-y-1.5 sm:space-y-2.5 mb-2 sm:mb-4 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50">
+          <div key={index} className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 ease-out hover:border-border/80 hover:-translate-y-0.5">
             <item.icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0", item.iconColor)} />
             <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-none">
               {item.text}

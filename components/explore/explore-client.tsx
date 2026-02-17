@@ -51,12 +51,8 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // State management
   const [filterState, setFilterState] = useState<{
     selectedProvider: Provider;
-    timeRange: string;
-    sortBy: string;
   }>({
     selectedProvider: "all",
-    timeRange: "all",
-    sortBy: "newest",
   });
   const [loadingState, setLoadingState] = useState({
     isLoading: false,
@@ -72,13 +68,9 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const isDefaultFilters = useMemo(
     () =>
       filterState.selectedProvider === "all" &&
-      filterState.timeRange === "all" &&
-      filterState.sortBy === "newest" &&
       paginationState.page === 1,
     [
       filterState.selectedProvider,
-      filterState.timeRange,
-      filterState.sortBy,
       paginationState.page,
     ]
   );
@@ -195,8 +187,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
 
       const { data, error } = await fetchLeaks({
         provider: backendProvider,
-        timeRange: currentFilterState.timeRange,
-        sortBy: currentFilterState.sortBy,
         page: currentPaginationState.page,
         limit: PAGE_SIZE,
         session,
@@ -219,9 +209,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
           // Only update if filters haven't changed during the request
           if (latestPaginationState.page === 1) {
             const isDefault =
-              latestFilterState.selectedProvider === "all" &&
-              latestFilterState.timeRange === "all" &&
-              latestFilterState.sortBy === "newest";
+              latestFilterState.selectedProvider === "all";
             if (isDefault) {
               firstPageCache.leaks = data.leaks;
               firstPageCache.timestamp = Date.now();
@@ -264,34 +252,26 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     fetchAndSetLeaksRef.current = fetchAndSetLeaks;
   }, [fetchAndSetLeaks]);
 
-  // Root fix: Wait for session to load before initial fetch
-  // This ensures authenticated users get proper auth headers on first load
-  useEffect(() => {
-    // Only fetch when session has finished loading (not 'loading' status)
-    if (!hasInitializedRef.current && sessionStatus !== "loading") {
-      hasInitializedRef.current = true;
-      fetchAndSetLeaksRef.current?.();
-    }
-  }, [sessionStatus]);
+  // Root fix: Merged initialization and auth change logic to prevent double-fetch race condition
+  // where the first request is aborted but cached, causing the second request to fail.
+  // This single effect handles both initial load and subsequent auth changes.
 
   // Root fix: Handle filter changes - separate from refresh to prevent loops
   useEffect(() => {
     if (!hasInitializedRef.current) return;
 
-    setLeaks([]);
+    // setLeaks([]); // Removed to prevent layout shift (seamless transition)
     setPaginationState((prev) => ({
       ...prev,
       page: 1,
       hasMore: false,
-      total: 0,
+      // total: 0, // Keep total to prevent jump
     }));
     setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
     clearLeaksCache();
 
     const isDefault =
-      filterState.selectedProvider === "all" &&
-      filterState.timeRange === "all" &&
-      filterState.sortBy === "newest";
+      filterState.selectedProvider === "all";
     if (!isDefault) {
       firstPageCache.leaks = [];
       firstPageCache.timestamp = 0;
@@ -302,7 +282,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }, 50);
 
     return () => clearTimeout(timeoutId);
-  }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
+  }, [filterState.selectedProvider]);
 
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
@@ -312,39 +292,38 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     }
   }, [paginationState.page]);
 
-  // Re-fetch when authentication status changes to update hasMore and enable infinite scroll
   useEffect(() => {
+    if (sessionStatus === "loading") return;
+
     const authChanged = prevAuthenticatedRef.current !== isAuthenticated;
-    if (authChanged && hasInitializedRef.current) {
+
+    // Case 1: Initial Load
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+      prevAuthenticatedRef.current = isAuthenticated;
+      fetchAndSetLeaksRef.current?.();
+      return;
+    }
+
+    // Case 2: Authentication State Changed (e.g. Sign In / Sign Out)
+    if (authChanged) {
       prevAuthenticatedRef.current = isAuthenticated;
       // Clear cache when authentication changes
       firstPageCache.leaks = [];
       firstPageCache.timestamp = 0;
-      // Reset to page 1 and trigger refresh to get updated hasMore value
-      // This ensures infinite scroll is enabled immediately after sign-in
-      // and works for all filter categories (15d, 30d, all providers, all sort options)
+      // Reset to page 1
       setPaginationState((prev) => ({
         ...prev,
         page: 1,
       }));
-      // Clear leaks state to force fresh data fetch
-      setLeaks([]);
-      // Trigger immediate refetch
+      // Trigger refetch (no timeout needed as we aren't racing anymore)
       fetchAndSetLeaksRef.current?.();
-    } else {
-      prevAuthenticatedRef.current = isAuthenticated;
     }
-  }, [isAuthenticated, session]);
+  }, [sessionStatus, isAuthenticated]);
 
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
     setFilterState((prev) => ({ ...prev, selectedProvider: provider }));
-  }, []);
-  const handleTimeRangeChange = useCallback((timeRange: string) => {
-    setFilterState((prev) => ({ ...prev, timeRange }));
-  }, []);
-  const handleSortByChange = useCallback((sortBy: string) => {
-    setFilterState((prev) => ({ ...prev, sortBy }));
   }, []);
 
   // Memoize shared props to prevent unnecessary re-renders of child components
@@ -356,10 +335,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       plan,
       session,
       onProviderChange: handleProviderChange,
-      timeRange: filterState.timeRange,
-      setTimeRange: handleTimeRangeChange,
-      sortBy: filterState.sortBy,
-      setSortBy: handleSortByChange,
       total: paginationState.total,
       error: loadingState.error,
     }),
@@ -367,15 +342,11 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       leaks,
       loadingState.isLoading,
       filterState.selectedProvider,
-      filterState.timeRange,
-      filterState.sortBy,
       plan,
       session,
       paginationState.total,
       loadingState.error,
       handleProviderChange,
-      handleTimeRangeChange,
-      handleSortByChange,
     ]
   );
 

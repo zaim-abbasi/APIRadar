@@ -40,8 +40,7 @@ const LoadingSkeleton = React.memo(() => (
     {Array.from({ length: 6 }).map((_, i) => (
       <div 
         key={`skeleton-${i}`}
-        className="group animate-fade-in-up opacity-0"
-        style={{ animationDelay: `${i * 30}ms` }}
+        className="group"
       >
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm animate-pulse">
           <CardContent className="p-3 sm:p-4 relative">
@@ -100,7 +99,7 @@ LoadingSkeleton.displayName = 'LoadingSkeleton';
 
 // Memoized Empty State component
 const EmptyState = React.memo(({ selectedProvider }: { selectedProvider: Provider }) => (
-  <div className="text-center py-16 animate-fade-in-up opacity-0 animate-delay-10">
+  <div className="text-center py-16">
     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-coral/10 border border-coral/20 mb-4">
       <FileText className="h-8 w-8 text-coral animate-pulse-slow" />
     </div>
@@ -190,10 +189,9 @@ const LeakCard = React.memo(({
   const safeFilePath = leak.filePath;
   return (
     <div 
-      className="group animate-fade-in-up opacity-0"
-      style={{ animationDelay: `${index * 30}ms` }}
+      className="group"
     >
-      <Card className="group/card border-border/50 bg-card/50 transition-all duration-200 hover:border-border/80 hover:bg-card/70">
+      <Card className="group/card border-border/50 bg-card/50 transition-colors duration-200 hover:border-border/80 hover:bg-card/70">
       <CardContent className="p-2.5 sm:p-4 relative"> 
         <div className="flex flex-col h-full pr-8 sm:pr-0">
           <div className="flex-1 flex flex-col gap-2 sm:gap-2.5 w-full">
@@ -301,7 +299,8 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
   const isUnauthenticated = plan === 'free';
   const showGradient = isUnauthenticated && validLeaks.length === 4;
 
-  if (isLoading) {
+  // Seamless loading: Only show skeleton if we have NO data to show
+  if (isLoading && validLeaks.length === 0) {
     return <LoadingSkeleton />;
   }
 

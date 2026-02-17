@@ -27,8 +27,6 @@ export interface LeaderboardData {
 
 export interface FilterOptions {
   provider: string;
-  timeRange: string;
-  sortBy: string;
 }
 
 export type { Provider } from '@/lib/constants';

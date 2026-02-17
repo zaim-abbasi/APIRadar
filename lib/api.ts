@@ -207,16 +207,12 @@ export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
 
 export async function fetchLeaks({
   provider,
-  timeRange,
-  sortBy,
   page = 1,
   limit = 10,
   session,
   signal,
 }: {
   provider?: string;
-  timeRange?: string;
-  sortBy?: string;
   page?: number;
   limit?: number;
   session?: any;
@@ -230,10 +226,8 @@ export async function fetchLeaks({
   };
 }>> {
   const normalizedProvider = provider ? String(provider).trim() : 'all';
-  const normalizedTimeRange = timeRange || 'all';
-  const normalizedSortBy = sortBy || 'newest';
   const userId = session?.user?.id || 'anonymous';
-  const cacheKey = `leaks:${normalizedProvider}:${normalizedTimeRange}:${normalizedSortBy}:${page}:${limit}:${userId}`;
+  const cacheKey = `leaks:${normalizedProvider}:${page}:${limit}:${userId}`;
 
   const fetchFn = async () => {
     const headers = createAuthHeaders(session);
@@ -241,8 +235,6 @@ export async function fetchLeaks({
     if (provider && provider !== 'all') {
       params.append('provider', String(provider).trim());
     }
-    if (timeRange) params.append('timeRange', timeRange);
-    if (sortBy) params.append('sortBy', sortBy);
     params.append('page', String(page));
     params.append('limit', String(limit));
 
