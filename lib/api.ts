@@ -213,7 +213,6 @@ export async function fetchLeaks({
   limit = 10,
   session,
   signal,
-  bypassCache = false
 }: {
   provider?: string;
   timeRange?: string;
@@ -222,7 +221,6 @@ export async function fetchLeaks({
   limit?: number;
   session?: any;
   signal?: AbortSignal;
-  bypassCache?: boolean;
 }): Promise<ApiResponse<{
   leaks: any[];
   total: number;
@@ -272,14 +270,6 @@ export async function fetchLeaks({
     const data = await response.json();
     return { data };
   };
-
-  if (bypassCache) {
-    try {
-      return await fetchFn();
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Failed to fetch leaks' };
-    }
-  }
 
   return deduplicateRequest(cacheKey, async () => {
     try {

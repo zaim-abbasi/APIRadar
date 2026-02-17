@@ -1,6 +1,6 @@
 import React, { Suspense, memo } from "react";
 import dynamic from "next/dynamic";
-import { Github, Linkedin, Mail, Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket, Info, ChevronDown, Check, Chrome } from "lucide-react";
+import { Github, Linkedin, Mail, Calendar, ArrowUpDown, LogIn, Rocket, Info, ChevronDown, Check, Chrome } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -14,18 +14,6 @@ const LeakTable = dynamic(() => import("@/components/explore/leak-table").then(m
   loading: () => <div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse">Loading…</div>
 });
 
-const InstructionsSection = memo(() => {
-  return (
-    <div className="mb-2 px-2 sm:px-2.5 py-1.5 sm:py-2 bg-coral/10 border border-coral/20 rounded-md flex items-start gap-2">
-      <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral flex-shrink-0 mt-0.5" />
-      <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">
-        To check provider details, click the <span className="text-coral font-medium">repository name</span> to directly open the leak location and code context.
-      </p>
-    </div>
-  );
-});
-
-InstructionsSection.displayName = 'InstructionsSection';
 
 // Memoized Action Card component
 const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
@@ -88,7 +76,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     setTimeRange,
     sortBy,
     setSortBy,
-    onRefresh,
     total,
     error,
     loadingRef,
@@ -150,22 +137,48 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         </div>
         {/* Results Count and Refresh */}
         <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
-          <InstructionsSection />
-          <div className="grid grid-cols-[1fr_auto] items-center gap-1.5 mt-1.5 w-full">
-            <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/40 border border-border/80 min-w-0 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium truncate">
-                <span className="font-bold">{total}</span> leak{total !== 1 ? 's' : ''} found
+          <div className="flex flex-col gap-2 mt-1.5 w-full">
+            {/* Row 1: Stats */}
+            <div className="flex flex-row items-center gap-2 text-xs sm:text-sm text-muted-foreground/80 whitespace-nowrap font-medium">
+              <span className="font-bold text-foreground">{total}</span>
+              <span>leaks</span>
+              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
+              <div className="inline-flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
+                </span>
+                <span>Live</span>
+              </div>
             </div>
 
-            <button
-              onClick={onRefresh}
-              disabled={isLoading}
-              aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-8 px-2.5 text-xs sm:text-sm font-medium text-primary-foreground bg-coral border border-coral/80 transition-all duration-200 ease-in-out hover:brightness-90 hover:border-coral/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-1.5 min-h-0 flex-shrink-0"
-              tabIndex={0}
-            >
-              <RefreshCw className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-              {isLoading ? 'Refreshing...' : 'Refresh'}
-            </button>
+            {/* Row 2: Links (Right aligned) */}
+            <div className="flex flex-row items-center justify-end gap-3 text-xs sm:text-sm font-medium ml-auto">
+              <a
+                href="https://github.com/zaim-abbasi/apiradar-community/discussions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Feedback Discussion"
+              >
+                Feedback
+                <Github className="h-3 w-3" />
+              </a>
+              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
+              <a
+                href="https://x.com/apiradar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Community on X"
+              >
+                Community
+                {/* X Logo */}
+                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -184,9 +197,20 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
 
           </div>
         </Suspense>
+
         {/* Infinite scroll sentinel for pro users */}
         {plan === 'pro' && hasMore && (
           <div ref={loadingRef} style={{ height: 1 }} />
+        )}
+
+
+        {/* Pro user end of list message */}
+        {plan === 'pro' && !hasMore && leaks.length > 0 && (
+          <div className="my-2 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
+             <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed w-full px-4 mx-auto">
+              Showing the <span className="font-semibold text-foreground">8</span> most recent critical exposures. The live feed updates as new 0-day leaks are detected.
+            </p>
+          </div>
         )}
       </div>
       {/* Social/Contact Icons (mobile only, above footer) */}

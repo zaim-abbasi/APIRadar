@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { Calendar, ArrowUpDown, RefreshCw, LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome } from 'lucide-react';
+import { Calendar, ArrowUpDown, LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome, Twitter } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
@@ -19,26 +19,6 @@ const ExploreHeader = React.memo(() => (
 
 ExploreHeader.displayName = 'ExploreHeader';
 
-const InstructionsSection = React.memo(() => {
-  return (
-    <div className="mb-2 px-3 py-1.5 bg-coral/10 border border-coral/20 rounded-md flex flex-col gap-1">
-      <div className="flex items-start sm:items-center gap-2.5">
-        <Sparkles className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
-        <p className="text-sm text-foreground/90 leading-relaxed">
-          <span className="font-semibold">System Update:</span> We've upgraded our dashboard. Please <span className="text-coral font-medium">Sign in</span> again to get full access to all leak cards.
-        </p>
-      </div>
-      <div className="flex items-start sm:items-center gap-2.5">
-        <Info className="h-4 w-4 text-coral flex-shrink-0 mt-0.5 sm:mt-0" />
-        <p className="text-sm text-foreground/90 leading-relaxed">
-          <span className="font-semibold">Info:</span> To check provider details, click the <span className="text-coral font-medium">Repo Name</span> to directly open the leak location and code context.
-        </p>
-      </div>
-    </div>
-  );
-});
-
-InstructionsSection.displayName = 'InstructionsSection';
 
 // Memoize ActionCard to prevent unnecessary re-renders
 const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
@@ -97,7 +77,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   setTimeRange,
   sortBy,
   setSortBy,
-  onRefresh,
   total,
   error,
   loadingRef,
@@ -113,7 +92,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   setTimeRange: (range: string) => void;
   sortBy: string;
   setSortBy: (sort: string) => void;
-  onRefresh: () => void;
   total: number;
   error: string | null;
   loadingRef: React.RefObject<HTMLDivElement>;
@@ -197,37 +175,46 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         </div>
         {/* Results Count and Refresh */}
         <div className="mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
-          <InstructionsSection />
-          <div className="flex flex-row items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center px-3 py-1 rounded-md bg-muted/40 border border-border/80 text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
-                <span className="font-bold mr-1">{total}</span> leak{total !== 1 ? 's' : ''} found
+          <div className="flex flex-row items-center justify-between gap-4 flex-wrap">
+            {/* Left Side: Stats */}
+            <div className="flex flex-row items-center gap-3 text-sm text-muted-foreground whitespace-nowrap">
+              <span className="font-bold text-foreground">{total}</span>
+              <span>leaks found</span>
+              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
+              <div className="inline-flex items-center gap-2">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
+                </span>
+                <span className="font-medium text-foreground/90">Monitoring Live</span>
+              </div>
             </div>
 
-            <div className="hidden xl:flex flex-1 justify-center items-center px-4">
-              <span className="text-sm font-medium text-muted-foreground italic text-center animate-pulse-slow">
-                "Found a bug or have a feature request?{" "}
-                <a 
-                  href="https://github.com/zaim-abbasi/apiradar-community/discussions" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-coral hover:underline underline-offset-4 pointer-events-auto"
-                >
-                  Join the GitHub Discussion.
-                </a>
-                "
-              </span>
-            </div>
-            
-            <div className="w-[120px] flex justify-end flex-shrink-0">
-              <button
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md h-9 px-4 text-sm font-medium text-foreground bg-background border border-border shadow-sm transition-all duration-200 ease-in-out hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed gap-2"
-                aria-label={isLoading ? 'Refreshing' : 'Refresh results'}
+            {/* Right Side: Links */}
+            <div className="flex flex-row items-center gap-3 text-sm font-medium">
+              <a
+                href="https://github.com/zaim-abbasi/apiradar-community/discussions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
               >
-                <RefreshCw className={`h-3.5 w-3.5 transition-transform duration-200 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
-                {isLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
+                Feedback
+                <Github className="h-3.5 w-3.5" />
+              </a>
+              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
+              <a
+                href="https://x.com/apiradar"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Community on X"
+              >
+                Community
+                {/* X Logo (using SVG path for accuracy as Lucide Twitter is bird) */}
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
             </div>
           </div>
         </div>
@@ -255,6 +242,15 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         {plan === 'pro' && hasMore && (
           <div ref={loadingRef} style={{ height: 1 }} />
         )}
+
+        {/* Pro user end of list message */}
+        {plan === 'pro' && !hasMore && leaks.length > 0 && (
+          <div className="my-2 text-center animate-fade-in-up opacity-0" style={{ animationDelay: '100ms' }}>
+             <p className="text-sm text-muted-foreground/80 leading-relaxed w-full mx-auto">
+              Showing the <span className="font-semibold text-foreground">8</span> most recent critical exposures. The live feed updates as new 0-day leaks are detected.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -262,4 +258,5 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 
 ExploreSectionDesktop.displayName = 'ExploreSectionDesktop';
 
-export default ExploreSectionDesktop; 
+export default ExploreSectionDesktop;
+ 

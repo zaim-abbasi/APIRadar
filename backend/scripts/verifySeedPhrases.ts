@@ -12,10 +12,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 const bs58 = require('bs58');
 const ed25519 = require('ed25519-hd-key');
+const crypto = require('crypto');
+
+function getHash(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
 
 const MONGODB_URI = "mongodb://localhost:27017/apiradar";
 const ANKR_RPC = 'https://rpc.ankr.com/multichain/41d9609ae145f55dfb5916d425da95f64998d13d1973440a73fa20a6325888d3';
 const ACCOUNTS_TO_SCAN = 10;
+const CONCURRENCY = 5;
 
 const ANKR_CHAINS = ['eth', 'bsc', 'polygon', 'arbitrum', 'base', 'avalanche', 'optimism'];
 
@@ -33,15 +39,46 @@ function isSpam(name: string): boolean {
   return n.includes('visit') || n.includes('claim') || n.includes('airdrop');
 }
 
-async function safeAnkrCall(body: any, timeout = 10000): Promise<any> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+
+// Optimized HTTP Client with Keep-Alive
+const httpsAgent = new (require('https').Agent)({ keepAlive: true, scheduling: 'lifo', maxSockets: 25, maxFreeSockets: 10, timeout: 30000 });
+const httpClient = axios.create({
+  timeout: 20000,
+  httpAgent: httpsAgent,
+  httpsAgent: httpsAgent,
+  headers: { 'Connection': 'keep-alive' }
+});
+
+
+
+async function fetchWithRetry(url: string, payload: any = null, method: 'get' | 'post' = 'get', retries = 5): Promise<any> {
+  for (let i = 0; i < retries; i++) {
     try {
-      if (attempt > 0) await sleep(2500 * attempt);
-      return (await axios.post(ANKR_RPC, body, { timeout })).data;
+      // Jitter: Add random delay (0-500ms) to prevent thundering herd
+      if (i > 0) await sleep(Math.random() * 500 + (1000 * Math.pow(2, i)));
+
+      const res = method === 'get'
+        ? await httpClient.get(url)
+        : await httpClient.post(url, payload);
+      return res.data;
     } catch (e: any) {
-      if (attempt === 2) throw e;
+      const isRateLimit = e.response?.status === 429;
+      const isTimeout = e.code === 'ECONNABORTED' || e.message?.includes('timeout') || e.code === 'ETIMEDOUT';
+      const isNetworkError = e.code === 'ECONNRESET' || e.message?.includes('socket hang up') || e.code === 'EAI_AGAIN';
+
+      if ((isRateLimit || isTimeout || isNetworkError) && i < retries - 1) {
+        // If rate limited, wait longer (exponential backoff)
+        const delay = isRateLimit ? 2000 * Math.pow(2, i) : 1000;
+        await sleep(delay);
+        continue;
+      }
+      throw e;
     }
   }
+}
+
+async function safeAnkrCall(body: any): Promise<any> {
+  return fetchWithRetry(ANKR_RPC, body, 'post');
 }
 
 const priceCache: Record<string, { price: number; ts: number }> = {};
@@ -59,8 +96,8 @@ async function getCachedPrice(id: string, fetcher: () => Promise<number>): Promi
 
 async function getBtcPrice(): Promise<number> {
   return getCachedPrice('btc', async () => {
-    const res = await axios.get('https://mempool.space/api/v1/prices');
-    return res.data.USD;
+    const data = await fetchWithRetry('https://mempool.space/api/v1/prices');
+    return data.USD;
   });
 }
 
@@ -76,32 +113,53 @@ async function checkAllBitcoin(seed: Uint8Array, count: number) {
   ];
 
   for (const type of types) {
-    let scanDepth = 2;
-    for (let i = 0; i < scanDepth && i < count; i++) {
+    const initialBatch = Math.min(2, count);
+    const addresses: { idx: number; address: string }[] = [];
+    for (let i = 0; i < initialBatch; i++) {
       const child = root.derivePath(`${type.path}${i}`);
       let address: string | undefined;
-      if (type.format === 'p2wpkh') {
-        address = bitcoin.payments.p2wpkh({ pubkey: child.publicKey }).address;
-      } else if (type.format === 'p2sh') {
-        address = bitcoin.payments.p2sh({ redeem: bitcoin.payments.p2wpkh({ pubkey: child.publicKey }) }).address;
-      } else {
-        address = bitcoin.payments.p2pkh({ pubkey: child.publicKey }).address;
-      }
-      if (!address) continue;
+      if (type.format === 'p2wpkh') address = bitcoin.payments.p2wpkh({ pubkey: child.publicKey }).address;
+      else if (type.format === 'p2sh') address = bitcoin.payments.p2sh({ redeem: bitcoin.payments.p2wpkh({ pubkey: child.publicKey }) }).address;
+      else address = bitcoin.payments.p2pkh({ pubkey: child.publicKey }).address;
+      if (address) addresses.push({ idx: i, address });
+    }
+
+    const checkBtcAddr = async (item: { idx: number; address: string }) => {
       try {
-        await sleep(1000);
-        const { data } = await axios.get(`https://mempool.space/api/address/${address}`, { timeout: 10000 });
+        const data = await fetchWithRetry(`https://mempool.space/api/address/${item.address}`);
         const satoshis = (data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum) +
           (data.mempool_stats.funded_txo_sum - data.mempool_stats.spent_txo_sum);
         if (satoshis > 0) {
-          if (i === 0) scanDepth = count;
           const btc = satoshis / 100000000;
           const price = await getBtcPrice();
-          results.push({ idx: i, address, balance: btc, usd: btc * price, type: type.name });
+          return { idx: item.idx, address: item.address, balance: btc, usd: btc * price, type: type.name };
         }
       } catch (e: any) {
-        console.log(chalk.gray(`      [BTC:${type.name}] Error: ${e?.message?.slice(0, 50) || 'unknown'}`));
+        if (e?.response?.status !== 429 && !e?.message?.includes('timeout')) {
+          console.log(chalk.gray(`      [BTC:${type.name}] Error: ${e?.message?.slice(0, 50) || 'unknown'}`));
+        }
       }
+      return null;
+    };
+
+    const initialResults = await Promise.all(addresses.map(checkBtcAddr));
+    let foundInInitial = false;
+    for (const r of initialResults) {
+      if (r) { results.push(r); foundInInitial = true; }
+    }
+
+    if (foundInInitial && count > initialBatch) {
+      const extraAddresses: { idx: number; address: string }[] = [];
+      for (let i = initialBatch; i < count; i++) {
+        const child = root.derivePath(`${type.path}${i}`);
+        let address: string | undefined;
+        if (type.format === 'p2wpkh') address = bitcoin.payments.p2wpkh({ pubkey: child.publicKey }).address;
+        else if (type.format === 'p2sh') address = bitcoin.payments.p2sh({ redeem: bitcoin.payments.p2wpkh({ pubkey: child.publicKey }) }).address;
+        else address = bitcoin.payments.p2pkh({ pubkey: child.publicKey }).address;
+        if (address) extraAddresses.push({ idx: i, address });
+      }
+      const extraResults = await Promise.all(extraAddresses.map(checkBtcAddr));
+      for (const r of extraResults) { if (r) results.push(r); }
     }
   }
   return results;
@@ -127,25 +185,33 @@ async function checkAllSolana(seed: Uint8Array, count: number) {
   const results: { idx: number; address: string; assets: { symbol: string; balance: string; usd: number }[] }[] = [];
   let scanDepth = 2;
 
-  for (let i = 0; i < scanDepth && i < addresses.length; i++) {
+  const checkSolAddr = async (i: number) => {
     try {
-      await sleep(1000);
       const body = { jsonrpc: '2.0', id: 1, method: 'ankr_getAccountBalance', params: { walletAddress: addresses[i], blockchain: ['solana'] } };
-      const data = await safeAnkrCall(body, 5000);
-
+      const data = await safeAnkrCall(body);
       const assets = (data.result?.assets || [])
         .filter((a: any) => Number(a.balanceUsd) > 0.01 && !isSpam(a.tokenName || ''))
         .map((a: any) => ({ symbol: a.tokenSymbol, balance: Number(a.balance).toFixed(4), usd: Number(a.balanceUsd) }));
-
-      if (assets.length > 0) {
-        if (i === 0) scanDepth = count;
-        results.push({ idx: i, address: addresses[i]!, assets });
-      }
+      if (assets.length > 0) return { idx: i, address: addresses[i]!, assets };
     } catch (e: any) {
       if (!e?.message?.includes('timeout')) {
         console.log(chalk.gray(`      [SOL] Error: ${e?.message?.slice(0, 50) || 'unknown'}`));
       }
     }
+    return null;
+  };
+
+  const initialIndices = Array.from({ length: Math.min(scanDepth, addresses.length) }, (_, i) => i);
+  const initialResults = await Promise.all(initialIndices.map(checkSolAddr));
+  let foundInInitial = false;
+  for (const r of initialResults) {
+    if (r) { results.push(r); foundInInitial = true; }
+  }
+
+  if (foundInInitial && addresses.length > scanDepth) {
+    const extraIndices = Array.from({ length: addresses.length - scanDepth }, (_, i) => i + scanDepth);
+    const extraResults = await Promise.all(extraIndices.map(checkSolAddr));
+    for (const r of extraResults) { if (r) results.push(r); }
   }
 
   return results;
@@ -153,11 +219,10 @@ async function checkAllSolana(seed: Uint8Array, count: number) {
 
 async function checkEvm(address: string) {
   try {
-    await sleep(1000);
     const data = await safeAnkrCall({
       jsonrpc: '2.0', id: 1, method: 'ankr_getAccountBalance',
       params: { walletAddress: address, blockchain: ANKR_CHAINS }
-    }, 15000);
+    });
 
     const assets = (data.result?.assets || []).filter((a: any) => Number(a.balanceUsd) > 0.01 && !isSpam(a.tokenName || ''));
     if (assets.length === 0) return [];
@@ -198,8 +263,7 @@ function deriveTronAddress(seed: Uint8Array, index: number): string {
 async function checkTron(address: string) {
   if (!address) return null;
   try {
-    await sleep(500);
-    const { data } = await axios.get(`https://api.trongrid.io/v1/accounts/${address}`, { timeout: 5000 });
+    const { data } = await fetchWithRetry(`https://api.trongrid.io/v1/accounts/${address}`);
     const account = data.data?.[0];
     if (!account) return null;
 
@@ -234,6 +298,27 @@ async function run() {
   console.log(chalk.gray('   Chains: Bitcoin · Solana · Ethereum · BSC · Polygon · Base · Arbitrum · Avalanche · Optimism · Tron'));
   console.log(chalk.gray(`   Accounts per seed: ${ACCOUNTS_TO_SCAN}\n`));
 
+  const RESULT_FILE = path.join(__dirname, 'scan-results.json');
+  const scannedHashes = new Set<string>();
+  let prevResults: any[] = [];
+  let prevHits: any[] = [];
+
+  if (fs.existsSync(RESULT_FILE)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(RESULT_FILE, 'utf8'));
+      if (Array.isArray(data.results)) {
+        prevResults = data.results;
+        prevHits = data.results.filter((r: any) => r.totalUsd > 0);
+        data.results.forEach((r: any) => {
+          if (r.id) scannedHashes.add(r.id);
+        });
+        console.log(chalk.yellow(`   📝 Resuming: Loaded ${data.results.length} previously scanned seeds`));
+      }
+    } catch {
+      console.log(chalk.red(`   ⚠️  Corrupt scan-results.json found, starting fresh backup...`));
+    }
+  }
+
   await mongoose.connect(MONGODB_URI);
   console.log(chalk.green('✅ Database connected'));
 
@@ -242,87 +327,132 @@ async function run() {
   const seenPhrases = new Map<string, number>();
   const uniqueLeaks: typeof leaks = [];
   let dupeCount = 0;
+  let skippedCount = 0;
 
   for (let i = 0; i < leaks.length; i++) {
     const phrase = String(leaks[i]!['fullKey'] || '').trim();
     if (!bip39.validateMnemonic(phrase)) continue;
     if (isTestMnemonic(phrase)) continue;
+
     if (seenPhrases.has(phrase)) {
       dupeCount++;
       continue;
     }
     seenPhrases.set(phrase, i);
+
+    const hash = getHash(phrase);
+    if (scannedHashes.has(hash)) {
+      skippedCount++;
+      continue;
+    }
     uniqueLeaks.push(leaks[i]!);
   }
 
-  console.log(chalk.white(`   ${leaks.length} seeds found, ${uniqueLeaks.length} unique valid mnemonics`));
+  console.log(chalk.white(`   ${leaks.length} seeds found, ${uniqueLeaks.length} new to scan`));
   if (dupeCount > 0) console.log(chalk.gray(`   ${dupeCount} duplicates skipped`));
+  if (skippedCount > 0) console.log(chalk.gray(`   ${skippedCount} already scanned (skipped)`));
   console.log('');
 
   const hits: { seed: number; repo: string; file: string; findings: string[]; totalUsd: number }[] = [];
-  const jsonResults: any[] = [];
+  const jsonResults: any[] = [...prevResults];
   const seedTimings: number[] = [];
 
-  for (let i = 0; i < uniqueLeaks.length; i++) {
+  // Simple atomic save
+  function saveProgress() {
+    const tmpFile = RESULT_FILE + '.tmp';
+    const finalData = {
+      scannedAt: new Date().toISOString(),
+      totalScanned: scannedHashes.size + jsonResults.length - prevResults.length, // correct total
+      funded: prevHits.length + hits.length,
+      results: jsonResults
+    };
+    fs.writeFileSync(tmpFile, JSON.stringify(finalData, null, 2));
+    fs.renameSync(tmpFile, RESULT_FILE);
+  }
+
+  async function processSeed(i: number) {
     const seedStart = Date.now();
     const leak = uniqueLeaks[i]!;
     const phrase = String(leak['fullKey'] || '').trim();
     const repo = String(leak['repoUrl'] || '').replace('https://github.com/', '');
     const file = String(leak['filePath'] || '');
-
-    let eta = '';
-    if (seedTimings.length > 0) {
-      const avgMs = seedTimings.reduce((a, b) => a + b, 0) / seedTimings.length;
-      const remaining = Math.ceil((avgMs * (uniqueLeaks.length - i)) / 1000);
-      const mins = Math.floor(remaining / 60);
-      const secs = remaining % 60;
-      eta = ` (~${mins}m${secs}s left)`;
-    }
-    process.stdout.write(chalk.gray(`\r   Scanning ${i + 1}/${uniqueLeaks.length}: ${repo.slice(0, 35)}...${eta}   `));
+    const hash = getHash(phrase);
 
     const findings: string[] = [];
     let seedTotalUsd = 0;
-    const seedJson: any = { repo, file, btc: [], sol: [], evm: [], tron: [] };
+    const seedJson: any = { id: hash };
 
     const seedBuf = Uint8Array.from(await bip39.mnemonicToSeed(phrase));
 
-    const btcResults = await checkAllBitcoin(seedBuf, ACCOUNTS_TO_SCAN);
-    for (const btc of btcResults) {
-      findings.push(chalk.yellow(`  🟠 BTC[${btc.idx}:${btc.type}]  `) + chalk.white(`${btc.balance.toFixed(8)} BTC`) + chalk.green(` ($${btc.usd.toFixed(2)})`) + chalk.gray(`  ${btc.address}`));
-      seedTotalUsd += btc.usd;
-      seedJson.btc.push(btc);
-    }
+    const [btcResults, solResults, evmInitial, tron] = await Promise.all([
+      checkAllBitcoin(seedBuf, ACCOUNTS_TO_SCAN),
+      checkAllSolana(seedBuf, ACCOUNTS_TO_SCAN),
+      (async () => {
+        const mnemonic = ethers.Mnemonic.fromPhrase(phrase);
+        const initialDepth = 2;
+        const initialWallets = Array.from({ length: initialDepth }, (_, idx) =>
+          ethers.HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${idx}`)
+        );
+        const initialResults = await Promise.all(initialWallets.map(w => checkEvm(w.address)));
+        const evmResults: { address: string; chains: any }[] = [];
+        let foundInInitial = false;
+        for (let idx = 0; idx < initialResults.length; idx++) {
+          if (initialResults[idx]!.length > 0) {
+            foundInInitial = true;
+            evmResults.push({ address: initialWallets[idx]!.address, chains: initialResults[idx]! });
+          }
+        }
+        if (foundInInitial && ACCOUNTS_TO_SCAN > initialDepth) {
+          const extraWallets = Array.from({ length: ACCOUNTS_TO_SCAN - initialDepth }, (_, idx) =>
+            ethers.HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${idx + initialDepth}`)
+          );
+          const extraResults = await Promise.all(extraWallets.map(w => checkEvm(w.address)));
+          for (let idx = 0; idx < extraResults.length; idx++) {
+            if (extraResults[idx]!.length > 0) {
+              evmResults.push({ address: extraWallets[idx]!.address, chains: extraResults[idx]! });
+            }
+          }
+        }
+        return evmResults;
+      })(),
+      checkTron(deriveTronAddress(seedBuf, 0)),
+    ]);
 
-    const solResults = await checkAllSolana(seedBuf, ACCOUNTS_TO_SCAN);
-    for (const sol of solResults) {
-      for (const a of sol.assets) {
-        findings.push(chalk.magenta(`  ◎ SOL[${sol.idx}]  `) + chalk.white(`${a.balance} ${a.symbol}`) + chalk.green(` ($${a.usd.toFixed(2)})`) + chalk.gray(`  ${sol.address}`));
-        seedTotalUsd += a.usd;
+    if (btcResults.length > 0) {
+      seedJson.btc = [];
+      for (const btc of btcResults) {
+        findings.push(chalk.yellow(`  🟠 BTC[${btc.idx}:${btc.type}]  `) + chalk.white(`${btc.balance.toFixed(8)} BTC`) + chalk.green(` ($${btc.usd.toFixed(2)})`) + chalk.gray(`  ${btc.address}`));
+        seedTotalUsd += btc.usd;
+        seedJson.btc.push(btc);
       }
-      seedJson.sol.push(sol);
     }
 
-    const mnemonic = ethers.Mnemonic.fromPhrase(phrase);
-    let evmDepth = 2;
+    if (solResults.length > 0) {
+      seedJson.sol = [];
+      for (const sol of solResults) {
+        for (const a of sol.assets) {
+          findings.push(chalk.magenta(`  ◎ SOL[${sol.idx}]  `) + chalk.white(`${a.balance} ${a.symbol}`) + chalk.green(` ($${a.usd.toFixed(2)})`) + chalk.gray(`  ${sol.address}`));
+          seedTotalUsd += a.usd;
+        }
+        seedJson.sol.push(sol);
+      }
+    }
 
-    for (let idx = 0; idx < evmDepth; idx++) {
-      const wallet = ethers.HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${idx}`);
-      const evm = await checkEvm(wallet.address);
-      if (evm.length > 0) {
-        if (idx === 0) evmDepth = ACCOUNTS_TO_SCAN;
-        for (const c of evm) {
+    if (evmInitial.length > 0) {
+      seedJson.evm = [];
+      for (const evmEntry of evmInitial) {
+        for (const c of evmEntry.chains) {
           for (const a of c.assets) {
-            findings.push(chalk.blue(`  ⟠ ${c.chain.padEnd(11)}`) + chalk.white(`${a.balance} ${a.symbol}`) + chalk.green(` ($${a.usd.toFixed(2)})`) + chalk.gray(`  ${wallet.address}`));
+            findings.push(chalk.blue(`  ⟠ ${c.chain.padEnd(11)}`) + chalk.white(`${a.balance} ${a.symbol}`) + chalk.green(` ($${a.usd.toFixed(2)})`) + chalk.gray(`  ${evmEntry.address}`));
             seedTotalUsd += a.usd;
           }
         }
-        seedJson.evm.push({ address: wallet.address, chains: evm });
+        seedJson.evm.push(evmEntry);
       }
     }
 
-    const tronAddr = deriveTronAddress(seedBuf, 0);
-    const tron = await checkTron(tronAddr);
     if (tron) {
+      seedJson.tron = [];
       for (const a of tron.assets) {
         findings.push(chalk.red(`  ♦ TRON       `) + chalk.white(`${a.balance} ${a.symbol}`) + chalk.green(` ($${a.usd.toFixed(2)})`) + chalk.gray(`  ${tron.address}`));
         seedTotalUsd += a.usd;
@@ -330,22 +460,71 @@ async function run() {
       seedJson.tron.push(tron);
     }
 
-    if (findings.length > 0) {
-      process.stdout.write('\r' + ' '.repeat(90) + '\r');
-      console.log(chalk.cyan(`\n━━━ Seed #${i + 1} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`));
-      console.log(chalk.white(`  Source:  `) + chalk.yellow(repo));
-      console.log(chalk.white(`  File:    `) + chalk.yellow(file));
-      console.log(chalk.white(`  Words:   `) + chalk.white(String(phrase.split(/\s+/).length)));
-      console.log('');
-      findings.forEach(f => console.log(f));
-      console.log(chalk.green(`\n  💰 Seed Total: $${seedTotalUsd.toFixed(2)}`));
-      hits.push({ seed: i + 1, repo, file, findings, totalUsd: seedTotalUsd });
+    if (seedTotalUsd > 0) {
+      seedJson.repo = repo;
+      seedJson.file = file;
       seedJson.totalUsd = seedTotalUsd;
-      jsonResults.push(seedJson);
+    } else {
+      seedJson.val = 0;
     }
 
-    seedTimings.push(Date.now() - seedStart);
+    const elapsed = Date.now() - seedStart;
+    return { i, repo, file, phrase, findings, seedTotalUsd, seedJson, elapsed };
   }
+
+  // Worker Pool Implementation
+  const queue = [...uniqueLeaks];
+  let scanCount = 0;
+
+  async function worker() {
+    while (queue.length > 0) {
+      const uniqueIndex = uniqueLeaks.length - queue.length;
+      const leak = queue.shift();
+      if (!leak) break;
+
+      try {
+        const { i, repo, file, phrase, findings, seedTotalUsd, seedJson, elapsed } = await processSeed(uniqueIndex);
+
+        scanCount++;
+        seedTimings.push(elapsed);
+
+        if (findings.length > 0) {
+          process.stdout.write('\r' + ' '.repeat(90) + '\r');
+          console.log(chalk.cyan(`\n━━━ Seed #${i + 1} ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`));
+          console.log(chalk.white(`  Source:  `) + chalk.yellow(repo));
+          console.log(chalk.white(`  File:    `) + chalk.yellow(file));
+          console.log(chalk.white(`  Words:   `) + chalk.white(String(phrase.split(/\s+/).length)));
+          console.log('');
+          findings.forEach(f => console.log(f));
+          console.log(chalk.green(`\n  💰 Seed Total: $${seedTotalUsd.toFixed(2)}`));
+          hits.push({ seed: i + 1, repo, file, findings, totalUsd: seedTotalUsd });
+          seedJson.totalUsd = seedTotalUsd;
+          jsonResults.push(seedJson);
+          saveProgress(); // Immediately save found funds
+        } else {
+          jsonResults.push(seedJson);
+          saveProgress(); // Save every seed (as requested)
+        }
+
+        // Progress update
+        let eta = '';
+        if (seedTimings.length > 0) {
+          const avgMs = seedTimings.reduce((a, b) => a + b, 0) / seedTimings.length;
+          const remaining = Math.ceil((avgMs * (uniqueLeaks.length - scanCount)) / 1000 / CONCURRENCY);
+          const mins = Math.floor(remaining / 60);
+          const secs = remaining % 60;
+          eta = ` (~${mins}m${secs}s left)`;
+        }
+        process.stdout.write(chalk.gray(`\r   Scanning ${scanCount}/${uniqueLeaks.length}${eta}   `));
+
+      } catch (e) {
+        console.error(`Error processing seed:`, e);
+      }
+    }
+  }
+
+  const workers = Array.from({ length: CONCURRENCY }, () => worker());
+  await Promise.all(workers);
 
   process.stdout.write('\r' + ' '.repeat(90) + '\r');
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -365,9 +544,8 @@ async function run() {
     }
   }
 
-  const outPath = path.join(__dirname, 'scan-results.json');
-  fs.writeFileSync(outPath, JSON.stringify({ scannedAt: new Date().toISOString(), seeds: uniqueLeaks.length, funded: hits.length, results: jsonResults }, null, 2));
-  console.log(chalk.gray(`\n  Results saved to ${outPath}`));
+  saveProgress();
+  console.log(chalk.gray(`\n  Results saved to ${RESULT_FILE}`));
   console.log(chalk.gray(`  Completed in ${elapsed}s. No database changes made.\n`));
 
   await mongoose.connection.close();

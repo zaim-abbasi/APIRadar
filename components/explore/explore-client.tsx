@@ -34,7 +34,7 @@ const ExploreSectionDesktop = dynamic(
   }
 );
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 8;
 const INFINITE_SCROLL_MARGIN = "0px 0px 600px 0px";
 const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = {
   leaks: [],
@@ -67,7 +67,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     page: 1,
     hasMore: false,
     total: 0,
-    refreshIndex: 0,
   });
   // Memoize default filters check to prevent unnecessary recalculations
   const isDefaultFilters = useMemo(
@@ -108,7 +107,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const prevAuthenticatedRef = useRef(isAuthenticated);
   // Root fix: Track in-flight requests to cancel stale ones
   const abortControllerRef = useRef<AbortController | null>(null);
-  const isRefreshingRef = useRef(false);
 
   // Set up IntersectionObserver for infinite scroll
   useEffect(() => {
@@ -203,7 +201,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         limit: PAGE_SIZE,
         session,
         signal: abortController.signal,
-        bypassCache: isRefreshingRef.current,
       });
 
       // Root fix: Ignore results if request was aborted
@@ -307,22 +304,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     return () => clearTimeout(timeoutId);
   }, [filterState.selectedProvider, filterState.timeRange, filterState.sortBy]);
 
-  // Root fix: Handle refresh separately - optimized for speed
-  useEffect(() => {
-    if (!hasInitializedRef.current || paginationState.refreshIndex === 0) return;
-    
-    isRefreshingRef.current = true;
-    clearLeaksCache();
-    setPaginationState((prev) => ({
-      ...prev,
-      page: 1,
-      hasMore: false,
-    }));
-    setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
-    fetchAndSetLeaksRef.current?.().finally(() => {
-      isRefreshingRef.current = false;
-    });
-  }, [paginationState.refreshIndex]);
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
   useEffect(() => {
@@ -345,7 +326,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       setPaginationState((prev) => ({
         ...prev,
         page: 1,
-        refreshIndex: prev.refreshIndex + 1,
       }));
       // Clear leaks state to force fresh data fetch
       setLeaks([]);
@@ -366,14 +346,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const handleSortByChange = useCallback((sortBy: string) => {
     setFilterState((prev) => ({ ...prev, sortBy }));
   }, []);
-  const handleRefresh = useCallback(() => {
-    if (loadingState.isLoading) return;
-    setPaginationState((prev) => ({
-      ...prev,
-      page: 1,
-      refreshIndex: prev.refreshIndex + 1,
-    }));
-  }, [loadingState.isLoading]);
 
   // Memoize shared props to prevent unnecessary re-renders of child components
   const sharedProps = useMemo(
@@ -388,7 +360,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       setTimeRange: handleTimeRangeChange,
       sortBy: filterState.sortBy,
       setSortBy: handleSortByChange,
-      onRefresh: handleRefresh,
       total: paginationState.total,
       error: loadingState.error,
     }),
@@ -405,7 +376,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       handleProviderChange,
       handleTimeRangeChange,
       handleSortByChange,
-      handleRefresh,
     ]
   );
 

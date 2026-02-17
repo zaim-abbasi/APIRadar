@@ -155,13 +155,15 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       repoCreatedAt: l.repoCreatedAt
     }));
 
-    const hasMore = isAuthenticated && (enforcedPage * enforcedLimit) < total;
+    const hasMore = isAuthenticated &&
+      (enforcedPage * enforcedLimit) < total &&
+      (enforcedPage * enforcedLimit) < accessLimits.maxLeaks;
 
     request.log.info({ msg: 'Leaks accessed', userId, total, returned: mappedLeaks.length });
 
     return reply.send({
       leaks: mappedLeaks,
-      total,
+      total: total,
       hasMore,
       planLimits: { maxLeaks: accessLimits.maxLeaks }
     });
