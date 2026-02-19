@@ -115,22 +115,8 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Feedback Discussion"
               >
-                Feedback
+                Issues & Requests
                 <Github className="h-3 w-3" />
-              </a>
-              <span className="text-muted-foreground pb-0.5 flex items-center leading-none">•</span>
-              <a
-                href="https://x.com/APIRadarLive"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Community on X"
-              >
-                Community
-                {/* X Logo */}
-                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" aria-hidden="true">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
               </a>
             </div>
           </div>
