@@ -1,9 +1,10 @@
 "use client";
 
 import React, { Suspense } from 'react';
-import { LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome, Twitter } from 'lucide-react';
+import { LogIn, Rocket, Sparkles, Info, ChevronDown, Github, Linkedin, Check, Chrome, Twitter, Heart } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from '@/components/explore/provider-filter';
+import { SponsorDialog } from '@/components/sponsor-dialog';
 import { CustomSelect, CustomSelectContent, CustomSelectItem, CustomSelectTrigger, CustomSelectValue } from '@/components/ui/custom-select';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -89,6 +90,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   loadingRef: React.RefObject<HTMLDivElement>;
   hasMore: boolean;
 }) {
+  const [isSponsorOpen, setIsSponsorOpen] = React.useState(false);
   const isUnauthenticated = !session || !session.user;
   return (
     <div className="container mx-auto px-4 pt-3 pb-6">
@@ -146,6 +148,15 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 
             {/* Right Side: Links */}
             <div className="flex flex-row items-center gap-3 text-sm font-medium">
+              <button
+                onClick={() => setIsSponsorOpen(true)}
+                className="flex items-center gap-1.5 text-muted-foreground sm:hover:text-foreground transition-colors"
+              >
+                <Heart className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Sponsor APIRadar</span>
+                <span className="sm:hidden">Sponsor</span>
+              </button>
+              <div className="h-4 w-px bg-border/50 hidden sm:block"></div>
               <a
                 href="https://github.com/zaim-abbasi/apiradar-community/discussions"
                 target="_blank"
@@ -193,6 +204,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           </div>
         )}
       </div>
+      <SponsorDialog open={isSponsorOpen} onOpenChange={setIsSponsorOpen} />
     </div>
   );
 });
