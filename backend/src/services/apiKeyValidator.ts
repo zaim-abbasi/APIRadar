@@ -1,4 +1,3 @@
-import * as bip39 from 'bip39';
 
 const PLACEHOLDER_WORDS = [
   'placeholder', 'changeme', 'example', 'sample', 'demo',
@@ -54,30 +53,4 @@ function isPlaceholderKey(key: string): boolean {
 
 export function isValidKey(key: string): boolean {
   return !isPlaceholderKey(key);
-}
-
-export function isValidMnemonic(phrase: string): boolean {
-  if (!phrase) return false;
-  const cleaned = phrase.trim();
-  if (!bip39.validateMnemonic(cleaned)) return false;
-
-  const words = cleaned.split(/\s+/);
-  if (new Set(words).size < 4) return false;
-
-  return true;
-}
-
-export function recoverMnemonic(phrase: string): string | null {
-  const cleaned = phrase.trim();
-  if (isValidMnemonic(cleaned)) return cleaned;
-
-  const words = cleaned.split(/\s+/);
-  for (const len of [12, 15, 18, 21, 24]) {
-    if (words.length > len) {
-      const sub = words.slice(0, len).join(' ');
-      if (isValidMnemonic(sub)) return sub;
-    }
-  }
-
-  return null;
 }

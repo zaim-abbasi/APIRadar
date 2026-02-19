@@ -1,4 +1,4 @@
-import { isValidKey, recoverMnemonic } from './apiKeyValidator';
+import { isValidKey } from './apiKeyValidator';
 import { FARM_CONSTANTS } from './farmConstants';
 
 export interface ProviderRule {
@@ -6,7 +6,6 @@ export interface ProviderRule {
   label: string;
   regex: RegExp;
   prefixes: string[];
-  keywords?: string[];
 }
 
 const PROVIDER_RULES: ProviderRule[] = [
@@ -51,13 +50,6 @@ const PROVIDER_RULES: ProviderRule[] = [
     label: 'Cerebras',
     regex: /\bcsk-[a-zA-Z0-9]{32,64}\b/,
     prefixes: ['csk-']
-  },
-  {
-    name: 'bip39_seed_phrase',
-    label: 'Crypto Wallet Seed Phrase',
-    regex: /((?:mnemonic|seed[_-]?phrase|secret[_-]?recovery[_-]?phrase|wallet[_-]?secret|wallet[_-]?mnemonic|master[_-]?key)[\s"':=]+)((?:[a-z]{3,}\s+){11,23}[a-z]{3,})\b/i,
-    prefixes: [],
-    keywords: ['mnemonic', 'seed', 'recovery', 'bip39', 'wallet', 'master']
   }
 ];
 
@@ -65,7 +57,7 @@ function buildSearchQueries(): Record<string, string[]> {
   const queries: Record<string, string[]> = {};
   for (const rule of PROVIDER_RULES) {
     const allQueries: string[] = [];
-    const searchTerms = rule.prefixes.length > 0 ? rule.prefixes : (rule.keywords || []);
+    const searchTerms = rule.prefixes;
     for (const term of searchTerms) {
       const termQueries = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
         file => `filename:${file} ${term}`
@@ -95,7 +87,6 @@ export const SORT_OPTIONS = [
 
 export class RegexRouter {
   private prefixMap: Map<string, ProviderRule[]> = new Map();
-  private keywordRules: ProviderRule[] = [];
   private triggerRegex: RegExp;
 
   constructor() {
@@ -109,8 +100,6 @@ export class RegexRouter {
           }
           this.prefixMap.get(prefix)!.push(rule);
         }
-      } else if (rule.keywords && rule.keywords.length > 0) {
-        this.keywordRules.push(rule);
       }
     }
     this.triggerRegex = new RegExp(Array.from(prefixes).join('|'), 'g');
@@ -169,26 +158,6 @@ export class RegexRouter {
       }
     }
 
-    for (const rule of this.keywordRules) {
-      const lower = content.toLowerCase();
-      if (!rule.keywords!.some(kw => lower.includes(kw))) continue;
-      const match = rule.regex.exec(content);
-      if (match && match[2]) {
-        let phrase = match[2].trim();
-
-        // Special validation for seed phrases
-        if (rule.name === 'bip39_seed_phrase') {
-          const recovered = recoverMnemonic(phrase);
-          if (!recovered) continue;
-          phrase = recovered;
-        }
-
-        if (!foundKeys.has(phrase)) {
-          results.push({ key: phrase, provider: rule.name });
-          foundKeys.add(phrase);
-        }
-      }
-    }
 
     return results;
   }
