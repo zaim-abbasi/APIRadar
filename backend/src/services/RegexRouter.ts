@@ -1,4 +1,4 @@
-import { isValidKey } from './apiKeyValidator';
+import { isValidKey, recoverMnemonic } from './apiKeyValidator';
 import { FARM_CONSTANTS } from './farmConstants';
 
 export interface ProviderRule {
@@ -174,7 +174,15 @@ export class RegexRouter {
       if (!rule.keywords!.some(kw => lower.includes(kw))) continue;
       const match = rule.regex.exec(content);
       if (match && match[2]) {
-        const phrase = match[2].trim();
+        let phrase = match[2].trim();
+
+        // Special validation for seed phrases
+        if (rule.name === 'bip39_seed_phrase') {
+          const recovered = recoverMnemonic(phrase);
+          if (!recovered) continue;
+          phrase = recovered;
+        }
+
         if (!foundKeys.has(phrase)) {
           results.push({ key: phrase, provider: rule.name });
           foundKeys.add(phrase);

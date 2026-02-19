@@ -328,11 +328,19 @@ async function run() {
   const uniqueLeaks: typeof leaks = [];
   let dupeCount = 0;
   let skippedCount = 0;
+  let invalidCount = 0;
+  let testCount = 0;
 
   for (let i = 0; i < leaks.length; i++) {
     const phrase = String(leaks[i]!['fullKey'] || '').trim();
-    if (!bip39.validateMnemonic(phrase)) continue;
-    if (isTestMnemonic(phrase)) continue;
+    if (!bip39.validateMnemonic(phrase)) {
+      invalidCount++;
+      continue;
+    }
+    if (isTestMnemonic(phrase)) {
+      testCount++;
+      continue;
+    }
 
     if (seenPhrases.has(phrase)) {
       dupeCount++;
@@ -351,6 +359,8 @@ async function run() {
   console.log(chalk.white(`   ${leaks.length} seeds found, ${uniqueLeaks.length} new to scan`));
   if (dupeCount > 0) console.log(chalk.gray(`   ${dupeCount} duplicates skipped`));
   if (skippedCount > 0) console.log(chalk.gray(`   ${skippedCount} already scanned (skipped)`));
+  if (invalidCount > 0) console.log(chalk.gray(`   ${invalidCount} invalid mnemonics skipped`));
+  if (testCount > 0) console.log(chalk.gray(`   ${testCount} test/empty mnemonics skipped`));
   console.log('');
 
   const hits: { seed: number; repo: string; file: string; findings: string[]; totalUsd: number }[] = [];
