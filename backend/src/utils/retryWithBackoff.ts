@@ -31,4 +31,3 @@ function getDelay(i: number, c: typeof DEFAULTS, e: any) {
   return c.jitter ? Math.max(0, d + (Math.random() * 2 - 1) * d * c.jitterFactor) : d;
 }
 
-export const createRetryFunction = <T>(c: Partial<typeof DEFAULTS> = {}, ctx?: string) => (fn: () => Promise<T>) => retryWithBackoff(fn, c, ctx);

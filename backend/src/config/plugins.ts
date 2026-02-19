@@ -1,5 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import rateLimit from '@fastify/rate-limit';
@@ -7,7 +6,6 @@ import { config } from './environment';
 import { logger } from '../utils/logger';
 
 export async function registerPlugins(server: FastifyInstance): Promise<void> {
-  await server.register(helmet, { contentSecurityPolicy: false });
   await server.register(cors, { origin: true, credentials: true });
   await server.register(compress);
   await server.register(rateLimit, {

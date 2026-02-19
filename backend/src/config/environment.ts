@@ -9,11 +9,8 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1).refine(uri => uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://')),
   GITHUB_TOKEN: z.string().optional()
     .transform(val => val ? val.split(',').map(t => t.trim()) : []),
-  MAX_REPOS_PER_SCAN: z.coerce.number().pipe(z.number().min(1).max(1000)).default(10),
-  MAX_PAGES_PER_QUERY: z.coerce.number().pipe(z.number().min(1).max(1000)).default(100),
   RATE_LIMIT_MAX: z.coerce.number().pipe(z.number().min(1)).default(100),
   RATE_LIMIT_WINDOW: z.coerce.number().pipe(z.number().min(1000)).default(900000),
-  GITHUB_RATE_LIMIT_DELAY: z.coerce.number().pipe(z.number().min(0)).default(1000),
   NEXTAUTH_SECRET: z.string().min(1),
   CORS_ORIGINS: z.string().default('https://apiradar.live,https://www.apiradar.live,https://api.apiradar.live,http://localhost:3000')
     .transform(val => val.split(',').map(origin => origin.trim())),

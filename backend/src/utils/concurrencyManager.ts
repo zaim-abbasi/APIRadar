@@ -1,4 +1,3 @@
-import { logger } from './logger';
 
 export class ConcurrencyManager {
   private active = 0;
@@ -33,5 +32,4 @@ export class ConcurrencyManager {
   }
 
   getStatus() { return { active: this.active, queued: this.queue.length, max: this.max }; }
-  clearQueue() { this.queue = []; logger.warn('[CONCURRENCY] Queue cleared'); }
 }

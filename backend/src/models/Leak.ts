@@ -10,7 +10,6 @@ export interface ILeak extends Document {
   leakIntroducedAt: Date;
   leakDetectedAt: Date;
   repoCreatedAt: Date;
-  status: 'unverified' | 'verified' | 'dismissed';
 }
 
 const LeakSchema = new Schema<ILeak>(
@@ -61,13 +60,6 @@ const LeakSchema = new Schema<ILeak>(
     repoCreatedAt: {
       type: Date,
       required: true,
-      index: true,
-    },
-    status: {
-      type: String,
-      required: true,
-      enum: ['unverified', 'verified', 'dismissed'],
-      default: 'unverified',
       index: true,
     },
   },

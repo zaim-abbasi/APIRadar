@@ -123,20 +123,6 @@ export class GitHubService {
     }
   }
 
-  async getRepoLatestCommitHash(repoName: string): Promise<string> {
-    for (const branch of ['main', 'master']) {
-      try {
-        const response = await this.makeRequest(client =>
-          client.get(`/repos/${repoName}/commits/${branch}`)
-        );
-        return response.data?.sha || '';
-      } catch (err: any) {
-        if (err.response?.status === 404) continue;
-        throw err;
-      }
-    }
-    return '';
-  }
 
   async getUserProfile(username: string): Promise<{ login: string; avatar_url: string; html_url: string } | null> {
     try {
