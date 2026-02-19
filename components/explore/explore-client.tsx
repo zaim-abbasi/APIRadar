@@ -7,7 +7,6 @@ import React, {
   useRef,
   Suspense,
 } from "react";
-import { useIsMobile } from "@/components/home/use-is-mobile";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { usePlanCheck } from "@/hooks/use-plan-check";
@@ -15,15 +14,6 @@ import { fetchLeaks, clearLeaksCache } from "@/lib/api";
 import { LeakedKey, Provider } from "@/types";
 
 // Optimize dynamic imports with loading states and proper chunking
-const ExploreSectionMobile = dynamic(
-  () => import("@/components/explore/explore-section-mobile"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-md" />
-    ),
-  }
-);
 const ExploreSectionDesktop = dynamic(
   () => import("@/components/explore/explore-section-desktop"),
   {
@@ -43,7 +33,6 @@ const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = {
 const CACHE_TTL = 60 * 1000; // 1 minute
 
 export const ExploreClient = React.memo(function ExploreClient(props: any) {
-  const isMobile = useIsMobile();
   const { data: session, status: sessionStatus } = useSession();
   const { isAuthenticated } = usePlanCheck();
   const plan: "free" | "pro" = isAuthenticated ? "pro" : "free";
@@ -350,15 +339,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     ]
   );
 
-  if (isMobile) {
-    return (
-      <ExploreSectionMobile
-        {...sharedProps}
-        loadingRef={loadingRef}
-        hasMore={paginationState.hasMore}
-      />
-    );
-  }
   return (
     <ExploreSectionDesktop
       {...sharedProps}

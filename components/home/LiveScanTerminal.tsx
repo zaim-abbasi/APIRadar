@@ -114,14 +114,14 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
 
   return (
     <div
-      className="w-full h-[300px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
+      className="w-full h-[150px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
       style={{
         fontFamily:
           "'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
       }}
     >
       <div className="hidden lg:flex px-4 py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
-        <div className="font-mono text-xs text-muted-foreground tracking-widest uppercase">
+        <div className="font-mono text-[10px] sm:text-xs text-muted-foreground tracking-widest uppercase truncate">
           GLOBAL_SCAN // ACTIVE
         </div>
         <div className="flex items-center gap-2">
@@ -132,8 +132,8 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pt-0 overflow-auto">
-        <div className="h-full flex flex-col justify-end gap-0 text-xs pb-4">
+      <div className="flex-1 px-2 sm:px-4 pt-0 overflow-hidden relative">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-0.5 sm:gap-0 text-[10px] sm:text-xs pb-2 sm:pb-4 w-full">
           {logs.map((log) => (
             <div
               key={log.id}
@@ -142,13 +142,16 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 !log.id.startsWith("init-") && "animate-in fade-in slide-in-from-bottom-1 duration-400",
               )}
             >
-              <span className="text-muted-foreground/60 text-[0.7rem] mr-2">
-                [{formatLogTime(log.timestamp)}]
-              </span>
-              <span className="text-muted-foreground">SCANNING </span>
-              <span className="text-foreground font-bold">{log.repo}</span>
-              <span className="text-muted-foreground/80"> CREATED BY </span>
-              <span className="text-coral">{log.owner}</span>
+              <div className="flex items-center w-full overflow-hidden">
+                <span className="text-muted-foreground/50 text-[0.65rem] sm:text-[0.7rem] mr-1.5 sm:mr-2 tabular-nums flex-shrink-0">
+                  [{formatLogTime(log.timestamp)}]
+                </span>
+                <span className="text-muted-foreground flex-shrink-0 mr-1">SCANNING</span>
+                <span className="text-foreground font-bold truncate max-w-[80px] min-w-[40px] sm:max-w-none sm:min-w-0 mr-1">{log.repo}</span>
+                <span className="text-muted-foreground/60 hidden sm:inline mr-1">CREATED BY</span>
+                <span className="text-muted-foreground/60 text-[9px] sm:hidden mr-1">BY</span>
+                <span className="text-coral truncate flex-1 sm:flex-none">{log.owner}</span>
+              </div>
             </div>
           ))}
         </div>
