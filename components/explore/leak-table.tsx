@@ -190,7 +190,7 @@ const LeakCard = React.memo(({
     <div 
       className="group"
     >
-      <Card className="group/card border-border/50 bg-card/50 transition-colors duration-200 hover:border-border/80 hover:bg-card/70">
+      <Card className="group/card border-border/50 bg-card/50 transition-colors duration-200 sm:hover:border-border/80 sm:hover:bg-card/70">
       <CardContent className="p-2.5 sm:p-4 relative"> 
         <div className="flex flex-col h-full pr-8 sm:pr-0">
           <div className="flex-1 flex flex-col gap-2 sm:gap-2.5 w-full">
@@ -228,10 +228,10 @@ const LeakCard = React.memo(({
                         href={safeFilePath ? `${safeRepoUrl}/blob/HEAD/${safeFilePath}` : safeRepoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-coral hover:text-coral/80 hover:underline flex items-center gap-1 min-w-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
+                        className="font-medium text-coral sm:hover:text-coral/80 sm:hover:underline flex items-center gap-1 min-w-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded"
                       >
                         <span className="truncate">{parsed.repo}</span>
-                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral flex-shrink-0 transition-transform duration-200 group-hover/card:translate-x-0.5 group-hover/card:-translate-y-0.5" />
+                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral flex-shrink-0 transition-transform duration-200 md:group-hover/card:translate-x-0.5 md:group-hover/card:-translate-y-0.5" />
                       </a>
                     </div>
                     <span className="hidden sm:inline text-muted-foreground/70 text-sm">by</span>
@@ -239,7 +239,7 @@ const LeakCard = React.memo(({
                       href={`https://github.com/${parsed.owner}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden sm:flex text-muted-foreground hover:text-coral items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded text-sm"
+                      className="hidden sm:flex text-muted-foreground sm:hover:text-coral items-center gap-1.5 break-all sm:break-normal transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 rounded text-sm"
                     >
                       <User className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/60" />
                       {parsed.owner}
@@ -267,7 +267,7 @@ const LeakCard = React.memo(({
             {safeFilePath && (
               <div className="flex items-start sm:items-center gap-1.5 sm:gap-2 min-w-0">
                 <FileText className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-coral mt-0.5 sm:mt-0" />
-                <span className="text-xs sm:text-sm text-coral font-medium">Key path:</span>
+                <span className="text-xs sm:text-sm text-coral font-medium whitespace-nowrap flex-shrink-0">Key path:</span>
                 <code className="text-xs sm:text-sm break-all sm:break-words sm:whitespace-normal bg-muted/50 px-1.5 py-0.5 rounded border border-border/30 inline-block" title={safeFilePath}>{safeFilePath}</code>
               </div>
             )}
@@ -345,7 +345,7 @@ const LeakTableComponent = React.memo(({ leaks, isLoading, selectedProvider, pla
                 <div className="flex-shrink-0 sm:self-center">
                   <button
                     onClick={onSignIn}
-                    className="text-xs sm:text-sm font-medium text-foreground bg-background border border-border rounded-md shadow-sm flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+                    className="text-xs sm:text-sm font-medium text-foreground bg-background border border-border rounded-md shadow-sm flex items-center justify-center gap-2 sm:gap-2.5 transition-all duration-200 ease-in-out sm:hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-3 sm:px-4 py-3 sm:py-2 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
                     aria-label="Sign in with Google"
                   >
                     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.01 24.01 0 0 0 0 21.56l7.98-6.19z"/><path fill="#FBBC05" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>

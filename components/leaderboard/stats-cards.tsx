@@ -226,7 +226,7 @@ const StatCard = React.memo(({
   const IconComponent = useMemo(() => stat.icon, [stat.icon]);
   
   return (
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm transition-all duration-200 ease-out hover:border-border/80 hover:-translate-y-0.5">
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-2 p-2.5 sm:p-3">
         <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
           {stat.title}

@@ -70,7 +70,7 @@ const ProviderListItem = React.memo(({
 
   return (
     <div 
-      className="flex items-center justify-between p-2 sm:p-3 rounded-md bg-muted/20 border border-border/30 transition-colors duration-200 hover:bg-muted/40"
+      className="flex items-center justify-between p-2 sm:p-3 rounded-md bg-muted/20 border border-border/30 transition-colors duration-200 sm:hover:bg-muted/40"
     >
       <div className="flex items-center gap-2 sm:gap-3">
         <div 

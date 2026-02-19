@@ -79,8 +79,8 @@ const CTAButton = React.memo(({
     className={cn(
       "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
       variant === "default" 
-        ? "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70 shadow-sm"
-        : "bg-background text-foreground border-border hover:bg-secondary/80 hover:border-coral/60 shadow-sm"
+        ? "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 shadow-sm"
+        : "bg-background text-foreground border-border sm:hover:bg-secondary/80 sm:hover:border-coral/60 shadow-sm"
     )}
   >
     {Icon && <Icon className="mr-2 h-5 w-5" />}
@@ -175,7 +175,7 @@ export const HeroSection = React.memo(() => {
                   prefetch={true}
                   className={cn(
                     "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-coral text-primary-foreground border-coral/80 hover:brightness-90 hover:border-coral/70"
+                    "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70"
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">
@@ -188,7 +188,7 @@ export const HeroSection = React.memo(() => {
                   prefetch={true}
                   className={cn(
                     "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-card/50 backdrop-blur-sm text-foreground border-border hover:brightness-90 hover:border-coral/70"
+                    "bg-card/50 backdrop-blur-sm text-foreground border-border sm:hover:brightness-90 sm:hover:border-coral/70"
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">

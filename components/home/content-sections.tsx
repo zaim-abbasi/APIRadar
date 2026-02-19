@@ -34,7 +34,7 @@ const WhatYouCanDo = React.memo(() => {
       </h2>
       <div className="space-y-3 sm:space-y-3 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="p-3 sm:p-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out hover:border-border/80 hover:-translate-y-0.5">
+          <div key={index} className="p-3 sm:p-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
             <div className="flex items-start gap-3 sm:gap-2.5">
               <item.icon className={cn("h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5", item.iconColor)} />
               <div className="flex-1 min-w-0">
@@ -71,7 +71,7 @@ const WhatYouSee = React.memo(() => {
       </h2>
       <div className="space-y-2.5 sm:space-y-2.5 mb-4 sm:mb-4 flex-1">
         {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-3 sm:gap-3 p-2.5 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 ease-out hover:border-border/80 hover:-translate-y-0.5">
+          <div key={index} className="flex items-center gap-3 sm:gap-3 p-2.5 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
             <item.icon className={cn("h-4 w-4 sm:h-4 sm:w-4 flex-shrink-0", item.iconColor)} />
             <p className="text-sm sm:text-sm text-foreground/90 font-medium leading-none">
               {item.text}
@@ -135,7 +135,7 @@ const WhatsNext = React.memo(() => {
               href={`https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com&su=${encodeURIComponent("APIRadar: Platform Inquiry")}&body=${encodeURIComponent("Hi Zaim,\n\nI'm interested in APIRadar for [Company/Use Case].\nI'd like to know more about [Features/Pricing/Enterprise].\n\nBest,\n[Name]")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-primary-foreground border border-coral/80 hover:brightness-90 hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] w-full sm:w-auto"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] w-full sm:w-auto"
             >
               <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Contact the Developer</span>

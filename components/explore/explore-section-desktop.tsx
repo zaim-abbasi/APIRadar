@@ -52,7 +52,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out sm:hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
               aria-label="Sign in with Google"
             >
               <Chrome className="h-4 w-4" aria-hidden="true" focusable="false" />
@@ -135,7 +135,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 <span className="font-bold text-foreground">{total}</span>
                 <span>leaks found</span>
               </div>
-              <div className="inline-flex items-center gap-2">
+              <div className="hidden sm:inline-flex items-center gap-2">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
@@ -150,9 +150,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 href="https://github.com/zaim-abbasi/apiradar-community/discussions"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 text-muted-foreground sm:hover:text-foreground transition-colors"
               >
-                Issues & Requests
+                <span className="sm:hidden">Issues</span>
+                <span className="hidden sm:inline">Issues & Requests</span>
                 <Github className="h-3.5 w-3.5" />
               </a>
             </div>

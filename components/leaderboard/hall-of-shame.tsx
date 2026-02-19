@@ -12,22 +12,22 @@ type TopLeaker = {
   repos_count: number;
 };
 
-function PosterSkeleton() {
+function PosterSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
         "relative inline-flex flex-col items-center justify-center gap-3 p-1",
         "animate-pulse",
-        ""
+        className
       )}
     >
-      <div className="h-20 w-20 rounded-md bg-muted/40" />
+      <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-md bg-muted/40" />
       <div className="h-4 w-32 bg-muted/40 rounded" />
     </div>
   );
 }
 
-function WantedPoster({ user }: { user: TopLeaker }) {
+function WantedPoster({ user, className }: { user: TopLeaker; className?: string }) {
   return (
     <a
       href={user.html_url}
@@ -35,11 +35,12 @@ function WantedPoster({ user }: { user: TopLeaker }) {
       rel="noopener noreferrer"
       className={cn(
         "group inline-flex flex-col items-center text-center gap-2.5 w-fit p-1 rounded-md",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200 ease-out hover:-translate-y-0.5"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all duration-200 ease-out sm:hover:-translate-y-0.5",
+        className
       )}
       aria-label={`Open GitHub profile for ${user.username}`}
     >
-      <div className="relative w-20 h-20 rounded-md overflow-hidden border-2 border-destructive/40">
+      <div className="relative w-14 h-14 sm:w-20 sm:h-20 rounded-md overflow-hidden border-2 border-destructive/40">
         <img
           src={user.avatar_url || "/logo/logo-webp.webp"}
           alt={user.username}
@@ -56,7 +57,7 @@ function WantedPoster({ user }: { user: TopLeaker }) {
         >
           #{user.rank}
         </div>
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 will-change-[opacity]">
+        <div className="absolute inset-0 opacity-0 sm:group-hover:opacity-100 will-change-[opacity]">
           <div className="absolute inset-0 rounded-md bg-background/60 backdrop-blur-sm" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-xs text-foreground">
             <div className="font-semibold">{user.total_leaks.toLocaleString()} leaks</div>
@@ -135,11 +136,19 @@ export const HallOfShame = React.memo(function HallOfShame({ className }: { clas
         </div>
       </div>
 
-       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 justify-items-center">
+       <div className="mt-4 grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 justify-items-center">
         {data === null ? (
-          Array.from({ length: 10 }).map((_, i) => <PosterSkeleton key={i} />)
+          Array.from({ length: 10 }).map((_, i) => (
+            <PosterSkeleton key={i} className={i >= 6 ? "hidden sm:inline-flex" : ""} />
+          ))
         ) : posters.length ? (
-          posters.map((u) => <WantedPoster key={`${u.rank}-${u.username}`} user={u} />)
+          posters.map((u, i) => (
+            <WantedPoster 
+              key={`${u.rank}-${u.username}`} 
+              user={u} 
+              className={i >= 6 ? "hidden sm:inline-flex" : ""}
+            />
+          ))
         ) : (
           <div className="text-sm text-muted-foreground">
             Scanning…
