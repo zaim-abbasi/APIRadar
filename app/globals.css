@@ -448,6 +448,8 @@ html {
   font-size: 0.875rem !important;
   color: hsl(var(--coral)) !important;
   background-color: hsl(var(--card)) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 [data-sonner-toast] [data-description] {

@@ -110,7 +110,7 @@ export function SponsorDialog({ open, onOpenChange }: SponsorDialogProps) {
                         className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
                       >
                         {copied === key ? (
-                          <Check className="h-3 w-3 text-green-500" />
+                          <Check className="h-3 w-3 text-coral" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}

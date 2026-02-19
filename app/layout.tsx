@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/ui/theme-provider';
 import { AuthProvider } from '@/components/providers/session-provider';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
-import { Toaster } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import Analytics from '@/components/Analytics';
 import { HydrationFix } from '@/components/hydration-fix';
 
