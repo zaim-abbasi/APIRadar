@@ -4,6 +4,7 @@ import { config } from './config/environment';
 import { connectToMongoDB, disconnectFromMongoDB, getConnectionStatus } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
+import { gitHubEventsListener } from './services/GitHubEventsListener';
 import { ConfigurationService } from './services/ConfigurationService';
 import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler';
 import { registerRoutes } from './routes';
@@ -44,6 +45,7 @@ async function gracefulShutdown(signal: string) {
 
     // Stop Leak Farm
     gitHubCodeLeakFarmService.stop();
+    gitHubEventsListener.stop();
 
     // 3. Close Server
     await server.close();
@@ -100,6 +102,7 @@ async function bootstrap() {
   // 6. Start Background Services
   try {
     await gitHubCodeLeakFarmService.start();
+    await gitHubEventsListener.start();
     await startBackupScheduler();
   } catch (serviceError) {
     throw new Error(`Failed to start services: ${serviceError instanceof Error ? serviceError.message : String(serviceError)}`);

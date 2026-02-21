@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const LOG = path.join(process.cwd(), 'logs', 'logs.txt');
-const COLORS: Record<string, any> = { INIT: chalk.hex('#B24BF3'), SCAN: chalk.hex('#39FF14'), LEAK: chalk.hex('#00F3FF').bold, WARN: chalk.hex('#FFD700'), ERROR: chalk.hex('#FF0055') };
+const COLORS: Record<string, any> = { INIT: chalk.hex('#B24BF3'), SCAN: chalk.hex('#39FF14'), LEAK: chalk.hex('#00F3FF').bold, WARN: chalk.hex('#FFD700'), ERROR: chalk.hex('#FF0055'), FARM: chalk.hex('#FF8C00'), EVENTS: chalk.hex('#00CED1') };
 
 class TitanLogger {
   private buf: string[] = [];
@@ -36,6 +36,8 @@ class TitanLogger {
   init(m: string) { this.log('INIT', m); }
   scan(repo: string, file: string) { this._active = true; this.log('SCAN', `repo: ${repo} | file: ${file}`, process.env['NODE_ENV'] !== 'production'); }
   leak(prov: string, repo: string) { this._active = true; this.log('LEAK', `Provider: ${prov}, Repo: ${repo}`); }
+  farm(m: string) { this.log('FARM', `[FARM] ${m}`); }
+  events(m: string) { this.log('EVENTS', `[EVENTS] ${m}`); }
   warn(m: string) { this.log('WARN', m); }
   error(m: string) { this.log('ERROR', m); }
   debug(t: string, m: string) { if (process.env['NODE_ENV'] === 'development') this.log('INFO', `[${t.toUpperCase()}] ${m}`); }

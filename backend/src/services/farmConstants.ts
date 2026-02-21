@@ -39,6 +39,15 @@ export const FARM_CONSTANTS = {
     REPO_MIN: 3,
     REPO_MAX: 10
   },
+  EVENTS: {
+    DEFAULT_POLL_INTERVAL: 60000,
+    MAX_QUEUE_SIZE: 1000,
+    WORKER_CONCURRENCY: 10,
+    COMMIT_FETCH_TIMEOUT: 15000,
+    RAW_FILE_FETCH_TIMEOUT: 10000,
+    CORE_BUDGET_FLOOR: 500,
+    CORE_BUDGET_RESUME: 1000,
+  },
   PATTERNS: {
     IGNORED_DIRS: ['.git', 'node_modules', 'vendor', 'dist', 'build'],
     HIGH_RISK_FILES: [
