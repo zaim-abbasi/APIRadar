@@ -116,8 +116,13 @@ export class RegexRouter {
     while ((match = this.triggerRegex.exec(content)) !== null) {
       const startIndex = match.index;
 
+      // Ensure the match starts at a true word boundary in the original text
+      if (startIndex > 0) {
+        const prevChar = content[startIndex - 1];
+        if (prevChar && /[a-zA-Z0-9_]/.test(prevChar)) continue;
+      }
+
       // Extract a reasonable chunk forward to find the full token
-      // 150 chars is safe for all current provider key lengths
       const potentialChunk = content.slice(startIndex, startIndex + 150);
 
       // Extract the specific token starting from the trigger

@@ -19,6 +19,11 @@ const CORE_FLOOR = 500;
 const CORE_RESUME = 1000;
 const DIFF_MAX_SIZE = 5 * 1024 * 1024;
 const REDACTION = { PREFIX: 6, SUFFIX: 6, TOTAL: 32 };
+const SCANNABLE_EXT = new Set([
+  'env', 'json', 'yaml', 'yml', 'toml', 'xml', 'ini', 'cfg', 'conf', 'properties', 'tfvars',
+  'js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'go', 'java', 'php', 'rs', 'cs', 'kt', 'scala',
+  'swift', 'sh', 'bash', 'zsh', 'tf', 'hcl',
+]);
 
 function redactKey(key: string): string {
   if (key.length <= 12) return key;
@@ -209,6 +214,8 @@ export class GitHubEventsListener {
       const repoUrl = `https://github.com/${repo}`;
 
       for (const section of sections) {
+        const ext = section.filePath.split('.').pop()?.toLowerCase() ?? '';
+        if (!SCANNABLE_EXT.has(ext)) continue;
         const matches = regexRouter.scan(section.content);
         if (!matches.length) continue;
 
