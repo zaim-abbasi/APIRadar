@@ -1,80 +1,70 @@
 import axios from 'axios';
 import chalk from 'chalk';
-
 import mongoose from 'mongoose';
+import readline from 'readline';
 import { GithubToken } from '../src/models/GithubToken';
 
 const MONGODB_URI = "mongodb://localhost:27017/apiradar";
 
-async function verifyGithubToken(token: string) {
-  console.log(chalk.cyan(`\n🔍 Testing token: ${token.substring(0, 10)}...`));
-
-  let dbConnected = false;
-  try {
-    await mongoose.connect(MONGODB_URI);
-    dbConnected = true;
-  } catch (err) {
-    console.log(chalk.yellow('⚠️  DB Connection failed, will perform verification only.'));
-  }
-
-  try {
-    // 1. Check Rate Limit (Basic validity check)
-    const rateRes = await axios.get('https://api.github.com/rate_limit', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.v3+json'
-      },
-      timeout: 10000
+function readTokens(): Promise<string[]> {
+  return new Promise(resolve => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const lines: string[] = [];
+    console.log(chalk.cyan('Paste token(s), then press Enter twice:\n'));
+    rl.on('line', line => {
+      const t = line.trim();
+      if (!t && lines.length > 0) { rl.close(); return; }
+      if (t) lines.push(t);
     });
+    rl.on('close', () => resolve(lines));
+  });
+}
 
-    // 2. Check User Identity (Required for webapp display/logging)
-    const userRes = await axios.get('https://api.github.com/user', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      timeout: 10000
-    });
+async function verify(token: string): Promise<'live' | 'dead' | 'exists'> {
+  try {
+    const [rateRes, userRes] = await Promise.all([
+      axios.get('https://api.github.com/rate_limit', {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+        timeout: 10000,
+      }),
+      axios.get('https://api.github.com/user', {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
+      }),
+    ]);
 
-    console.log(chalk.green('✅ TOKEN IS ALIVE!'));
-    console.log(chalk.white(`   Owner: `) + chalk.yellow(`${userRes.data.login}`));
-    console.log(chalk.white(`   Account Type: `) + chalk.yellow(`${userRes.data.type}`));
-    console.log(chalk.white(`   Search Limit: `) + chalk.yellow(`${rateRes.data.resources.search.remaining}/${rateRes.data.resources.search.limit}`));
-    console.log(chalk.white(`   Core Limit: `) + chalk.yellow(`${rateRes.data.resources.core.remaining}/${rateRes.data.resources.core.limit}`));
+    const search = rateRes.data.resources.search;
+    const core = rateRes.data.resources.core;
+    console.log(chalk.green('  ✅ Live') + chalk.gray(` | ${userRes.data.login} | search: ${search.remaining}/${search.limit} | core: ${core.remaining}/${core.limit}`));
 
-    const scopes = userRes.headers['x-oauth-scopes'] || 'no specific scopes';
-    console.log(chalk.white(`   Permissions: `) + chalk.magenta(`${scopes}`));
-
-    if (dbConnected) {
-      await GithubToken.updateOne({ token }, { token }, { upsert: true });
-      console.log(chalk.blue('💾 Token saved/updated in database.'));
-    }
-
-  } catch (err: any) {
-    const status = err.response?.status;
-    const message = err.response?.data?.message;
-
-    if (status === 401) {
-      console.log(chalk.red('❌ TOKEN IS DEAD: ') + chalk.white('Revoked or Bad Credentials (401)'));
-    } else if (status === 403) {
-      if (message?.toLowerCase().includes('suspended')) {
-        console.log(chalk.red('❌ ACCOUNT SUSPENDED: ') + chalk.white('The account owner has been flagged by GitHub'));
-      } else {
-        console.log(chalk.yellow('⚠️ BLOCKED: ') + chalk.white('Token is valid but currently flat-out rate limited (403)'));
-      }
-    } else {
-      console.log(chalk.red(`💥 ERROR (${status || 'Network'}): `) + chalk.white(message || 'Connection failed'));
-    }
-  } finally {
-    if (dbConnected) {
-      await mongoose.connection.close();
-    }
+    if (await GithubToken.exists({ token })) return 'exists';
+    await GithubToken.create({ token });
+    return 'live';
+  } catch {
+    return 'dead';
   }
 }
 
-const tokenToTest = process.argv[2];
+async function run() {
+  const tokens = await readTokens();
+  if (!tokens.length) { console.log(chalk.red('No tokens provided.')); return; }
 
-if (!tokenToTest) {
-  console.log(chalk.red('Please provide a token: ') + chalk.white('npx ts-node scripts/verifyToken.ts ghp_XYZ...'));
-} else {
-  verifyGithubToken(tokenToTest);
+  await mongoose.connect(MONGODB_URI);
+  console.log(chalk.gray(`\nProcessing ${tokens.length} token(s)...\n`));
+
+  let added = 0, dead = 0, dupes = 0;
+
+  for (const token of tokens) {
+    const short = token.substring(0, 12) + '...';
+    process.stdout.write(chalk.gray(`${short} `));
+    const result = await verify(token);
+    if (result === 'live') { added++; }
+    else if (result === 'exists') { dupes++; console.log(chalk.yellow('  ⚠️  Already in DB')); }
+    else { dead++; console.log(chalk.red('  ❌ Expired/revoked')); }
+  }
+
+  console.log(chalk.cyan(`\n📊 ${added} added, ${dupes} duplicates, ${dead} dead\n`));
+  await mongoose.connection.close();
 }
+
+run();

