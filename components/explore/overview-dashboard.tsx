@@ -222,7 +222,7 @@ export function OverviewDashboard({
 
         {/* Right: Vertical Recent Feed */}
         <div className="lg:col-span-1">
-          <Card className="border-border/50 bg-card/40 backdrop-blur-sm h-full max-h-[280px] flex flex-col">
+          <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full max-h-[280px] flex flex-col">
             <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
               <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
