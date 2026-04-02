@@ -42,7 +42,7 @@ export const ProviderFilter = React.memo(
                   transition={{ duration: 0 }}
                 />
               )}
-              <span className="relative z-10 truncate px-1">
+              <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                 {provider.label}
               </span>
             </button>

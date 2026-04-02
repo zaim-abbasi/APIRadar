@@ -88,7 +88,11 @@ export function OverviewDashboard({
             {leaks.slice(0, 15).map((l, i) => (
               <React.Fragment key={`mq1-${i}`}>
                 <span className="inline-block">
-                  [ALERT] {l.provider.toUpperCase()} leak detected in{" "}
+                  <span className="text-coral/80">[ALERT]</span>{" "}
+                  <span className="text-coral font-bold">
+                    {l.provider.toUpperCase()}
+                  </span>{" "}
+                  leak detected in{" "}
                   {l.repoUrl
                     ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
                     : "Unknown Repo"}{" "}
@@ -107,7 +111,11 @@ export function OverviewDashboard({
             {leaks.slice(0, 15).map((l, i) => (
               <React.Fragment key={`mq2-${i}`}>
                 <span className="inline-block">
-                  [ALERT] {l.provider.toUpperCase()} leak detected in{" "}
+                  <span className="text-coral/80">[ALERT]</span>{" "}
+                  <span className="text-coral font-bold">
+                    {l.provider.toUpperCase()}
+                  </span>{" "}
+                  leak detected in{" "}
                   {l.repoUrl
                     ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
                     : "Unknown Repo"}{" "}
@@ -157,7 +165,9 @@ export function OverviewDashboard({
                       <CardContent className="p-3 sm:p-5 relative">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div className="space-y-0.5 sm:space-y-1 z-10">
-                            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            <p
+                              className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
+                            >
                               {stat.provider}
                             </p>
                             <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
@@ -186,12 +196,12 @@ export function OverviewDashboard({
                 .concat(
                   <Card
                     key="total-today"
-                    className="border-emerald-500/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-emerald-500/50 transition-colors h-full flex flex-col justify-center shadow-[inset_0_0_15px_rgba(16,185,129,0.05)]"
+                    className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/50 transition-colors h-full flex flex-col justify-center"
                   >
                     <CardContent className="p-3 sm:p-5 relative">
                       <div className="flex justify-between items-start mb-1 sm:mb-2">
                         <div className="space-y-0.5 sm:space-y-1 z-10">
-                          <p className="text-[10px] sm:text-xs font-medium text-emerald-500 uppercase tracking-wider">
+                          <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
                             Total Today
                           </p>
                           <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
@@ -201,7 +211,7 @@ export function OverviewDashboard({
                             )}
                           </h3>
                         </div>
-                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 z-10" />
+                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
                       </div>
                     </CardContent>
                   </Card>,
@@ -212,7 +222,7 @@ export function OverviewDashboard({
 
         {/* Right: Vertical Recent Feed */}
         <div className="lg:col-span-1">
-          <Card className="border-border/50 bg-card/40 backdrop-blur-sm h-full max-h-[500px] flex flex-col">
+          <Card className="border-border/50 bg-card/40 backdrop-blur-sm h-full max-h-[280px] flex flex-col">
             <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
               <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
@@ -250,7 +260,9 @@ export function OverviewDashboard({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 sm:gap-2">
-                          <span className="text-[11px] sm:text-xs font-bold text-foreground truncate">
+                          <span
+                            className={`text-[11px] sm:text-xs font-bold truncate ${providerColors[leak.provider] || "text-foreground"}`}
+                          >
                             {leak.provider.toUpperCase()}
                           </span>
                           <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap">
