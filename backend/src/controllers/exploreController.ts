@@ -61,6 +61,23 @@ export const getLeaksSchema = {
   }
 };
 
+export const getProviderStatsSchema = {
+  response: {
+    200: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          provider: { type: 'string' },
+          count: { type: 'number' },
+          todayCount: { type: 'number' }
+        }
+      }
+    },
+    500: errorSchema
+  }
+};
+
 export const getLeakFullKeySchema = {
   params: {
     type: 'object',
@@ -184,5 +201,35 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
   } catch (error) {
     request.log.error('Error fetching full key:', error);
     return reply.status(500).send({ error: 'Failed to fetch full key' });
+  }
+}
+
+export async function getProviderStatsHandler(request: AuthenticatedRequest, reply: FastifyReply) {
+  try {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const stats = await Leak.aggregate([
+      {
+        $group: {
+          _id: '$provider',
+          count: { $sum: 1 },
+          todayCount: {
+            $sum: { $cond: [{ $gte: ['$leakDetectedAt', oneDayAgo] }, 1, 0] }
+          }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Map _id to provider and fill any zero records if needed later down the pipeline
+    const formattedStats = stats.map((s: any) => ({
+      provider: s._id as string,
+      count: s.count as number,
+      todayCount: s.todayCount as number
+    }));
+
+    return reply.send(formattedStats);
+  } catch (error) {
+    request.log.error('Error fetching provider stats:', error);
+    return reply.status(500).send({ error: 'Failed to fetch provider stats' });
   }
 }

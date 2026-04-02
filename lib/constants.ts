@@ -11,7 +11,7 @@ export const PROVIDER_LABELS = [
 
 
 export const PROVIDERS = [
-  { value: 'all', label: 'All Providers' },
+  { value: 'all', label: 'Overview' },
   ...PROVIDER_LABELS
 ] as const;
 

@@ -272,6 +272,26 @@ export async function fetchLeaks({
   });
 }
 
+export async function fetchProviderStats(session?: any): Promise<ApiResponse<{ provider: string; count: number; todayCount: number }[]>> {
+  try {
+    const headers = createAuthHeaders(session);
+    const response = await fetch('/api/stats/providers', {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    return { data };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Failed to fetch provider stats' };
+  }
+}
+
 export async function fetchLeakFullKey(leakId: string, session?: any): Promise<ApiResponse<{ redactedKey: string }>> {
   try {
     const headers = createAuthHeaders(session);
