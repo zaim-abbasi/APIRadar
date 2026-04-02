@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Send } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
 
 export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   const [secondsAgo, setSecondsAgo] = useState(0);
@@ -62,12 +64,88 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   );
 }
 
-export function WatchlistShortcut() {
+export function FeatureRequestForm() {
+  const { data: session } = useSession();
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogVariant, setDialogVariant] = useState<
+    "success" | "rate-limit" | "error"
+  >("success");
+  const isAuthenticated = !!session?.user;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim() || !isAuthenticated) return;
+    setStatus("loading");
+    try {
+      const response = await fetch("/api/feature-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session.user?.email, text }),
+      });
+
+      if (response.status === 429) {
+        setDialogVariant("rate-limit");
+        setShowDialog(true);
+        setStatus("idle");
+        return;
+      }
+
+      if (!response.ok) {
+        setDialogVariant("error");
+        setShowDialog(true);
+        setStatus("idle");
+        return;
+      }
+
+      setText("");
+      setStatus("success");
+      setDialogVariant("success");
+      setShowDialog(true);
+      setTimeout(() => setStatus("idle"), 2000);
+    } catch {
+      setDialogVariant("error");
+      setShowDialog(true);
+      setStatus("idle");
+    }
+  };
+
   return (
-    <button className="flex items-center gap-1.5 text-muted-foreground sm:hover:text-foreground transition-colors cursor-pointer">
-      <Search className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Search / Filter</span>
-      <span className="sm:hidden">Search</span>
-    </button>
+    <>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-1 items-center gap-2 sm:flex-initial"
+      >
+        <input
+          type="text"
+          maxLength={150}
+          disabled={!isAuthenticated || status === "loading"}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={
+            isAuthenticated
+              ? "Request a provider or feature..."
+              : "Sign in to suggest features"
+          }
+          className="h-8 w-full min-w-0 sm:w-64 appearance-none rounded-md border border-amber-500/30 bg-[#1A1A1A] bg-clip-padding px-3 py-1.5 text-xs sm:text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={!isAuthenticated || status === "loading" || !text.trim()}
+          className="flex h-8 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 px-3 text-xs sm:text-sm text-amber-500 transition-colors hover:bg-amber-500/20 outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Send className="h-3.5 w-3.5 sm:mr-1.5" />
+          <span className="hidden sm:inline">
+            {status === "success" ? "Sent" : "Send"}
+          </span>
+        </button>
+      </form>
+      <FeatureRequestDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        variant={dialogVariant}
+      />
+    </>
   );
 }

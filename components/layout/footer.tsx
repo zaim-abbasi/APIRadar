@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Radar, Github, Heart } from "lucide-react";
+import { Radar, Github, Coffee } from "lucide-react";
 import { SponsorDialog } from "@/components/sponsor-dialog";
 
 // Memoized Logo component
@@ -82,18 +82,9 @@ const FooterComponent = () => {
             onClick={() => setIsSponsorOpen(true)}
             className="flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
-            <Heart className="h-3.5 w-3.5" />
+            <Coffee className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Sponsor</span>
           </button>
-          <a
-            href="https://github.com/zaim-abbasi/apiradar-community/discussions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-          >
-            <span className="hidden sm:inline">Issues & Requests</span>
-            <Github className="h-3.5 w-3.5 sm:hidden" />
-          </a>
           <Link
             href="/#about"
             className="hover:text-foreground transition-colors"

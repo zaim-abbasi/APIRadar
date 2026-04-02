@@ -24,7 +24,7 @@ import {
   CustomSelectValue,
 } from "@/components/ui/custom-select";
 import { Badge } from "@/components/ui/badge";
-import { LiveStats, WatchlistShortcut } from "@/components/explore/live-stats";
+import { LiveStats, FeatureRequestForm } from "@/components/explore/live-stats";
 import {
   Tooltip,
   TooltipProvider,
@@ -182,9 +182,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </div>
 
             {/* Right Side: Links */}
-            <div className="flex flex-row items-center gap-3 text-sm font-medium">
-              <WatchlistShortcut />
-            </div>
+            <FeatureRequestForm />
           </div>
         </div>
       </div>
@@ -238,21 +236,6 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         {/* Infinite scroll sentinel for pro users */}
         {plan === "pro" && hasMore && (
           <div ref={loadingRef} style={{ height: 1 }} />
-        )}
-
-        {/* Pro user end of list message */}
-        {plan === "pro" && !hasMore && leaks.length > 0 && (
-          <div
-            className="my-2 text-center animate-fade-in-up opacity-0"
-            style={{ animationDelay: "100ms" }}
-          >
-            <p className="text-sm text-muted-foreground/80 leading-relaxed w-full mx-auto">
-              Showing the{" "}
-              <span className="font-semibold text-foreground">8</span> most
-              recent critical exposures. The live feed updates as new 0-day
-              leaks are detected.
-            </p>
-          </div>
         )}
       </div>
     </div>

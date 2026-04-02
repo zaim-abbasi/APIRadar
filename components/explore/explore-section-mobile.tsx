@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Check,
   Chrome,
+  Coffee,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from "@/components/explore/provider-filter";
@@ -29,7 +30,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { LiveStats, WatchlistShortcut } from "@/components/explore/live-stats";
+import { LiveStats, FeatureRequestForm } from "@/components/explore/live-stats";
 import { SponsorDialog } from "@/components/sponsor-dialog";
 
 const LeakTable = dynamic(
@@ -150,9 +151,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             </div>
 
             {/* Right side: Links */}
-            <div className="flex flex-row items-center gap-3 text-xs sm:text-sm font-medium">
-              <WatchlistShortcut />
-            </div>
+            <FeatureRequestForm />
           </div>
         </div>
       </div>
@@ -193,21 +192,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         {plan === "pro" && hasMore && (
           <div ref={loadingRef} style={{ height: 1 }} />
         )}
-
-        {/* Pro user end of list message */}
-        {plan === "pro" && !hasMore && leaks.length > 0 && (
-          <div
-            className="my-2 text-center animate-fade-in-up opacity-0"
-            style={{ animationDelay: "100ms" }}
-          >
-            <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed w-full px-4 mx-auto">
-              Showing the{" "}
-              <span className="font-semibold text-foreground">8</span> most
-              recent critical exposures. The live feed updates as new 0-day
-              leaks are detected.
-            </p>
-          </div>
-        )}
       </div>
       {/* Social/Contact Icons (mobile only, above footer) */}
       <footer
@@ -220,19 +204,9 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             onClick={() => setIsSponsorOpen(true)}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Heart className="h-3.5 w-3.5" />
+            <Coffee className="h-3.5 w-3.5" />
             <span>Sponsor</span>
           </button>
-          <div className="h-3 w-px bg-border/50"></div>
-          <a
-            href="https://github.com/zaim-abbasi/apiradar-community/discussions"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span>Issues</span>
-            <Github className="h-3.5 w-3.5" />
-          </a>
         </div>
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">
