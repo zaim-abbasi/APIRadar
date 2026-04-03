@@ -4,30 +4,23 @@ import { Secret } from '../models/Secret';
 import { getEncryptionKey, encrypt } from '../utils/encryption';
 import { logger } from '../utils/logger';
 
-interface RawLeakFinding extends Partial<ILeak> {
+export interface RawLeakFinding extends Partial<ILeak> {
   fullKey?: string;
   redactedKey?: string;
 }
 
 export class IngestionService {
-  /**
-   * Refactored Core Ingestion Logic supporting the Twin-Table Architecture.
-   * Process multiple scanned findings ensuring deterministic deduplication scaling.
-   */
   public async processLeaks(leaks: RawLeakFinding[]): Promise<void> {
     if (!leaks.length) return;
 
-    // Load encryption buffer once per batch call
     const AES_KEY = getEncryptionKey();
 
-    // Map each identified leak using sequential but fast upserts ensuring collision integrity
     for (const leak of leaks) {
       if (!leak.fullKey) continue;
 
       try {
         const keyHash = crypto.createHash('sha256').update(leak.fullKey).digest('hex');
 
-        // Secret Upsert using native lean projection
         const secretDoc = await Secret.findOneAndUpdate(
           { keyHash },
           {
@@ -45,10 +38,8 @@ export class IngestionService {
           throw new Error(`Failed to secure Secret mapping for: ${leak.redactedKey}`);
         }
 
-        // Wipe the raw key strings to ensure data integrity compliance
         const { fullKey: _, redactedKey: __, ...safeLeakData } = leak;
 
-        // Perform the Leak Registration mapped against the Twin-Table SecretId
         await Leak.updateOne(
           { repoUrl: leak.repoUrl, secretId: secretDoc._id, filePath: leak.filePath },
           {

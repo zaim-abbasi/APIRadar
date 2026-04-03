@@ -14,7 +14,7 @@ import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { queryPrioritizer } from '../utils/queryPrioritizer';
 import { FARM_CONSTANTS } from './farmConstants';
-import { ingestionService } from './IngestionService';
+import { ingestionService, RawLeakFinding } from './IngestionService';
 
 
 
@@ -818,7 +818,7 @@ export class GitHubCodeLeakFarmService {
       try {
         await rateLimitOptimizer.waitWithThrottling();
         const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
-        const leakData: Partial<ILeak> = {
+        const leakData: RawLeakFinding = {
           redactedKey: redactKey(key),
           fullKey: key,
           provider,

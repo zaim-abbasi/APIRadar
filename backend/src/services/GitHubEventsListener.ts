@@ -7,9 +7,9 @@ import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { dbResilienceManager } from '../utils/dbResilience';
-import { ILeak } from '../models/Leak';
+
 import { FARM_CONSTANTS } from './farmConstants';
-import { ingestionService } from './IngestionService';
+import { ingestionService, RawLeakFinding } from './IngestionService';
 
 const EVENTS_URL = 'https://api.github.com/events';
 const POLL_INTERVAL = 60000;
@@ -211,7 +211,7 @@ export class GitHubEventsListener {
       const sections = parseDiffSections(diff);
       if (!sections.length) return;
 
-      const leaks: Partial<ILeak>[] = [];
+      const leaks: RawLeakFinding[] = [];
       const repoUrl = `https://github.com/${repo}`;
 
       for (const section of sections) {
@@ -241,7 +241,7 @@ export class GitHubEventsListener {
     }
   }
 
-  private async upsertLeaks(leaks: Partial<ILeak>[]): Promise<void> {
+  private async upsertLeaks(leaks: RawLeakFinding[]): Promise<void> {
     await dbResilienceManager.execute(async () => {
       await ingestionService.processLeaks(leaks);
     }, { queue: true, timeout: FARM_CONSTANTS.LIMITS.DB_WRITE }).catch((e: any) => {
