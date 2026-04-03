@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 export interface RawLeakFinding extends Partial<ILeak> {
   fullKey?: string;
   redactedKey?: string;
+  verification_status?: string;
 }
 
 export class IngestionService {
@@ -28,8 +29,7 @@ export class IngestionService {
               encryptedKey: encrypt(leak.fullKey, AES_KEY),
               provider: leak.provider,
               status: leak.verification_status || 'pending',
-            },
-            $inc: { leakCount: 1 }
+            }
           },
           { upsert: true, new: true }
         ).select('_id').lean();

@@ -6,7 +6,6 @@ export interface ISecret extends Document {
   encryptedKey: string;
   provider: string;
   status: 'pending' | 'usable' | 'authenticated' | 'rate_limited' | 'dead';
-  leakCount: number;
   lastVerifiedAt?: Date | null;
 }
 
@@ -37,19 +36,13 @@ const SecretSchema = new Schema<ISecret>(
       default: 'pending',
       index: true,
     },
-    leakCount: {
-      type: Number,
-      required: true,
-      default: 0,
-      min: 0,
-    },
     lastVerifiedAt: {
       type: Date,
       default: null,
     },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
     versionKey: false,
     toJSON: {
       transform: (_doc: any, ret: any) => {
