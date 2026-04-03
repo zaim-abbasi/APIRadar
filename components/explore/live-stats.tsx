@@ -128,7 +128,7 @@ export function FeatureRequestForm() {
               ? "Request a provider or feature..."
               : "Sign in to suggest features"
           }
-          className="h-8 w-full min-w-0 sm:w-64 appearance-none rounded-md border border-amber-500/30 bg-[#1A1A1A] bg-clip-padding px-3 py-1.5 text-xs sm:text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-8 w-full min-w-0 sm:w-64 appearance-none rounded-md border border-amber-500/30 bg-background bg-clip-padding px-3 py-1.5 text-xs sm:text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         />
         <button
           type="submit"
