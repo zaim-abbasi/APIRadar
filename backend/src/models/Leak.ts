@@ -10,6 +10,8 @@ export interface ILeak extends Document {
   leakIntroducedAt: Date;
   leakDetectedAt: Date;
   repoCreatedAt: Date;
+  last_verified_at?: Date | null;
+  verification_status: 'pending' | 'usable' | 'authenticated' | 'rate_limited' | 'dead';
 }
 
 const LeakSchema = new Schema<ILeak>(
@@ -61,6 +63,15 @@ const LeakSchema = new Schema<ILeak>(
       type: Date,
       required: true,
       index: true,
+    },
+    last_verified_at: {
+      type: Date,
+      default: null,
+    },
+    verification_status: {
+      type: String,
+      enum: ['pending', 'usable', 'authenticated', 'rate_limited', 'dead'],
+      default: 'pending',
     },
   },
   {

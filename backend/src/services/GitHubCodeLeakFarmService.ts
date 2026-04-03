@@ -85,7 +85,7 @@ function redactKey(key: string): string {
   if (key.length <= 12) return key;
   const prefix = key.substring(0, REDACTION.PREFIX_LEN);
   const suffix = key.substring(key.length - REDACTION.SUFFIX_LEN);
-  const stars = REDACTION.TOTAL_LEN - prefix.length - suffix.length;
+  const stars = key.length - REDACTION.PREFIX_LEN - REDACTION.SUFFIX_LEN;
   return `${prefix}${'*'.repeat(Math.max(stars, 0))}${suffix}`;
 }
 
