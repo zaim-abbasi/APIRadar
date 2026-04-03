@@ -3,6 +3,8 @@ import { Leak } from '../models/Leak';
 import { z } from 'zod';
 import { AuthenticatedRequest, getAccessLimits } from '../middleware/auth';
 import { PROVIDER_NAMES } from '../services/RegexRouter';
+import { Secret } from '../models/Secret';
+import { decrypt, getEncryptionKey } from '../utils/encryption';
 
 
 const querySchema = z.object({
@@ -87,7 +89,7 @@ export const getLeakFullKeySchema = {
   response: {
     200: {
       type: 'object',
-      properties: { redactedKey: { type: 'string' } }
+      properties: { fullKey: { type: 'string' } }
     },
     401: errorSchema,
     403: {
@@ -136,11 +138,31 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       total = await Leak.countDocuments(filter);
       const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
       leaks = await Leak.find(filter)
-        .select('redactedKey provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
+        .select('secretId provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
         .sort(sort)
         .skip(skip)
         .limit(enforcedLimit)
         .lean();
+
+      // OPTIMIZATION: O(1) Batch Decryption Map
+      const secretIds = [...new Set(leaks.map(l => l.secretId.toString()))];
+      const secrets = await Secret.find({ _id: { $in: secretIds } }).lean();
+
+      const AES_KEY = getEncryptionKey();
+      const secretMap = new Map(secrets.map(s => {
+        let redacted = '**********';
+        try {
+          const full = decrypt(s.encryptedKey, AES_KEY);
+          redacted = `${full.substring(0, 6)}********************${full.substring(full.length - 6)}`;
+        } catch { }
+        return [s._id.toString(), redacted];
+      }));
+
+      leaks = leaks.map(l => ({
+        ...l,
+        redactedKey: secretMap.get(l.secretId.toString()) || '**********'
+      }));
+
     } catch (dbErr) {
       request.log.error({ msg: 'DB error', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
@@ -185,19 +207,28 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     const { id } = request.params as { id: string };
 
     let leak = null;
+    let fullKey = '';
     try {
-      leak = await Leak.findById(id).select('redactedKey').lean();
+      leak = await Leak.findById(id).select('secretId').lean();
+
+      if (leak && leak.secretId) {
+        const secret = await Secret.findById(leak.secretId).lean();
+        if (secret && secret.encryptedKey) {
+          const AES_KEY = getEncryptionKey();
+          fullKey = decrypt(secret.encryptedKey, AES_KEY);
+        }
+      }
     } catch (dbErr) {
       request.log.error({ msg: 'DB error', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
     }
 
-    if (!leak) {
-      return reply.status(404).send({ error: 'Leak not found' });
+    if (!leak || !fullKey) {
+      return reply.status(404).send({ error: 'Leak or Secret not found' });
     }
 
-    request.log.info({ msg: 'Full key accessed', userId: request.user.id, leakId: id });
-    return reply.send({ redactedKey: leak.redactedKey });
+    request.log.info({ msg: 'Full key securely decrypted and accessed', userId: request.user.id, leakId: id });
+    return reply.send({ fullKey });
   } catch (error) {
     request.log.error('Error fetching full key:', error);
     return reply.status(500).send({ error: 'Failed to fetch full key' });

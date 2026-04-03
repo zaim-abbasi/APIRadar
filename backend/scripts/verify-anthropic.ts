@@ -1,7 +1,8 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { connectToMongoDB, disconnectFromMongoDB } from '../src/config/mongo';
-import { Leak } from '../src/models/Leak';
+import { Secret } from '../src/models/Secret';
+import { decrypt, getEncryptionKey } from '../src/utils/encryption';
 
 async function verifyKey(id: string, key: string, current: number, total: number) {
   const prefix = `[${current}/${total}] ID: ${id}`;
@@ -73,19 +74,21 @@ async function run() {
   try {
     await connectToMongoDB();
 
-    const leaks = await Leak.find({ provider: 'anthropic' }).select('+fullKey');
-    const total = leaks.length;
-    console.log(chalk.blue(`\n🚀 Starting tactical probe for ${total} Anthropic keys...\n`));
+    const secrets = await Secret.find({ provider: 'anthropic' });
+    const total = secrets.length;
+    console.log(chalk.blue(`\n🚀 Starting tactical probe for ${total} deduplicated Anthropic keys...\n`));
 
     const CONCURRENCY = 15;
     let index = 0;
+    const AES_KEY = getEncryptionKey();
 
     const next = async (): Promise<void> => {
       if (index >= total) return;
       const i = index++;
-      const leak = leaks[i];
-      if (leak?.fullKey) {
-        await verifyKey(leak.id, leak.fullKey, i + 1, total);
+      const secret = secrets[i];
+      if (secret?.encryptedKey) {
+        const fullKey = decrypt(secret.encryptedKey, AES_KEY);
+        await verifyKey(secret.id, fullKey, i + 1, total);
       }
       return next();
     };

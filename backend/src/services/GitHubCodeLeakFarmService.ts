@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { githubService } from './github';
-import { ILeak, Leak } from '../models/Leak';
+import { ILeak } from '../models/Leak';
 import { ScannedRepo } from '../models/ScannedRepo';
 import { rateLimitOptimizer } from './rateLimitOptimizer';
 import axios from 'axios';
@@ -13,8 +13,8 @@ import { FatalErrorRecoveryManager } from '../utils/fatalErrorRecovery';
 import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { queryPrioritizer } from '../utils/queryPrioritizer';
-
 import { FARM_CONSTANTS } from './farmConstants';
+import { ingestionService } from './IngestionService';
 
 
 
@@ -316,26 +316,7 @@ async function handleRateLimitError(err: any): Promise<void> {
 async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
   if (!leaks.length) return;
   await dbResilienceManager.execute(async () => {
-    const ops = leaks.map(leak => ({
-      updateOne: {
-        filter: { repoUrl: leak.repoUrl, redactedKey: leak.redactedKey, provider: leak.provider, filePath: leak.filePath },
-        update: {
-          $setOnInsert: { ...leak, leakDetectedAt: new Date() }
-        },
-        upsert: true
-      }
-    }));
-
-    const result = await Leak.bulkWrite(ops, { ordered: false });
-    const newLeaks: Partial<ILeak>[] = [];
-    if (result.upsertedIds && Object.keys(result.upsertedIds).length > 0) {
-      for (let i = 0; i < leaks.length; i++) {
-        const leak = leaks[i];
-        if (result.upsertedIds && result.upsertedIds[i] && leak) {
-          newLeaks.push(leak);
-        }
-      }
-    }
+    await ingestionService.processLeaks(leaks);
   }, {
     queue: true,
     timeout: FARM_CONSTANTS.LIMITS.DB_WRITE

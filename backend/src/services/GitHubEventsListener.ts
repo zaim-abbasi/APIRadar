@@ -7,8 +7,9 @@ import { ConcurrencyManager } from '../utils/concurrencyManager';
 import { LRUCache } from '../utils/lruCache';
 import { CircuitBreaker } from '../utils/circuitBreaker';
 import { dbResilienceManager } from '../utils/dbResilience';
-import { ILeak, Leak } from '../models/Leak';
+import { ILeak } from '../models/Leak';
 import { FARM_CONSTANTS } from './farmConstants';
+import { ingestionService } from './IngestionService';
 
 const EVENTS_URL = 'https://api.github.com/events';
 const POLL_INTERVAL = 60000;
@@ -242,14 +243,7 @@ export class GitHubEventsListener {
 
   private async upsertLeaks(leaks: Partial<ILeak>[]): Promise<void> {
     await dbResilienceManager.execute(async () => {
-      const ops = leaks.map(l => ({
-        updateOne: {
-          filter: { repoUrl: l.repoUrl, redactedKey: l.redactedKey, provider: l.provider, filePath: l.filePath },
-          update: { $setOnInsert: { ...l, leakDetectedAt: new Date() } },
-          upsert: true,
-        },
-      }));
-      await Leak.bulkWrite(ops, { ordered: false });
+      await ingestionService.processLeaks(leaks);
     }, { queue: true, timeout: FARM_CONSTANTS.LIMITS.DB_WRITE }).catch((e: any) => {
       if (e.code === 11000) logger.events(`Duplicate leak: ${e.message}`);
       else logger.events(`DB write failed: ${e instanceof Error ? e.message : String(e)}`);

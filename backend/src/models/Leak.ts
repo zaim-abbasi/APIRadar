@@ -2,8 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { PROVIDER_NAMES } from '../services/RegexRouter';
 
 export interface ILeak extends Document {
-  redactedKey: string;
-  fullKey: string;
+  secretId: mongoose.Types.ObjectId;
   provider: string;
   repoUrl: string;
   filePath: string;
@@ -16,18 +15,12 @@ export interface ILeak extends Document {
 
 const LeakSchema = new Schema<ILeak>(
   {
-    redactedKey: {
-      type: String,
+
+    secretId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Secret',
       required: true,
-      trim: true,
-      maxlength: 100,
-    },
-    fullKey: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 1000,
-      select: false,
+      index: true,
     },
     provider: {
       type: String,
@@ -82,7 +75,6 @@ const LeakSchema = new Schema<ILeak>(
         ret.id = ret._id;
         delete ret._id;
         delete ret.__v;
-        delete ret.fullKey;
         return ret;
       },
     },
@@ -90,14 +82,15 @@ const LeakSchema = new Schema<ILeak>(
 );
 
 LeakSchema.index(
-  { repoUrl: 1, redactedKey: 1, provider: 1, filePath: 1 },
+  { repoUrl: 1, secretId: 1, filePath: 1 },
   { unique: true }
 );
 
-LeakSchema.index(
-  { fullKey: 1 },
-  { unique: true }
-);
+// UNIQUE CONSTRAINT REMOVED MIGRATION
+// LeakSchema.index(
+//   { fullKey: 1 },
+//   { unique: true }
+// );
 
 LeakSchema.index({ leakDetectedAt: -1 });
 LeakSchema.index({ repoCreatedAt: -1 });

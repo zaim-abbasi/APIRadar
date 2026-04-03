@@ -22,11 +22,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-const server = fastify({
-  logger: false,
-  disableRequestLogging: true
-});
-
+let activeServer: any = null;
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal: string) {
@@ -36,24 +32,17 @@ async function gracefulShutdown(signal: string) {
   logger.status('Shutting Down', `Signal: ${signal}`);
 
   try {
-    // 1. Stop accepting new requests (if possible) or just close server
-    // 2. Stop services
     logger.init('Stopping services...');
-
-    // Stop Scheduler
     stopBackupScheduler();
-
-    // Stop Leak Farm
     gitHubCodeLeakFarmService.stop();
     gitHubEventsListener.stop();
 
-    // 3. Close Server
-    await server.close();
-    logger.init('HTTP Server closed');
+    if (activeServer) {
+      await activeServer.close();
+      logger.init('HTTP Server closed');
+    }
 
-    // 4. Close Database
     await disconnectFromMongoDB();
-
     logger.status('System', 'Shutdown Complete');
     process.exit(0);
   } catch (err) {
@@ -63,6 +52,12 @@ async function gracefulShutdown(signal: string) {
 }
 
 async function bootstrap() {
+  const server = fastify({
+    logger: false,
+    disableRequestLogging: true
+  });
+  activeServer = server;
+
   // 1. Register Plugins & Routes
   await server.register(cors, {
     origin: config.CORS_ORIGINS,
@@ -96,7 +91,6 @@ async function bootstrap() {
     logger.init('Configuration initialized');
   } catch (configError) {
     logger.error(`Configuration init failed: ${configError instanceof Error ? configError.message : String(configError)}`);
-    // Non-fatal? Maybe, but risky. Let's proceed but warn.
   }
 
   // 6. Start Background Services
@@ -117,7 +111,6 @@ async function bootstrap() {
 // Start Server
 bootstrap().catch(err => {
   logger.error(`[FATAL] Initial startup failed: ${err.message}`);
-  // If initial startup fails, we enter recovery mode immediately
   fatalErrorRecoveryManager.handleFatalError(
     err,
     async () => {
@@ -134,4 +127,6 @@ bootstrap().catch(err => {
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-export { server };
+export const server = {
+  get current() { return activeServer; }
+};

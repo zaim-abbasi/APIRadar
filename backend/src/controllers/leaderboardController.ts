@@ -173,8 +173,8 @@ export async function getTopLeakersHandler(request: FastifyRequest, reply: Fasti
     const data = await withCache<TopLeaker[]>('top-leakers', CACHE_TTL.LONG, async () => {
       const raw = await Leak.aggregate([
         { $addFields: { owner: { $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: ['$repoUrl', 'github.com/'] }, 1] }, '/'] }, 0] } } },
-        { $match: { owner: { $nin: [null, ''] } } },
-        { $group: { _id: { owner: '$owner', key: '$fullKey' }, repoUrl: { $first: '$repoUrl' } } },
+        { $match: { owner: { $nin: [null, ''] }, secretId: { $exists: true } } },
+        { $group: { _id: { owner: '$owner', key: '$secretId' }, repoUrl: { $first: '$repoUrl' } } },
         { $group: { _id: '$_id.owner', total_leaks: { $sum: 1 }, repos: { $addToSet: '$repoUrl' } } },
         { $project: { _id: 0, username: '$_id', total_leaks: 1, repos_count: { $size: '$repos' } } },
         { $sort: { total_leaks: -1 } },
