@@ -68,61 +68,122 @@ export function OverviewDashboard({
   return (
     <div className="flex flex-col space-y-6 w-full animate-fade-in-up">
       {/* Live Ticker */}
-      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1.5 sm:p-2 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[36px] sm:h-[42px]">
-        <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/20 rounded-full shadow-sm shrink-0 ml-0.5 sm:ml-1">
+      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[38px] sm:h-[44px] group">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,114,94,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,114,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
+
+        <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
           <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral drop-shadow-sm">
             Live Intel
           </span>
         </div>
+
         <div
           className="flex-1 overflow-hidden relative flex h-full"
           style={{
             maskImage:
-              "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
             WebkitMaskImage:
-              "linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent)",
+              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
           }}
         >
-          <div className="animate-marquee whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full">
+          <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full">
+            <div className="flex items-center gap-4 sm:gap-6 mr-4 sm:mr-6">
+              <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                  System Status
+                </span>
+                <span className="text-emerald-500 font-bold animate-pulse">
+                  NOMINAL
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                  Keys Secured
+                </span>
+                <span className="text-foreground font-bold italic">
+                  {providerStats
+                    .reduce((sum, s) => sum + s.count, 0)
+                    .toLocaleString()}
+                </span>
+              </span>
+            </div>
+
             {leaks.slice(0, 15).map((l, i) => (
               <React.Fragment key={`mq1-${i}`}>
-                <span className="inline-block">
-                  <span className="text-coral/80">[ALERT]</span>{" "}
-                  <span className="text-coral font-bold">
+                <span className="inline-block hover:text-foreground transition-colors cursor-default">
+                  <span className="text-coral/80 font-bold">[ALERT]</span>{" "}
+                  <span
+                    className={`font-bold ${providerColors[l.provider] || "text-coral"}`}
+                  >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  leak detected in{" "}
-                  {l.repoUrl
-                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                    : "Unknown Repo"}{" "}
-                  · {safeFormatDate(l.leakDetectedAt)}
+                  leak in{" "}
+                  <span className="text-muted-foreground/90 italic">
+                    {l.repoUrl
+                      ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
+                      : "Unknown Repo"}
+                  </span>{" "}
+                  ·{" "}
+                  <span className="opacity-70 text-[9px] sm:text-[10px]">
+                    {safeFormatDate(l.leakDetectedAt)}
+                  </span>
                 </span>
-                <span className="inline-block px-4 sm:px-6 text-coral/50 flex-shrink-0">
-                  •
+                <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+                  //
                 </span>
               </React.Fragment>
             ))}
           </div>
+
+          {/* Duplicated for seamless loop */}
           <div
-            className="animate-marquee whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full"
+            className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full"
             style={{ "--marquee-start": "100%" } as React.CSSProperties}
           >
+            <div className="flex items-center gap-4 sm:gap-6 mr-4 sm:mr-6">
+              <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                  System Status
+                </span>
+                <span className="text-emerald-500 font-bold animate-pulse">
+                  NOMINAL
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                  Keys Secured
+                </span>
+                <span className="text-foreground font-bold italic">
+                  {providerStats
+                    .reduce((sum, s) => sum + s.count, 0)
+                    .toLocaleString()}
+                </span>
+              </span>
+            </div>
+
             {leaks.slice(0, 15).map((l, i) => (
               <React.Fragment key={`mq2-${i}`}>
-                <span className="inline-block">
-                  <span className="text-coral/80">[ALERT]</span>{" "}
-                  <span className="text-coral font-bold">
+                <span className="inline-block hover:text-foreground transition-colors cursor-default">
+                  <span className="text-coral/80 font-bold">[ALERT]</span>{" "}
+                  <span
+                    className={`font-bold ${providerColors[l.provider] || "text-coral"}`}
+                  >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  leak detected in{" "}
-                  {l.repoUrl
-                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                    : "Unknown Repo"}{" "}
-                  · {safeFormatDate(l.leakDetectedAt)}
+                  leak in{" "}
+                  <span className="text-muted-foreground/90 italic">
+                    {l.repoUrl
+                      ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
+                      : "Unknown Repo"}
+                  </span>{" "}
+                  ·{" "}
+                  <span className="opacity-70 text-[9px] sm:text-[10px]">
+                    {safeFormatDate(l.leakDetectedAt)}
+                  </span>
                 </span>
-                <span className="inline-block px-4 sm:px-6 text-coral/50 flex-shrink-0">
-                  •
+                <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+                  //
                 </span>
               </React.Fragment>
             ))}
@@ -138,7 +199,7 @@ export function OverviewDashboard({
           100% { transform: translateX(calc(-100% + var(--marquee-start, 0%))); }
         }
         .animate-marquee {
-          animation: marquee 50s linear infinite;
+          animation: marquee 60s linear infinite;
         }
       `,
         }}
@@ -160,7 +221,7 @@ export function OverviewDashboard({
                   return (
                     <Card
                       key={i}
-                      className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-colors h-full flex flex-col justify-center"
+                      className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-300 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""}`}
                     >
                       <CardContent className="p-3 sm:p-5 relative">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
@@ -189,6 +250,10 @@ export function OverviewDashboard({
                             className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
                           />
                         </div>
+                        {/* Subtle background icon */}
+                        <Zap
+                          className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
+                        />
                       </CardContent>
                     </Card>
                   );
@@ -196,7 +261,7 @@ export function OverviewDashboard({
                 .concat(
                   <Card
                     key="total-today"
-                    className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/50 transition-colors h-full flex flex-col justify-center"
+                    className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-colors h-full flex flex-col justify-center"
                   >
                     <CardContent className="p-3 sm:p-5 relative">
                       <div className="flex justify-between items-start mb-1 sm:mb-2">
@@ -221,8 +286,8 @@ export function OverviewDashboard({
         </div>
 
         {/* Right: Vertical Recent Feed */}
-        <div className="lg:col-span-1">
-          <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full max-h-[280px] flex flex-col">
+        <div className="lg:col-span-1 lg:h-0 lg:min-h-full">
+          <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col">
             <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
               <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
