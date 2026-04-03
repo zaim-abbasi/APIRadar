@@ -3,9 +3,11 @@ import {
   getLeaksHandler,
   getLeakFullKeyHandler,
   getProviderStatsHandler,
+  getLiveStatsHandler,
   getLeaksSchema,
   getLeakFullKeySchema,
-  getProviderStatsSchema
+  getProviderStatsSchema,
+  getLiveStatsSchema
 } from '../controllers/exploreController';
 import { authenticateUser } from '../middleware/auth';
 
@@ -14,4 +16,5 @@ export async function leaksRoutes(server: FastifyInstance) {
   server.get('/leaks', { schema: getLeaksSchema }, getLeaksHandler);
   server.get('/leaks/:id/fullkey', { schema: getLeakFullKeySchema }, getLeakFullKeyHandler);
   server.get('/stats/providers', { schema: getProviderStatsSchema }, getProviderStatsHandler);
+  server.get('/stats/live', { schema: getLiveStatsSchema }, getLiveStatsHandler);
 }

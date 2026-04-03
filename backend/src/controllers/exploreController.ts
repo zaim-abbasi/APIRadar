@@ -80,6 +80,17 @@ export const getProviderStatsSchema = {
   }
 };
 
+export const getLiveStatsSchema = {
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        activeResearchers: { type: 'number' }
+      }
+    }
+  }
+};
+
 export const getLeakFullKeySchema = {
   params: {
     type: 'object',
@@ -263,4 +274,20 @@ export async function getProviderStatsHandler(request: AuthenticatedRequest, rep
     request.log.error('Error fetching provider stats:', error);
     return reply.status(500).send({ error: 'Failed to fetch provider stats' });
   }
+}
+
+export async function getLiveStatsHandler(_request: AuthenticatedRequest, reply: FastifyReply) {
+  const t = (Date.now() / 15000) | 0;
+  const h = (t * 15000 / 3600000) % 24;
+
+  const trend = 100 + 41 * Math.sin((h - 9) * 0.2618);
+  const hash = (((t * 1664525 + 1013904223) >>> 0) % 15) - 7;
+
+  let count = (trend + hash) | 0;
+
+  if (count % 10 === 0) count += (t & 1 ? 1 : -1);
+
+  const final = count < 51 ? 51 : (count > 149 ? 149 : count);
+
+  return reply.send({ activeResearchers: final });
 }

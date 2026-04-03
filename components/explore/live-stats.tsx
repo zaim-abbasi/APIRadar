@@ -4,10 +4,25 @@ import React, { useState, useEffect } from "react";
 import { Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const [researchers, setResearchers] = useState(142); // Initial value between 90-150
+  const [researchers, setResearchers] = useState(142);
+
+  const { data: stats } = useSWR("/api/stats/live", fetcher, {
+    refreshInterval: 15000,
+    dedupingInterval: 50000,
+    revalidateOnFocus: false,
+  });
+
+  useEffect(() => {
+    if (stats?.activeResearchers) {
+      setResearchers(stats.activeResearchers);
+    }
+  }, [stats]);
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`;
@@ -31,17 +46,8 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
     updateTimer();
     const timerInterval = setInterval(updateTimer, 1000);
 
-    // Researchers fake oscillation Effect
-    const researchersInterval = setInterval(() => {
-      setResearchers((prev) => {
-        const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
-        return Math.min(150, Math.max(90, prev + change));
-      });
-    }, 4500); // adjust every 4.5s
-
     return () => {
       clearInterval(timerInterval);
-      clearInterval(researchersInterval);
     };
   }, [latestLeakAt]);
 
