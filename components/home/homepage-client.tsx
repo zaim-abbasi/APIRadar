@@ -2,15 +2,16 @@
 import dynamic from "next/dynamic";
 
 const HeroSection = dynamic(
-  () => import("@/components/home/hero-section").then(m => m.HeroSection),
-  { 
+  () => import("@/components/home/hero-section").then((m) => m.HeroSection),
+  {
     ssr: false,
-    loading: () => <div className="min-h-screen animate-pulse bg-muted/20" />
-  }
+    loading: () => <div className="min-h-screen" />,
+  },
 );
 const ContentSections = dynamic(
-  () => import("@/components/home/content-sections").then(m => m.ContentSections),
-  { ssr: true }
+  () =>
+    import("@/components/home/content-sections").then((m) => m.ContentSections),
+  { ssr: true },
 );
 
 export default function HomePageClient() {
@@ -20,4 +21,4 @@ export default function HomePageClient() {
       <ContentSections />
     </div>
   );
-} 
+}

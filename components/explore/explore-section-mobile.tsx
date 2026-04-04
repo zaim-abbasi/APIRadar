@@ -38,7 +38,7 @@ const LeakTable = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse">
+      <div className="h-32 w-full flex items-center justify-center text-muted-foreground/50">
         Loading…
       </div>
     ),
@@ -160,7 +160,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <Suspense
           fallback={
             <div
-              className="h-32 w-full flex items-center justify-center text-muted-foreground animate-pulse"
+              className="h-32 w-full flex items-center justify-center text-muted-foreground/50"
               aria-busy="true"
               aria-live="polite"
             >

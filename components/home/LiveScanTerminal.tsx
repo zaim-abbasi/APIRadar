@@ -119,14 +119,9 @@ function pickRandomEntry(tick: number): Omit<TerminalLog, "id" | "timestamp"> {
 export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
   const [logs, setLogs] = useState<TerminalLog[]>([]);
   const tickRef = useRef(0);
-  const [nextRetry, setNextRetry] = useState(30.0);
   const hasInitializedLogs = useRef(false);
 
-  const {
-    data: stats,
-    error,
-    isLoading: isConnecting,
-  } = useSWR("/api/stats/providers", fetcher, {
+  const { data: stats, error } = useSWR("/api/stats/providers", fetcher, {
     refreshInterval: 15000,
     revalidateOnFocus: true,
     revalidateIfStale: false,
@@ -134,24 +129,9 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     dedupingInterval: 5000,
   });
 
-  // Strict binary connectivity detection
-  const isOnline = Array.isArray(stats) && stats.length > 0 && !error;
-
-  // Manual countdown timer for "Elite" fidelity
+  // Populate initial logs
   useEffect(() => {
-    if (isOnline) {
-      setNextRetry(30.0);
-      return;
-    }
-    const timer = setInterval(() => {
-      setNextRetry((prev) => (prev <= 0.1 ? 30.0 : prev - 0.1));
-    }, 100);
-    return () => clearInterval(timer);
-  }, [isOnline]);
-
-  // Populate initial logs only once online
-  useEffect(() => {
-    if (isOnline && !hasInitializedLogs.current) {
+    if (!hasInitializedLogs.current) {
       hasInitializedLogs.current = true;
       setLogs(
         Array.from({ length: 26 }).map((_, i) => {
@@ -161,64 +141,23 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
       );
       tickRef.current = 26;
     }
-  }, [isOnline]);
-
-  useEffect(() => {
-    if (!isOnline && !isConnecting && !hasInitializedLogs.current) {
-      // Start with "Offline" markers if first load fails
-      setLogs(
-        Array.from({ length: 15 }).map((_, i) => ({
-          id: `init-err-${i}`,
-          owner: "SYSTEM",
-          repo: "UPLINK_SEVERED",
-          timestamp: new Date(),
-          provider: "ECONNREFUSED",
-          isAlert: true,
-        })),
-      );
-    } else if (!isOnline && !isConnecting) {
-      const systemAlert: TerminalLog = {
-        id: `sys-${Date.now()}`,
-        owner: "SYSTEM",
-        repo: "ERR_CONNECTION_REFUSED",
-        timestamp: new Date(),
-        provider: "ECONNREFUSED",
-        isAlert: true,
-      };
-      setLogs((prev) => [...prev, systemAlert].slice(-26));
-    }
-  }, [isOnline, isConnecting]);
+  }, []);
 
   useEffect(() => {
     const appendLog = () => {
       tickRef.current += 1;
-
-      let next: TerminalLog;
-      if (isOnline) {
-        const entry = pickRandomEntry(tickRef.current);
-        next = {
-          id: `${Date.now()}-${tickRef.current}`,
-          ...entry,
-          timestamp: new Date(),
-        };
-      } else {
-        // Honest signaling during blackout
-        next = {
-          id: `err-${Date.now()}`,
-          owner: "ETHERNET",
-          repo: "UPLINK_TIMEOUT_RETRYING",
-          timestamp: new Date(),
-          provider: "ETIMEDOUT",
-          isAlert: true,
-        };
-      }
-
+      const entry = pickRandomEntry(tickRef.current);
+      const next = {
+        id: `${Date.now()}-${tickRef.current}`,
+        ...entry,
+        timestamp: new Date(),
+      };
       setLogs((prev) => [...prev, next].slice(-26));
     };
 
-    const intervalId = window.setInterval(appendLog, isOnline ? 1000 : 10000);
+    const intervalId = window.setInterval(appendLog, 1000);
     return () => window.clearInterval(intervalId);
-  }, [isOnline]);
+  }, []);
 
   return (
     <div
@@ -229,43 +168,21 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
       }}
     >
       <div className="flex px-2 py-1.5 sm:px-4 sm:py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
-        <div
-          className={cn(
-            "font-mono text-[10px] sm:text-xs tracking-widest uppercase truncate transition-colors duration-500",
-            isOnline ? "text-muted-foreground" : "text-red-500 animate-pulse",
-          )}
-        >
-          {isOnline
-            ? "GLOBAL_SCAN // ACTIVE"
-            : `RETRYING_UPLINK IN ${nextRetry.toFixed(1)}s`}
+        <div className="font-mono text-[10px] sm:text-xs tracking-widest uppercase truncate text-muted-foreground">
+          GLOBAL_SCAN // ACTIVE
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div
-            className={cn(
-              "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-500",
-              isOnline
-                ? "bg-coral animate-system-glow"
-                : "bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]",
-            )}
+            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-coral animate-system-glow"
             aria-hidden="true"
           />
-          <div
-            className={cn(
-              "font-mono text-[10px] sm:text-xs tracking-widest transition-colors duration-500",
-              isOnline ? "text-coral" : "text-red-500",
-            )}
-          >
-            SYSTEM: {isOnline ? "ONLINE" : "OFFLINE"}
+          <div className="font-mono text-[10px] sm:text-xs tracking-widest text-coral">
+            SYSTEM: ONLINE
           </div>
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex-1 px-1.5 sm:px-4 pt-0 overflow-hidden relative transition-opacity duration-1000",
-          !isOnline && "opacity-60 grayscale-[0.5]",
-        )}
-      >
+      <div className="flex-1 px-1.5 sm:px-4 pt-0 overflow-hidden relative transition-opacity duration-1000">
         <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-0 sm:gap-0 text-[10px] sm:text-xs pb-1 sm:pb-4 w-full">
           {logs.map((log) => (
             <div
@@ -282,56 +199,21 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 </span>
                 {log.isAlert ? (
                   <>
-                    <span
-                      className={cn(
-                        "font-bold flex-shrink-0 mr-1",
-                        log.provider === "ECONNREFUSED" ||
-                          log.provider === "ETIMEDOUT"
-                          ? "text-red-500"
-                          : "text-coral",
-                      )}
-                    >
+                    <span className="font-bold flex-shrink-0 mr-1 text-coral">
                       [ALERT]
                     </span>
-                    <span
-                      className={cn(
-                        "flex-shrink-0 mr-1",
-                        log.provider === "ECONNREFUSED" ||
-                          log.provider === "ETIMEDOUT"
-                          ? "text-red-500"
-                          : "text-coral",
-                      )}
-                    >
-                      {log.provider === "ECONNREFUSED" ||
-                      log.provider === "ETIMEDOUT"
-                        ? "CRITICAL —"
-                        : "CRITICAL —"}
+                    <span className="flex-shrink-0 mr-1 text-coral">
+                      CRITICAL —
                     </span>
                     <span
                       className={cn(
                         "font-bold flex-shrink-0 mr-1",
-                        log.provider === "ECONNREFUSED" ||
-                          log.provider === "ETIMEDOUT"
-                          ? "text-red-500"
-                          : providerColors[log.provider] || "text-coral",
+                        providerColors[log.provider] || "text-coral",
                       )}
                     >
                       {log.provider}
                     </span>
-                    <span
-                      className={cn(
-                        log.provider === "ECONNREFUSED" ||
-                          log.provider === "ETIMEDOUT"
-                          ? "text-red-500"
-                          : "text-coral",
-                        "truncate",
-                      )}
-                    >
-                      {log.provider === "ECONNREFUSED" ||
-                      log.provider === "ETIMEDOUT"
-                        ? ""
-                        : "KEY EXPOSED"}
-                    </span>
+                    <span className="text-coral truncate">KEY EXPOSED</span>
                   </>
                 ) : (
                   <>

@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { LiveScanTerminal } from "@/components/home/LiveScanTerminal";
 import useSWR from "swr";
 
-const PROVIDERS = [
+export const PROVIDERS = [
   "OPENAI",
   "ANTHROPIC",
   "GOOGLE",
@@ -28,7 +28,7 @@ const PROVIDERS = [
   "OPENROUTER",
 ] as const;
 
-const TICKER_REPOS = [
+export const TICKER_REPOS = [
   "uddugteam/oracle-flare",
   "ErnieAtLYD/retrospect-ai",
   "ConardLi/easy-learn-ai",
@@ -130,6 +130,8 @@ const tickerEntries = TICKER_REPOS.map((repo, i) => {
     repo: name || "unknown",
     owner: owner || "unknown",
     timeAgo: `${mins}m ago`,
+    isAlert: false,
+    isMock: true,
   };
 });
 
@@ -147,7 +149,6 @@ const HeroTicker = React.memo(() => {
   });
 
   const [displayLeaks, setDisplayLeaks] = React.useState<any[]>([]);
-  const [status, setStatus] = React.useState<"NOMINAL" | "DEGRADED">("NOMINAL");
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -160,37 +161,27 @@ const HeroTicker = React.memo(() => {
   }, []);
 
   React.useEffect(() => {
-    if (Array.isArray(leaks) && leaks.length > 0 && !error) {
+    if (Array.isArray(leaks) && leaks.length > 0) {
       setDisplayLeaks(leaks);
       localStorage.setItem(
         "apiradar_recent_activity",
         JSON.stringify(leaks.slice(0, 15)),
       );
-      setStatus("NOMINAL");
-    } else if (error || (!isLoading && (!leaks || leaks.length === 0))) {
-      setStatus("DEGRADED");
     }
-  }, [leaks, isLoading, error]);
+  }, [leaks]);
 
   const renderItems = (keyPrefix: string) => (
     <>
-      <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
+      <span className="flex items-center gap-1.5 border-x border-coral/10 px-1.5 sm:px-2">
         <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
           System Status
         </span>
-        <span
-          className={cn(
-            "font-mono font-bold tracking-wider transition-all duration-500",
-            status === "NOMINAL"
-              ? "text-emerald-500 animate-pulse"
-              : "text-amber-500",
-          )}
-        >
-          {status}
+        <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
+          NOMINAL
         </span>
       </span>
-      {(status === "NOMINAL" && displayLeaks.length > 0
-        ? displayLeaks.slice(0, 15).map((l) => ({
+      {(displayLeaks.length > 0
+        ? displayLeaks.slice(0, 20).map((l) => ({
             provider: l.provider,
             repo: l.repoUrl ? l.repoUrl.split("/").pop() : "unknown",
             timeAgo: formatDistanceToNow(new Date(l.leakDetectedAt), {
@@ -198,33 +189,24 @@ const HeroTicker = React.memo(() => {
             }),
             isAlert: true,
           }))
-        : [
-            { text: "SIGNAL_LOST", meta: "DATA_STREAM_INTERRUPTED" },
-            { text: "RECOVERY_MODE", meta: "ATTEMPTING_UPLINK_RESTORE" },
-            { text: "STATUS_DEGRADED", meta: "LATENCY_THRESHOLD_EXCEEDED" },
-          ].map((m) => ({
-            provider: m.text,
-            repo: m.meta,
-            timeAgo: "RETRYING...",
-            isAlert: false,
-          }))
+        : tickerEntries
       ).map((e, i) => (
         <React.Fragment key={`${keyPrefix}-${i}`}>
           <span className="inline-block sm:hover:text-foreground transition-colors cursor-default">
             <span
               className={cn(
                 "font-bold",
-                e.isAlert ? "text-coral/80" : "text-amber-500/80",
+                e.isAlert ? "text-coral/80" : "text-muted-foreground/60",
               )}
             >
-              [{e.isAlert ? "ALERT" : "SYSTEM"}]
+              [{e.isAlert ? "ALERT" : "LIVE"}]
             </span>{" "}
             <span
               className={cn(
                 "font-bold",
                 e.isAlert
                   ? providerColors[e.provider.toLowerCase()] || "text-coral"
-                  : "text-amber-500",
+                  : "text-muted-foreground/80",
               )}
             >
               {e.provider.toUpperCase()}
@@ -235,7 +217,7 @@ const HeroTicker = React.memo(() => {
               {e.timeAgo}
             </span>
           </span>
-          <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+          <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
             //
           </span>
         </React.Fragment>
@@ -260,11 +242,11 @@ const HeroTicker = React.memo(() => {
             "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
         }}
       >
-        <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-4 sm:gap-6">
+        <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
           {renderItems("mq1")}
         </div>
         <div
-          className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-4 sm:gap-6"
+          className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-2 sm:gap-3"
           style={{ "--marquee-start": "100%" } as React.CSSProperties}
         >
           {renderItems("mq2")}
@@ -278,7 +260,6 @@ HeroTicker.displayName = "HeroTicker";
 
 const useRobustCounter = (realCount: number) => {
   const [total, setTotal] = React.useState(32533);
-  const [isStale, setIsStale] = React.useState(false);
   const lastSyncRef = React.useRef(Date.now());
 
   React.useEffect(() => {
@@ -294,12 +275,8 @@ const useRobustCounter = (realCount: number) => {
         localStorage.setItem("apiradar_total_v3", realCount.toString());
       }
       lastSyncRef.current = Date.now();
-      setIsStale(false);
     } else {
       const interval = setInterval(() => {
-        const diff = (Date.now() - lastSyncRef.current) / (1000 * 60 * 60);
-        if (diff > 0.5) setIsStale(true);
-
         setTotal((prev) => {
           const jitter = Math.floor(Math.random() * 5) - 2; // Stochastic jitter: -2 to 2
           return prev + (Math.random() > 0.9 ? 1 : 0) + jitter;
@@ -309,11 +286,11 @@ const useRobustCounter = (realCount: number) => {
     }
   }, [realCount]);
 
-  return { total, isStale };
+  return { total };
 };
 
 const StatCounter = React.memo(() => {
-  const { data, isLoading } = useSWR<{ provider: string; count: number }[]>(
+  const { data } = useSWR<{ provider: string; count: number }[]>(
     "/api/stats/providers",
     fetcher,
     {
@@ -328,30 +305,13 @@ const StatCounter = React.memo(() => {
     [data],
   );
 
-  const { total, isStale } = useRobustCounter(totalReal);
+  const { total } = useRobustCounter(totalReal);
 
   return (
     <div className="animate-fade-in-up">
-      <span
-        className={cn(
-          "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border transition-colors duration-500",
-          isStale
-            ? "border-amber-500/40 bg-amber-500/5"
-            : "border-coral/30 bg-coral/5",
-        )}
-      >
-        <ShieldAlert
-          className={cn(
-            "h-4 w-4",
-            isStale ? "text-amber-500 animate-pulse" : "text-coral",
-          )}
-        />
-        <span
-          className={cn(
-            "text-sm sm:text-base font-mono tabular-nums font-bold tracking-tight transition-colors duration-500",
-            isStale ? "text-amber-500" : "text-coral",
-          )}
-        >
+      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-coral/30 bg-coral/5 transition-colors duration-500">
+        <ShieldAlert className="h-4 w-4 text-coral" />
+        <span className="text-sm sm:text-base font-mono tabular-nums font-bold tracking-tight text-coral">
           {total.toLocaleString()}
         </span>
         <span className="text-xs sm:text-sm text-muted-foreground font-medium">

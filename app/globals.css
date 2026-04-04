@@ -54,6 +54,7 @@
     scroll-padding-top: 50px;
     overflow-y: scroll;
     scrollbar-gutter: stable both-edges;
+    transition: none !important;
   }
 
   * {
@@ -62,15 +63,13 @@
 
   body {
     @apply text-foreground font-sans antialiased;
-    background-color: hsl(var(--background));
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-      color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1;
     overflow-x: hidden;
     scrollbar-gutter: stable both-edges;
+    transition: none !important;
   }
 
   body[data-scroll-locked] {

@@ -18,10 +18,8 @@ const ExploreSectionDesktop = dynamic(
   () => import("@/components/explore/explore-section-desktop"),
   {
     ssr: false,
-    loading: () => (
-      <div className="min-h-[400px] animate-pulse bg-muted/20 rounded-md" />
-    ),
-  }
+    loading: () => <div className="min-h-[400px]" />,
+  },
 );
 
 const PAGE_SIZE = 8;
@@ -55,13 +53,8 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   });
   // Memoize default filters check to prevent unnecessary recalculations
   const isDefaultFilters = useMemo(
-    () =>
-      filterState.selectedProvider === "all" &&
-      paginationState.page === 1,
-    [
-      filterState.selectedProvider,
-      paginationState.page,
-    ]
+    () => filterState.selectedProvider === "all" && paginationState.page === 1,
+    [filterState.selectedProvider, paginationState.page],
   );
 
   // Initialize leaks from cache if available (client-only to prevent hydration mismatch)
@@ -117,7 +110,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
           setPaginationState((prev) => ({ ...prev, page: prev.page + 1 }));
         }
       },
-      { rootMargin: INFINITE_SCROLL_MARGIN }
+      { rootMargin: INFINITE_SCROLL_MARGIN },
     );
 
     // Observe the loading element
@@ -130,7 +123,12 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         observerRef.current.disconnect();
       }
     };
-  }, [paginationState.hasMore, loadingState.isLoading, loadingState.isLoadingMore, isAuthenticated]);
+  }, [
+    paginationState.hasMore,
+    loadingState.isLoading,
+    loadingState.isLoadingMore,
+    isAuthenticated,
+  ]);
 
   // Root fix: Use ref to track latest filter state to prevent stale closures
   const filterStateRef = useRef(filterState);
@@ -197,8 +195,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         setLeaks((prev) => {
           // Only update if filters haven't changed during the request
           if (latestPaginationState.page === 1) {
-            const isDefault =
-              latestFilterState.selectedProvider === "all";
+            const isDefault = latestFilterState.selectedProvider === "all";
             if (isDefault) {
               firstPageCache.leaks = data.leaks;
               firstPageCache.timestamp = Date.now();
@@ -259,8 +256,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
     clearLeaksCache();
 
-    const isDefault =
-      filterState.selectedProvider === "all";
+    const isDefault = filterState.selectedProvider === "all";
     if (!isDefault) {
       firstPageCache.leaks = [];
       firstPageCache.timestamp = 0;
@@ -272,7 +268,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
 
     return () => clearTimeout(timeoutId);
   }, [filterState.selectedProvider]);
-
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
   useEffect(() => {
@@ -336,7 +331,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       paginationState.total,
       loadingState.error,
       handleProviderChange,
-    ]
+    ],
   );
 
   return (

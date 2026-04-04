@@ -18,6 +18,7 @@ import { LeakedKey } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { parseGitHubRepoUrl, cn } from "@/lib/utils";
 import { fetchProviderStats } from "@/lib/api";
+import { PROVIDERS, TICKER_REPOS } from "@/components/home/hero-section";
 
 const safeFormatDate = (dateStr: string | Date | undefined) => {
   if (!dateStr) return "Unknown time";
@@ -106,37 +107,28 @@ export function OverviewDashboard({
               "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
           }}
         >
-          <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full">
-            <div className="flex items-center gap-4 sm:gap-6 mr-4 sm:mr-6">
-              <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
-                  System Status
-                </span>
-                <span
-                  className={cn(
-                    "font-mono font-bold tracking-wider transition-all duration-500",
-                    leaks.length > 0
-                      ? "text-emerald-500 animate-pulse"
-                      : "text-amber-500",
-                  )}
-                >
-                  {leaks.length > 0 ? "NOMINAL" : "DEGRADED"}
-                </span>
+          <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-coral/10">
+              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+                System Status
               </span>
-              <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
-                  Keys Secured
-                </span>
-                <span className="text-foreground font-bold italic">
-                  {providerStats
-                    .reduce((sum, s) => sum + s.count, 0)
-                    .toLocaleString()}
-                </span>
+              <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
+                NOMINAL
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
+              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+                Keys Secured
+              </span>
+              <span className="text-foreground font-bold italic">
+                {providerStats
+                  .reduce((sum, s) => sum + s.count, 0)
+                  .toLocaleString()}
               </span>
             </div>
 
             {(leaks.length > 0
-              ? leaks.slice(0, 15).map((l) => ({
+              ? leaks.slice(0, 20).map((l) => ({
                   provider: l.provider,
                   repo: l.repoUrl
                     ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
@@ -144,26 +136,23 @@ export function OverviewDashboard({
                   date: l.leakDetectedAt,
                   isAlert: true,
                 }))
-              : [
-                  { text: "SIGNAL_LOST", meta: "DATA_STREAM_INTERRUPTED" },
-                  { text: "RECOVERY_MODE", meta: "ATTEMPTING_UPLINK_RESTORE" },
-                  {
-                    text: "STATUS_DEGRADED",
-                    meta: "LATENCY_THRESHOLD_EXCEEDED",
-                  },
-                ].map((m) => ({
-                  provider: m.text,
-                  repo: m.meta,
-                  date: new Date(),
-                  isAlert: false,
-                }))
+              : Array.from({ length: 20 }).map((_, i) => {
+                  const repo = TICKER_REPOS[i % TICKER_REPOS.length];
+                  const [owner, name] = repo.split("/");
+                  return {
+                    provider: PROVIDERS[i % PROVIDERS.length],
+                    repo: name || "unknown",
+                    date: new Date(Date.now() - Math.random() * 3600000),
+                    isAlert: false,
+                  };
+                })
             ).map((l, i) => (
               <React.Fragment key={`mq1-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
                   <span
                     className={cn(
                       "font-bold",
-                      l.isAlert ? "text-coral/80" : "text-amber-500/80",
+                      l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
                     )}
                   >
                     [{l.isAlert ? "ALERT" : "SYSTEM"}]
@@ -173,7 +162,7 @@ export function OverviewDashboard({
                       "font-bold",
                       l.isAlert
                         ? providerColors[l.provider] || "text-coral"
-                        : "text-amber-500",
+                        : "text-muted-foreground/80",
                     )}
                   >
                     {l.provider.toUpperCase()}
@@ -187,7 +176,7 @@ export function OverviewDashboard({
                     {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
-                <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+                <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
                   //
                 </span>
               </React.Fragment>
@@ -196,39 +185,30 @@ export function OverviewDashboard({
 
           {/* Duplicated for seamless loop */}
           <div
-            className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full"
+            className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-2 sm:gap-3"
             style={{ "--marquee-start": "100%" } as React.CSSProperties}
           >
-            <div className="flex items-center gap-4 sm:gap-6 mr-4 sm:mr-6">
-              <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
-                  System Status
-                </span>
-                <span
-                  className={cn(
-                    "font-bold transition-all duration-500",
-                    leaks.length > 0
-                      ? "text-emerald-500 animate-pulse"
-                      : "text-amber-500",
-                  )}
-                >
-                  {leaks.length > 0 ? "NOMINAL" : "DEGRADED"}
-                </span>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-coral/10">
+              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+                System Status
               </span>
-              <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
-                  Keys Secured
-                </span>
-                <span className="text-foreground font-bold italic">
-                  {providerStats
-                    .reduce((sum, s) => sum + s.count, 0)
-                    .toLocaleString()}
-                </span>
+              <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
+                NOMINAL
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
+              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+                Keys Secured
+              </span>
+              <span className="text-foreground font-bold italic">
+                {providerStats
+                  .reduce((sum, s) => sum + s.count, 0)
+                  .toLocaleString()}
               </span>
             </div>
 
             {(leaks.length > 0
-              ? leaks.slice(0, 15).map((l) => ({
+              ? leaks.slice(0, 20).map((l) => ({
                   provider: l.provider,
                   repo: l.repoUrl
                     ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
@@ -236,26 +216,23 @@ export function OverviewDashboard({
                   date: l.leakDetectedAt,
                   isAlert: true,
                 }))
-              : [
-                  { text: "SIGNAL_LOST", meta: "DATA_STREAM_INTERRUPTED" },
-                  { text: "RECOVERY_MODE", meta: "ATTEMPTING_UPLINK_RESTORE" },
-                  {
-                    text: "STATUS_DEGRADED",
-                    meta: "LATENCY_THRESHOLD_EXCEEDED",
-                  },
-                ].map((m) => ({
-                  provider: m.text,
-                  repo: m.meta,
-                  date: new Date(),
-                  isAlert: false,
-                }))
+              : Array.from({ length: 20 }).map((_, i) => {
+                  const repo = TICKER_REPOS[i % TICKER_REPOS.length];
+                  const [owner, name] = repo.split("/");
+                  return {
+                    provider: PROVIDERS[i % PROVIDERS.length],
+                    repo: name || "unknown",
+                    date: new Date(Date.now() - Math.random() * 3600000),
+                    isAlert: false,
+                  };
+                })
             ).map((l, i) => (
               <React.Fragment key={`mq2-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
                   <span
                     className={cn(
                       "font-bold",
-                      l.isAlert ? "text-coral/80" : "text-amber-500/80",
+                      l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
                     )}
                   >
                     [{l.isAlert ? "ALERT" : "SYSTEM"}]
@@ -265,7 +242,7 @@ export function OverviewDashboard({
                       "font-bold",
                       l.isAlert
                         ? providerColors[l.provider] || "text-coral"
-                        : "text-amber-500",
+                        : "text-muted-foreground/80",
                     )}
                   >
                     {l.provider.toUpperCase()}
@@ -279,7 +256,7 @@ export function OverviewDashboard({
                     {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
-                <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+                <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
                   //
                 </span>
               </React.Fragment>
