@@ -1,28 +1,40 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { Send, LogIn } from "lucide-react";
+import { useSession, signIn } from "next-auth/react";
 import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error("Offline");
+    return res.json();
+  });
 
 export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const [researchers, setResearchers] = useState(142);
+  const [researchers, setResearchers] = useState(0);
 
-  const { data: stats } = useSWR("/api/stats/live", fetcher, {
+  const {
+    data: stats,
+    error,
+    isLoading: isSWRLoading,
+  } = useSWR("/api/stats/live", fetcher, {
     refreshInterval: 15000,
-    dedupingInterval: 50000,
-    revalidateOnFocus: false,
+    dedupingInterval: 5000,
+    revalidateOnFocus: true,
+    revalidateIfStale: false,
+    shouldRetryOnError: false,
   });
 
   useEffect(() => {
-    if (stats?.activeResearchers) {
+    if (stats?.activeResearchers && !error) {
       setResearchers(stats.activeResearchers);
+    } else if (!isSWRLoading || error) {
+      setResearchers(0);
     }
-  }, [stats]);
+  }, [stats, isSWRLoading, error]);
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`;
@@ -62,9 +74,19 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
           Latest Detection: {formatTime(secondsAgo)}
         </span>
       </div>
-      <div className="hidden sm:inline-flex items-center gap-2 text-muted-foreground">
-        <span>●</span>
-        <span className="font-medium">{researchers} researchers active</span>
+      <div
+        className={`hidden sm:inline-flex items-center gap-2 text-muted-foreground transition-all duration-1000 ${researchers === 0 ? "opacity-60" : ""}`}
+      >
+        <span
+          className={`transition-colors duration-500 ${researchers === 0 ? "text-red-500/50" : "text-muted-foreground"}`}
+        >
+          ●
+        </span>
+        <span className="font-medium">
+          {researchers === 0
+            ? "0 researchers active (Link Severed)"
+            : `${researchers} researchers active`}
+        </span>
       </div>
     </>
   );
@@ -82,7 +104,11 @@ export function FeatureRequestForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !isAuthenticated) return;
+    if (!isAuthenticated) {
+      signIn("google", { callbackUrl: window.location.href });
+      return;
+    }
+    if (!text.trim() || status === "loading") return;
     setStatus("loading");
     try {
       const response = await fetch("/api/feature-requests", {
@@ -138,12 +164,20 @@ export function FeatureRequestForm() {
         />
         <button
           type="submit"
-          disabled={!isAuthenticated || status === "loading" || !text.trim()}
+          disabled={status === "loading" || (isAuthenticated && !text.trim())}
           className="flex h-8 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 px-3 text-xs sm:text-sm text-amber-500 transition-colors hover:bg-amber-500/20 outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Send className="h-3.5 w-3.5 sm:mr-1.5" />
+          {!isAuthenticated ? (
+            <LogIn className="h-3.5 w-3.5 sm:mr-1.5" />
+          ) : (
+            <Send className="h-3.5 w-3.5 sm:mr-1.5" />
+          )}
           <span className="hidden sm:inline">
-            {status === "success" ? "Sent" : "Send"}
+            {!isAuthenticated
+              ? "Sign in"
+              : status === "success"
+                ? "Sent"
+                : "Send"}
           </span>
         </button>
       </form>

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { LeakedKey } from "@/types";
 import { formatDistanceToNow } from "date-fns";
-import { parseGitHubRepoUrl } from "@/lib/utils";
+import { parseGitHubRepoUrl, cn } from "@/lib/utils";
 import { fetchProviderStats } from "@/lib/api";
 
 const safeFormatDate = (dateStr: string | Date | undefined) => {
@@ -42,24 +42,43 @@ export function OverviewDashboard({
   isLoading,
   onSignIn,
   plan,
+  isOffline: isOfflineProp,
 }: {
   leaks: LeakedKey[];
   isLoading: boolean;
   onSignIn?: () => void;
   plan: "free" | "pro";
+  isOffline?: boolean;
 }) {
   const [providerStats, setProviderStats] = useState<
     { provider: string; count: number; todayCount: number }[]
   >([]);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [nextRetry, setNextRetry] = useState(30.0);
+
+  const isOffline =
+    isOfflineProp ?? (!statsLoading && providerStats.length === 0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isOffline) {
+      timer = setInterval(() => {
+        setNextRetry((prev) => (prev <= 0.1 ? 30.0 : prev - 0.1));
+      }, 100);
+    }
+    return () => clearInterval(timer);
+  }, [isOffline]);
+
   useEffect(() => {
     const loadStats = async () => {
       setStatsLoading(true);
-      const res = await fetchProviderStats();
-      if (res.data) {
-        setProviderStats(res.data);
-      }
+      try {
+        const res = await fetchProviderStats();
+        if (res.data && res.data.length > 0) {
+          setProviderStats(res.data);
+        }
+      } catch (e) {}
       setStatsLoading(false);
     };
     loadStats();
@@ -90,15 +109,22 @@ export function OverviewDashboard({
           <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full">
             <div className="flex items-center gap-4 sm:gap-6 mr-4 sm:mr-6">
               <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
                   System Status
                 </span>
-                <span className="text-emerald-500 font-bold animate-pulse">
-                  NOMINAL
+                <span
+                  className={cn(
+                    "font-mono font-bold tracking-wider transition-all duration-500",
+                    leaks.length > 0
+                      ? "text-emerald-500 animate-pulse"
+                      : "text-amber-500",
+                  )}
+                >
+                  {leaks.length > 0 ? "NOMINAL" : "DEGRADED"}
                 </span>
               </span>
               <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
-                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+                <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
                   Keys Secured
                 </span>
                 <span className="text-foreground font-bold italic">
@@ -109,24 +135,56 @@ export function OverviewDashboard({
               </span>
             </div>
 
-            {leaks.slice(0, 15).map((l, i) => (
+            {(leaks.length > 0
+              ? leaks.slice(0, 15).map((l) => ({
+                  provider: l.provider,
+                  repo: l.repoUrl
+                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
+                    : "Unknown Repo",
+                  date: l.leakDetectedAt,
+                  isAlert: true,
+                }))
+              : [
+                  { text: "SIGNAL_LOST", meta: "DATA_STREAM_INTERRUPTED" },
+                  { text: "RECOVERY_MODE", meta: "ATTEMPTING_UPLINK_RESTORE" },
+                  {
+                    text: "STATUS_DEGRADED",
+                    meta: "LATENCY_THRESHOLD_EXCEEDED",
+                  },
+                ].map((m) => ({
+                  provider: m.text,
+                  repo: m.meta,
+                  date: new Date(),
+                  isAlert: false,
+                }))
+            ).map((l, i) => (
               <React.Fragment key={`mq1-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
-                  <span className="text-coral/80 font-bold">[ALERT]</span>{" "}
                   <span
-                    className={`font-bold ${providerColors[l.provider] || "text-coral"}`}
+                    className={cn(
+                      "font-bold",
+                      l.isAlert ? "text-coral/80" : "text-amber-500/80",
+                    )}
+                  >
+                    [{l.isAlert ? "ALERT" : "SYSTEM"}]
+                  </span>{" "}
+                  <span
+                    className={cn(
+                      "font-bold",
+                      l.isAlert
+                        ? providerColors[l.provider] || "text-coral"
+                        : "text-amber-500",
+                    )}
                   >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  leak in{" "}
+                  {l.isAlert ? "leak in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
-                    {l.repoUrl
-                      ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                      : "Unknown Repo"}
+                    {l.repo}
                   </span>{" "}
                   ·{" "}
                   <span className="opacity-70 text-[9px] sm:text-[10px]">
-                    {safeFormatDate(l.leakDetectedAt)}
+                    {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
                 <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
@@ -146,8 +204,15 @@ export function OverviewDashboard({
                 <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
                   System Status
                 </span>
-                <span className="text-emerald-500 font-bold animate-pulse">
-                  NOMINAL
+                <span
+                  className={cn(
+                    "font-bold transition-all duration-500",
+                    leaks.length > 0
+                      ? "text-emerald-500 animate-pulse"
+                      : "text-amber-500",
+                  )}
+                >
+                  {leaks.length > 0 ? "NOMINAL" : "DEGRADED"}
                 </span>
               </span>
               <span className="flex items-center gap-1.5 border-r border-coral/10 pr-3 sm:pr-4">
@@ -162,24 +227,56 @@ export function OverviewDashboard({
               </span>
             </div>
 
-            {leaks.slice(0, 15).map((l, i) => (
+            {(leaks.length > 0
+              ? leaks.slice(0, 15).map((l) => ({
+                  provider: l.provider,
+                  repo: l.repoUrl
+                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
+                    : "Unknown Repo",
+                  date: l.leakDetectedAt,
+                  isAlert: true,
+                }))
+              : [
+                  { text: "SIGNAL_LOST", meta: "DATA_STREAM_INTERRUPTED" },
+                  { text: "RECOVERY_MODE", meta: "ATTEMPTING_UPLINK_RESTORE" },
+                  {
+                    text: "STATUS_DEGRADED",
+                    meta: "LATENCY_THRESHOLD_EXCEEDED",
+                  },
+                ].map((m) => ({
+                  provider: m.text,
+                  repo: m.meta,
+                  date: new Date(),
+                  isAlert: false,
+                }))
+            ).map((l, i) => (
               <React.Fragment key={`mq2-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
-                  <span className="text-coral/80 font-bold">[ALERT]</span>{" "}
                   <span
-                    className={`font-bold ${providerColors[l.provider] || "text-coral"}`}
+                    className={cn(
+                      "font-bold",
+                      l.isAlert ? "text-coral/80" : "text-amber-500/80",
+                    )}
+                  >
+                    [{l.isAlert ? "ALERT" : "SYSTEM"}]
+                  </span>{" "}
+                  <span
+                    className={cn(
+                      "font-bold",
+                      l.isAlert
+                        ? providerColors[l.provider] || "text-coral"
+                        : "text-amber-500",
+                    )}
                   >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  leak in{" "}
+                  {l.isAlert ? "leak in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
-                    {l.repoUrl
-                      ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                      : "Unknown Repo"}
+                    {l.repo}
                   </span>{" "}
                   ·{" "}
                   <span className="opacity-70 text-[9px] sm:text-[10px]">
-                    {safeFormatDate(l.leakDetectedAt)}
+                    {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
                 <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
@@ -206,163 +303,196 @@ export function OverviewDashboard({
       />
 
       {/* Main Layout: Dynamic Provider Stat Grid & Recent Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        {/* Center: Dynamic Provider Stats */}
-        <div className="lg:col-span-2">
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {statsLoading ? (
-              <div className="col-span-full h-32 flex items-center justify-center text-muted-foreground text-sm">
-                Loading statistics...
+      {isOffline ? (
+        <div className="w-full min-h-[300px] flex flex-col items-center justify-center p-6 sm:p-10 text-center animate-fade-in">
+          <div className="space-y-4 max-w-md mx-auto">
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-bold tracking-tight text-foreground uppercase">
+                System Offline
+              </h3>
+              <div className="flex items-center justify-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] text-red-500/80 font-mono">
+                  [SIGNAL_LOST] // UPLINK_SEVERED_CORE_STREAM
+                </span>
               </div>
-            ) : (
-              providerStats
-                .map((stat, i) => {
-                  const color = providerColors[stat.provider] || "text-coral";
-                  return (
+            </div>
+
+            <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
+              The intelligence bridge has been severed. Autonomous recovery
+              protocols have been initiated to restore the live intel stream.
+            </p>
+
+            <div className="pt-2">
+              <span className="text-[9px] font-bold font-mono tracking-widest text-coral/60 uppercase">
+                AUTONOMOUS_RECOVERY: RETRYING_IN {nextRetry.toFixed(1)}s
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          {/* Center: Dynamic Provider Stats */}
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              {statsLoading ? (
+                <div className="col-span-full h-32 flex items-center justify-center text-muted-foreground text-sm">
+                  <Activity className="h-4 w-4 animate-spin mr-2" />
+                  Loading statistics...
+                </div>
+              ) : (
+                providerStats
+                  .map((stat, i) => {
+                    const color = providerColors[stat.provider] || "text-coral";
+                    return (
+                      <Card
+                        key={i}
+                        className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-300 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""}`}
+                      >
+                        <CardContent className="p-3 sm:p-5 relative">
+                          <div className="flex justify-between items-start mb-1 sm:mb-2">
+                            <div className="space-y-0.5 sm:space-y-1 z-10">
+                              <p
+                                className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
+                              >
+                                {stat.provider}
+                              </p>
+                              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                                {stat.count.toLocaleString()}
+                              </h3>
+                              {stat.todayCount > 0 ? (
+                                <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-emerald-500">
+                                  <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
+                                  +{stat.todayCount} today
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-muted-foreground/40">
+                                  <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50" />{" "}
+                                  +0 today
+                                </span>
+                              )}
+                            </div>
+                            <Zap
+                              className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
+                            />
+                          </div>
+                          {/* Subtle background icon */}
+                          <Zap
+                            className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
+                          />
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                  .concat(
                     <Card
-                      key={i}
-                      className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-300 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""}`}
+                      key="total-today"
+                      className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-colors h-full flex flex-col justify-center"
                     >
                       <CardContent className="p-3 sm:p-5 relative">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div className="space-y-0.5 sm:space-y-1 z-10">
-                            <p
-                              className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
-                            >
-                              {stat.provider}
+                            <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
+                              Total Today
                             </p>
                             <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                              {stat.count}
+                              {providerStats
+                                .reduce(
+                                  (sum, stat) => sum + (stat.todayCount || 0),
+                                  0,
+                                )
+                                .toLocaleString()}
                             </h3>
-                            {stat.todayCount > 0 ? (
-                              <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-emerald-500">
-                                <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
-                                +{stat.todayCount} today
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-muted-foreground/40">
-                                <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50" />{" "}
-                                +0 today
-                              </span>
-                            )}
                           </div>
-                          <Zap
-                            className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
-                          />
+                          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
                         </div>
-                        {/* Subtle background icon */}
-                        <Zap
-                          className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
-                        />
                       </CardContent>
-                    </Card>
-                  );
-                })
-                .concat(
-                  <Card
-                    key="total-today"
-                    className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-colors h-full flex flex-col justify-center"
-                  >
-                    <CardContent className="p-3 sm:p-5 relative">
-                      <div className="flex justify-between items-start mb-1 sm:mb-2">
-                        <div className="space-y-0.5 sm:space-y-1 z-10">
-                          <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
-                            Total Today
-                          </p>
-                          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                            {providerStats.reduce(
-                              (sum, stat) => sum + (stat.todayCount || 0),
-                              0,
-                            )}
-                          </h3>
-                        </div>
-                        <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
-                      </div>
-                    </CardContent>
-                  </Card>,
-                )
-            )}
-          </div>
-        </div>
-
-        {/* Right: Vertical Recent Feed */}
-        <div className="lg:col-span-1 lg:h-0 lg:min-h-full">
-          <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col">
-            <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
-              <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
-                Recent Activity
-              </h3>
-              <Badge variant="secondary" className="text-[10px] uppercase">
-                Live
-              </Badge>
-            </div>
-            <div className="p-0 overflow-y-auto flex-1 custom-scrollbar">
-              {isLoading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  Loading feed...
-                </div>
-              ) : leaks.length === 0 ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  No recent activity detected.
-                </div>
-              ) : (
-                <div className="flex flex-col divide-y divide-border/20">
-                  {leaks.slice(0, 20).map((leak, idx) => (
-                    <a
-                      key={idx}
-                      href={
-                        leak.repoUrl && leak.filePath
-                          ? `${leak.repoUrl}/blob/HEAD/${leak.filePath}`
-                          : leak.repoUrl || "#"
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group cursor-pointer flex items-center gap-2 sm:gap-3 block"
-                    >
-                      <div
-                        className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full flex-shrink-0 shadow-sm animate-pulse ${!leak.isLocked ? "bg-coral shadow-coral/50" : "bg-blue-500 shadow-blue-500/50"}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1 sm:gap-2">
-                          <span
-                            className={`text-[11px] sm:text-xs font-bold truncate ${providerColors[leak.provider] || "text-foreground"}`}
-                          >
-                            {leak.provider.toUpperCase()}
-                          </span>
-                          <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap">
-                            {safeFormatDate(leak.leakDetectedAt)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground/80 font-mono truncate mt-0.5">
-                          <FolderGit2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0 opacity-70" />
-                          <span className="truncate">
-                            {leak.repoUrl
-                              ? parseGitHubRepoUrl(leak.repoUrl)?.repo ||
-                                "Unknown Repo"
-                              : "Unknown Repo"}
-                          </span>
-                          {leak.filePath && (
-                            <>
-                              <span className="opacity-40 flex-shrink-0 text-[8px] sm:text-[10px]">
-                                /
-                              </span>
-                              <FileCode2 className="h-2 w-2 sm:h-2.5 sm:w-2.5 flex-shrink-0 opacity-60" />
-                              <span className="truncate opacity-80">
-                                {leak.filePath.split("/").pop()}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+                    </Card>,
+                  )
               )}
             </div>
-          </Card>
+          </div>
+
+          {/* Right: Vertical Recent Feed */}
+          <div className="lg:col-span-1 lg:h-0 lg:min-h-full">
+            <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col">
+              <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
+                <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
+                  Recent Activity
+                </h3>
+                <Badge variant="secondary" className="text-[10px] uppercase">
+                  Live
+                </Badge>
+              </div>
+              <div className="p-0 overflow-y-auto flex-1 custom-scrollbar">
+                {isLoading ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <Activity className="h-4 w-4 animate-spin mx-auto mb-2 opacity-50" />
+                    Loading feed...
+                  </div>
+                ) : leaks.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No recent activity detected.
+                  </div>
+                ) : (
+                  <div className="flex flex-col divide-y divide-border/20">
+                    {leaks.slice(0, 20).map((leak, idx) => (
+                      <a
+                        key={idx}
+                        href={
+                          leak.repoUrl && leak.filePath
+                            ? `${leak.repoUrl}/blob/HEAD/${leak.filePath}`
+                            : leak.repoUrl || "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group cursor-pointer flex items-center gap-2 sm:gap-3 block"
+                      >
+                        <div
+                          className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full flex-shrink-0 shadow-sm animate-pulse ${!leak.isLocked ? "bg-coral shadow-coral/50" : "bg-blue-500 shadow-blue-500/50"}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1 sm:gap-2">
+                            <span
+                              className={`text-[11px] sm:text-xs font-bold truncate ${providerColors[leak.provider] || "text-foreground"}`}
+                            >
+                              {leak.provider.toUpperCase()}
+                            </span>
+                            <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap">
+                              {safeFormatDate(leak.leakDetectedAt)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground/80 font-mono truncate mt-0.5">
+                            <FolderGit2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0 opacity-70" />
+                            <span className="truncate">
+                              {leak.repoUrl
+                                ? parseGitHubRepoUrl(leak.repoUrl)?.repo ||
+                                  "Unknown Repo"
+                                : "Unknown Repo"}
+                            </span>
+                            {leak.filePath && (
+                              <>
+                                <span className="opacity-40 flex-shrink-0 text-[8px] sm:text-[10px]">
+                                  /
+                                </span>
+                                <FileCode2 className="h-2 w-2 sm:h-2.5 sm:w-2.5 flex-shrink-0 opacity-60" />
+                                <span className="truncate opacity-80">
+                                  {leak.filePath.split("/").pop()}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

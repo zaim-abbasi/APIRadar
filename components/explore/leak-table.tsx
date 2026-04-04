@@ -10,6 +10,7 @@ import {
   GitBranch,
   LogIn,
   CircleCheck,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LeakedKey, Provider } from "@/types";
@@ -94,25 +95,96 @@ const LoadingSkeleton = React.memo(() => (
 LoadingSkeleton.displayName = "LoadingSkeleton";
 
 // Memoized Empty State component
+// Memoized Empty State component
 const EmptyState = React.memo(
-  ({ selectedProvider }: { selectedProvider: Provider }) => (
-    <div className="text-center py-16">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-coral/10 border border-coral/20 mb-4">
-        <FileText className="h-8 w-8 text-coral animate-pulse-slow" />
+  ({
+    selectedProvider,
+    isOffline,
+  }: {
+    selectedProvider: Provider;
+    isOffline?: boolean;
+  }) => {
+    const isAll = selectedProvider === "all";
+    const providerLabel = isAll ? "SYSTEM" : selectedProvider.toUpperCase();
+    const [nextRetry, setNextRetry] = React.useState(30.0);
+
+    React.useEffect(() => {
+      let timer: NodeJS.Timeout;
+      if (isOffline) {
+        timer = setInterval(() => {
+          setNextRetry((prev) => (prev <= 0.1 ? 30.0 : prev - 0.1));
+        }, 100);
+      }
+      return () => clearInterval(timer);
+    }, [isOffline]);
+
+    return (
+      <div className="text-center py-16 px-4 animate-fade-in transition-all duration-300">
+        <div className="space-y-4 max-w-md mx-auto">
+          {isOffline ? (
+            <>
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-bold tracking-tight text-foreground uppercase">
+                  System Offline
+                </h3>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] text-red-500/80 font-mono">
+                    [SIGNAL_LOST] // UPLINK_SEVERED_CORE_STREAM
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
+                The intelligence bridge has been severed. Autonomous recovery
+                protocols have been initiated to restore the live intel stream.
+              </p>
+
+              <div className="pt-2">
+                <span className="text-[9px] font-bold font-mono tracking-widest text-coral/60 uppercase">
+                  AUTONOMOUS_RECOVERY: RETRYING_IN {nextRetry.toFixed(1)}s
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-bold tracking-tight text-foreground uppercase">
+                  Sensors are clear
+                </h3>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500/80 font-mono">
+                    [STATUS: NOMINAL] // NO_EXPOSURES_DETECTED_FOR_
+                    {providerLabel}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
+                The scanning engine reports zero active leaks for the current
+                filters. All monitored{" "}
+                {isAll ? "provider repositories" : `${providerLabel} assets`}{" "}
+                are currently secured and verified.
+              </p>
+            </>
+          )}
+        </div>
       </div>
-      <h3 className="text-lg font-semibold mb-2 text-foreground">
-        Sensors are clear
-      </h3>
-      <p className="text-muted-foreground/80 max-w-md mx-auto text-sm leading-relaxed px-4">
-        No leaks found for current filters. This could mean the system is
-        updating or the backend is currently processing new scans. Check back
-        shortly.
-      </p>
-    </div>
-  ),
+    );
+  },
 );
 
 EmptyState.displayName = "EmptyState";
+
+interface LeakTableProps {
+  leaks: (LeakedKey | null)[];
+  isLoading?: boolean;
+  selectedProvider: Provider;
+  plan: "free" | "pro";
+  onSignIn?: () => void;
+  isOffline?: boolean;
+}
 
 const formatTimeAgo = (date: Date): string => {
   return formatDistanceToNow(date, { addSuffix: true })
@@ -249,7 +321,14 @@ const LeakCard = React.memo(
 LeakCard.displayName = "LeakCard";
 
 const LeakTableComponent = React.memo(
-  ({ leaks, isLoading, selectedProvider, plan, onSignIn }: LeakTableProps) => {
+  ({
+    leaks,
+    isLoading,
+    selectedProvider,
+    plan,
+    onSignIn,
+    isOffline,
+  }: LeakTableProps) => {
     // Filter and memoize valid leaks to prevent unnecessary re-renders
     const validLeaks = useMemo(
       () => leaks.filter((leak) => leak !== null) as LeakedKey[],
@@ -263,8 +342,10 @@ const LeakTableComponent = React.memo(
       return <LoadingSkeleton />;
     }
 
-    if (validLeaks.length === 0) {
-      return <EmptyState selectedProvider={selectedProvider} />;
+    if (validLeaks.length === 0 || isOffline) {
+      return (
+        <EmptyState selectedProvider={selectedProvider} isOffline={isOffline} />
+      );
     }
 
     // Render as a 2-column grid on desktop, 1 column on mobile
@@ -365,6 +446,8 @@ const LeakTableComponent = React.memo(
     for (const id of Array.from(prevIds)) {
       if (!nextIds.has(id)) return false;
     }
+
+    if (prevProps.isOffline !== nextProps.isOffline) return false;
 
     return true; // Props are equal, skip re-render
   },

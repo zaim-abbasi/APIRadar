@@ -213,6 +213,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                     : undefined
                 }
                 plan={plan}
+                isOffline={!!error}
               />
             ) : (
               <LeakTable
@@ -229,6 +230,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                         })
                     : undefined
                 }
+                isOffline={!!error}
               />
             )}
           </div>
