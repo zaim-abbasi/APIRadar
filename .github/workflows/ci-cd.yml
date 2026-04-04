@@ -2,13 +2,16 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
   contents: read
   statuses: write
   pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -68,7 +71,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: 📥 Download artifact
         uses: actions/download-artifact@v4
@@ -101,9 +104,9 @@ jobs:
             BACKUP_DIR="/home/${{ secrets.SERVER_USER }}/API-Radar-backup"
             TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             BACKUP="$BACKUP_DIR/backup-$TIMESTAMP.tar"
-            
+
             mkdir -p "$BACKUP_DIR"
-            
+
             if [ -d .next ] || [ -d backend/dist ]; then
               tar -cf "$BACKUP" .next public package.json package-lock.json \
                 backend/dist backend/package.json backend/package-lock.json \
@@ -112,21 +115,21 @@ jobs:
               
               ls -t "$BACKUP_DIR"/backup-*.tar 2>/dev/null | tail -n +3 | xargs rm -f 2>/dev/null || true
             fi
-            
+
             tar -xf deployment.tar && rm -f deployment.tar
-            
-            npm ci --prefer-offline --no-audit --legacy-peer-deps || \
-              npm install --prefer-offline --no-audit --legacy-peer-deps
-            
-            (cd backend && (npm ci --prefer-offline --no-audit --legacy-peer-deps || \
-              npm install --prefer-offline --no-audit --legacy-peer-deps))
-            
+
+            npm ci --prefer-offline --no-audit --legacy-peer-deps --omit=dev || \
+              npm install --prefer-offline --no-audit --legacy-peer-deps --omit=dev
+
+            (cd backend && (npm ci --prefer-offline --no-audit --legacy-peer-deps --omit=dev || \
+              npm install --prefer-offline --no-audit --legacy-peer-deps --omit=dev))
+
             pm2 list | grep -q "api-radar-backend.*online" && pm2 reload api-radar-backend --update-env 2>/dev/null || \
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
-            
+
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
               pm2 start npm --name api-radar-frontend -- start
-            
+
             pm2 save --force
             sleep 2
             pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online" || exit 1
@@ -146,13 +149,13 @@ jobs:
             const { sha, ref, actor, runId, serverUrl, repo } = context;
             const branch = ref.replace('refs/heads/', '');
             const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
-            
+
             await github.rest.repos.createCommitStatus({
               owner: repo.owner, repo: repo.repo, sha,
               state: 'success', context: 'CI/CD Pipeline',
               description: 'Deployed successfully', target_url: url
             });
-            
+
             const prs = await github.rest.pulls.list({
               owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
             });
@@ -189,13 +192,13 @@ jobs:
               exit 1
             fi
             tar -xf "$BACKUP"
-            
+
             pm2 list | grep -q "api-radar-backend.*online" && pm2 reload api-radar-backend --update-env 2>/dev/null || \
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
-            
+
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
               pm2 start npm --name api-radar-frontend -- start
-            
+
             pm2 save --force
 
       - name: 🔄 Notify Rollback
@@ -206,13 +209,13 @@ jobs:
             const { sha, ref, actor, runId, serverUrl, repo } = context;
             const branch = ref.replace('refs/heads/', '');
             const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
-            
+
             await github.rest.repos.createCommitStatus({
               owner: repo.owner, repo: repo.repo, sha,
               state: 'success', context: 'CI/CD Pipeline - Rollback',
               description: 'Rollback completed', target_url: url
             });
-            
+
             const prs = await github.rest.pulls.list({
               owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
             });
@@ -231,13 +234,13 @@ jobs:
             const { sha, ref, actor, runId, serverUrl, repo } = context;
             const branch = ref.replace('refs/heads/', '');
             const url = `${serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${runId}`;
-            
+
             await github.rest.repos.createCommitStatus({
               owner: repo.owner, repo: repo.repo, sha,
               state: 'failure', context: 'CI/CD Pipeline',
               description: 'Deployment failed', target_url: url
             });
-            
+
             const prs = await github.rest.pulls.list({
               owner: repo.owner, repo: repo.repo, state: 'open', head: `${repo.owner}:${branch}`
             });
