@@ -17,7 +17,6 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { LiveScanTerminal } from "@/components/home/LiveScanTerminal";
 import useSWR from "swr";
-import { Skeleton } from "boneyard-js/react";
 
 const PROVIDERS = [
   "OPENAI",
@@ -245,35 +244,33 @@ const HeroTicker = React.memo(() => {
   );
 
   return (
-    <Skeleton name="hero-ticker" loading={false}>
-      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
-        <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
-          <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
-          <span className="text-[9px] sm:text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral drop-shadow-sm translate-y-[0.5px]">
-            Live Intel
-          </span>
+    <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
+      <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
+        <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
+        <span className="text-[9px] sm:text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral drop-shadow-sm translate-y-[0.5px]">
+          Live Intel
+        </span>
+      </div>
+      <div
+        className="flex-1 overflow-hidden relative flex h-full"
+        style={{
+          maskImage:
+            "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+        }}
+      >
+        <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-4 sm:gap-6">
+          {renderItems("mq1")}
         </div>
         <div
-          className="flex-1 overflow-hidden relative flex h-full"
-          style={{
-            maskImage:
-              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-          }}
+          className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-4 sm:gap-6"
+          style={{ "--marquee-start": "100%" } as React.CSSProperties}
         >
-          <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-4 sm:gap-6">
-            {renderItems("mq1")}
-          </div>
-          <div
-            className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-4 sm:gap-6"
-            style={{ "--marquee-start": "100%" } as React.CSSProperties}
-          >
-            {renderItems("mq2")}
-          </div>
+          {renderItems("mq2")}
         </div>
       </div>
-    </Skeleton>
+    </div>
   );
 });
 
@@ -334,36 +331,34 @@ const StatCounter = React.memo(() => {
   const { total, isStale } = useRobustCounter(totalReal);
 
   return (
-    <Skeleton name="hero-stats" loading={isLoading}>
-      <div className="animate-fade-in-up">
+    <div className="animate-fade-in-up">
+      <span
+        className={cn(
+          "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border transition-colors duration-500",
+          isStale
+            ? "border-amber-500/40 bg-amber-500/5"
+            : "border-coral/30 bg-coral/5",
+        )}
+      >
+        <ShieldAlert
+          className={cn(
+            "h-4 w-4",
+            isStale ? "text-amber-500 animate-pulse" : "text-coral",
+          )}
+        />
         <span
           className={cn(
-            "inline-flex items-center gap-2 px-3 py-1.5 rounded-md border transition-colors duration-500",
-            isStale
-              ? "border-amber-500/40 bg-amber-500/5"
-              : "border-coral/30 bg-coral/5",
+            "text-sm sm:text-base font-mono tabular-nums font-bold tracking-tight transition-colors duration-500",
+            isStale ? "text-amber-500" : "text-coral",
           )}
         >
-          <ShieldAlert
-            className={cn(
-              "h-4 w-4",
-              isStale ? "text-amber-500 animate-pulse" : "text-coral",
-            )}
-          />
-          <span
-            className={cn(
-              "text-sm sm:text-base font-mono tabular-nums font-bold tracking-tight transition-colors duration-500",
-              isStale ? "text-amber-500" : "text-coral",
-            )}
-          >
-            {total.toLocaleString()}
-          </span>
-          <span className="text-xs sm:text-sm text-muted-foreground font-medium">
-            Active Threats Neutralized
-          </span>
+          {total.toLocaleString()}
         </span>
-      </div>
-    </Skeleton>
+        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+          Active Threats Neutralized
+        </span>
+      </span>
+    </div>
   );
 });
 
@@ -380,23 +375,21 @@ export const HeroSection = React.memo(() => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 sm:mb-4 lg:pr-8">
                   <StatCounter />
                   <div className="flex justify-center lg:justify-end shrink-0">
-                    <Skeleton name="ph-badge" loading={false}>
-                      <a
-                        href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
-                      >
-                        <Trophy className="h-4 w-4 text-coral shrink-0" />
-                        <span className="text-sm sm:text-base font-bold tracking-tight text-foreground/90">
-                          Featured On
-                        </span>
-                        <span className="text-xs sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
-                          Product Hunt
-                        </span>
-                        <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
-                      </a>
-                    </Skeleton>
+                    <a
+                      href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
+                    >
+                      <Trophy className="h-4 w-4 text-coral shrink-0" />
+                      <span className="text-sm sm:text-base font-bold tracking-tight text-foreground/90">
+                        Featured On
+                      </span>
+                      <span className="text-xs sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
+                        Product Hunt
+                      </span>
+                      <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
+                    </a>
                   </div>
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
@@ -420,9 +413,7 @@ export const HeroSection = React.memo(() => {
             </div>
 
             <div className="flex flex-col justify-center mt-2 sm:mt-6 lg:mt-0">
-              <Skeleton name="live-scan-active" loading={false}>
-                <LiveScanTerminal />
-              </Skeleton>
+              <LiveScanTerminal />
               <div className="mt-4 flex flex-col gap-4 sm:gap-4.5">
                 <Link
                   href="/explore"

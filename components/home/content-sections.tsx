@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Skeleton } from "boneyard-js/react";
 
 const WhatYouCanDo = React.memo(() => {
   const items = [
@@ -41,41 +40,39 @@ const WhatYouCanDo = React.memo(() => {
   ];
 
   return (
-    <Skeleton name="what-you-can-do" loading={false}>
-      <div className="flex flex-col h-full">
-        <h2
-          id="about"
-          className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight"
-        >
-          What You Can Do Here
-        </h2>
-        <div className="space-y-2.5 flex-1">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="p-2 sm:px-4 sm:py-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
-            >
-              <div className="flex items-start gap-3.5">
-                <item.icon
-                  className={cn(
-                    "h-4 w-4 flex-shrink-0 mt-1 transition-transform sm:group-hover:scale-110",
-                    item.iconColor,
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-foreground mb-1">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
+    <div className="flex flex-col h-full">
+      <h2
+        id="about"
+        className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight"
+      >
+        What You Can Do Here
+      </h2>
+      <div className="space-y-2.5 flex-1">
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="p-2 sm:px-4 sm:py-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
+          >
+            <div className="flex items-start gap-3.5">
+              <item.icon
+                className={cn(
+                  "h-4 w-4 flex-shrink-0 mt-1 transition-transform sm:group-hover:scale-110",
+                  item.iconColor,
+                )}
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </Skeleton>
+    </div>
   );
 });
 
@@ -91,26 +88,24 @@ const WhatYouSee = React.memo(() => {
   ];
 
   return (
-    <Skeleton name="what-you-see" loading={false}>
-      <div className="flex flex-col h-full">
-        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-          What You See For Each Leak
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 flex-1">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
-            >
-              <item.icon className="h-4 w-4 flex-shrink-0 text-coral" />
-              <p className="text-sm text-foreground/90 font-bold leading-none tracking-tight">
-                {item.text}
-              </p>
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col h-full">
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+        What You See For Each Leak
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 flex-1">
+        {items.map((item, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
+          >
+            <item.icon className="h-4 w-4 flex-shrink-0 text-coral" />
+            <p className="text-sm text-foreground/90 font-bold leading-none tracking-tight">
+              {item.text}
+            </p>
+          </div>
+        ))}
       </div>
-    </Skeleton>
+    </div>
   );
 });
 
@@ -127,30 +122,28 @@ const WhyThisExists = React.memo(() => {
   ];
 
   return (
-    <Skeleton name="why-this-exists" loading={false}>
-      <div className="flex flex-col h-full">
-        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-          The Zero-Trust Manifesto
-        </h2>
-        <div className="space-y-4 flex-1">
-          <div className="space-y-3">
-            {points.map((point, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
-                <p className="text-sm text-foreground/90 leading-relaxed font-medium">
-                  {point.title && (
-                    <span className="font-bold text-coral block mb-0.5">
-                      {point.title}
-                    </span>
-                  )}
-                  {point.text}
-                </p>
-              </div>
-            ))}
-          </div>
+    <div className="flex flex-col h-full">
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+        The Zero-Trust Manifesto
+      </h2>
+      <div className="space-y-4 flex-1">
+        <div className="space-y-3">
+          {points.map((point, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
+              <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+                {point.title && (
+                  <span className="font-bold text-coral block mb-0.5">
+                    {point.title}
+                  </span>
+                )}
+                {point.text}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
-    </Skeleton>
+    </div>
   );
 });
 
@@ -163,52 +156,50 @@ const WhatsNext = React.memo(() => {
   ];
 
   return (
-    <Skeleton name="whats-next" loading={false}>
-      <div className="flex flex-col h-full">
-        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-          Strategic Roadmap
-        </h2>
-        <div className="flex-1 space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            {items.map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col gap-1 px-3 py-2 rounded-md bg-secondary/30 border border-border/50"
-              >
-                <span className="text-[10px] font-bold text-muted-foreground">
-                  {item.label}
-                </span>
-                <span
-                  className={cn(
-                    "text-[9px] font-black tracking-widest",
-                    item.active
-                      ? "text-coral animate-pulse"
-                      : "text-muted-foreground/40",
-                  )}
-                >
-                  [{item.status}]
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3 pt-2">
-            <Link
-              href="https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com"
-              target="_blank"
-              className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
+    <div className="flex flex-col h-full">
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+        Strategic Roadmap
+      </h2>
+      <div className="flex-1 space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          {items.map((item) => (
+            <div
+              key={item.label}
+              className="flex flex-col gap-1 px-3 py-2 rounded-md bg-secondary/30 border border-border/50"
             >
-              <Shield className="h-4 w-4" />
-              <span>Collaborate on Intelligence</span>
-            </Link>
-            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
-              <Users className="h-3 w-3" />
-              <span>Built for researchers, by researchers.</span>
+              <span className="text-[10px] font-bold text-muted-foreground">
+                {item.label}
+              </span>
+              <span
+                className={cn(
+                  "text-[9px] font-black tracking-widest",
+                  item.active
+                    ? "text-coral animate-pulse"
+                    : "text-muted-foreground/40",
+                )}
+              >
+                [{item.status}]
+              </span>
             </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 pt-2">
+          <Link
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com"
+            target="_blank"
+            className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
+          >
+            <Shield className="h-4 w-4" />
+            <span>Collaborate on Intelligence</span>
+          </Link>
+          <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+            <Users className="h-3 w-3" />
+            <span>Built for researchers, by researchers.</span>
           </div>
         </div>
       </div>
-    </Skeleton>
+    </div>
   );
 });
 
