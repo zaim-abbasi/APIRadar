@@ -1,164 +1,230 @@
 "use client";
 
-import React from 'react';
-import { FileSearch, TrendingUp, GraduationCap, Github, Calendar, Key, ExternalLink, Lock, Mail } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import React from "react";
+import {
+  FileSearch,
+  TrendingUp,
+  GraduationCap,
+  Cpu,
+  Vault,
+  FolderGit2,
+  Clock,
+  Network,
+  Shield,
+  Users,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { Skeleton } from "boneyard-js/react";
 
 const WhatYouCanDo = React.memo(() => {
   const items = [
     {
       icon: FileSearch,
-      title: 'Explore real API key leaks',
-      description: 'Redacted previews and source links for deep investigation.',
-      iconColor: 'text-coral'
+      title: "Explore real API key leaks",
+      description: "Redacted previews and source links for deep investigation.",
+      iconColor: "text-coral",
     },
     {
       icon: TrendingUp,
-      title: 'Understand leak patterns',
-      description: 'Filter and sort to spot where leaks happen most.',
-      iconColor: 'text-coral'
+      title: "Understand leak patterns",
+      description: "Filter and sort to spot where leaks happen most.",
+      iconColor: "text-coral",
     },
     {
       icon: GraduationCap,
-      title: 'Enterprise Security Awareness',
-      description: 'Real-world leak patterns for secure DevOps training.',
-      iconColor: 'text-coral'
-    }
+      title: "Enterprise Security Awareness",
+      description:
+        "Train teams with real-world metadata to build defensive guardrails without exposing original source code.",
+      iconColor: "text-coral",
+    },
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <h2 id="about" className="text-lg sm:text-2xl lg:text-3xl font-semibold text-foreground mb-1.5 sm:mb-3 scroll-mt-20">
-        What You Can Do Here
-      </h2>
-      <div className="space-y-3 sm:space-y-3 flex-1">
-        {items.map((item, index) => (
-          <div key={index} className="p-3 sm:p-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
-            <div className="flex items-start gap-3 sm:gap-2.5">
-              <item.icon className={cn("h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0 mt-0.5", item.iconColor)} />
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-base font-semibold text-foreground mb-1 sm:mb-1">
-                  {item.title}
-                </h3>
-                <p className="hidden sm:block text-sm sm:text-sm text-muted-foreground leading-relaxed truncate">
-                  {item.description}
-                </p>
+    <Skeleton name="what-you-can-do" loading={false}>
+      <div className="flex flex-col h-full">
+        <h2
+          id="about"
+          className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight"
+        >
+          What You Can Do Here
+        </h2>
+        <div className="space-y-2.5 flex-1">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className="p-2 sm:px-4 sm:py-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
+            >
+              <div className="flex items-start gap-3.5">
+                <item.icon
+                  className={cn(
+                    "h-4 w-4 flex-shrink-0 mt-1 transition-transform sm:group-hover:scale-110",
+                    item.iconColor,
+                  )}
+                />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-foreground mb-1">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </Skeleton>
   );
 });
 
-WhatYouCanDo.displayName = 'WhatYouCanDo';
+WhatYouCanDo.displayName = "WhatYouCanDo";
 
 const WhatYouSee = React.memo(() => {
   const items = [
-    { icon: Key, text: 'Provider', iconColor: 'text-muted-foreground/70' },
-    { icon: Lock, text: 'Redacted Key', iconColor: 'text-muted-foreground/70' },
-    { icon: Github, text: 'Repository', iconColor: 'text-muted-foreground/70' },
-    { icon: Calendar, text: 'Timestamp', iconColor: 'text-muted-foreground/70' },
-    { icon: ExternalLink, text: 'Source Link', iconColor: 'text-muted-foreground/70' }
+    { icon: Cpu, text: "Provider" },
+    { icon: Vault, text: "Redacted Key" },
+    { icon: FolderGit2, text: "Repository" },
+    { icon: Clock, text: "Timestamp" },
+    { icon: Network, text: "Source Link" },
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold text-foreground mb-1.5 sm:mb-3">
-        What You See For Each Leak
-      </h2>
-      <div className="space-y-2.5 sm:space-y-2.5 mb-4 sm:mb-4 flex-1">
-        {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-3 sm:gap-3 p-2.5 sm:p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
-            <item.icon className={cn("h-4 w-4 sm:h-4 sm:w-4 flex-shrink-0", item.iconColor)} />
-            <p className="text-sm sm:text-sm text-foreground/90 font-medium leading-none">
-              {item.text}
-            </p>
-          </div>
-        ))}
+    <Skeleton name="what-you-see" loading={false}>
+      <div className="flex flex-col h-full">
+        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+          What You See For Each Leak
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 flex-1">
+          {items.map((item, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-3 p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
+            >
+              <item.icon className="h-4 w-4 flex-shrink-0 text-coral" />
+              <p className="text-sm text-foreground/90 font-bold leading-none tracking-tight">
+                {item.text}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-
-    </div>
+    </Skeleton>
   );
 });
 
-WhatYouSee.displayName = 'WhatYouSee';
+WhatYouSee.displayName = "WhatYouSee";
 
 const WhyThisExists = React.memo(() => {
   const points = [
-    { text: 'Secrets leak to public repos daily.' },
-    { text: 'Attackers exploit instantly. Visibility enables defense.' },
-    { title: 'No Code Retention:', text: 'Public metadata only. We never clone or store your code.' }
+    { text: "Secrets leak to public repos daily." },
+    { text: "Attackers exploit instantly. Visibility enables defense." },
+    {
+      title: "No Code Retention:",
+      text: "Public metadata only. We never clone or store your code.",
+    },
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold text-foreground mb-1.5 sm:mb-4">
-        The APIRadar Mission
-      </h2>
-      <div className="space-y-3 sm:space-y-2.5 flex-1">
-        {points.map((point, index) => (
-          <div key={index} className="flex items-start gap-3 sm:gap-3">
-            <div className="flex-shrink-0 w-1.5 h-1.5 sm:w-1.5 sm:h-1.5 rounded-full bg-coral mt-2 sm:mt-2" />
-            <p className="text-sm sm:text-sm text-foreground/90 leading-relaxed">
-              {point.title && <span className="font-semibold text-foreground mr-1">{point.title}</span>}
-              {point.text}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-});
-
-WhyThisExists.displayName = 'WhyThisExists';
-
-const WhatsNext = React.memo(() => {
-  return (
-    <div className="flex flex-col h-full">
-      <h2 className="text-lg sm:text-2xl lg:text-3xl font-semibold text-foreground mb-1.5 sm:mb-4">
-        What's Next for APIRadar?
-      </h2>
-      <div className="flex-1">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            {['More providers', 'Trend views', 'Private monitoring'].map((tag) => (
-              <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-                {tag}
-              </span>
+    <Skeleton name="why-this-exists" loading={false}>
+      <div className="flex flex-col h-full">
+        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+          The Zero-Trust Manifesto
+        </h2>
+        <div className="space-y-4 flex-1">
+          <div className="space-y-3">
+            {points.map((point, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
+                <p className="text-sm text-foreground/90 leading-relaxed font-medium">
+                  {point.title && (
+                    <span className="font-bold text-coral block mb-0.5">
+                      {point.title}
+                    </span>
+                  )}
+                  {point.text}
+                </p>
+              </div>
             ))}
-          </div>
-          <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3 shrink-0 w-full sm:w-auto">
-            <a
-              href={`https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com&su=${encodeURIComponent("APIRadar: Platform Inquiry")}&body=${encodeURIComponent("Hi Zaim,\n\nI'm interested in APIRadar for [Company/Use Case].\nI'd like to know more about [Features/Pricing/Enterprise].\n\nBest,\n[Name]")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-[0.98] w-full sm:w-auto"
-            >
-              <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span>Contact the Developer</span>
-            </a>
           </div>
         </div>
       </div>
-    </div>
+    </Skeleton>
   );
 });
 
-WhatsNext.displayName = 'WhatsNext';
+WhyThisExists.displayName = "WhyThisExists";
+
+const WhatsNext = React.memo(() => {
+  const items = [
+    { label: "More Providers", status: "PLANNED", active: false },
+    { label: "Private Monitoring", status: "COMING SOON", active: false },
+  ];
+
+  return (
+    <Skeleton name="whats-next" loading={false}>
+      <div className="flex flex-col h-full">
+        <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
+          Strategic Roadmap
+        </h2>
+        <div className="flex-1 space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {items.map((item) => (
+              <div
+                key={item.label}
+                className="flex flex-col gap-1 px-3 py-2 rounded-md bg-secondary/30 border border-border/50"
+              >
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {item.label}
+                </span>
+                <span
+                  className={cn(
+                    "text-[9px] font-black tracking-widest",
+                    item.active
+                      ? "text-coral animate-pulse"
+                      : "text-muted-foreground/40",
+                  )}
+                >
+                  [{item.status}]
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-3 pt-2">
+            <Link
+              href="https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com"
+              target="_blank"
+              className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Collaborate on Intelligence</span>
+            </Link>
+            <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+              <Users className="h-3 w-3" />
+              <span>Built for researchers, by researchers.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Skeleton>
+  );
+});
+
+WhatsNext.displayName = "WhatsNext";
 
 export const ContentSections = React.memo(() => {
   return (
-    <section className="pt-2 sm:pt-3 pb-6 sm:pb-10">
+    <section className="pt-6 sm:pt-10 pb-10 sm:pb-16">
       <div className="container mx-auto px-4">
-        <div className="space-y-3 sm:space-y-6 lg:space-y-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 lg:gap-12">
+        <div className="space-y-10 sm:space-y-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-14">
             <WhatYouCanDo />
             <WhatYouSee />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-12">
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-14">
             <WhyThisExists />
             <WhatsNext />
           </div>
@@ -168,5 +234,4 @@ export const ContentSections = React.memo(() => {
   );
 });
 
-ContentSections.displayName = 'ContentSections';
-
+ContentSections.displayName = "ContentSections";

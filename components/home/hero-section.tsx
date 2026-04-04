@@ -1,208 +1,338 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { ArrowRight, Zap, Eye, Globe, Radar, Crosshair, Radio, Trophy, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { LiveScanTerminal } from '@/components/home/LiveScanTerminal';
+import React, { useMemo } from "react";
+import {
+  ArrowRight,
+  Radar,
+  Lock,
+  Shield,
+  Trophy,
+  ShieldAlert,
+  Crosshair,
+  Activity,
+  ArrowUpRight,
+} from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { LiveScanTerminal } from "@/components/home/LiveScanTerminal";
+import useSWR from "swr";
+import { Skeleton } from "boneyard-js/react";
+
+const PROVIDERS = [
+  "OPENAI",
+  "ANTHROPIC",
+  "GOOGLE",
+  "GROQ",
+  "XAI",
+  "CEREBRAS",
+  "OPENROUTER",
+] as const;
+
+const TICKER_REPOS = [
+  "uddugteam/oracle-flare",
+  "ErnieAtLYD/retrospect-ai",
+  "ConardLi/easy-learn-ai",
+  "elQ3ndie/EtherStaking",
+  "idootop/open-xiaoai",
+  "TRocket-Labs/vectorlint",
+  "codeme-ne/die-produktivitaets-werkstatt",
+  "Tortilok/cyberimmune-systems_tpp",
+  "yannart/docker-compose-demo",
+  "manikcloud/manik-flask-chatgpt",
+  "Divyanshu9822/ml-ops-holiday-package-prediction",
+  "relkli/opentelemetry-demo",
+  "Vizzuality/heco-invest",
+  "wangwwwwjy/chatgpt-on-wechat-2",
+  "sumitrevolt/flash-loan-arbitrage-system",
+  "InsightReactions/TinyLlama",
+  "chromewillow/ai-credential-manager",
+  "gounthar/jdk8-removal",
+  "Siluvai1997/k8s-cicd-infrastructure",
+  "borjaOrtizLlamas/TFM_DEVOPS_MASTER_AWS",
+] as const;
+
+const providerColors: Record<string, string> = {
+  OPENAI: "text-emerald-500",
+  ANTHROPIC: "text-amber-600",
+  GOOGLE: "text-blue-500",
+  OPENROUTER: "text-fuchsia-500",
+  GROQ: "text-orange-600",
+  XAI: "text-slate-400",
+  CEREBRAS: "text-violet-500",
+};
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+const PIPELINE_STEPS = [
+  { icon: Radar, label: "MONITOR" },
+  { icon: Crosshair, label: "INTERCEPT" },
+  { icon: Lock, label: "VAULT" },
+  { icon: Activity, label: "INTEL" },
+] as const;
 
 const WorkflowPipeline = React.memo(() => (
-  <div className="flex items-center justify-center lg:justify-start">
-    <div className="flex items-center gap-2">
-      <div className="inline-flex items-center gap-2 rounded-md border bg-card border-border px-3 py-2">
-        <Radar className="h-4 w-4 text-muted-foreground" aria-hidden="true" focusable="false" />
-        <span className="text-xs font-bold tracking-widest text-muted-foreground">SCAN</span>
-      </div>
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" focusable="false" />
-      <div className="inline-flex items-center gap-2 rounded-md border bg-card border-border px-3 py-2">
-        <Crosshair className="h-4 w-4 text-muted-foreground" aria-hidden="true" focusable="false" />
-        <span className="text-xs font-bold tracking-widest text-muted-foreground">DETECT</span>
-      </div>
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden="true" focusable="false" />
-      <div className="inline-flex items-center gap-2 rounded-md border bg-coral text-primary-foreground border-coral/80 animate-pulse px-3 py-2">
-        <Radio className="h-4 w-4 text-primary-foreground" aria-hidden="true" focusable="false" />
-        <span className="text-xs font-bold tracking-widest text-primary-foreground">LIVE FEED</span>
-      </div>
+  <div className="flex items-center justify-center lg:justify-start overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+    <div className="flex items-center gap-1.5 sm:gap-2 px-1 whitespace-nowrap">
+      {PIPELINE_STEPS.map((step, i) => (
+        <React.Fragment key={step.label}>
+          {i > 0 && (
+            <ArrowRight
+              className="h-3.5 w-3.5 text-muted-foreground/50"
+              aria-hidden="true"
+            />
+          )}
+          <div
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md border px-3 py-2",
+              i === PIPELINE_STEPS.length - 1
+                ? "bg-coral text-primary-foreground border-coral/80 animate-pulse"
+                : "bg-card border-border",
+            )}
+          >
+            <step.icon
+              className={cn(
+                "h-4 w-4",
+                i === PIPELINE_STEPS.length - 1
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground",
+              )}
+              aria-hidden="true"
+            />
+            <span
+              className={cn(
+                "text-xs font-bold tracking-widest",
+                i === PIPELINE_STEPS.length - 1
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
+              {step.label}
+            </span>
+          </div>
+        </React.Fragment>
+      ))}
     </div>
   </div>
 ));
 
-WorkflowPipeline.displayName = 'WorkflowPipeline';
+WorkflowPipeline.displayName = "WorkflowPipeline";
 
-// Memoized Feature Tag component
-const FeatureTag = React.memo(({ 
-  icon: Icon, 
-  text, 
-  color, 
-  delayClass,
-  shouldSpin = false
-}: { 
-  icon: React.ComponentType<{ className?: string }>; 
-  text: string; 
-  color: string; 
-  delayClass: string; 
-  shouldSpin?: boolean;
-}) => (
-  <div 
-    className={cn(
-      "flex items-center gap-2 px-3 py-1.5 rounded-full border glass-card border-border/50 shadow-sm transition-all duration-200 ease-in-out",
-      delayClass
-    )}
-  >
-    <div className={cn(color, "animate-pulse-slow", shouldSpin && "animate-spin-slow")}> 
-      <Icon className="h-4 w-4" />
-    </div>
-    <span className="text-xs sm:text-sm font-medium text-foreground/90">{text}</span>
-  </div>
-));
+const tickerEntries = TICKER_REPOS.map((repo, i) => {
+  const [owner, name] = repo.split("/");
+  const provider = PROVIDERS[i % PROVIDERS.length];
+  const mins = Math.floor(Math.random() * 58) + 1;
+  return {
+    provider,
+    repo: name || "unknown",
+    owner: owner || "unknown",
+    timeAgo: `${mins}m ago`,
+  };
+});
 
-FeatureTag.displayName = 'FeatureTag';
-
-// Memoized CTA Button component
-const CTAButton = React.memo(({ 
-  href, 
-  icon: Icon, 
-  children, 
-  variant = "default",
-  secondaryIcon: SecondaryIcon
-}: { 
-  href: string; 
-  icon?: React.ComponentType<{ className?: string }>; 
-  children: React.ReactNode; 
-  variant?: "default" | "outline";
-  secondaryIcon?: React.ComponentType<{ className?: string }>;
-}) => (
-  <Link 
-    href={href} 
-    prefetch={true}
-    className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-[140px] sm:w-[160px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-      variant === "default" 
-        ? "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 shadow-sm"
-        : "bg-background text-foreground border-border sm:hover:bg-secondary/80 sm:hover:border-coral/60 shadow-sm"
-    )}
-  >
-    {Icon && <Icon className="mr-2 h-5 w-5" />}
-    <span className="text-center">{children}</span>
-    {SecondaryIcon && (
-      <SecondaryIcon className="ml-2 h-4 w-4 transition-transform duration-200 ease-in-out group-hover:translate-x-1" />
-    )}
-  </Link>
-));
-
-CTAButton.displayName = 'CTAButton';
-
-
-
-// Memoized Feature Tags component (for left column)
-const FeatureTags = React.memo(() => {
-  const features = useMemo(() => [
-    {       icon: Zap, text: 'Real-Time Monitoring', color: 'text-coral', shouldSpin: true },
-    { icon: Eye, text: 'Comprehensive Detection', color: 'text-foreground', shouldSpin: false },
-    { icon: Globe, text: 'Global Coverage', color: 'text-coral', shouldSpin: false }
-  ], []);
-
-  return (
+const HeroTicker = React.memo(() => {
+  const renderItems = (keyPrefix: string) => (
     <>
-      {features.map((feature, index) => (
-        <FeatureTag
-          key={index}
-          icon={feature.icon}
-          text={feature.text}
-          color={feature.color}
-          delayClass=""
-          shouldSpin={feature.shouldSpin}
-        />
+      <span className="flex items-center gap-1.5 border-x border-coral/10 px-3 sm:px-4">
+        <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-tighter">
+          System Status
+        </span>
+        <span className="text-emerald-500 font-bold animate-pulse">
+          NOMINAL
+        </span>
+      </span>
+      {tickerEntries.map((e, i) => (
+        <React.Fragment key={`${keyPrefix}-${i}`}>
+          <span className="inline-block sm:hover:text-foreground transition-colors cursor-default">
+            <span className="text-coral/80 font-bold">[ALERT]</span>{" "}
+            <span
+              className={`font-bold ${providerColors[e.provider] || "text-coral"}`}
+            >
+              {e.provider}
+            </span>{" "}
+            leak in{" "}
+            <span className="text-muted-foreground/90 italic">{e.repo}</span> ·{" "}
+            <span className="opacity-70 text-[9px] sm:text-[10px]">
+              {e.timeAgo}
+            </span>
+          </span>
+          <span className="inline-block px-4 sm:px-6 text-coral/30 flex-shrink-0 font-light">
+            //
+          </span>
+        </React.Fragment>
       ))}
     </>
   );
+
+  return (
+    <Skeleton name="hero-ticker" loading={false}>
+      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
+        <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
+          <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral drop-shadow-sm">
+            Live Intel
+          </span>
+        </div>
+        <div
+          className="flex-1 overflow-hidden relative flex h-full"
+          style={{
+            maskImage:
+              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
+          }}
+        >
+          <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-4 sm:gap-6">
+            {renderItems("mq1")}
+          </div>
+          <div
+            className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-4 sm:gap-6"
+            style={{ "--marquee-start": "100%" } as React.CSSProperties}
+          >
+            {renderItems("mq2")}
+          </div>
+        </div>
+      </div>
+    </Skeleton>
+  );
 });
 
-FeatureTags.displayName = 'FeatureTags';
+HeroTicker.displayName = "HeroTicker";
 
+const StatCounter = React.memo(() => {
+  const { data, isLoading } = useSWR<{ provider: string; count: number }[]>(
+    "/api/stats/providers",
+    fetcher,
+    {
+      refreshInterval: 60000,
+      dedupingInterval: 55000,
+      revalidateOnFocus: false,
+    },
+  );
 
+  const total = useMemo(
+    () => data?.reduce((sum, s) => sum + s.count, 0) ?? 0,
+    [data],
+  );
 
+  return (
+    <Skeleton name="hero-stats" loading={isLoading}>
+      <div className="animate-fade-in-up">
+        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-coral/30 bg-coral/5">
+          <ShieldAlert className="h-4 w-4 text-coral" />
+          <span className="text-sm sm:text-base font-mono tabular-nums font-bold text-coral tracking-tight">
+            {(total || 32533).toLocaleString()}
+          </span>
+          <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+            Active Threats Neutralized
+          </span>
+        </span>
+      </div>
+    </Skeleton>
+  );
+});
 
+StatCounter.displayName = "StatCounter";
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative min-h-screen flex items-center py-8 md:py-12 lg:py-0 lg:h-screen overflow-hidden">
+    <section className="relative min-h-[100svh] flex items-center py-8 md:py-12 lg:py-0 lg:min-h-screen overflow-hidden pb-safe">
       <div className="container mx-auto relative z-10 w-full px-4">
         <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 sm:mb-4 lg:pr-8">
+                  <StatCounter />
+                  <div className="flex justify-center lg:justify-end shrink-0">
+                    <Skeleton name="ph-badge" loading={false}>
+                      <a
+                        href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
+                      >
+                        <Trophy className="h-4 w-4 text-coral shrink-0" />
+                        <span className="text-sm sm:text-base font-bold tracking-tight text-foreground/90">
+                          Featured On
+                        </span>
+                        <span className="text-xs sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
+                          Product Hunt
+                        </span>
+                        <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
+                      </a>
+                    </Skeleton>
+                  </div>
+                </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
-                  <span className="text-foreground">Real-Time{' '}</span>
-                  <span className="text-coral">API Key</span>
-                  <br />
-                  <span className="text-foreground">Leak Detection</span>
+                  <span className="text-foreground">Global </span>
+                  <span className="text-coral">API Leak</span>
+                  <br className="hidden sm:block" />
+                  <span className="text-foreground"> Intelligence</span>
                 </h1>
               </div>
 
               <div className="space-y-2.5 sm:space-y-2.5">
-                <p className="text-sm sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Monitor public GitHub repositories in real-time to see exactly when, where, and how often API keys are exposed.
+                <p className="text-[13px] sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  Monitor public GitHub repositories in real-time to track
+                  exactly when, where, and how often API keys are exposed.
                 </p>
               </div>
 
-              <div className="hidden md:block pt-1 sm:pt-2">
+              <div className="hidden sm:block pt-2 sm:pt-4">
                 <WorkflowPipeline />
-              </div>
-              <div className="hidden lg:flex pt-2 justify-center lg:justify-start">
-                <a
-                  href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex"
-                >
-                  <img
-                    alt="APIRadar - See your leaked API keys before attackers do | Product Hunt"
-                    width="250"
-                    height="54"
-                    src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1058833&theme=dark&t=1768563980516"
-                  />
-                </a>
               </div>
             </div>
 
             <div className="flex flex-col justify-center mt-2 sm:mt-6 lg:mt-0">
-              <LiveScanTerminal />
+              <Skeleton name="live-scan-active" loading={false}>
+                <LiveScanTerminal />
+              </Skeleton>
               <div className="mt-4 flex flex-col gap-4 sm:gap-4.5">
                 <Link
                   href="/explore"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70"
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
+                    "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70",
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">
-                    <Shield className="h-4 w-4" strokeWidth={2.6} aria-hidden="true" focusable="false" />
-                    Explore Leaks
+                    <Shield
+                      className="h-4 w-4"
+                      strokeWidth={2.6}
+                      aria-hidden="true"
+                      focusable="false"
+                    />
+                    Access Leak Intelligence
                   </span>
                 </Link>
                 <Link
                   href="/leaderboard"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-5 sm:px-6 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-card/50 backdrop-blur-sm text-foreground border-border sm:hover:brightness-90 sm:hover:border-coral/70"
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
+                    "bg-card/50 backdrop-blur-sm text-foreground border-border sm:hover:brightness-90 sm:hover:border-coral/70",
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">
-                    <Trophy className="h-4 w-4 text-coral" strokeWidth={2.6} aria-hidden="true" focusable="false" />
-                    View Leaderboard
+                    <Trophy
+                      className="h-4 w-4 text-coral"
+                      strokeWidth={2.6}
+                      aria-hidden="true"
+                      focusable="false"
+                    />
+                    Check Global Standings
                   </span>
                 </Link>
               </div>
             </div>
           </div>
+
+          <HeroTicker />
         </div>
       </div>
     </section>
   );
 });
 
-HeroSection.displayName = 'HeroSection';
+HeroSection.displayName = "HeroSection";

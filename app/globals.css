@@ -350,6 +350,36 @@ button:focus:not(:focus-visible) {
   animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes system-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px hsl(var(--coral) / 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 16px hsl(var(--coral) / 0.9), 0 0 24px hsl(var(--coral) / 0.3);
+  }
+}
+
+.animate-system-glow {
+  animation: system-glow 2s ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(var(--marquee-start, 0%));
+  }
+
+  100% {
+    transform: translateX(calc(-100% + var(--marquee-start, 0%)));
+  }
+}
+
+.animate-marquee {
+  animation: marquee 60s linear infinite;
+}
+
 /* BULLETPROOF SECURITY: Prevent CSS manipulation of locked content */
 .locked-content {
   user-select: none !important;
@@ -405,6 +435,10 @@ html {
 
 /* Premium APIRadar utilities */
 @layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 24px);
+  }
+
   .glass-card {
     background: hsl(var(--glass-white));
     backdrop-filter: blur(12px);
@@ -415,9 +449,11 @@ html {
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  @media (hover: hover) {
+    .hover-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
   }
 
 
@@ -438,8 +474,19 @@ html {
     transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .hover-glow:hover {
-    box-shadow: 0 0 20px hsl(var(--coral) / 0.4);
+  @media (hover: hover) {
+    .hover-glow:hover {
+      box-shadow: 0 0 20px hsl(var(--coral) / 0.4);
+    }
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

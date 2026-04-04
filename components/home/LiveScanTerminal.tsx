@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const REAL_DATA_SAMPLES = [
@@ -57,100 +57,167 @@ const REAL_DATA_SAMPLES = [
   "arturogf93/terracota-netlify",
 ] as const;
 
-type TerminalLog = { id: string; owner: string; repo: string; timestamp: Date };
+const PROVIDERS = [
+  "OPENAI",
+  "ANTHROPIC",
+  "GOOGLE",
+  "GROQ",
+  "XAI",
+  "CEREBRAS",
+  "OPENROUTER",
+] as const;
+
+const providerColors: Record<string, string> = {
+  OPENAI: "text-emerald-500",
+  ANTHROPIC: "text-amber-600",
+  GOOGLE: "text-blue-500",
+  OPENROUTER: "text-fuchsia-500",
+  GROQ: "text-orange-600",
+  XAI: "text-slate-400",
+  CEREBRAS: "text-violet-500",
+};
+
+type TerminalLog = {
+  id: string;
+  owner: string;
+  repo: string;
+  timestamp: Date;
+  provider: string;
+  isAlert: boolean;
+};
 
 const formatLogTime = (date: Date): string => {
   return new Intl.DateTimeFormat(navigator.language, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
   }).format(date);
 };
 
-function pickRandomSample(): { owner: string; repo: string } {
-  const fullName = REAL_DATA_SAMPLES[Math.floor(Math.random() * REAL_DATA_SAMPLES.length)];
+function pickRandomEntry(tick: number): Omit<TerminalLog, "id" | "timestamp"> {
+  const fullName =
+    REAL_DATA_SAMPLES[Math.floor(Math.random() * REAL_DATA_SAMPLES.length)];
   const [owner, repo] = fullName.split("/");
-  return { owner: owner || "unknown", repo: repo || "unknown" };
+  const provider = PROVIDERS[Math.floor(Math.random() * PROVIDERS.length)];
+  const isAlert = tick % 5 === 0;
+  return {
+    owner: owner || "unknown",
+    repo: repo || "unknown",
+    provider,
+    isAlert,
+  };
 }
 
 export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
-  const [logs, setLogs] = useState<TerminalLog[]>(() => {
-    const initialCount = 26;
-    return Array.from({ length: initialCount }).map((_, i) => {
-      const { owner, repo } = pickRandomSample();
-      return { id: `init-${i}`, owner, repo, timestamp: new Date() };
-    });
-  });
+  const [logs, setLogs] = useState<TerminalLog[]>(() =>
+    Array.from({ length: 26 }).map((_, i) => {
+      const entry = pickRandomEntry(i);
+      return { id: `init-${i}`, ...entry, timestamp: new Date() };
+    }),
+  );
   const tickRef = useRef(26);
-
 
   useEffect(() => {
     const appendLog = () => {
       tickRef.current += 1;
-
-      const { owner, repo } = pickRandomSample();
-      const next: TerminalLog = { 
-        id: `${Date.now()}-${tickRef.current}`, 
-        owner, 
-        repo, 
-        timestamp: new Date() 
+      const entry = pickRandomEntry(tickRef.current);
+      const next: TerminalLog = {
+        id: `${Date.now()}-${tickRef.current}`,
+        ...entry,
+        timestamp: new Date(),
       };
-
-      setLogs((prev) => {
-        const nextLogs = [...prev, next];
-        const MAX_LOGS = 26;
-        return nextLogs.slice(-MAX_LOGS);
-      });
+      setLogs((prev) => [...prev, next].slice(-26));
     };
 
     appendLog();
     const intervalId = window.setInterval(appendLog, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    return () => window.clearInterval(intervalId);
   }, []);
 
   return (
     <div
-      className="w-full h-[150px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
+      className="w-full h-[200px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
       style={{
         fontFamily:
           "'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
       }}
     >
-      <div className="hidden lg:flex px-4 py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
-        <div className="font-mono text-[10px] sm:text-xs text-muted-foreground tracking-widest uppercase truncate">
+      <div className="flex px-2 py-1.5 sm:px-4 sm:py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
+        <div className="font-mono text-[9px] sm:text-xs text-muted-foreground tracking-widest uppercase truncate">
           GLOBAL_SCAN // ACTIVE
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-coral shadow-[0_0_8px_hsl(var(--coral)/0.6)]" aria-hidden="true" />
-          <div className="text-coral text-xs font-mono tracking-wider">
+          <div
+            className="w-2 h-2 rounded-full bg-coral animate-system-glow"
+            aria-hidden="true"
+          />
+          <div className="text-coral text-[10px] sm:text-xs font-mono tracking-wider">
             SYSTEM: ONLINE
           </div>
         </div>
       </div>
 
-      <div className="flex-1 px-2 sm:px-4 pt-0 overflow-hidden relative">
-        <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-0.5 sm:gap-0 text-[10px] sm:text-xs pb-2 sm:pb-4 w-full">
+      <div className="flex-1 px-1.5 sm:px-4 pt-0 overflow-hidden relative">
+        <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end gap-0 sm:gap-0 text-[10px] sm:text-xs pb-1 sm:pb-4 w-full">
           {logs.map((log) => (
             <div
               key={log.id}
               className={cn(
                 "leading-4 whitespace-nowrap",
-                !log.id.startsWith("init-") && "animate-in fade-in slide-in-from-bottom-1 duration-400",
+                !log.id.startsWith("init-") &&
+                  "animate-in fade-in slide-in-from-bottom-1 duration-400",
               )}
             >
               <div className="flex items-center w-full overflow-hidden">
-                <span className="text-muted-foreground/50 text-[0.65rem] sm:text-[0.7rem] mr-1.5 sm:mr-2 tabular-nums flex-shrink-0">
+                <span className="text-muted-foreground/50 text-[0.6rem] sm:text-[0.7rem] mr-1 sm:mr-2 tabular-nums flex-shrink-0">
                   [{formatLogTime(log.timestamp)}]
                 </span>
-                <span className="text-muted-foreground flex-shrink-0 mr-1">SCANNING</span>
-                <span className="text-foreground font-bold truncate max-w-[80px] min-w-[40px] sm:max-w-none sm:min-w-0 mr-1">{log.repo}</span>
-                <span className="text-muted-foreground/60 hidden sm:inline mr-1">CREATED BY</span>
-                <span className="text-muted-foreground/60 text-[9px] sm:hidden mr-1">BY</span>
-                <span className="text-coral truncate flex-1 sm:flex-none">{log.owner}</span>
+                {log.isAlert ? (
+                  <>
+                    <span className="text-coral font-bold flex-shrink-0 mr-1">
+                      [ALERT]
+                    </span>
+                    <span className="text-coral flex-shrink-0 mr-1">
+                      CRITICAL —
+                    </span>
+                    <span
+                      className={cn(
+                        "font-bold flex-shrink-0 mr-1",
+                        providerColors[log.provider] || "text-coral",
+                      )}
+                    >
+                      {log.provider}
+                    </span>
+                    <span className="text-coral truncate">KEY EXPOSED</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-muted-foreground flex-shrink-0 mr-1">
+                      SCANNING
+                    </span>
+                    <span
+                      className={cn(
+                        "font-bold flex-shrink-0 mr-1 text-[8.5px] sm:text-[10px]",
+                        providerColors[log.provider] || "text-muted-foreground",
+                      )}
+                    >
+                      [{log.provider}]
+                    </span>
+                    <span className="text-foreground font-bold truncate max-w-[80px] min-w-[40px] sm:max-w-none sm:min-w-0 mr-1">
+                      {log.repo}
+                    </span>
+                    <span className="text-muted-foreground/60 hidden sm:inline mr-1">
+                      CREATED BY
+                    </span>
+                    <span className="text-muted-foreground/60 text-[9px] sm:hidden mr-1">
+                      BY
+                    </span>
+                    <span className="text-coral truncate flex-1 sm:flex-none">
+                      {log.owner}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -159,5 +226,3 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     </div>
   );
 });
-
-
