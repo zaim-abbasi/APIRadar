@@ -33,8 +33,8 @@ import {
 import { LiveStats, FeatureRequestForm } from "@/components/explore/live-stats";
 import { SponsorDialog } from "@/components/sponsor-dialog";
 
-const LeakTable = dynamic(
-  () => import("@/components/explore/leak-table").then((m) => m.LeakTable),
+const LeakFeed = dynamic(
+  () => import("@/components/explore/leak-feed").then((m) => m.LeakFeed),
   {
     ssr: false,
     loading: () => (
@@ -170,7 +170,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         >
           {/* Wrap in relative container for fade effect */}
           <div className="relative">
-            <LeakTable
+            <LeakFeed
               leaks={leaks}
               isLoading={isLoading}
               selectedProvider={selectedProvider}

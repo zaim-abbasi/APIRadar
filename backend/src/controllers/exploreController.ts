@@ -80,17 +80,6 @@ export const getProviderStatsSchema = {
   }
 };
 
-export const getLiveStatsSchema = {
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        activeResearchers: { type: 'number' }
-      }
-    }
-  }
-};
-
 export const getLeakFullKeySchema = {
   params: {
     type: 'object',
@@ -141,7 +130,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     const filter = buildQueryFilter(provider);
 
-    const sort = { leakIntroducedAt: -1 as const };
+    const sort = { leakDetectedAt: -1 as const };
 
     let total = 0;
     let leaks: any[] = [];
@@ -274,96 +263,4 @@ export async function getProviderStatsHandler(request: AuthenticatedRequest, rep
     request.log.error('Error fetching provider stats:', error);
     return reply.status(500).send({ error: 'Failed to fetch provider stats' });
   }
-}
-
-export async function getLiveStatsHandler(_request: AuthenticatedRequest, reply: FastifyReply) {
-  const now = Date.now();
-  const t = (now / 15000) | 0;  // 15-second epoch
-
-  // --- Mulberry32 PRNG (deterministic, high-quality) ---
-  function mulberry32(seed: number): () => number {
-    return () => {
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let v = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      v ^= v + Math.imul(v ^ (v >>> 7), 61 | v);
-      return ((v ^ (v >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  // Helper: resolve regime center from a roll value
-  function regimeFromRoll(roll: number): number {
-    if (roll < 0.08) return 70;        // 8%: DEAD
-    else if (roll < 0.22) return 95;   // 14%: QUIET
-    else if (roll < 0.55) return 125;  // 33%: NORMAL
-    else if (roll < 0.80) return 150;  // 25%: BUSY
-    else return 175;                   // 20%: SURGE
-  }
-
-  // --- Layer 1: Traffic "regime" — shifts baseline gradually ---
-  // Every ~5 min the system drifts to a new regime
-  const regimeWindow = (now / 300000) | 0;  // 5-min windows
-  const regimeRng = mulberry32(regimeWindow * 7919);
-  const regimeCenter = regimeFromRoll(regimeRng());
-
-  // Smooth transition: blend across 40% of the window (~2 min ramp)
-  const prevRng = mulberry32((regimeWindow - 1) * 7919);
-  const prevCenter = regimeFromRoll(prevRng());
-
-  const posInRegime = (now % 300000) / 300000;
-  const blendFactor = posInRegime < 0.4 ? posInRegime / 0.4 : 1.0;
-  const base = prevCenter + (regimeCenter - prevCenter) * blendFactor;
-
-  // --- Layer 2: Session waves — gentle group arrivals/departures ---
-  const waveEpoch = (now / 360000) | 0;  // 6-min windows
-  const waveRng = mulberry32(waveEpoch * 48271);
-  const waveIntensity = waveRng() * 2 - 1;  // -1 to +1
-  const waveEffect = waveIntensity * 15;     // ±15
-
-  // --- Layer 3: Burst events — occasional spikes and dips ---
-  const burstWindow = (now / 300000) | 0;  // 5-min windows
-  const burstRng = mulberry32(burstWindow * 2654435761);
-  const burstRoll = burstRng();
-  const burstMagRng = mulberry32(burstWindow * 16807);
-  let burst = 0;
-  if (burstRoll > 0.93) {
-    // 7%: Big spike (+20 to +30)
-    burst = 20 + (burstMagRng() * 10) | 0;
-  } else if (burstRoll > 0.86) {
-    // 7%: Big dip (-15 to -25)
-    burst = -(15 + (burstMagRng() * 10) | 0);
-  } else if (burstRoll > 0.75) {
-    // 11%: Moderate spike (+8 to +15)
-    burst = 8 + (burstMagRng() * 7) | 0;
-  } else if (burstRoll > 0.65) {
-    // 10%: Moderate dip (-8 to -13)
-    burst = -(8 + (burstMagRng() * 5) | 0);
-  }
-
-  // --- Layer 4: Momentum drift — slow trend within a window ---
-  const driftRng = mulberry32(burstWindow * 31337);
-  const driftDir = driftRng() > 0.5 ? 1 : -1;
-  const driftMag = driftRng() * 10;  // up to ±10
-  const posInBurst = (now % 300000) / 300000;
-  const drift = driftDir * driftMag * (posInBurst < 0.6
-    ? posInBurst / 0.6
-    : (1 - posInBurst) / 0.4);
-
-  // --- Layer 5: Raw noise + micro-jitter ---
-  const noiseRng = mulberry32(t * 1664525);
-  const noise = noiseRng() * 10 - 5;  // ±5 every 15s
-
-  const microSeed = (now / 10000) | 0;  // changes every 10s
-  const micro = (mulberry32(microSeed * 6971)() * 4) - 2;  // ±2
-
-  // --- Combine all layers ---
-  let count = (base + waveEffect + burst + drift + noise + micro) | 0;
-
-  // Anti-round-number (psychological realism)
-  if (count % 10 === 0) count += (t & 1 ? 3 : -1);
-  if (count % 5 === 0) count += (t & 2 ? 1 : -1);
-
-  // Clamp to 50–200 range
-  const final = Math.max(50, Math.min(200, count));
-
-  return reply.send({ activeResearchers: final });
 }

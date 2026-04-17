@@ -44,12 +44,14 @@ export function OverviewDashboard({
   onSignIn,
   plan,
   isOffline: isOfflineProp,
+  onProviderChange,
 }: {
   leaks: LeakedKey[];
   isLoading: boolean;
   onSignIn?: () => void;
   plan: "free" | "pro";
   isOffline?: boolean;
+  onProviderChange?: (provider: any) => void;
 }) {
   const [providerStats, setProviderStats] = useState<
     { provider: string; count: number; todayCount: number }[]
@@ -273,7 +275,7 @@ export function OverviewDashboard({
           100% { transform: translateX(calc(-100% + var(--marquee-start, 0%))); }
         }
         .animate-marquee {
-          animation: marquee 60s linear infinite;
+          animation: marquee 45s linear infinite;
         }
       `,
         }}
@@ -322,69 +324,77 @@ export function OverviewDashboard({
                   .map((stat, i) => {
                     const color = providerColors[stat.provider] || "text-coral";
                     return (
-                      <Card
+                      <button
                         key={i}
-                        className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-300 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""}`}
+                        onClick={() => onProviderChange?.(stat.provider)}
+                        className="text-left h-full outline-none"
                       >
-                        <CardContent className="p-3 sm:p-5 relative">
-                          <div className="flex justify-between items-start mb-1 sm:mb-2">
-                            <div className="space-y-0.5 sm:space-y-1 z-10">
-                              <p
-                                className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
-                              >
-                                {stat.provider}
-                              </p>
-                              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                                {stat.count.toLocaleString()}
-                              </h3>
-                              {stat.todayCount > 0 ? (
-                                <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-emerald-500">
-                                  <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
-                                  +{stat.todayCount} today
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-muted-foreground/40">
-                                  <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50" />{" "}
-                                  +0 today
-                                </span>
-                              )}
+                        <Card
+                          className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-150 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""} cursor-pointer`}
+                        >
+                          <CardContent className="p-3 sm:p-5 relative">
+                            <div className="flex justify-between items-start mb-1 sm:mb-2">
+                              <div className="space-y-0.5 sm:space-y-1 z-10">
+                                <p
+                                  className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
+                                >
+                                  {stat.provider}
+                                </p>
+                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                                  {stat.count.toLocaleString()}
+                                </h3>
+                                {stat.todayCount > 0 ? (
+                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-emerald-500">
+                                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
+                                    +{stat.todayCount} today
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-muted-foreground/40">
+                                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50" />{" "}
+                                    +0 today
+                                  </span>
+                                )}
+                              </div>
+                              <Zap
+                                className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
+                              />
                             </div>
+                            {/* Subtle background icon */}
                             <Zap
-                              className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
+                              className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
                             />
-                          </div>
-                          {/* Subtle background icon */}
-                          <Zap
-                            className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
-                          />
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                      </button>
                     );
                   })
                   .concat(
-                    <Card
+                    <button
                       key="total-today"
-                      className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-colors h-full flex flex-col justify-center"
+                      onClick={() => onProviderChange?.("openai")} // Take to feed if clicked (default to openai to force tab switch)
+                      className="text-left h-full outline-none"
                     >
-                      <CardContent className="p-3 sm:p-5 relative">
-                        <div className="flex justify-between items-start mb-1 sm:mb-2">
-                          <div className="space-y-0.5 sm:space-y-1 z-10">
-                            <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
-                              Total Today
-                            </p>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                              {providerStats
-                                .reduce(
-                                  (sum, stat) => sum + (stat.todayCount || 0),
-                                  0,
-                                )
-                                .toLocaleString()}
-                            </h3>
+                      <Card className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-all duration-150 h-full flex flex-col justify-center cursor-pointer">
+                        <CardContent className="p-3 sm:p-5 relative">
+                          <div className="flex justify-between items-start mb-1 sm:mb-2">
+                            <div className="space-y-0.5 sm:space-y-1 z-10">
+                              <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
+                                Total Today
+                              </p>
+                              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                                {providerStats
+                                  .reduce(
+                                    (sum, stat) => sum + (stat.todayCount || 0),
+                                    0,
+                                  )
+                                  .toLocaleString()}
+                              </h3>
+                            </div>
+                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
                           </div>
-                          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
-                        </div>
-                      </CardContent>
-                    </Card>,
+                        </CardContent>
+                      </Card>
+                    </button>,
                   )
               )}
             </div>

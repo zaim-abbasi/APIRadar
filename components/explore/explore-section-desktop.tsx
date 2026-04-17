@@ -31,10 +31,10 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-const LeakTable = React.lazy(() =>
-  import("@/components/explore/leak-table").then((m) => ({
-    default: m.LeakTable,
-  })),
+const LeakFeed = React.lazy(() =>
+  import("@/components/explore/leak-feed").then((m) => ({
+    default: m.LeakFeed,
+  }))
 );
 const OverviewDashboard = React.lazy(() =>
   import("@/components/explore/overview-dashboard").then((m) => ({
@@ -148,14 +148,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   }, [selectedProvider]);
 
   const handleMainTabChange = (value: string) => {
-    const newTab = value as "overview" | "feed";
-    setActiveTab(newTab);
-    if (newTab === "overview") {
-      onProviderChange("all");
-    } else if (selectedProvider === "all") {
-      // If switching to feed from all, default to openai
-      onProviderChange("openai");
-    }
+    setActiveTab(value as "overview" | "feed");
   };
 
   return (
@@ -256,6 +249,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 }
                 plan={plan}
                 isOffline={!!error}
+                onProviderChange={onProviderChange}
               />
             </Suspense>
           </div>
@@ -293,7 +287,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 }
               >
                 <div className="relative">
-                  <LeakTable
+                  <LeakFeed
                     leaks={leaks}
                     isLoading={isLoading}
                     selectedProvider={selectedProvider}

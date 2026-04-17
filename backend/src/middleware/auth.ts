@@ -26,7 +26,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
 
 export const ACCESS_LIMITS = {
   unauthenticated: { maxLeaks: 4 },
-  authenticated: { maxLeaks: 8 }
+  authenticated: { maxLeaks: 15 }
 } as const;
 
 export async function authenticateUser(request: AuthenticatedRequest, reply: FastifyReply) {

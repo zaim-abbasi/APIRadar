@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, LogIn, Sparkles, MessageSquarePlus } from "lucide-react";
+import { Send, LogIn, MessageSquarePlus } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
 import {
@@ -9,37 +9,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import useSWR from "swr";
-
-const fetcher = (url: string) =>
-  fetch(url).then((res) => {
-    if (!res.ok) throw new Error("Offline");
-    return res.json();
-  });
+import { fetchProviderStats } from "@/lib/api";
 
 export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const [researchers, setResearchers] = useState(0);
-
-  const {
-    data: stats,
-    error,
-    isLoading: isSWRLoading,
-  } = useSWR("/api/stats/live", fetcher, {
-    refreshInterval: 15000,
-    dedupingInterval: 5000,
-    revalidateOnFocus: true,
-    revalidateIfStale: false,
-    shouldRetryOnError: false,
-  });
+  const [totalLeaks, setTotalLeaks] = useState(0);
 
   useEffect(() => {
-    if (stats?.activeResearchers && !error) {
-      setResearchers(stats.activeResearchers);
-    } else if (!isSWRLoading || error) {
-      setResearchers(0);
-    }
-  }, [stats, isSWRLoading, error]);
+    const fetchTotal = () => {
+      fetchProviderStats().then((res) => {
+        if (res.data) setTotalLeaks(res.data.reduce((acc, curr) => acc + curr.count, 0));
+      });
+    };
+    
+    fetchTotal();
+    const interval = setInterval(fetchTotal, 60000); // 1 min poll
+    return () => clearInterval(interval);
+  }, []);
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`;
@@ -69,11 +55,10 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   }, [latestLeakAt]);
 
   return (
-    <>
+    <div className="flex items-center gap-2 sm:gap-3.5">
       <div className="hidden sm:inline-flex items-center gap-2.5">
         <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
+          <span className="inline-flex rounded-full h-1.5 w-1.5 bg-muted-foreground/60"></span>
         </span>
         <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
           Latest Detection:{" "}
@@ -82,21 +67,21 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
           </span>
         </span>
       </div>
-      <div
-        className={`hidden sm:inline-flex items-center gap-2.5 transition-all duration-1000 ${researchers === 0 ? "opacity-60" : ""}`}
-      >
+      
+      <span className="hidden sm:inline-block text-border font-light">|</span>
+      
+      <div className={`hidden sm:inline-flex items-center gap-2.5 transition-opacity duration-500 ${totalLeaks === 0 ? "opacity-0" : "opacity-100"}`}>
         <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className={`inline-flex rounded-full h-1.5 w-1.5 ${researchers === 0 ? "bg-red-500" : "bg-muted-foreground/60"}`}></span>
+          <span className="inline-flex rounded-full h-1.5 w-1.5 bg-muted-foreground/60"></span>
         </span>
         <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
           <span className="text-foreground font-bold tabular-nums inline-block min-w-[24px]">
-            {researchers === 0 ? "0" : researchers}
+            {totalLeaks.toLocaleString()}
           </span>{" "}
-          researchers active
-          {researchers === 0 && <span className="text-red-500/80 ml-1">(Offline)</span>}
+          leaks detected
         </span>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -160,8 +145,7 @@ export function FeatureRequestForm() {
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <button className="group relative flex h-8 items-center gap-2 px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 shadow-sm active:scale-95">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <button className="group relative flex h-8 items-center justify-center px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 shadow-sm active:scale-95">
             Suggest Feature
           </button>
         </PopoverTrigger>

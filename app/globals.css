@@ -143,7 +143,7 @@
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 
@@ -215,12 +215,12 @@
 /* Smooth data loading transitions */
 .data-loading {
   opacity: 0.7;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.2s ease-in-out;
 }
 
 .data-loaded {
   opacity: 1;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity 0.2s ease-in-out;
 }
 
 /* Progressive loading animations */
@@ -237,7 +237,7 @@
 }
 
 .progressive-load {
-  animation: slide-in-up 0.4s ease-out forwards;
+  animation: slide-in-up 0.3s ease-out forwards;
 }
 
 /* Staggered card animations */
@@ -376,7 +376,7 @@ button:focus:not(:focus-visible) {
 }
 
 .animate-marquee {
-  animation: marquee 60s linear infinite;
+  animation: marquee 45s linear infinite;
 }
 
 /* BULLETPROOF SECURITY: Prevent CSS manipulation of locked content */

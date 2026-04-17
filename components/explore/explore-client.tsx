@@ -22,7 +22,7 @@ const ExploreSectionDesktop = dynamic(
   },
 );
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 15;
 const INFINITE_SCROLL_MARGIN = "0px 0px 600px 0px";
 const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = {
   leaks: [],
