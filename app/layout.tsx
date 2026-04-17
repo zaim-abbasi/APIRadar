@@ -86,49 +86,67 @@ export default function RootLayout({
         {/* Favicon: fallback to logo-png.png if favicon.ico is missing */}
         <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
         {/* Open Graph & Twitter handled by Next.js metadata */}
-        {/* JSON-LD Structured Data: WebSite and Organization with social profiles */}
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "APIRadar",
-            "url": "https://apiradar.live",
-            "sameAs": [
-              "https://github.com/zaim-abbasi",
-              "https://www.linkedin.com/in/zaim-abbasi/"
-            ],
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://apiradar.live/search?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
-          })
-        }} />
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            "name": "APIRadar",
-            "url": "https://apiradar.live",
-            "logo": "https://apiradar.live/logo/logo-webp.webp",
-            "sameAs": [
-              "https://github.com/zaim-abbasi",
-              "https://www.linkedin.com/in/zaim-abbasi/"
-            ]
-          })
-        }} />
-        {/* Google Analytics 4 (gtag.js) */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8WZNWWCZL"></script>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-M8WZNWWCZL');
-          `
-        }} />
       </head>
       <body className={`${inter.className} ${spaceGrotesk.variable}`} suppressHydrationWarning>
+        {/* JSON-LD Structured Data: WebSite and Organization */}
+        <Script
+          id="json-ld-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "APIRadar",
+              "url": "https://apiradar.live",
+              "sameAs": [
+                "https://github.com/zaim-abbasi",
+                "https://www.linkedin.com/in/zaim-abbasi/"
+              ],
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://apiradar.live/search?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
+        <Script
+          id="json-ld-organization"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "APIRadar",
+              "url": "https://apiradar.live",
+              "logo": "https://apiradar.live/logo/logo-webp.webp",
+              "sameAs": [
+                "https://github.com/zaim-abbasi",
+                "https://www.linkedin.com/in/zaim-abbasi/"
+              ]
+            })
+          }}
+        />
+
+        {/* Google Analytics 4 (gtag.js) */}
+        <Script
+          id="gtag-load"
+          src="https://www.googletagmanager.com/gtag/js?id=G-M8WZNWWCZL"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="gtag-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-M8WZNWWCZL');
+            `
+          }}
+        />
+
         <Script
           id="pre-hydration-attr-cleanup"
           strategy="beforeInteractive"

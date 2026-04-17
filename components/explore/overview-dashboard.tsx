@@ -91,9 +91,9 @@ export function OverviewDashboard({
       <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[38px] sm:h-[44px] group">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,114,94,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,114,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
 
-        <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
-          <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral drop-shadow-sm">
+        <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
+          <Activity className="h-3.5 w-3.5 text-coral animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-coral">
             Live Intel
           </span>
         </div>

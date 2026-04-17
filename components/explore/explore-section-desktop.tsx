@@ -15,7 +15,7 @@ import {
   Heart,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
-import { ProviderFilter } from "@/components/explore/provider-filter";
+import { ProviderSidebar } from "@/components/explore/provider-sidebar";
 import {
   CustomSelect,
   CustomSelectContent,
@@ -194,11 +194,11 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       >
         {/* Header Card Wrapper */}
         <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 animate-fade-in-up shadow-sm transition-shadow duration-200">
-          <div className="flex flex-col lg:flex-row items-start gap-3 sm:gap-4 w-full">
-            {/* Left: Tabs Section (2/3 Width) */}
-            <div className="w-full lg:w-2/3">
-              <div className="relative flex flex-wrap justify-center sm:flex-wrap items-center w-full p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-[46px]">
-                <TabsList className="bg-transparent border-none p-0 h-full w-full flex flex-wrap sm:flex-nowrap gap-1.5 transition-all shadow-none">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 w-full">
+            {/* Left: Tabs Section */}
+            <div className="flex-grow">
+              <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-11 w-full">
+                <TabsList className="bg-transparent border-none p-0 h-full w-full flex items-center gap-1.5 transition-all shadow-none">
                   <TabsTrigger
                     value="overview"
                     className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
@@ -210,23 +210,23 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   </TabsTrigger>
                   <TabsTrigger
                     value="feed"
-                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md sm:rounded-none first:sm:rounded-l-md last:sm:rounded-r-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />
-                      Intelligence Feed
+                      API Leaks
                     </span>
                   </TabsTrigger>
                 </TabsList>
               </div>
             </div>
 
-            {/* Right: Stats Section (1/3 Width) */}
-            <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-end gap-3 justify-center">
-              <FeatureRequestForm />
-              <div className="flex flex-row items-center gap-6 text-sm text-muted-foreground whitespace-nowrap pr-2">
+            {/* Right: Stats & Action Section */}
+            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-6 lg:gap-8">
+              <div className="flex flex-row items-center gap-6 text-sm text-muted-foreground whitespace-nowrap">
                 <LiveStats latestLeakAt={latestGlobalLeakAt || leaks[0]?.leakDetectedAt} />
               </div>
+              <FeatureRequestForm />
             </div>
           </div>
         </div>
@@ -262,49 +262,56 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         </TabsContent>
 
         <TabsContent value="feed" className="space-y-6 m-0 focus-visible:ring-0">
-          <div className="flex flex-col gap-6 animate-fade-in-up">
-            {/* Filters (Pills) */}
-            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 shadow-sm transition-shadow duration-200">
-              <div className="w-full">
-                <ProviderFilter
-                  selectedProvider={selectedProvider}
-                  onProviderChange={onProviderChange}
-                  providers={INTEL_PROVIDERS}
-                />
-              </div>
+          <div className="flex flex-col lg:flex-row gap-6 animate-fade-in-up items-start">
+            {/* Left Sidebar: Providers */}
+            <aside className="w-full lg:w-64 flex-shrink-0 sticky top-24 hidden lg:block">
+              <ProviderSidebar
+                selectedProvider={selectedProvider}
+                onProviderChange={onProviderChange}
+                providers={INTEL_PROVIDERS}
+              />
+            </aside>
+
+            {/* Mobile View: Inline Sidebar (or old filter style) */}
+            <div className="w-full lg:hidden bg-card/40 border border-border/50 rounded-md p-4">
+              <ProviderSidebar
+                selectedProvider={selectedProvider}
+                onProviderChange={onProviderChange}
+                providers={INTEL_PROVIDERS}
+              />
             </div>
 
-
-
-            {/* Results */}
-            <Suspense
-              fallback={
-                <div className="min-h-[200px] flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">
-                    Loading results…
-                  </span>
+            {/* Right: Results */}
+            <div className="flex-1 min-w-0 w-full">
+              <Suspense
+                fallback={
+                  <div className="min-h-[200px] flex items-center justify-center">
+                    <span className="text-muted-foreground text-sm">
+                      Loading results…
+                    </span>
+                  </div>
+                }
+              >
+                <div className="relative">
+                  <LeakTable
+                    leaks={leaks}
+                    isLoading={isLoading}
+                    selectedProvider={selectedProvider}
+                    plan={plan}
+                    onSignIn={
+                      isUnauthenticated
+                        ? () =>
+                            signIn("google", {
+                              callbackUrl: window.location.href,
+                              redirect: true,
+                            })
+                        : undefined
+                    }
+                    isOffline={!!error}
+                  />
                 </div>
-              }
-            >
-              <div className="relative">
-                <LeakTable
-                  leaks={leaks}
-                  isLoading={isLoading}
-                  selectedProvider={selectedProvider}
-                  plan={plan}
-                  onSignIn={
-                    isUnauthenticated
-                      ? () =>
-                          signIn("google", {
-                            callbackUrl: window.location.href,
-                            redirect: true,
-                          })
-                      : undefined
-                  }
-                  isOffline={!!error}
-                />
-              </div>
-            </Suspense>
+              </Suspense>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

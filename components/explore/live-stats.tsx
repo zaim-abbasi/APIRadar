@@ -70,27 +70,30 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
 
   return (
     <>
-      <div className="hidden sm:inline-flex items-center gap-2">
-        <span className="relative flex h-1.5 w-1.5">
+      <div className="hidden sm:inline-flex items-center gap-2.5">
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral opacity-50"></span>
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-coral"></span>
         </span>
-        <span className="font-medium text-foreground/90">
-          Latest Detection: {formatTime(secondsAgo)}
+        <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
+          Latest Detection:{" "}
+          <span className="text-foreground font-bold tabular-nums inline-block min-w-[55px]">
+            {formatTime(secondsAgo)}
+          </span>
         </span>
       </div>
       <div
-        className={`hidden sm:inline-flex items-center gap-2 text-muted-foreground transition-all duration-1000 ${researchers === 0 ? "opacity-60" : ""}`}
+        className={`hidden sm:inline-flex items-center gap-2.5 transition-all duration-1000 ${researchers === 0 ? "opacity-60" : ""}`}
       >
-        <span
-          className={`transition-colors duration-500 ${researchers === 0 ? "text-red-500/50" : "text-muted-foreground"}`}
-        >
-          ●
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className={`inline-flex rounded-full h-1.5 w-1.5 ${researchers === 0 ? "bg-red-500" : "bg-muted-foreground/60"}`}></span>
         </span>
-        <span className="font-medium">
-          {researchers === 0
-            ? "0 researchers active (Link Severed)"
-            : `${researchers} researchers active`}
+        <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
+          <span className="text-foreground font-bold tabular-nums inline-block min-w-[24px]">
+            {researchers === 0 ? "0" : researchers}
+          </span>{" "}
+          researchers active
+          {researchers === 0 && <span className="text-red-500/80 ml-1">(Offline)</span>}
         </span>
       </div>
     </>
@@ -157,7 +160,7 @@ export function FeatureRequestForm() {
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <button className="group relative flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-coral uppercase tracking-widest rounded-md bg-coral/10 hover:bg-coral/20 transition-all duration-300 border border-coral/30 hover:border-coral/50 shadow-[0_0_15px_rgba(var(--coral-rgb),0.1)] active:scale-95">
+          <button className="group relative flex h-8 items-center gap-2 px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 shadow-sm active:scale-95">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
             Suggest Feature
           </button>

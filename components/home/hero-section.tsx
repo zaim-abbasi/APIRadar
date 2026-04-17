@@ -227,9 +227,9 @@ const HeroTicker = React.memo(() => {
 
   return (
     <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
-      <div className="z-20 flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shadow-[0_0_10px_rgba(255,114,94,0.1)] shrink-0 ml-0.5 sm:ml-1 backdrop-blur-md">
-        <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
-        <span className="text-[9px] sm:text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral drop-shadow-sm translate-y-[0.5px]">
+      <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
+        <ShieldAlert className="h-3.5 w-3.5 text-coral animate-pulse" />
+        <span className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral translate-y-[0.5px]">
           Live Intel
         </span>
       </div>
