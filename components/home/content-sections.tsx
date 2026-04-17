@@ -151,8 +151,18 @@ WhyThisExists.displayName = "WhyThisExists";
 
 const WhatsNext = React.memo(() => {
   const items = [
-    { label: "More Providers", status: "PLANNED", active: false },
-    { label: "Private Monitoring", status: "COMING SOON", active: false },
+    {
+      label: "More Providers",
+      status: "PLANNED",
+      dotColor: "bg-amber-500/80",
+      active: true,
+    },
+    {
+      label: "Private Monitoring",
+      status: "COMING SOON",
+      dotColor: "bg-emerald-500/80",
+      active: true,
+    },
   ];
 
   return (
@@ -160,26 +170,42 @@ const WhatsNext = React.memo(() => {
       <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
         Strategic Roadmap
       </h2>
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-3">
         <div className="grid grid-cols-2 gap-2">
           {items.map((item) => (
             <div
               key={item.label}
-              className="flex flex-col gap-1 px-3 py-2 rounded-md bg-secondary/30 border border-border/50"
+              className="flex flex-col gap-1 px-3 py-2.5 rounded-md bg-secondary/30 border border-border/50 transition-all duration-300"
             >
-              <span className="text-[10px] font-bold text-muted-foreground">
-                {item.label}
-              </span>
-              <span
-                className={cn(
-                  "text-[9px] font-black tracking-widest",
-                  item.active
-                    ? "text-coral animate-pulse"
-                    : "text-muted-foreground/40",
-                )}
-              >
-                [{item.status}]
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  {item.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  {item.active && (
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className={cn(
+                        "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
+                        item.dotColor
+                      )}></span>
+                      <span className={cn(
+                        "relative inline-flex rounded-full h-1.5 w-1.5",
+                        item.dotColor
+                      )}></span>
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      "text-[9px] font-black tracking-widest",
+                      item.active
+                        ? "text-foreground/90"
+                        : "text-muted-foreground/40",
+                    )}
+                  >
+                    [{item.status}]
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
