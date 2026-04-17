@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROVIDERS } from "@/lib/constants";
 import { Provider } from "@/types";
@@ -10,10 +11,22 @@ interface ProviderFilterProps {
   selectedProvider: Provider;
   onProviderChange: (provider: Provider) => void;
   className?: string;
+  providers?: readonly { value: string; label: string }[];
 }
 
 export const ProviderFilter = React.memo(
-  ({ selectedProvider, onProviderChange, className }: ProviderFilterProps) => {
+  ({
+    selectedProvider,
+    onProviderChange,
+    className,
+    providers = PROVIDERS,
+  }: ProviderFilterProps) => {
+    const processedProviders = React.useMemo(() => {
+      return providers.map((p) =>
+        p.value === "all" ? { ...p, label: "All Providers" } : p,
+      );
+    }, [providers]);
+
     return (
       <div
         className={cn(
@@ -21,7 +34,7 @@ export const ProviderFilter = React.memo(
           className,
         )}
       >
-        {PROVIDERS.map((provider) => {
+        {processedProviders.map((provider) => {
           const isSelected = selectedProvider === provider.value;
           return (
             <button
@@ -39,7 +52,9 @@ export const ProviderFilter = React.memo(
                   layoutId="activeProvider"
                   className="absolute inset-0 bg-background rounded-md shadow-sm border border-border/50"
                   initial={false}
-                  transition={{ duration: 0 }}
+                  transition={{
+                    duration: 0,
+                  }}
                 />
               )}
               <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">

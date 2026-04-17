@@ -15,5 +15,7 @@ export const PROVIDERS = [
   ...PROVIDER_LABELS
 ] as const;
 
+export const INTEL_PROVIDERS = PROVIDER_LABELS;
+
 
 export type Provider = typeof PROVIDER_NAMES[number] | 'all';

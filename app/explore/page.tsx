@@ -57,13 +57,7 @@ class ExplorePageError extends Error {
   }
 }
 
-// Memoized Header component
-const ExploreHeader = React.memo(() => (
-  <div className="mb-6 text-center">
-  </div>
-));
-
-ExploreHeader.displayName = 'ExploreHeader';
+// Explore Header removed for cleaner top-bar layout
 
 // Helper to get provider label from value
 function getProviderLabel(value: string): string {

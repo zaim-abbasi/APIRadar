@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, LogIn } from "lucide-react";
+import { Send, LogIn, Sparkles, MessageSquarePlus } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import useSWR from "swr";
 
 const fetcher = (url: string) =>
@@ -97,6 +102,7 @@ export function FeatureRequestForm() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
   const [showDialog, setShowDialog] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [dialogVariant, setDialogVariant] = useState<
     "success" | "rate-limit" | "error"
   >("success");
@@ -120,6 +126,7 @@ export function FeatureRequestForm() {
       if (response.status === 429) {
         setDialogVariant("rate-limit");
         setShowDialog(true);
+        setIsPopoverOpen(false);
         setStatus("idle");
         return;
       }
@@ -127,6 +134,7 @@ export function FeatureRequestForm() {
       if (!response.ok) {
         setDialogVariant("error");
         setShowDialog(true);
+        setIsPopoverOpen(false);
         setStatus("idle");
         return;
       }
@@ -135,52 +143,70 @@ export function FeatureRequestForm() {
       setStatus("success");
       setDialogVariant("success");
       setShowDialog(true);
+      setIsPopoverOpen(false);
       setTimeout(() => setStatus("idle"), 2000);
     } catch {
       setDialogVariant("error");
       setShowDialog(true);
+      setIsPopoverOpen(false);
       setStatus("idle");
     }
   };
 
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-1 items-center gap-2 sm:flex-initial"
-      >
-        <input
-          type="text"
-          maxLength={150}
-          disabled={!isAuthenticated || status === "loading"}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={
-            isAuthenticated
-              ? "Request a provider or feature..."
-              : "Sign in to suggest features"
-          }
-          className="h-8 w-full min-w-0 sm:w-64 appearance-none rounded-md border border-amber-500/30 bg-background bg-clip-padding px-3 py-1.5 text-xs sm:text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={status === "loading" || (isAuthenticated && !text.trim())}
-          className="flex h-8 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 px-3 text-xs sm:text-sm text-amber-500 transition-colors hover:bg-amber-500/20 outline-none focus:outline-none focus:border-amber-500 focus:!ring-0 focus:!ring-offset-0 focus:!shadow-none disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {!isAuthenticated ? (
-            <LogIn className="h-3.5 w-3.5 sm:mr-1.5" />
-          ) : (
-            <Send className="h-3.5 w-3.5 sm:mr-1.5" />
-          )}
-          <span className="hidden sm:inline">
-            {!isAuthenticated
-              ? "Sign in"
-              : status === "success"
-                ? "Sent"
-                : "Send"}
-          </span>
-        </button>
-      </form>
+      <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <PopoverTrigger asChild>
+          <button className="group relative flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-coral uppercase tracking-widest rounded-md bg-coral/10 hover:bg-coral/20 transition-all duration-300 border border-coral/30 hover:border-coral/50 shadow-[0_0_15px_rgba(var(--coral-rgb),0.1)] active:scale-95">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            Suggest Feature
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[420px] p-5 bg-card/98 backdrop-blur-xl border border-border/60 shadow-2xl" side="bottom" align="end">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-5"
+          >
+            <div className="space-y-2">
+              <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+                <MessageSquarePlus className="w-5 h-5 text-coral" />
+                Shape APIRadar
+              </h4>
+              <p className="text-sm text-muted-foreground leading-snug">
+                APIRadar evolves with you. We&apos;re constantly improving based on your feedback—tell us what we should build next.
+              </p>
+            </div>
+            
+            <div className="flex gap-3 items-end">
+              <textarea
+                maxLength={150}
+                disabled={!isAuthenticated || status === "loading"}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={
+                  isAuthenticated
+                    ? "Type your request (e.g., 'Add Cloudflare feed')..."
+                    : "Sign in to suggest features"
+                }
+                rows={2}
+                className="h-24 w-full appearance-none rounded-md border border-coral/20 bg-background/40 px-3.5 py-3 text-sm text-foreground transition-all placeholder:text-muted-foreground/60 focus:border-coral/60 focus:outline-none focus:ring-0 focus:!ring-offset-0 resize-none leading-relaxed"
+              />
+              <button
+                type="submit"
+                disabled={status === "loading" || (isAuthenticated && !text.trim())}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-coral/30 bg-coral/10 text-coral transition-all hover:bg-coral/20 active:scale-90 disabled:opacity-50"
+                title={!isAuthenticated ? "Sign in to send" : "Send request"}
+              >
+                {!isAuthenticated ? (
+                  <LogIn className="h-4 w-4" />
+                ) : (
+                  <Send className={`h-4 w-4 ${status === "success" ? "text-green-500" : ""}`} />
+                )}
+              </button>
+            </div>
+          </form>
+        </PopoverContent>
+      </Popover>
       <FeatureRequestDialog
         open={showDialog}
         onOpenChange={setShowDialog}

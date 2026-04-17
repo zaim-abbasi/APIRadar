@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import {
   LogIn,
   Rocket,
@@ -42,14 +42,12 @@ const OverviewDashboard = React.lazy(() =>
   })),
 );
 import { Card, CardContent } from "@/components/ui/card";
-import { PROVIDERS } from "@/lib/constants";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PROVIDERS, INTEL_PROVIDERS } from "@/lib/constants";
 import { Provider } from "@/types";
+import { LayoutGrid, Activity, ListFilter } from "lucide-react";
 
-const ExploreHeader = React.memo(() => (
-  <div className="mb-6 text-center"></div>
-));
-
-ExploreHeader.displayName = "ExploreHeader";
+const ExploreHeader = React.memo(() => null);
 
 // Memoize ActionCard to prevent unnecessary re-renders
 const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
@@ -121,6 +119,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   error,
   loadingRef,
   hasMore,
+  latestGlobalLeakAt,
 }: {
   leaks: any[];
   isLoading: boolean;
@@ -132,14 +131,39 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   error: string | null;
   loadingRef: React.RefObject<HTMLDivElement>;
   hasMore: boolean;
+  latestGlobalLeakAt?: string | Date;
 }) {
   const isUnauthenticated = !session || !session.user;
+  const [activeTab, setActiveTab] = useState<"overview" | "feed">(
+    selectedProvider === "all" ? "overview" : "feed",
+  );
+
+  // Sync activeTab with selectedProvider if it changes from outside
+  useEffect(() => {
+    if (selectedProvider === "all") {
+      setActiveTab("overview");
+    } else {
+      setActiveTab("feed");
+    }
+  }, [selectedProvider]);
+
+  const handleMainTabChange = (value: string) => {
+    const newTab = value as "overview" | "feed";
+    setActiveTab(newTab);
+    if (newTab === "overview") {
+      onProviderChange("all");
+    } else if (selectedProvider === "all") {
+      // If switching to feed from all, default to openai
+      onProviderChange("openai");
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 pt-3 pb-6">
+    <div className="container mx-auto px-4 pt-9 pb-6">
       {/* Structured Data for Explore Page */}
       <script
         type="application/ld+json"
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
@@ -163,43 +187,61 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       />
       {/* Header */}
       <ExploreHeader />
-      {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
-        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
-          <div className="w-full">
-            <ProviderFilter
-              selectedProvider={selectedProvider}
-              onProviderChange={onProviderChange}
-            />
-          </div>
-        </div>
-        {/* Results Count and Refresh */}
-        <div className="mt-3 pt-3 border-t border-border/40 animate-fade-in-up opacity-0 animate-delay-10">
-          <div className="flex flex-row items-center justify-between gap-4 flex-wrap">
-            {/* Left Side: Stats */}
-            <div className="flex flex-row items-center gap-4 text-sm text-muted-foreground whitespace-nowrap">
-              <LiveStats latestLeakAt={leaks[0]?.leakDetectedAt} />
+      <Tabs
+        value={activeTab}
+        onValueChange={handleMainTabChange}
+        className="w-full space-y-6"
+      >
+        {/* Header Card Wrapper */}
+        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 animate-fade-in-up shadow-sm transition-shadow duration-200">
+          <div className="flex flex-col lg:flex-row items-start gap-3 sm:gap-4 w-full">
+            {/* Left: Tabs Section (2/3 Width) */}
+            <div className="w-full lg:w-2/3">
+              <div className="relative flex flex-wrap justify-center sm:flex-wrap items-center w-full p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-[46px]">
+                <TabsList className="bg-transparent border-none p-0 h-full w-full flex flex-wrap sm:flex-nowrap gap-1.5 transition-all shadow-none">
+                  <TabsTrigger
+                    value="overview"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                  >
+                    <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                      Global Overview
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="feed"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md sm:rounded-none first:sm:rounded-l-md last:sm:rounded-r-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                  >
+                    <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
+                      <Activity className="h-3.5 w-3.5" />
+                      Intelligence Feed
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </div>
 
-            {/* Right Side: Links */}
-            <FeatureRequestForm />
+            {/* Right: Stats Section (1/3 Width) */}
+            <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-end gap-3 justify-center">
+              <FeatureRequestForm />
+              <div className="flex flex-row items-center gap-6 text-sm text-muted-foreground whitespace-nowrap pr-2">
+                <LiveStats latestLeakAt={latestGlobalLeakAt || leaks[0]?.leakDetectedAt} />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      {/* Results */}
-      <div className="animate-fade-in-up opacity-0 animate-delay-10">
-        <Suspense
-          fallback={
-            <div className="min-h-[200px] flex items-center justify-center">
-              <span className="text-muted-foreground text-sm">
-                Loading results…
-              </span>
-            </div>
-          }
-        >
-          {/* Wrap in relative container for fade effect */}
-          <div className="relative">
-            {selectedProvider === "all" ? (
+
+        <TabsContent value="overview" className="space-y-6 m-0 focus-visible:ring-0">
+          <div className="animate-fade-in-up">
+            <Suspense
+              fallback={
+                <div className="min-h-[200px] flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">
+                    Loading overview…
+                  </span>
+                </div>
+              }
+            >
               <OverviewDashboard
                 leaks={leaks}
                 isLoading={isLoading}
@@ -215,31 +257,57 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 plan={plan}
                 isOffline={!!error}
               />
-            ) : (
-              <LeakTable
-                leaks={leaks}
-                isLoading={isLoading}
-                selectedProvider={selectedProvider}
-                plan={plan}
-                onSignIn={
-                  isUnauthenticated
-                    ? () =>
-                        signIn("google", {
-                          callbackUrl: window.location.href,
-                          redirect: true,
-                        })
-                    : undefined
-                }
-                isOffline={!!error}
-              />
-            )}
+            </Suspense>
           </div>
-        </Suspense>
-        {/* Infinite scroll sentinel for pro users */}
-        {plan === "pro" && hasMore && (
-          <div ref={loadingRef} style={{ height: 1 }} />
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="feed" className="space-y-6 m-0 focus-visible:ring-0">
+          <div className="flex flex-col gap-6 animate-fade-in-up">
+            {/* Filters (Pills) */}
+            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 shadow-sm transition-shadow duration-200">
+              <div className="w-full">
+                <ProviderFilter
+                  selectedProvider={selectedProvider}
+                  onProviderChange={onProviderChange}
+                  providers={INTEL_PROVIDERS}
+                />
+              </div>
+            </div>
+
+
+
+            {/* Results */}
+            <Suspense
+              fallback={
+                <div className="min-h-[200px] flex items-center justify-center">
+                  <span className="text-muted-foreground text-sm">
+                    Loading results…
+                  </span>
+                </div>
+              }
+            >
+              <div className="relative">
+                <LeakTable
+                  leaks={leaks}
+                  isLoading={isLoading}
+                  selectedProvider={selectedProvider}
+                  plan={plan}
+                  onSignIn={
+                    isUnauthenticated
+                      ? () =>
+                          signIn("google", {
+                            callbackUrl: window.location.href,
+                            redirect: true,
+                          })
+                      : undefined
+                  }
+                  isOffline={!!error}
+                />
+              </div>
+            </Suspense>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 });

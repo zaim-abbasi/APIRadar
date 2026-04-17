@@ -87,7 +87,7 @@ export default function RootLayout({
         <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
         {/* Open Graph & Twitter handled by Next.js metadata */}
         {/* JSON-LD Structured Data: WebSite and Organization with social profiles */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
+        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebSite",
@@ -104,7 +104,7 @@ export default function RootLayout({
             }
           })
         }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
+        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",

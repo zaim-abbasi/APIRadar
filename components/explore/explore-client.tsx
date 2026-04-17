@@ -59,6 +59,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
 
   // Initialize leaks from cache if available (client-only to prevent hydration mismatch)
   const [leaks, setLeaks] = useState<LeakedKey[]>([]);
+  const [latestGlobalLeakAt, setLatestGlobalLeakAt] = useState<string | Date | undefined>(undefined);
 
   // Load from cache on client mount only
   useEffect(() => {
@@ -199,6 +200,10 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
             if (isDefault) {
               firstPageCache.leaks = data.leaks;
               firstPageCache.timestamp = Date.now();
+              // Store global latest leak time for consistent LiveStats
+              if (data.leaks.length > 0) {
+                setLatestGlobalLeakAt(data.leaks[0].leakDetectedAt);
+              }
             }
             return data.leaks;
           }
@@ -321,6 +326,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       onProviderChange: handleProviderChange,
       total: paginationState.total,
       error: loadingState.error,
+      latestGlobalLeakAt,
     }),
     [
       leaks,
@@ -331,6 +337,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       paginationState.total,
       loadingState.error,
       handleProviderChange,
+      latestGlobalLeakAt,
     ],
   );
 
