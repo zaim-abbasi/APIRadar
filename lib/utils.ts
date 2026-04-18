@@ -19,3 +19,8 @@ export function parseGitHubRepoUrl(repoUrl: string): { owner: string; repo: stri
     return null;
   }
 }
+
+export function redact(s: string): string {
+  if (s.length <= 5) return `${s.slice(0, 2)}${'*'.repeat(Math.max(3, Math.floor(s.length * 0.8)))}`;
+  return `${s.slice(0, 3)}${'*'.repeat(Math.max(3, Math.floor((s.length - 5) * 0.8)))}${s.slice(-2)}`;
+}

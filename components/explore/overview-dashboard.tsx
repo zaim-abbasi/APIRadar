@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { LeakedKey } from "@/types";
 import { formatDistanceToNow } from "date-fns";
-import { parseGitHubRepoUrl, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { fetchProviderStats } from "@/lib/api";
 import { PROVIDERS, TICKER_REPOS } from "@/components/home/hero-section";
 
@@ -132,9 +132,7 @@ export function OverviewDashboard({
             {(leaks.length > 0
               ? leaks.slice(0, 20).map((l) => ({
                   provider: l.provider,
-                  repo: l.repoUrl
-                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                    : "Unknown Repo",
+                  repo: l.repoUrl || "***",
                   date: l.leakDetectedAt,
                   isAlert: true,
                 }))
@@ -212,9 +210,7 @@ export function OverviewDashboard({
             {(leaks.length > 0
               ? leaks.slice(0, 20).map((l) => ({
                   provider: l.provider,
-                  repo: l.repoUrl
-                    ? parseGitHubRepoUrl(l.repoUrl)?.repo || "Unknown Repo"
-                    : "Unknown Repo",
+                  repo: l.repoUrl || "***",
                   date: l.leakDetectedAt,
                   isAlert: true,
                 }))
@@ -412,7 +408,7 @@ export function OverviewDashboard({
                   Live
                 </Badge>
               </div>
-              <div className="p-0 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="p-0 overflow-y-auto overscroll-contain flex-1 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {isLoading ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     <Activity className="h-4 w-4 animate-spin mx-auto mb-2 opacity-50" />
@@ -425,23 +421,9 @@ export function OverviewDashboard({
                 ) : (
                   <div className="flex flex-col divide-y divide-border/20">
                     {leaks.slice(0, 20).map((leak, idx) => (
-                      <a
+                      <div
                         key={idx}
-                        href={plan === "pro" ? (
-                          leak.repoUrl && leak.filePath
-                            ? `${leak.repoUrl}/blob/HEAD/${leak.filePath}`
-                            : leak.repoUrl || "#"
-                        ) : undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          if (plan !== "pro" && onSignIn) {
-                            e.preventDefault();
-                            sessionStorage.setItem("radar_restore_flag", "true");
-                            onSignIn();
-                          }
-                        }}
-                        className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group cursor-pointer flex items-center gap-2 sm:gap-3 block"
+                        className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
                       >
                         <div
                           className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full flex-shrink-0 shadow-sm animate-pulse ${!leak.isLocked ? "bg-coral shadow-coral/50" : "bg-blue-500 shadow-blue-500/50"}`}
@@ -459,26 +441,17 @@ export function OverviewDashboard({
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-muted-foreground/80 font-mono truncate mt-0.5">
                             <FolderGit2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0 opacity-70" />
-                            <span className="truncate">
-                              {leak.repoUrl
-                                ? parseGitHubRepoUrl(leak.repoUrl)?.repo ||
-                                  "Unknown Repo"
-                                : "Unknown Repo"}
-                            </span>
+                            <span className="truncate">{leak.repoUrl || "***"}</span>
                             {leak.filePath && (
                               <>
-                                <span className="opacity-40 flex-shrink-0 text-[8px] sm:text-[10px]">
-                                  /
-                                </span>
+                                <span className="opacity-40 flex-shrink-0 text-[8px] sm:text-[10px]">/</span>
                                 <FileCode2 className="h-2 w-2 sm:h-2.5 sm:w-2.5 flex-shrink-0 opacity-60" />
-                                <span className="truncate opacity-80">
-                                  {leak.filePath.split("/").pop()}
-                                </span>
+                                <span className="truncate opacity-80">{leak.filePath}</span>
                               </>
                             )}
                           </div>
                         </div>
-                      </a>
+                      </div>
                     ))}
                   </div>
                 )}

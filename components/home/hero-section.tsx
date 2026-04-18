@@ -14,7 +14,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, redact } from "@/lib/utils";
 import { LiveScanTerminal } from "@/components/home/LiveScanTerminal";
 import useSWR from "swr";
 
@@ -121,14 +121,14 @@ const WorkflowPipeline = React.memo(() => (
 
 WorkflowPipeline.displayName = "WorkflowPipeline";
 
+
 const tickerEntries = TICKER_REPOS.map((repo, i) => {
   const [owner, name] = repo.split("/");
   const provider = PROVIDERS[i % PROVIDERS.length];
   const mins = Math.floor(Math.random() * 58) + 1;
   return {
     provider,
-    repo: name || "unknown",
-    owner: owner || "unknown",
+    repo: `${redact(owner || "unknown")}/${redact(name || "unknown")}`,
     timeAgo: `${mins}m ago`,
     isAlert: false,
     isMock: true,
@@ -183,7 +183,7 @@ const HeroTicker = React.memo(() => {
       {(displayLeaks.length > 0
         ? displayLeaks.slice(0, 20).map((l) => ({
             provider: l.provider,
-            repo: l.repoUrl ? l.repoUrl.split("/").pop() : "unknown",
+            repo: l.repoUrl || "***",
             timeAgo: formatDistanceToNow(new Date(l.leakDetectedAt), {
               addSuffix: true,
             }),

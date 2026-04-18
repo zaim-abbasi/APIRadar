@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, redact } from "@/lib/utils";
 import useSWR from "swr";
 
 const fetcher = (url: string) =>
@@ -102,6 +102,7 @@ const formatLogTime = (date: Date): string => {
   }).format(date);
 };
 
+
 function pickRandomEntry(tick: number): Omit<TerminalLog, "id" | "timestamp"> {
   const fullName =
     REAL_DATA_SAMPLES[Math.floor(Math.random() * REAL_DATA_SAMPLES.length)];
@@ -109,8 +110,8 @@ function pickRandomEntry(tick: number): Omit<TerminalLog, "id" | "timestamp"> {
   const provider = PROVIDERS[Math.floor(Math.random() * PROVIDERS.length)];
   const isAlert = tick % 5 === 0;
   return {
-    owner: owner || "unknown",
-    repo: repo || "unknown",
+    owner: redact(owner || "unknown"),
+    repo: redact(repo || "unknown"),
     provider,
     isAlert,
   };

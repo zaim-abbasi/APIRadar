@@ -111,6 +111,11 @@ function buildQueryFilter(provider?: string): Record<string, any> {
   return filter;
 }
 
+function redactString(s: string): string {
+  if (s.length <= 5) return `${s.slice(0, 2)}${'*'.repeat(Math.max(3, Math.floor(s.length * 0.8)))}`;
+  return `${s.slice(0, 3)}${'*'.repeat(Math.max(3, Math.floor((s.length - 5) * 0.8)))}${s.slice(-2)}`;
+}
+
 export async function getLeaksHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
     if (!request.user) {
@@ -168,17 +173,29 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       return reply.status(503).send({ error: 'Database unavailable' });
     }
 
-    const mappedLeaks = leaks.map((l: any) => ({
-      id: l._id,
-      provider: l.provider,
-      leakDetectedAt: l.leakDetectedAt,
-      leakIntroducedAt: l.leakIntroducedAt,
-      isLocked: false,
-      redactedKey: l.redactedKey,
-      repoUrl: l.repoUrl,
-      filePath: l.filePath,
-      repoCreatedAt: l.repoCreatedAt
-    }));
+    const mappedLeaks = leaks.map((l: any) => {
+      let repoDisplay = '***';
+      let fileDisplay = '***';
+      if (l.repoUrl) {
+        const m = l.repoUrl.match(/github\.com\/(.+?)\/(.+?)(?:$|\/|\?|#)/);
+        if (m) repoDisplay = `${redactString(m[1])}/${redactString(m[2])}`;
+      }
+      if (l.filePath) {
+        const parts = l.filePath.split('/');
+        fileDisplay = parts.map((p: string) => redactString(p)).join('/');
+      }
+      return {
+        id: l._id,
+        provider: l.provider,
+        leakDetectedAt: l.leakDetectedAt,
+        leakIntroducedAt: l.leakIntroducedAt,
+        isLocked: false,
+        redactedKey: l.redactedKey,
+        repoUrl: repoDisplay,
+        filePath: fileDisplay,
+        repoCreatedAt: l.repoCreatedAt
+      };
+    });
 
     const hasMore = isAuthenticated &&
       (enforcedPage * enforcedLimit) < total &&

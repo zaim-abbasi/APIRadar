@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ExternalLink,
   CircleCheck,
   ShieldAlert,
   Clock,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { LeakedKey, Provider } from "@/types";
-import { cn, parseGitHubRepoUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { INTEL_PROVIDERS } from "@/lib/constants";
 
 const ALLOWED_PROVIDERS = [...INTEL_PROVIDERS]
@@ -211,26 +210,9 @@ const FeedItem = React.memo(
     onSignIn?: () => void;
     isAuthenticated: boolean;
   }) => {
-    const parsed = leak.repoUrl ? parseGitHubRepoUrl(leak.repoUrl) : null;
-
-    const linkUrl =
-      leak.repoUrl && leak.filePath
-        ? `${leak.repoUrl}/blob/HEAD/${leak.filePath}`
-        : leak.repoUrl || "#";
-
     return (
-      <a
-        href={isAuthenticated ? linkUrl : undefined}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => {
-          if (!isAuthenticated && onSignIn) {
-            e.preventDefault();
-            sessionStorage.setItem("radar_restore_flag", "true");
-            onSignIn();
-          }
-        }}
-        className="block px-3.5 py-1.5 sm:px-5 sm:py-2 sm:hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer group/item animate-fade-in-up opacity-0"
+      <div
+        className="block px-3.5 py-1.5 sm:px-5 sm:py-2 sm:hover:bg-white/[0.03] transition-colors duration-150 group/item animate-fade-in-up opacity-0"
         style={{ animationDelay: `${Math.min(index * 40, 300)}ms` }}
       >
         <div className="flex items-center gap-3 sm:gap-4">
@@ -263,23 +245,20 @@ const FeedItem = React.memo(
                 </code>
              </div>
 
-             {/* Middle Section: Repo & File */}
+             {/* Middle Section: Repo & File — values are pre-masked by the server */}
              <div className="flex items-center gap-1.5 sm:gap-2.5 text-xs sm:text-sm text-muted-foreground/80 min-w-0 flex-1">
                 <FolderGit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 text-coral/80" />
                 <span className="text-coral/90 font-semibold truncate group-hover/item:text-coral transition-colors duration-150">
-                  {parsed?.owner ? `${parsed.owner}/` : ""}
-                  {parsed?.repo || "Unknown Repo"}
+                  {leak.repoUrl || "***"}
                 </span>
 
-                {leak.filePath && (
-                  <>
-                    <span className="text-border flex-shrink-0 font-light">/</span>
-                    <FileCode2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 opacity-70" />
-                    <span className="truncate text-foreground/80 font-medium">
-                      {leak.filePath.split("/").pop()}
-                    </span>
-                  </>
-                )}
+                <>
+                  <span className="text-border flex-shrink-0 font-light">/</span>
+                  <FileCode2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 opacity-70" />
+                  <span className="truncate text-foreground/80 font-medium">
+                    {leak.filePath || "***"}
+                  </span>
+                </>
              </div>
 
              </div>
@@ -294,8 +273,6 @@ const FeedItem = React.memo(
 
              <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
 
-             {/* External link indicator */}
-             <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/20 md:group-hover/item:text-coral/60 transition-all duration-200 flex-shrink-0 md:group-hover/item:translate-x-0.5 md:group-hover/item:-translate-y-0.5" />
 
              {/* Timestamp at the full end */}
              <span className="text-xs text-muted-foreground/70 whitespace-nowrap flex-shrink-0 tabular-nums font-medium inline-flex items-center gap-1.5 lg:w-[90px] justify-start">
@@ -304,7 +281,7 @@ const FeedItem = React.memo(
              </span>
           </div>
         </div>
-      </a>
+      </div>
     );
   }
 );
@@ -383,7 +360,7 @@ const LeakFeedComponent = React.memo(
               isUnauthenticated ? "h-fit" : "h-[380px] sm:h-[450px]"
             )}
           >
-            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {isLoading && validLeaks.length === 0 ? (
                 <FeedSkeleton />
               ) : (validLeaks.length === 0 || isOffline) && !isRestricted ? (
