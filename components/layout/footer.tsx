@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { Radar, Github } from "lucide-react";
 
@@ -78,14 +78,14 @@ const FooterComponent = () => {
         <div className="md:w-1/3 flex items-center justify-center md:justify-end text-xs font-medium text-muted-foreground tracking-wide gap-4 sm:gap-6">
           <div className="flex items-center gap-4">
             <Link
-              href="https://apiradar.live/privacy-policy"
+              href="/privacy-policy"
               className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
             >
               Privacy Policy
             </Link>
             <span className="text-muted-foreground/20">•</span>
             <Link
-              href="https://apiradar.live/terms-of-service"
+              href="/terms-of-service"
               className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
             >
               Terms of Service
