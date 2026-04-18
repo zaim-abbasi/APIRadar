@@ -66,6 +66,21 @@ const nextConfig = {
       },
     ];
   },
+  // Add redirects for standardized legal URLs
+  async redirects() {
+    return [
+      {
+        source: '/privacy',
+        destination: '/privacy-policy',
+        permanent: true,
+      },
+      {
+        source: '/terms',
+        destination: '/terms-of-service',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
