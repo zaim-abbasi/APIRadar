@@ -141,17 +141,17 @@ export async function fetchTopProviders(session?: any): Promise<ApiResponse<{ to
   }
 }
 
-// Server-side version of fetchLeaderboardData
-export async function fetchLeaderboardDataServer(): Promise<{
+// Server-side version of fetchThreatInsightsData
+export async function fetchThreatInsightsDataServer(): Promise<{
   totalReposScanned: number;
   totalLeaksFound: number;
   topProviders: Array<{ provider: string; count: number; percentage: number }>;
-  todayLeaks: number;
+  todayExposures: number;
 }> {
   try {
     // Use the Next.js API route instead of calling backend directly
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/leaderboard`, {
+    const response = await fetch(`${baseUrl}/api/threat-insights`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -166,29 +166,34 @@ export async function fetchLeaderboardDataServer(): Promise<{
     }
 
     const data = await response.json();
-    return data;
+    return {
+      totalReposScanned: data.totalReposScanned,
+      totalLeaksFound: data.totalLeaksFound,
+      topProviders: data.topProviders,
+      todayExposures: data.leaksFoundToday || 0
+    };
   } catch (error) {
-    console.error('Error fetching leaderboard data server-side:', error);
+    console.error('Error fetching threat insights data server-side:', error);
     // Return fallback data on error
     return {
       totalReposScanned: 0,
       totalLeaksFound: 0,
       topProviders: [],
-      todayLeaks: 0
+      todayExposures: 0
     };
   }
 }
 
-// Client-side version of fetchLeaderboardData
-export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
+// Client-side version of fetchThreatInsightsData
+export async function fetchThreatInsightsData(session?: any): Promise<ApiResponse<{
   totalReposScanned: number;
   totalLeaksFound: number;
   topProviders: Array<{ provider: string; count: number; percentage: number }>;
-  todayLeaks: number;
+  todayExposures: number;
 }>> {
   try {
     const headers = createAuthHeaders(session);
-    const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
+    const response = await fetch(`${API_BASE_URL}/api/threat-insights`, {
       method: 'GET',
       headers,
     });
@@ -199,9 +204,16 @@ export async function fetchLeaderboardData(session?: any): Promise<ApiResponse<{
     }
 
     const data = await response.json();
-    return { data };
+    return { 
+      data: {
+        totalReposScanned: data.totalReposScanned,
+        totalLeaksFound: data.totalLeaksFound,
+        topProviders: data.topProviders,
+        todayExposures: data.leaksFoundToday || 0
+      }
+    };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Failed to fetch leaderboard data' };
+    return { error: error instanceof Error ? error.message : 'Failed to fetch threat insights data' };
   }
 }
 

@@ -5,10 +5,10 @@ export interface ProviderStats {
   trend: 'up' | 'down' | 'stable';
 }
 
-export interface LeaderboardData {
+export interface ThreatInsightsData {
   topProviders: ProviderStats[];
-  totalLeaks: number;
-  todayLeaks: number;
+  totalExposures: number;
+  todayExposures: number;
   weeklyGrowth: number;
-  leaksFoundToday: number;
-} 
+  exposuresFoundToday: number;
+}

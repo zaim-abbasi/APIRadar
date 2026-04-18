@@ -38,7 +38,7 @@ APIRadar is a large, multi-component system. It scans GitHub for secrets, detect
 - Deduplication and scan tracking
 - Redacted keys by default; secure full-key endpoint
 - Full audit logging
-- Modern frontend: real-time explorer, leaderboard
+- Modern frontend: real-time explorer, Threat Insights dashboard
 - Built with Fastify, MongoDB, TypeScript, Next.js, Tailwind CSS
 
 ---

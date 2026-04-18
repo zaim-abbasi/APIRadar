@@ -29,8 +29,8 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL('https://apiradar.live'),
   title: 'APIRadar',
-  description: 'Live tracking of exposed API keys from millions of GitHub repositories. Discover leaks as they happen with unmatched detail and speed.',
-  keywords: 'API keys, security, GitHub, leaks, monitoring, detection, OpenAI, Google Cloud, Gemini, API leak detector',
+  description: 'Live tracking of exposed API keys from millions of GitHub repositories. Analyze exposure trends to mitigate organizational security risks with unmatched detail and speed.',
+  keywords: 'API keys, security, GitHub, exposures, monitoring, detection, OpenAI, Google Cloud, Gemini, API exposure detector',
   authors: [{ name: 'Zaim Abbasi' }],
   creator: 'Zaim Abbasi',
   publisher: 'APIRadar',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'APIRadar - Real-time API Key Leak Detection',
+    title: 'APIRadar - Real-time API Key Exposure Monitoring',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
     type: 'website',
     locale: 'en_US',

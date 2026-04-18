@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.search;
 
     try {
-      const response = await fetch(`${backendUrl}/api/leaderboard${searchParams}`, {
+      const response = await fetch(`${backendUrl}/api/threat-insights${searchParams}`, {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
           errorData = { error: await response.text().catch(() => 'Unable to read error') };
         }
 
-        console.error('Backend leaderboard API error:', {
+        console.error('Backend threat-insights API error:', {
           status: response.status,
           statusText: response.statusText,
           errorData,
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       backendUrl = backendUrl.replace('localhost', '127.0.0.1');
     }
 
-    console.error('Error in leaderboard API route:', {
+    console.error('Error in threat-insights API route:', {
       error: errorMessage,
       stack: errorStack,
       errorObject: error,
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: 'Failed to fetch leaderboard data',
+        error: 'Failed to fetch threat insights data',
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       },
       { status: 500 }

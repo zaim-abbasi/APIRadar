@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { Leak } from '../models/Leak';
+import { Leak as Exposure } from '../models/Leak';
 import { ScannedRepo } from '../models/ScannedRepo';
 import { githubService } from '../services/github';
 
@@ -9,10 +9,6 @@ const CACHE_TTL = { SHORT: 30_000, LONG: 300_000 };
 
 const cache = new Map<string, { data: any; timestamp: number }>();
 
-// function resolveTimezone(tz?: string): string {
-//   return tz || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-// }
-
 function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: any): Promise<T> {
   const now = Date.now();
   const cached = cache.get(key);
@@ -20,7 +16,7 @@ function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: 
     log.info({ msg: 'Cache hit', key, age: now - cached.timestamp });
     return cached.data;
   }
-  const data = fetcher(); // Note: Removed await as we wrap it in withCache which is awaited
+  const data = fetcher();
   if (data instanceof Promise) {
     return data.then(d => {
       cache.set(key, { data: d, timestamp: now });
@@ -31,17 +27,13 @@ function withCache<T>(key: string, ttl: number, fetcher: () => Promise<T>, log: 
   return Promise.resolve(data);
 }
 
-// function formatLocalDate(date: Date, tz: string): string {
-//   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-// }
-
-interface LeaderboardResponse {
+interface ThreatInsightsResponse {
   totalReposScanned: number;
   totalLeaksFound: number;
   leaksFoundToday: number;
 }
 
-export const leaderboardDataSchema = {
+export const threatInsightsDataSchema = {
   response: {
     200: {
       type: 'object',
@@ -54,18 +46,16 @@ export const leaderboardDataSchema = {
   }
 };
 
-export async function getLeaderboardDataHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getThreatInsightsDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    // Use 'UTC' for static global caching (independent of user timezone)
-    const data = await withCache<LeaderboardResponse>('leaderboard-global', CACHE_TTL.SHORT, async () => {
+    const data = await withCache<ThreatInsightsResponse>('threat-insights-global', CACHE_TTL.SHORT, async () => {
       const [totalReposScanned, totalLeaksFound] = await Promise.all([
         ScannedRepo.countDocuments(),
-        Leak.countDocuments(),
+        Exposure.countDocuments(),
       ]);
 
-      // Last 24 hours rolling window
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const leaksFoundToday = await Leak.countDocuments({
+      const leaksFoundToday = await Exposure.countDocuments({
         leakDetectedAt: { $gte: oneDayAgo }
       });
 
@@ -73,8 +63,8 @@ export async function getLeaderboardDataHandler(request: FastifyRequest, reply: 
     }, request.log);
     return reply.send(data);
   } catch (error) {
-    request.log.error({ msg: 'Leaderboard fetch failed', error: String(error) });
-    return reply.status(500).send({ error: 'Failed to fetch leaderboard data' });
+    request.log.error({ msg: 'Threat Insights fetch failed', error: String(error) });
+    return reply.status(500).send({ error: 'Failed to fetch threat insights data' });
   }
 }
 
@@ -95,16 +85,14 @@ export const activitySchema = {
   }
 };
 
-export async function getLeaderboardActivityHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getThreatInsightsActivityHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    // const tz = 'UTC'; // Standardize on UTC for everyone
-    const data = await withCache<ActivityPoint[]>('activity-global', CACHE_TTL.SHORT, async () => {
+    const data = await withCache<ActivityPoint[]>('threat-insights-activity', CACHE_TTL.SHORT, async () => {
       const now = new Date();
-      // Calculate start of "Today" in UTC (00:00:00.000)
       const todayStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       const sixDaysAgoStartUTC = new Date(todayStartUTC.getTime() - 6 * MS_PER_DAY);
 
-      const raw = await Leak.aggregate([
+      const raw = await Exposure.aggregate([
         { $match: { leakDetectedAt: { $gte: sixDaysAgoStartUTC } } },
         {
           $group: {
@@ -118,15 +106,10 @@ export async function getLeaderboardActivityHandler(request: FastifyRequest, rep
       const counts = new Map(raw.map((r: any) => [r._id, r.count]));
       const result: ActivityPoint[] = [];
 
-      // Iterate from 6 days ago up to and including today (0 days ago)
       for (let i = 6; i >= 0; i--) {
         const t = new Date(todayStartUTC.getTime() - i * MS_PER_DAY);
-        // Format to YYYY-MM-DD for key lookup
         const dateKey = t.toISOString().split('T')[0];
-
-        // Format label (e.g., "Mon", "Tue")
         const dayName = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' }).format(t);
-
         result.push({ date: dayName, count: counts.get(dateKey) || 0 });
       }
       return result;
@@ -134,11 +117,11 @@ export async function getLeaderboardActivityHandler(request: FastifyRequest, rep
     return reply.send(data);
   } catch (error) {
     request.log.error({ msg: 'Activity fetch failed', error: String(error) });
-    return reply.status(500).send({ error: 'Failed to fetch leaderboard activity' });
+    return reply.status(500).send({ error: 'Failed to fetch exposure activity' });
   }
 }
 
-type TopLeaker = {
+type TopExposureUser = {
   rank: number;
   username: string;
   avatar_url: string;
@@ -147,7 +130,7 @@ type TopLeaker = {
   repos_count: number;
 };
 
-export const topLeakersSchema = {
+export const topExposuresSchema = {
   response: {
     200: {
       type: 'array',
@@ -166,19 +149,19 @@ export const topLeakersSchema = {
   }
 };
 
-const TOP_LEAKERS_LIMIT = 10;
+const TOP_EXPOSURES_LIMIT = 10;
 
-export async function getTopLeakersHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getTopExposuresHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const data = await withCache<TopLeaker[]>('top-leakers', CACHE_TTL.LONG, async () => {
-      const raw = await Leak.aggregate([
+    const data = await withCache<TopExposureUser[]>('top-exposures', CACHE_TTL.LONG, async () => {
+      const raw = await Exposure.aggregate([
         { $addFields: { owner: { $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: ['$repoUrl', 'github.com/'] }, 1] }, '/'] }, 0] } } },
         { $match: { owner: { $nin: [null, ''] }, secretId: { $exists: true } } },
         { $group: { _id: { owner: '$owner', key: '$secretId' }, repoUrl: { $first: '$repoUrl' } } },
         { $group: { _id: '$_id.owner', total_leaks: { $sum: 1 }, repos: { $addToSet: '$repoUrl' } } },
         { $project: { _id: 0, username: '$_id', total_leaks: 1, repos_count: { $size: '$repos' } } },
         { $sort: { total_leaks: -1 } },
-        { $limit: TOP_LEAKERS_LIMIT }
+        { $limit: TOP_EXPOSURES_LIMIT }
       ]);
 
       const profiles = await Promise.all(
@@ -206,7 +189,7 @@ export async function getTopLeakersHandler(request: FastifyRequest, reply: Fasti
     }, request.log);
     return reply.send(data);
   } catch (error) {
-    request.log.error({ msg: 'Top leakers fetch failed', error: String(error) });
-    return reply.status(500).send({ error: 'Failed to fetch top leakers' });
+    request.log.error({ msg: 'Top exposures fetch failed', error: String(error) });
+    return reply.status(500).send({ error: 'Failed to fetch top exposures' });
   }
 }

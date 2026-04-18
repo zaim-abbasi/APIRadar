@@ -60,7 +60,7 @@ function WantedPoster({ user, className }: { user: TopLeaker; className?: string
         <div className="absolute inset-0 opacity-0 sm:group-hover:opacity-100 will-change-[opacity]">
           <div className="absolute inset-0 rounded-md bg-background/60 backdrop-blur-sm" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-xs text-foreground">
-            <div className="font-semibold">{user.total_leaks.toLocaleString()} leaks</div>
+            <div className="font-semibold">{user.total_leaks.toLocaleString()} exposures</div>
             <div className="text-muted-foreground">{user.repos_count.toLocaleString()} repos</div>
           </div>
         </div>
@@ -82,7 +82,7 @@ export const HallOfShame = React.memo(function HallOfShame({ className }: { clas
   useEffect(() => {
     let cancelled = false;
     setData(null);
-    fetch("/api/leaderboard/top-leakers")
+    fetch("/api/threat-insights/top-exposures")
       .then(async (res) => {
         if (!res.ok) throw new Error(`Request failed: ${res.status}`);
         return res.json();
@@ -123,15 +123,15 @@ export const HallOfShame = React.memo(function HallOfShame({ className }: { clas
         "rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-4 sm:p-5",
         className
       )}
-      aria-label="Hall of Shame"
+      aria-label="High-Exposure Profiles"
     >
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
-            Hall of Shame
+            High-Exposure Profiles
           </div>
           <div className="text-xs text-muted-foreground/80 mt-1">
-            Top 10 developers by unique leaked keys (last known public repos)
+            Top 10 developers by unique exposure events (last known public repos)
           </div>
         </div>
       </div>

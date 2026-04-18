@@ -14,41 +14,47 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
-  { href: '/', label: 'Home' },
+  { href: '/#about', label: 'About' },
   { href: '/explore', label: 'Explore' },
-  { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/threat-insights', label: 'Threat Insights' },
 ];
 
 // Memoize NavLinks to prevent unnecessary re-renders
-const NavLinks = React.memo(() => {
+const NavLinks = React.memo(({ isAboutInView }: { isAboutInView: boolean }) => {
   const pathname = usePathname();
+  
   return (
     <>
-          {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          prefetch={true}
-          className={cn(
-            "px-3 py-2 text-base font-medium transition-colors hover:text-coral whitespace-nowrap",
-            pathname === item.href
-              ? "text-coral"
-              : "text-muted-foreground"
-          )}
-        >
-          {item.label}
-        </Link>
-      ))}
+      {navItems.map((item) => {
+        const isActive = item.href === '/#about' 
+          ? isAboutInView 
+          : pathname === item.href;
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            prefetch={true}
+            aria-current={isActive ? 'page' : undefined}
+            className={cn(
+              "px-3 py-2 text-sm font-medium transition-colors hover:text-coral whitespace-nowrap",
+              isActive ? "text-coral" : "text-muted-foreground"
+            )}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </>
   );
 });
 NavLinks.displayName = 'NavLinks';
 
-const MobileMenuOverlay = React.memo(({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const { data: session } = useSession();
+const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOpen: boolean; onClose: () => void; isAboutInView: boolean }) => {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Prevent body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -62,56 +68,82 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose }: { isOpen: boolean; on
 
   if (!isOpen) return null;
 
+  const initials = session?.user?.name
+    ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : session?.user?.email?.[0].toUpperCase() || 'U';
+
   return (
     <div className="fixed inset-0 top-[50px] z-40 bg-background/95 backdrop-blur-xl flex flex-col px-6 py-8 overflow-hidden md:hidden animate-in fade-in slide-in-from-top-5 duration-200">
       <div className="flex flex-col gap-6 mt-4">
-        {navItems.map((item, idx) => (
-          <div key={item.href}>
-            <Link
-              href={item.href}
-              onClick={onClose}
-              className="text-3xl font-medium tracking-tight text-foreground hover:text-coral transition-colors flex items-center gap-3"
-            >
-              {item.label}
-            </Link>
-          </div>
-        ))}
+        {navItems.map((item) => {
+          const isActive = item.href === '/#about' ? isAboutInView : pathname === item.href;
+          return (
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                onClick={onClose}
+                className={cn(
+                  "text-3xl font-medium tracking-tight transition-colors flex items-center gap-3",
+                  isActive ? "text-coral" : "text-foreground hover:text-coral"
+                )}
+              >
+                {item.label}
+              </Link>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-auto mb-8 border-t border-border/50 pt-8">
-        {session ? (
-           <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-lg font-bold text-coral">
-                  {session.user?.name?.[0] || session.user?.email?.[0] || 'U'}
+        {status === 'loading' ? (
+          <div className="flex flex-col gap-4">
+             <div className="flex items-center gap-3 p-2 rounded-md border border-border/20 bg-card/30 animate-pulse">
+                <div className="h-8 w-8 rounded-full bg-muted/40" />
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-3 w-24 bg-muted/30 rounded" />
+                  <div className="h-2 w-32 bg-muted/20 rounded" />
+                </div>
+             </div>
+          </div>
+        ) : session ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between p-2 rounded-md border border-coral/10 bg-card/30">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-coral/10 flex items-center justify-center text-xs font-bold text-coral border border-coral/30 overflow-hidden">
+                  {session.user?.image ? (
+                    <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-mono">{initials}</span>
+                  )}
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-medium text-foreground">{session.user?.name}</span>
-                  <span className="text-sm text-muted-foreground">{session.user?.email}</span>
+                  <span className="text-sm font-bold text-foreground leading-tight">{session.user?.name}</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight font-mono lowercase">{session.user?.email}</span>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-12 text-base font-medium border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
-                onClick={async () => {
-                  await signOut({ callbackUrl: '/', redirect: true });
-                  onClose();
-                }}
-              >
-                <LogOut className="mr-3 h-5 w-5" />
-                Sign Out
-              </Button>
-           </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start h-12 text-xs font-bold uppercase tracking-[0.18em] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
+              onClick={async () => {
+                await signOut({ callbackUrl: '/', redirect: true });
+                onClose();
+              }}
+            >
+              <LogOut className="mr-3 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         ) : (
           <Button 
-            className="w-full h-12 text-base font-semibold bg-coral text-primary-foreground hover:bg-coral/90"
+            className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95 bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 uppercase tracking-[0.18em]"
             onClick={() => {
               sessionStorage.setItem('radar_restore_flag', 'true');
               signIn('google');
               onClose();
             }}
           >
-            Sign In
+            Sign in
           </Button>
         )}
       </div>
@@ -124,12 +156,22 @@ const NavbarComponent = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isAboutInView, setIsAboutInView] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsAboutInView(entry.isIntersecting),
+      { threshold: 0.4 }
+    );
+
+    const aboutSection = document.getElementById('about');
+    if (aboutSection) observer.observe(aboutSection);
+
+    return () => observer.disconnect();
+  }, [pathname]);
 
 
   // Scroll detection
@@ -172,7 +214,7 @@ const NavbarComponent = () => {
           {/* Center: Nav Links */}
           <div className="hidden md:flex flex-1 justify-center">
             <div className="flex items-center space-x-8">
-              <NavLinks />
+              <NavLinks isAboutInView={isAboutInView} />
             </div>
           </div>
 
@@ -185,22 +227,21 @@ const NavbarComponent = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-12 w-12 focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
+              className="md:hidden h-9 w-9 transition-all focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Open menu"
               tabIndex={0}
-              // Removed unused dynamic imports that cause unnecessary chunks
             >
               {isMenuOpen ? (
-                <X className="h-6 w-6 transition-transform duration-200 rotate-90" />
+                <X className="h-5 w-5 transition-transform duration-200 rotate-90" />
               ) : (
-                <Menu className="h-6 w-6 transition-transform duration-200" />
+                <Menu className="h-5 w-5 transition-transform duration-200" />
               )}
             </Button>
           </div>
         </div>
         {/* Mobile Floating Menu Panel */}
-        <MobileMenuOverlay isOpen={isMenuOpen} onClose={handleNavClick} />
+        <MobileMenuOverlay isOpen={isMenuOpen} onClose={handleNavClick} isAboutInView={isAboutInView} />
       </div>
     </nav>
   );

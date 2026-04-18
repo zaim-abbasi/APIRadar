@@ -20,13 +20,13 @@ const WhatYouCanDo = React.memo(() => {
   const items = [
     {
       icon: FileSearch,
-      title: "Explore real API key leaks",
+      title: "Analyze Credential Exposure Events",
       description: "Redacted previews and source links for deep investigation.",
       iconColor: "text-coral",
     },
     {
       icon: TrendingUp,
-      title: "Understand leak patterns",
+      title: "Identify Vulnerability Vectors",
       description: "Filter and sort to spot where leaks happen most.",
       iconColor: "text-coral",
     },
@@ -45,7 +45,7 @@ const WhatYouCanDo = React.memo(() => {
         id="about"
         className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight"
       >
-        What You Can Do Here
+        Platform Capabilities
       </h2>
       <div className="space-y-2.5 flex-1">
         {items.map((item, index) => (
@@ -84,13 +84,13 @@ const WhatYouSee = React.memo(() => {
     { icon: Vault, text: "Redacted Key" },
     { icon: FolderGit2, text: "Repository" },
     { icon: Clock, text: "Timestamp" },
-    { icon: Network, text: "Source Link" },
+    { icon: Network, text: "Repository Reference" },
   ];
 
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-        What You See For Each Leak
+        Forensic Data Points
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 flex-1">
         {items.map((item, index) => (
@@ -113,8 +113,8 @@ WhatYouSee.displayName = "WhatYouSee";
 
 const WhyThisExists = React.memo(() => {
   const points = [
-    { text: "Secrets leak to public repos daily." },
-    { text: "Attackers exploit instantly. Visibility enables defense." },
+    { text: "Credential exposure occurs in public repos daily." },
+    { text: "Exposure poses immediate risk. Visibility enables defense." },
     {
       title: "No Code Retention:",
       text: "Public metadata only. We never clone or store your code.",
@@ -124,7 +124,7 @@ const WhyThisExists = React.memo(() => {
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-        The Zero-Trust Manifesto
+        The Security Framework
       </h2>
       <div className="space-y-4 flex-1">
         <div className="space-y-3">
@@ -217,7 +217,7 @@ const WhatsNext = React.memo(() => {
             className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
           >
             <Shield className="h-4 w-4" />
-            <span>Collaborate on Intelligence</span>
+            <span>Partner with Us or Enterprise Inquiry</span>
           </Link>
           <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
             <Users className="h-3 w-3" />

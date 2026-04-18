@@ -22,8 +22,10 @@ export async function GET(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+    const searchParams = request.nextUrl.search;
+
     try {
-      const response = await fetch(`${backendUrl}/api/leaderboard/top-leakers`, {
+      const response = await fetch(`${backendUrl}/api/threat-insights/activity${searchParams}`, {
         method: 'GET',
         headers: authHeaders,
         signal: controller.signal,
@@ -62,12 +64,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: 'Failed to fetch top leakers',
+        error: 'Failed to fetch exposure activity',
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
       },
       { status: 500 },
     );
   }
 }
-
 

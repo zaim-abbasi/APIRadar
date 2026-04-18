@@ -173,7 +173,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
           <div
-            className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-coral animate-system-glow"
+            className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-coral animate-system-glow"
             aria-hidden="true"
           />
           <div className="font-mono text-[10px] sm:text-xs tracking-widest text-coral">
@@ -200,7 +200,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 {log.isAlert ? (
                   <>
                     <span className="font-bold flex-shrink-0 mr-1 text-coral">
-                      [ALERT]
+                      [DETECTION]
                     </span>
                     <span className="flex-shrink-0 mr-1 text-coral">
                       CRITICAL —
@@ -213,7 +213,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                     >
                       {log.provider}
                     </span>
-                    <span className="text-coral truncate">KEY EXPOSED</span>
+                    <span className="text-coral truncate">EXPOSURE EVENT</span>
                   </>
                 ) : (
                   <>

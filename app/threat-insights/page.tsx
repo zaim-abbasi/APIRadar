@@ -1,33 +1,27 @@
 import React, { Suspense } from 'react';
-import { StatsCards } from '@/components/leaderboard/stats-cards';
-import { LeaderboardData, ProviderStats } from '@/types';
+import { StatsCards } from '@/components/threat-insights/stats-cards';
+import { ThreatInsightsData, ProviderStats } from '@/types';
 import type { Metadata } from 'next';
-import LeaderboardClient from "@/components/leaderboard/leaderboard-client";
-import { headers, cookies } from 'next/headers';
+import ThreatInsightsClient from "@/components/threat-insights/threat-insights-client";
+import { headers } from 'next/headers';
 
 // Page-specific metadata
 export const metadata: Metadata = {
-  title: 'Security Leaderboard - APIRadar',
-  description: '',
+  title: 'Threat Insights - APIRadar',
+  description: 'Global statistics and industry trends on API key exposure events.',
   openGraph: {
-    title: 'Security Leaderboard - APIRadar',
-    description: '',
-    url: 'https://apiradar.live/leaderboard',
+    title: 'Threat Insights - APIRadar',
+    description: 'Global statistics and industry trends on API key exposure events.',
+    url: 'https://apiradar.live/threat-insights',
   },
   twitter: {
-    title: 'Security Leaderboard - APIRadar',
-    description: '',
+    title: 'Threat Insights - APIRadar',
+    description: 'Global statistics and industry trends on API key exposure events.',
   },
 };
 
-// Types for better type safety
-// interface StatsData {
-//   totalLeaks: number;
-//   todayLeaks: number;
-// }
-
 // Production-grade data fetching with proper error handling
-async function fetchLeaderboardData(): Promise<LeaderboardData> {
+async function fetchThreatInsightsData(): Promise<ThreatInsightsData> {
   // Use Next.js API route as proxy (similar to leaks)
   // Get the base URL for server-side requests
   let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -46,7 +40,7 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
   }
   
   try {
-    const url = new URL(`${baseUrl}/api/leaderboard`);
+    const url = new URL(`${baseUrl}/api/threat-insights`);
 
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -86,9 +80,9 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
     return {
       topProviders,
       totalReposScanned: Number(data.totalReposScanned) || 0,
-      totalLeaksFound: Number(data.totalLeaksFound) || 0,
+      totalExposuresFound: Number(data.totalLeaksFound) || 0,
       weeklyGrowth: Number(data.weeklyGrowth) || 0,
-      leaksFoundToday: Number(data.leaksFoundToday) || 0,
+      exposuresFoundToday: Number(data.leaksFoundToday) || 0,
     };
     
   } catch (error) {
@@ -101,28 +95,28 @@ async function fetchLeaderboardData(): Promise<LeaderboardData> {
       baseUrl
     };
     
-    console.error('Leaderboard data fetch failed:', errorDetails);
+    console.error('Threat Insights data fetch failed:', errorDetails);
 
     // Return safe fallback data
     return {
       topProviders: [{ provider: 'unknown', count: 0, percentage: 0, trend: 'stable' }],
       totalReposScanned: 0,
-      totalLeaksFound: 0,
+      totalExposuresFound: 0,
       weeklyGrowth: 0,
-      leaksFoundToday: 0,
+      exposuresFoundToday: 0,
     };
   }
 }
 
 // Clean component structure
-const LeaderboardHeader = React.memo(() => (
+const ThreatInsightsHeader = React.memo(() => (
   <div className="mb-6 text-center">
   </div>
 ));
 
-LeaderboardHeader.displayName = 'LeaderboardHeader';
+ThreatInsightsHeader.displayName = 'ThreatInsightsHeader';
 
-const StatsSection = React.memo(({ data }: { data: LeaderboardData }) => (
+const StatsSection = React.memo(({ data }: { data: ThreatInsightsData }) => (
   <div className="mb-8">
     <StatsCards data={data} />
   </div>
@@ -130,14 +124,14 @@ const StatsSection = React.memo(({ data }: { data: LeaderboardData }) => (
 
 StatsSection.displayName = 'StatsSection';
 
-// Force dynamic rendering - leaderboard data changes frequently
+// Force dynamic rendering - insights data changes frequently
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Always fetch fresh data
 
 // Main page component
-export default async function LeaderboardPage() {
-  const leaderboardData = await fetchLeaderboardData();
+export default async function ThreatInsightsPage() {
+  const insightsData = await fetchThreatInsightsData();
 
-  const statsData: LeaderboardData = leaderboardData;
-  return <LeaderboardClient statsData={statsData} />;
+  const statsData: ThreatInsightsData = insightsData;
+  return <ThreatInsightsClient statsData={statsData} />;
 }

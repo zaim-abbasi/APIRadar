@@ -69,8 +69,8 @@ const fetcher = (url: string) =>
 
 const PIPELINE_STEPS = [
   { icon: Radar, label: "MONITOR" },
-  { icon: Crosshair, label: "INTERCEPT" },
-  { icon: Lock, label: "VAULT" },
+  { icon: Crosshair, label: "DETECT" },
+  { icon: Lock, label: "ANALYZE" },
   { icon: Activity, label: "INTEL" },
 ] as const;
 
@@ -199,7 +199,7 @@ const HeroTicker = React.memo(() => {
                 e.isAlert ? "text-coral/80" : "text-muted-foreground/60",
               )}
             >
-              [{e.isAlert ? "ALERT" : "LIVE"}]
+              [{e.isAlert ? "DETECTION" : "LIVE"}]
             </span>{" "}
             <span
               className={cn(
@@ -211,7 +211,7 @@ const HeroTicker = React.memo(() => {
             >
               {e.provider.toUpperCase()}
             </span>{" "}
-            {e.isAlert ? "leak in" : "//"}{" "}
+            {e.isAlert ? "exposure in" : "//"}{" "}
             <span className="text-muted-foreground/90 italic">{e.repo}</span> ·{" "}
             <span className="opacity-70 text-[9px] sm:text-[10px]">
               {e.timeAgo}
@@ -315,7 +315,7 @@ const StatCounter = React.memo(() => {
           {total.toLocaleString()}
         </span>
         <span className="text-xs sm:text-sm text-muted-foreground font-medium">
-          Active Threats Neutralized
+          Exposures Identified
         </span>
       </span>
     </div>
@@ -354,7 +354,7 @@ export const HeroSection = React.memo(() => {
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
                   <span className="text-foreground">Global </span>
-                  <span className="text-coral">API Leak</span>
+                  <span className="text-coral">API Exposure</span>
                   <br className="hidden sm:block" />
                   <span className="text-foreground"> Intelligence</span>
                 </h1>
@@ -362,8 +362,8 @@ export const HeroSection = React.memo(() => {
 
               <div className="space-y-2.5 sm:space-y-2.5">
                 <p className="text-[13px] sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Monitor public GitHub repositories in real-time to track
-                  exactly when, where, and how often API keys are exposed.
+                  Monitor public GitHub repositories to analyze exposure trends
+                  to mitigate organizational security risks.
                 </p>
               </div>
 
@@ -390,11 +390,11 @@ export const HeroSection = React.memo(() => {
                       aria-hidden="true"
                       focusable="false"
                     />
-                    Access Leak Intelligence
+                    Access Exposure Reports
                   </span>
                 </Link>
                 <Link
-                  href="/leaderboard"
+                  href="/threat-insights"
                   prefetch={true}
                   className={cn(
                     "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
@@ -408,7 +408,7 @@ export const HeroSection = React.memo(() => {
                       aria-hidden="true"
                       focusable="false"
                     />
-                    Check Global Standings
+                    View Global Statistics
                   </span>
                 </Link>
               </div>

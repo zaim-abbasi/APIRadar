@@ -353,11 +353,11 @@ button:focus:not(:focus-visible) {
 
   0%,
   100% {
-    box-shadow: 0 0 8px hsl(var(--coral) / 0.6);
+    box-shadow: 0 0 4px hsl(var(--coral) / 0.4);
   }
 
   50% {
-    box-shadow: 0 0 16px hsl(var(--coral) / 0.9), 0 0 24px hsl(var(--coral) / 0.3);
+    box-shadow: 0 0 10px hsl(var(--coral) / 0.6);
   }
 }
 

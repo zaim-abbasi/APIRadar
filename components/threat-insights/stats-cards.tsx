@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, Shield, AlertTriangle, Eye, Calendar, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LeaderboardData } from '@/types';
+import { ThreatInsightsData } from '@/types';
 
 interface StatsCardsProps {
-  data: LeaderboardData;
+  data: ThreatInsightsData;
 }
 
 interface AnimatedCounterProps {
@@ -261,7 +261,7 @@ StatCard.displayName = 'StatCard';
 function StatsErrorFallback() {
   return (
     <div className="text-center text-destructive my-4" role="alert">
-      Failed to load stats. Please try refreshing the page.
+      Failed to load statistics. Please try refreshing the page.
     </div>
   );
 }
@@ -271,28 +271,24 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     return <StatsErrorFallback />;
   }
 
-  const [displayData, setDisplayData] = useState<LeaderboardData>(data);
-
-  useEffect(() => {
-    // No-op: Stats are now standard UTC for everyone
-  }, []);
+  const [displayData, setDisplayData] = useState<ThreatInsightsData>(data);
 
   useEffect(() => {
     const fetchPersonalizedData = async () => {
       try {
-        const response = await fetch(`/api/leaderboard`);
+        const response = await fetch(`/api/threat-insights`);
         if (response.ok) {
           const freshData = await response.json();
           setDisplayData({
              topProviders: data.topProviders,
              totalReposScanned: Number(freshData.totalReposScanned) || 0,
-             totalLeaksFound: Number(freshData.totalLeaksFound) || 0,
+             totalExposuresFound: Number(freshData.totalLeaksFound) || 0,
              weeklyGrowth: data.weeklyGrowth,
-             leaksFoundToday: Number(freshData.leaksFoundToday) || 0,
+             exposuresFoundToday: Number(freshData.leaksFoundToday) || 0,
           });
         }
       } catch (error) {
-        console.error("Failed to fetch personalized stats:", error);
+        console.error("Failed to fetch statistics:", error);
       }
     };
 
@@ -301,37 +297,37 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
 
   const {
     totalReposScanned,
-    totalLeaksFound,
-    leaksFoundToday
+    totalExposuresFound,
+    exposuresFoundToday
   } = displayData;
 
   const safeTotalReposScanned = typeof totalReposScanned === 'number' && isFinite(totalReposScanned) ? totalReposScanned : 0;
-  const safeTotalLeaksFound = typeof totalLeaksFound === 'number' && isFinite(totalLeaksFound) ? totalLeaksFound : 0;
-  const safeLeaksFoundToday = typeof leaksFoundToday === 'number' && isFinite(leaksFoundToday) ? leaksFoundToday : 0;
+  const safeTotalExposuresFound = typeof totalExposuresFound === 'number' && isFinite(totalExposuresFound) ? totalExposuresFound : 0;
+  const safeExposuresFoundToday = typeof exposuresFoundToday === 'number' && isFinite(exposuresFoundToday) ? exposuresFoundToday : 0;
 
   const stats = useMemo(() => [
     {
-      title: 'Leaks Found Today',
-      value: safeLeaksFoundToday,
+      title: 'Exposures Identified Today',
+      value: safeExposuresFoundToday,
       icon: Eye,
       color: 'text-coral',
       bgColor: 'bg-coral/10'
     },
     {
-      title: 'Total Leaks Found',
-      value: safeTotalLeaksFound,
+      title: 'Total Exposures Identified',
+      value: safeTotalExposuresFound,
       icon: AlertTriangle,
       color: 'text-coral',
       bgColor: 'bg-coral/10'
     },
     {
-      title: 'Total Repos Scanned',
+      title: 'Total Repos Analyzed',
       value: safeTotalReposScanned,
       icon: Search,
       color: 'text-coral',
       bgColor: 'bg-coral/10'
     }
-  ], [safeTotalReposScanned, safeTotalLeaksFound, safeLeaksFoundToday]);
+  ], [safeTotalReposScanned, safeTotalExposuresFound, safeExposuresFoundToday]);
 
   return (
     <div
@@ -340,7 +336,7 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     >
       <div className="flex items-center justify-between px-1 pb-2">
         <span className="text-xs font-semibold tracking-wide text-foreground/80">
-          Leaderboard Stats
+          Threat Insight Statistics
         </span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-5">

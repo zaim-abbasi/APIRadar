@@ -32,7 +32,7 @@ const CustomTooltip = React.memo(function CustomTooltip({
     <div className="bg-card/95 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-md shadow-sm">
       <div className="text-xs font-medium text-foreground/90">{label}</div>
       <div className="text-xs text-muted-foreground">
-        Leaks: <span className="font-semibold text-foreground">{typeof value === "number" ? value : 0}</span>
+        Exposures: <span className="font-semibold text-foreground">{typeof value === "number" ? value : 0}</span>
       </div>
     </div>
   );
@@ -47,8 +47,7 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
     let cancelled = false;
     setError(null);
     setIsLoading(true);
-    const timeZone = "UTC"; // Standardize
-    fetch(`/api/leaderboard/activity`)
+    fetch(`/api/threat-insights/activity`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text().catch(() => "");
@@ -90,7 +89,7 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
     <Card className={cn("border-border/50 bg-card/30 backdrop-blur-sm w-full", className)}>
       <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
         <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
-          Weekly Leak Activity
+          Weekly Exposure Activity
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5">
@@ -147,6 +146,3 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
     </Card>
   );
 });
-
-
-

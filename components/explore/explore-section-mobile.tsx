@@ -8,10 +8,8 @@ import {
   LogIn,
   Rocket,
   Info,
-  ChevronDown,
   Check,
   Chrome,
-  Coffee,
 } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { ProviderFilter } from "@/components/explore/provider-filter";
@@ -31,7 +29,6 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { LiveStats, FeatureRequestForm } from "@/components/explore/live-stats";
-import { SponsorDialog } from "@/components/sponsor-dialog";
 
 const LeakFeed = dynamic(
   () => import("@/components/explore/leak-feed").then((m) => m.LeakFeed),
@@ -120,7 +117,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
     loadingRef,
     hasMore,
   } = props;
-  const [isSponsorOpen, setIsSponsorOpen] = React.useState(false);
   const isUnauthenticated = !session || !session.user;
   const isPro = plan === "pro";
   const isLoggedIn = !!session?.user;
@@ -199,15 +195,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         aria-labelledby="footer-label-mobile"
         className="w-full text-center mt-auto pt-4 pb-3 text-xs text-muted-foreground/80 z-10 tracking-wide"
       >
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <button
-            onClick={() => setIsSponsorOpen(true)}
-            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Coffee className="h-3.5 w-3.5" />
-            <span>Sponsor</span>
-          </button>
-        </div>
         <div className="flex items-center justify-center gap-3">
           <span id="footer-label-mobile" className="font-semibold">
             APIRadar
@@ -242,7 +229,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           </a>
         </div>
       </footer>
-      <SponsorDialog open={isSponsorOpen} onOpenChange={setIsSponsorOpen} />
     </section>
   );
 });

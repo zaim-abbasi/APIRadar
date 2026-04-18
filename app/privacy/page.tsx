@@ -1,105 +1,157 @@
 import React from "react";
 import { Metadata } from "next";
+import { Shield, Database, Users, Fingerprint, ExternalLink, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | APIRadar",
-  description: "Learn how APIRadar handles your data and protects your privacy while using our security intelligence platform.",
+  description: "Learn how APIRadar handles your data and protects your privacy while using our real-time API exposure intelligence platform.",
 };
 
 export default function PrivacyPage() {
   const lastUpdated = "April 18, 2026";
 
   return (
-    <div className="min-h-screen bg-background py-12 md:py-20 lg:py-24">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <div className="space-y-4 mb-10 md:mb-16 animate-fade-in-up">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-foreground lg:leading-[1.1]">
+    <div className="min-h-screen bg-background py-8 sm:py-10 md:py-14 font-inter">
+      <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
+        {/* Header Section */}
+        <div className="space-y-3 mb-8 md:mb-10 animate-fade-in-up border-b border-border/40 pb-6 text-left sm:text-left">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground leading-[1.2] lg:leading-[1.1] font-heading text-balance">
             Privacy <span className="text-coral">Policy</span>
           </h1>
-          <p className="text-muted-foreground text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em]">
+          <p className="text-muted-foreground text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] border-l border-coral/30 pl-4 py-1">
             Last Updated: {lastUpdated}
           </p>
         </div>
 
-        <div className="prose prose-invert prose-coral max-w-none space-y-10 animate-fade-in-up animate-delay-150">
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              The Basics
-            </h2>
-            <p className="text-muted-foreground leading-relaxed text-lg">
-              We take your privacy seriously. Here is how we handle your data.
-            </p>
-          </section>
+        {/* Content Layout */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[1fr_260px] gap-8 lg:gap-6 animate-fade-in-up animate-delay-150">
+          <div className="order-2 lg:order-1 space-y-8 md:space-y-10">
+            {/* Protocol Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-md bg-coral/10 text-coral flex-shrink-0">
+                  <Fingerprint className="h-5 w-5" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Data Minimization Protocol</h2>
+              </div>
+              <div className="relative p-5 rounded-lg border border-coral/20 bg-coral/5 overflow-hidden">
+                <p className="text-muted-foreground leading-relaxed text-sm sm:text-base relative z-10 font-medium italic">
+                  APIRadar operates on a principle of Data Minimization. We do not collect or store sensitive personal information beyond what is strictly required for platform authentication and service delivery.
+                </p>
+              </div>
+            </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              What We Collect
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We collect almost nothing. Since you sign in with Google, we only store:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-muted-foreground pl-2">
-              <li>Your name</li>
-              <li>Your email</li>
-            </ul>
-            <p className="text-muted-foreground leading-relaxed">
-              We <strong>do not</strong> save your profile picture, password, or address. 
-            </p>
-          </section>
+            {/* Collection Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-md bg-muted/50 text-foreground flex-shrink-0">
+                  <Database className="h-5 w-5" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Information Collected</h2>
+              </div>
+              
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                    <span className="h-1.5 w-1.5 rounded-full bg-coral" />
+                    Primary Identity
+                  </h3>
+                  <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
+                    Full Name and Email Address retrieved via Google OAuth.
+                  </p>
+                </div>
+                
+                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                    <span className="h-1.5 w-1.5 rounded-full bg-coral" />
+                    Usage Data
+                  </h3>
+                  <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
+                    Intelligence Credit balance and transaction history.
+                  </p>
+                </div>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              How We Use Your Info
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We use your email to set up your account and send you security updates. If you join our mailing list, we'll send you intelligence reports too.
-            </p>
-          </section>
+                <div className="sm:col-span-2 lg:col-span-1 p-3 rounded-md border border-destructive/20 bg-destructive/5 text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80">
+                  Note: We do not store profile imagery, residential addresses, or passwords.
+                </div>
+              </div>
+            </section>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              Third Parties
-            </h2>
-            <div className="bg-coral/5 border border-coral/20 rounded-lg p-5">
-              <p className="text-foreground font-bold mb-2">We don't sell your data.</p>
-              <p className="text-muted-foreground leading-relaxed">
-                We never trade or sell your personal info to anyone. 
+            {/* Third-Party Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-md bg-muted/50 text-foreground flex-shrink-0">
+                  <ExternalLink className="h-5 w-5" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Third-Party Processing</h2>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
+                    <span className="h-1 w-2 rounded-full bg-blue-500" />
+                    Financials
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">
+                    Processed exclusively by Lemon Squeezy and Stripe.
+                  </p>
+                </div>
+                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
+                    <span className="h-1 w-2 rounded-full bg-green-500" />
+                    Authentication
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">
+                    Managed securely via Google Identity Services.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Disclosure Section */}
+            <section className="p-5 sm:p-6 rounded-lg border border-border/50 bg-card/20 text-center space-y-3">
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground underline underline-offset-4 decoration-coral/50 font-heading uppercase tracking-wide">Security Disclosure</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                As a transparency-first platform, we host a formal <span className="text-foreground font-medium underline decoration-coral/30 italic">Vulnerability Disclosure Program (VDP)</span>. 
+                If you represent an organization, contact our security team.
               </p>
+              <div className="pt-1 flex justify-center">
+                <a 
+                  href="mailto:security@apiradar.live" 
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-coral text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs hover:brightness-90 transition-all active:scale-95"
+                >
+                  <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Contact Security Team
+                </a>
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar Info (Order 1 on mobile to show it after header) */}
+          <aside className="order-1 lg:order-2 space-y-4">
+            <div className="flex flex-col sm:flex-row lg:flex-col lg:sticky lg:top-24 gap-4">
+              <div className="flex-1 p-5 rounded-md border border-border/50 bg-card/30 overflow-hidden relative">
+                 <div className="absolute top-0 right-0 p-2 opacity-5">
+                    <Users className="h-12 w-12" />
+                 </div>
+                <div className="flex items-center gap-2 mb-3 text-foreground font-bold text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                  <Users className="h-3.5 w-3.5 text-coral flex-shrink-0" />
+                  User Rights
+                </div>
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed mb-4">
+                  Request a full export or deletion of your account data at any time.
+                </p>
+                <div className="text-[10px] sm:text-[11px] font-mono font-bold text-coral uppercase tracking-[0.25em]">
+                  SLA: 30 Days
+                </div>
+              </div>
+
+              <div className="flex-1 lg:flex-none p-4 rounded-md border border-border/40 bg-card/10 border-dashed flex items-center lg:block">
+                <div className="text-[10px] sm:text-[11px] font-mono text-muted-foreground/60 uppercase tracking-widest leading-relaxed">
+                  SOC-2 compliant intelligence gathering framework.
+                </div>
+              </div>
             </div>
-            <p className="text-muted-foreground leading-relaxed">
-              We use Stripe and LemonSqueezy for payments. They handle the credit cards—we never see your card number.
-            </p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              Cookies & Tracking
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We use standard cookies and local storage to keep you signed in. We don't use tracking pixels for ads.
-            </p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              Data Retention
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We keep your account info as long as you're a user. If you delete your account, we'll pull your data from our active database within 30 days.
-            </p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground border-b border-border/50 pb-2">
-              Takedown Requests
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              If you own a repo or represent a provider (like OpenAI) and want a specific leak removed, email us.
-            </p>
-            <p className="text-coral font-bold">
-              Email: <a href="mailto:security@apiradar.live" className="underline underline-offset-4 hover:text-coral/80 transition-colors">security@apiradar.live</a>
-            </p>
-          </section>
+          </aside>
         </div>
       </div>
     </div>
