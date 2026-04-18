@@ -210,7 +210,7 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
   }, [targetDay, targetYear, day, year]);
 
   return (
-    <span className="transition-all duration-600 ease-out" suppressHydrationWarning>
+    <span className="transition-all duration-600 ease-out font-mono tabular-nums tracking-tighter" suppressHydrationWarning>
       {mounted ? `${day} ${month}, ${year}` : `${targetDay} ${month}, ${targetYear}`}
     </span>
   );
@@ -233,8 +233,8 @@ const StatCard = React.memo(({
         </CardTitle>
         <IconComponent className={`${stat.color} h-7 w-7 sm:h-8 sm:w-8`} />
       </CardHeader>
-      <CardContent className="p-2.5 sm:p-3 pt-0">
-        <div className="text-xl sm:text-2xl font-semibold text-foreground">
+      <CardContent className="p-3 pt-0">
+        <div className="text-xl sm:text-2xl font-bold tracking-tighter text-foreground font-mono tabular-nums">
           {typeof stat.value === 'number' && stat.value !== null ? (
             stat.isPercentage ? (
               <span>{stat.value.toFixed(1)}%</span>
@@ -332,7 +332,7 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   return (
     <div
       id="stats-container"
-      className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3"
+      className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-3"
     >
       <div className="flex items-center justify-between px-1 pb-2">
         <span className="text-xs font-semibold tracking-wide text-foreground/80">

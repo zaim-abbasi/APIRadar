@@ -8,12 +8,12 @@ import { Radar, Github } from "lucide-react";
 const FooterLogo = React.memo(() => (
   <Link href="/" className="flex items-center gap-1">
     <Radar
-      className="h-6 w-6 text-coral"
+      className="h-5 w-5 md:h-6 md:w-6 text-coral"
       strokeWidth={1.5}
       aria-hidden="true"
       focusable="false"
     />
-    <span className="text-xl font-semibold tracking-tighter font-heading">
+    <span className="text-lg md:text-xl font-semibold tracking-tighter font-heading">
       <span className="text-coral">API</span>
       <span className="text-foreground">Radar</span>
     </span>
@@ -56,43 +56,14 @@ const FooterComponent = () => {
     <footer
       role="contentinfo"
       aria-labelledby="footer-label"
-      className="border-t border-border/40 shadow-sm py-6 md:py-0 md:h-[50px] bg-background"
+      className="border-t border-border/40 shadow-sm py-4 md:py-0 md:h-[50px] bg-background"
     >
-      <div className="container mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
-        {/* Left: Logo & Name */}
-        <div className="flex items-center space-x-1.5 shrink-0 md:w-1/3 justify-start">
+      <div className="container mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between gap-2.5 md:gap-0">
+        {/* Row 1 (Mobile) / Left Section (Desktop) */}
+        <div className="flex items-center justify-between w-full md:w-1/3 md:justify-start gap-4">
           <FooterLogo />
-        </div>
-
-        {/* Center: Copyright */}
-        <div className="md:w-1/3 flex justify-center">
-          <span
-            id="footer-label"
-            className="text-[10px] md:text-xs text-muted-foreground/60 text-center font-medium"
-          >
-            © 2026 APIRadar. Real-time API exposure intelligence.
-          </span>
-        </div>
-
-        {/* Right: Links & Credit */}
-        <div className="md:w-1/3 flex items-center justify-center md:justify-end text-xs font-medium text-muted-foreground tracking-wide gap-4 sm:gap-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href="https://apiradar.live/privacy"
-              className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
-            >
-              Privacy Policy
-            </Link>
-            <span className="text-muted-foreground/20">•</span>
-            <Link
-              href="https://apiradar.live/terms"
-              className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
-            >
-              Terms of Service
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
+          {/* Mobile-only Built by */}
+          <div className="md:hidden flex items-center gap-1 shrink-0 text-[10px] font-medium text-muted-foreground tracking-wide">
             <span className="opacity-60">Built by</span>
             <a
               href="https://github.com/zaim-abbasi"
@@ -100,9 +71,56 @@ const FooterComponent = () => {
               rel="noopener noreferrer"
               className="flex items-center gap-1 font-semibold text-coral transition-colors duration-200 hover:underline underline-offset-4"
             >
-              <Github className="h-3.5 w-3.5" />
+              <Github className="h-3 w-3" />
               <span className="font-bold">Zaim Abbasi</span>
             </a>
+          </div>
+        </div>
+
+        {/* Row 2 (Mobile) / Center & Right Sections (Desktop) */}
+        <div className="flex items-center justify-between w-full md:contents gap-4">
+          {/* Copyright: Center on desktop, left on mobile row 2 */}
+          <div className="md:w-1/3 flex md:justify-center">
+            <span
+              id="footer-label"
+              className="text-[9px] md:text-xs text-muted-foreground/60 font-medium whitespace-nowrap"
+            >
+              <span className="sm:inline hidden md:inline">© 2026 APIRadar. Real-time API exposure intelligence.</span>
+              <span className="sm:hidden">© 2026 APIRadar</span>
+            </span>
+          </div>
+
+          {/* Legal Links & Credit: Right on desktop, right on mobile row 2 */}
+          <div className="md:w-1/3 flex items-center justify-end text-[10px] md:text-xs font-medium text-muted-foreground tracking-wide md:gap-0">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link
+                href="https://apiradar.live/privacy"
+                className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
+              >
+                Privacy
+              </Link>
+              <span className="text-muted-foreground/20">•</span>
+              <Link
+                href="https://apiradar.live/terms"
+                className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
+              >
+                Terms
+              </Link>
+            </div>
+            
+            {/* Desktop-only Built by */}
+            <div className="hidden md:flex items-center gap-1 shrink-0 ml-6">
+              <span className="opacity-60 font-medium">Built by</span>
+              <a
+                href="https://github.com/zaim-abbasi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-semibold text-coral transition-colors duration-200 hover:underline underline-offset-4"
+              >
+                <Github className="h-3.5 w-3.5" />
+                <span className="font-bold text-coral">Zaim Abbasi</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>

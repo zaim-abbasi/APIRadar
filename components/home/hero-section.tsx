@@ -308,13 +308,13 @@ const StatCounter = React.memo(() => {
   const { total } = useRobustCounter(totalReal);
 
   return (
-    <div className="animate-fade-in-up">
-      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-coral/30 bg-coral/5 transition-colors duration-500">
-        <ShieldAlert className="h-4 w-4 text-coral" />
-        <span className="text-sm sm:text-base font-mono tabular-nums font-bold tracking-tight text-coral">
+    <div className="animate-fade-in-up flex-shrink-0">
+      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-coral/30 bg-coral/5 transition-colors duration-500">
+        <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
+        <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-coral">
           {total.toLocaleString()}
         </span>
-        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+        <span className="text-[10px] sm:text-sm text-muted-foreground/80 font-medium whitespace-nowrap">
           Exposures Identified
         </span>
       </span>
@@ -326,29 +326,29 @@ StatCounter.displayName = "StatCounter";
 
 export const HeroSection = React.memo(() => {
   return (
-    <section className="relative min-h-[100svh] flex items-center py-8 md:py-12 lg:py-0 lg:min-h-screen overflow-hidden pb-safe">
-      <div className="container mx-auto relative z-10 w-full px-4">
+    <section className="relative min-h-[100svh] flex items-center pt-4 pb-8 md:py-12 lg:py-0 lg:min-h-screen overflow-hidden pb-safe">
+      <div className="container mx-auto relative z-10 w-full px-3 sm:px-4">
         <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 sm:mb-4 lg:pr-8">
+                <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 lg:pr-8">
                   <StatCounter />
-                  <div className="flex justify-center lg:justify-end shrink-0">
+                  <div className="flex justify-end shrink-0">
                     <a
                       href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
+                      className="inline-flex items-center gap-1.5 sm:gap-2.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
                     >
-                      <Trophy className="h-4 w-4 text-coral shrink-0" />
-                      <span className="text-sm sm:text-base font-bold tracking-tight text-foreground/90">
+                      <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral shrink-0" />
+                      <span className="text-[10px] sm:text-base font-bold tracking-tight text-foreground/90 whitespace-nowrap">
                         Featured On
                       </span>
-                      <span className="text-xs sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
+                      <span className="hidden xs:inline text-[10px] sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
                         Product Hunt
                       </span>
-                      <ArrowUpRight className="ml-1 h-3.5 w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
+                      <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
                     </a>
                   </div>
                 </div>

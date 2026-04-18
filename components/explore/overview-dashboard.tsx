@@ -90,12 +90,12 @@ export function OverviewDashboard({
   return (
     <div className="flex flex-col space-y-6 w-full animate-fade-in-up">
       {/* Live Ticker */}
-      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[38px] sm:h-[44px] group">
+      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-3 overflow-hidden relative h-[34px] sm:h-[44px] group">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,114,94,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,114,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
 
-        <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
-          <Activity className="h-3.5 w-3.5 text-coral animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-coral">
+        <div className="z-20 flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
+          <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral">
             Live Intel
           </span>
         </div>
@@ -309,7 +309,7 @@ export function OverviewDashboard({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* Center: Dynamic Provider Stats */}
           <div className="lg:col-span-2">
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {statsLoading ? (
                 <div className="col-span-full h-32 flex items-center justify-center text-muted-foreground text-sm">
                   <Activity className="h-4 w-4 animate-spin mr-2" />
@@ -336,7 +336,7 @@ export function OverviewDashboard({
                                 >
                                   {stat.provider}
                                 </p>
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                                <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                                   {stat.count.toLocaleString()}
                                 </h3>
                                 {stat.todayCount > 0 ? (
@@ -377,7 +377,7 @@ export function OverviewDashboard({
                               <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
                                 Total Today
                               </p>
-                              <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                              <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                                 {providerStats
                                   .reduce(
                                     (sum, stat) => sum + (stat.todayCount || 0),
@@ -397,7 +397,7 @@ export function OverviewDashboard({
           </div>
 
           {/* Right: Vertical Recent Feed */}
-          <div className="lg:col-span-1 lg:h-0 lg:min-h-full">
+          <div className="lg:col-span-1 h-56 lg:h-0 lg:min-h-full">
             <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col">
               <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
                 <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
@@ -423,7 +423,7 @@ export function OverviewDashboard({
                     {leaks.slice(0, 20).map((leak, idx) => (
                       <div
                         key={idx}
-                        className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
+                        className="px-3.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
                       >
                         <div
                           className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full flex-shrink-0 shadow-sm animate-pulse ${!leak.isLocked ? "bg-coral shadow-coral/50" : "bg-blue-500 shadow-blue-500/50"}`}

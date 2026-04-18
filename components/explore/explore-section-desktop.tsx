@@ -157,7 +157,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   };
 
   return (
-    <div className="container mx-auto px-4 pt-9 pb-6">
+    <div className="container mx-auto px-3 sm:px-4 pt-4 sm:pt-9 pb-6">
       {/* Structured Data for Explore Page */}
       <script
         type="application/ld+json"
@@ -191,11 +191,11 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         className="w-full space-y-6"
       >
         {/* Header Card Wrapper */}
-        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-4 sm:p-5 mb-6 animate-fade-in-up shadow-sm transition-shadow duration-200">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 w-full">
+        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-3 sm:p-5 mb-6 animate-fade-in-up shadow-sm transition-shadow duration-200">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-4 w-full">
             {/* Left: Tabs Section */}
-            <div className="flex-grow">
-              <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-11 w-full">
+            <div className="flex-grow w-full lg:w-auto">
+              <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-9 lg:h-11 w-full">
                 <TabsList className="bg-transparent border-none p-0 h-full w-full flex items-center gap-1.5 transition-all shadow-none">
                   <TabsTrigger
                     value="overview"
@@ -220,11 +220,13 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </div>
 
             {/* Right: Stats & Action Section */}
-            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center gap-6 lg:gap-8">
-              <div className="flex flex-row items-center gap-6 text-sm text-muted-foreground whitespace-nowrap">
+            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-6 lg:gap-8 w-full sm:w-auto">
+              <div className="hidden sm:flex flex-row items-center justify-center sm:justify-start gap-4 sm:gap-6 text-sm text-muted-foreground whitespace-nowrap w-full sm:w-auto">
                 <LiveStats latestLeakAt={latestGlobalLeakAt || leaks[0]?.leakDetectedAt} />
               </div>
-              <FeatureRequestForm />
+              <div className="w-full sm:w-auto">
+                <FeatureRequestForm />
+              </div>
             </div>
           </div>
         </div>
@@ -274,7 +276,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </aside>
 
             {/* Mobile View: Inline Sidebar (or old filter style) */}
-            <div className="w-full lg:hidden bg-card/40 border border-border/50 rounded-md p-4">
+            <div className="w-full lg:hidden bg-card/40 border border-border/50 rounded-md p-3">
               <ProviderSidebar
                 selectedProvider={selectedProvider}
                 onProviderChange={onProviderChange}

@@ -51,7 +51,7 @@ const WhatYouCanDo = React.memo(() => {
         {items.map((item, index) => (
           <div
             key={index}
-            className="p-2 sm:px-4 sm:py-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
+            className="p-3 sm:px-4 sm:py-2.5 rounded-md border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
           >
             <div className="flex items-start gap-3.5">
               <item.icon
@@ -96,7 +96,7 @@ const WhatYouSee = React.memo(() => {
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 p-2.5 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
+            className="flex items-center gap-3 p-3 rounded-md bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
           >
             <item.icon className="h-4 w-4 flex-shrink-0 text-coral" />
             <p className="text-sm text-foreground/90 font-bold leading-none tracking-tight">
@@ -175,7 +175,7 @@ const WhatsNext = React.memo(() => {
           {items.map((item) => (
             <div
               key={item.label}
-              className="flex flex-col gap-1 px-3 py-2.5 rounded-md bg-secondary/30 border border-border/50 transition-all duration-300"
+              className="flex flex-col gap-1 p-3 rounded-md bg-secondary/30 border border-border/50 transition-all duration-300"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -233,15 +233,15 @@ WhatsNext.displayName = "WhatsNext";
 
 export const ContentSections = React.memo(() => {
   return (
-    <section className="pt-6 sm:pt-10 pb-10 sm:pb-16">
-      <div className="container mx-auto px-4">
-        <div className="space-y-10 sm:space-y-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-14">
+    <section className="pt-4 sm:pt-10 pb-10 sm:pb-16">
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="space-y-8 sm:space-y-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-14">
             <WhatYouCanDo />
             <WhatYouSee />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-14">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-14">
             <WhyThisExists />
             <WhatsNext />
           </div>

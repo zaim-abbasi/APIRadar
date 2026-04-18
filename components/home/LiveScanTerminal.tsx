@@ -162,7 +162,7 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
 
   return (
     <div
-      className="w-full h-[200px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
+      className="w-full h-[185px] sm:h-[320px] lg:h-[360px] rounded-lg overflow-hidden bg-card border border-border font-mono flex flex-col relative"
       style={{
         fontFamily:
           "'SF Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",

@@ -27,7 +27,7 @@ const NavLinks = React.memo(({ isAboutInView }: { isAboutInView: boolean }) => {
     <>
       {navItems.map((item) => {
         const isActive = item.href === '/#about' 
-          ? isAboutInView 
+          ? (pathname === '/' && isAboutInView)
           : pathname === item.href;
 
         return (
@@ -73,20 +73,21 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
     : session?.user?.email?.[0].toUpperCase() || 'U';
 
   return (
-    <div className="fixed inset-0 top-[50px] z-40 bg-background/95 backdrop-blur-xl flex flex-col px-6 py-8 overflow-hidden md:hidden animate-in fade-in slide-in-from-top-5 duration-200">
-      <div className="flex flex-col gap-6 mt-4">
+    <div className="fixed inset-0 top-[50px] z-40 bg-background/98 backdrop-blur-2xl flex flex-col px-5 py-6 overflow-hidden md:hidden animate-in fade-in slide-in-from-top-5 duration-200">
+      <div className="flex flex-col gap-5 mt-2">
         {navItems.map((item) => {
-          const isActive = item.href === '/#about' ? isAboutInView : pathname === item.href;
+          const isActive = item.href === '/#about' ? (pathname === '/' && isAboutInView) : pathname === item.href;
           return (
-            <div key={item.href}>
+            <div key={item.href} className="relative py-1">
               <Link
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "text-3xl font-medium tracking-tight transition-colors flex items-center gap-3",
+                  "text-2xl font-bold tracking-tighter transition-all flex items-center gap-3 active:scale-[0.98]",
                   isActive ? "text-coral" : "text-foreground hover:text-coral"
                 )}
               >
+                {isActive && <div className="h-1 w-4 bg-coral rounded-full flex-shrink-0" />}
                 {item.label}
               </Link>
             </div>
@@ -94,11 +95,11 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         })}
       </div>
 
-      <div className="mt-auto mb-8 border-t border-border/50 pt-8">
+      <div className="mt-auto mb-6 border-t border-border/50 pt-6">
         {status === 'loading' ? (
           <div className="flex flex-col gap-4">
-             <div className="flex items-center gap-3 p-2 rounded-md border border-border/20 bg-card/30 animate-pulse">
-                <div className="h-8 w-8 rounded-full bg-muted/40" />
+             <div className="flex items-center gap-3 p-2.5 rounded-md border border-border/20 bg-card/40 animate-pulse">
+                <div className="h-9 w-9 rounded-full bg-muted/40" />
                 <div className="flex flex-col gap-1.5">
                   <div className="h-3 w-24 bg-muted/30 rounded" />
                   <div className="h-2 w-32 bg-muted/20 rounded" />
@@ -106,10 +107,10 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
              </div>
           </div>
         ) : session ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between p-2 rounded-md border border-coral/10 bg-card/30">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between p-2.5 rounded-md border border-coral/20 bg-card/40">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-coral/10 flex items-center justify-center text-xs font-bold text-coral border border-coral/30 overflow-hidden">
+                <div className="h-9 w-9 rounded-full bg-coral/10 flex items-center justify-center text-xs font-bold text-coral border border-coral/30 overflow-hidden">
                   {session.user?.image ? (
                     <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
                   ) : (
@@ -117,14 +118,14 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
                   )}
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-foreground leading-tight">{session.user?.name}</span>
-                  <span className="text-[10px] text-muted-foreground leading-tight font-mono lowercase">{session.user?.email}</span>
+                  <span className="text-sm font-bold text-foreground leading-tight tracking-tight">{session.user?.name}</span>
+                  <span className="text-[10px] text-muted-foreground leading-tight font-mono lowercase opacity-70">{session.user?.email}</span>
                 </div>
               </div>
             </div>
             <Button 
               variant="outline" 
-              className="w-full justify-start h-12 text-xs font-bold uppercase tracking-[0.18em] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
+              className="w-full justify-start h-11 text-[11px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 active:scale-[0.98] transition-all"
               onClick={async () => {
                 await signOut({ callbackUrl: '/', redirect: true });
                 onClose();
@@ -136,7 +137,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
           </div>
         ) : (
           <Button 
-            className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95 bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 uppercase tracking-[0.18em]"
+            className="w-full h-11 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95 bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 uppercase tracking-[0.2em]"
             onClick={() => {
               sessionStorage.setItem('radar_restore_flag', 'true');
               signIn('google');
