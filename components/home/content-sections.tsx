@@ -212,7 +212,7 @@ const WhatsNext = React.memo(() => {
 
         <div className="flex flex-col gap-3 pt-2">
           <Link
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=apiradar.live@gmail.com"
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=security@apiradar.live"
             target="_blank"
             className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
           >

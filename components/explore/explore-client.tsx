@@ -39,7 +39,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const [filterState, setFilterState] = useState<{
     selectedProvider: Provider;
   }>({
-    selectedProvider: "all",
+    selectedProvider: "anthropic",
   });
   const [loadingState, setLoadingState] = useState({
     isLoading: false,
@@ -59,9 +59,10 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
 
   // Initialize leaks from cache if available (client-only to prevent hydration mismatch)
   const [leaks, setLeaks] = useState<LeakedKey[]>([]);
+  const [globalLeaks, setGlobalLeaks] = useState<LeakedKey[]>([]);
   const [latestGlobalLeakAt, setLatestGlobalLeakAt] = useState<string | Date | undefined>(undefined);
 
-  // Load from cache on client mount only
+  // Initial mount effect to load cache (sync only)
   useEffect(() => {
     if (
       isDefaultFilters &&
@@ -200,6 +201,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
             if (isDefault) {
               firstPageCache.leaks = data.leaks;
               firstPageCache.timestamp = Date.now();
+              setGlobalLeaks(data.leaks.slice(0, 20));
               // Store global latest leak time for consistent LiveStats
               if (data.leaks.length > 0) {
                 setLatestGlobalLeakAt(data.leaks[0].leakDetectedAt);
@@ -290,7 +292,37 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
       prevAuthenticatedRef.current = isAuthenticated;
+
+      // Restoration logic: If coming back from a sign-in redirect
+      const shouldRestore = sessionStorage.getItem("radar_restore_flag") === "true";
+      const savedProvider = sessionStorage.getItem("radar_last_provider") as Provider;
+      
+      let effectiveProvider = filterStateRef.current.selectedProvider;
+      if (shouldRestore && savedProvider) {
+        effectiveProvider = savedProvider;
+        // Update state to match restoration
+        setFilterState({ selectedProvider: savedProvider });
+        // Flag is cleared below after everyone had a chance to see it in this pass
+      }
+
       fetchAndSetLeaksRef.current?.();
+
+      // Fetch global leaks separately if current view is not 'all'
+      if (effectiveProvider !== "all") {
+        fetchLeaks({
+          provider: "all",
+          page: 1,
+          limit: 20,
+          session,
+        }).then((res) => {
+          if (res.data) setGlobalLeaks(res.data.leaks);
+        });
+      }
+
+      // Clear restoration flag after a short delay to allow children to also read it
+      if (shouldRestore) {
+        setTimeout(() => sessionStorage.removeItem("radar_restore_flag"), 100);
+      }
       return;
     }
 
@@ -313,6 +345,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
     setFilterState((prev) => ({ ...prev, selectedProvider: provider }));
+    sessionStorage.setItem("radar_last_provider", provider);
   }, []);
 
   // Memoize shared props to prevent unnecessary re-renders of child components
@@ -327,6 +360,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       total: paginationState.total,
       error: loadingState.error,
       latestGlobalLeakAt,
+      globalLeaks,
     }),
     [
       leaks,
@@ -338,6 +372,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       loadingState.error,
       handleProviderChange,
       latestGlobalLeakAt,
+      globalLeaks,
     ],
   );
 

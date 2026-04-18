@@ -4,6 +4,12 @@ import { getToken } from 'next-auth/jwt';
 import jwt from 'jsonwebtoken';
 import { authOptions } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { INTEL_PROVIDERS } from '@/lib/constants';
+
+const ALLOWED_PROVIDERS = [...INTEL_PROVIDERS]
+  .sort((a, b) => a.label.localeCompare(b.label))
+  .slice(0, 2)
+  .map((p) => p.value);
 
 export async function GET(request: NextRequest) {
   try {
@@ -58,6 +64,19 @@ export async function GET(request: NextRequest) {
         }
       }
     }
+
+    const url = new URL(request.url);
+    const providerParam = url.searchParams.get('provider');
+    
+    // Enforce provider restrictions for unauthenticated users
+    if (!session && providerParam && providerParam !== 'all' && !ALLOWED_PROVIDERS.includes(providerParam as any)) {
+      return NextResponse.json({ 
+        leaks: [], 
+        total: 0, 
+        hasMore: false,
+        message: "Authentication required for this provider"
+      });
+    }
     
     const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -94,7 +113,6 @@ export async function GET(request: NextRequest) {
       backendUrl = backendUrl.replace('localhost', '127.0.0.1');
     }
     
-    const url = new URL(request.url);
     const backendUrlWithParams = `${backendUrl}/api/leaks${url.search}`;
     
     const response = await fetch(backendUrlWithParams, {

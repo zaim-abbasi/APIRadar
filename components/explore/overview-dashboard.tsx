@@ -427,13 +427,20 @@ export function OverviewDashboard({
                     {leaks.slice(0, 20).map((leak, idx) => (
                       <a
                         key={idx}
-                        href={
+                        href={plan === "pro" ? (
                           leak.repoUrl && leak.filePath
                             ? `${leak.repoUrl}/blob/HEAD/${leak.filePath}`
                             : leak.repoUrl || "#"
-                        }
+                        ) : undefined}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                          if (plan !== "pro" && onSignIn) {
+                            e.preventDefault();
+                            sessionStorage.setItem("radar_restore_flag", "true");
+                            onSignIn();
+                          }
+                        }}
                         className="px-2.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group cursor-pointer flex items-center gap-2 sm:gap-3 block"
                       >
                         <div

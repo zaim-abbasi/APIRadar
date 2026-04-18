@@ -66,13 +66,13 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
                 <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">
-                Sign in to unlock full access
+                Sign in with Google to unlock all leaks for free
               </span>
             </div>
 
             {/* Description */}
             <div className="text-sm text-muted-foreground/90 leading-relaxed">
-              Sign in to view all API key leaks and access advanced features.
+              Unlock the full feed and access every active API leak discovered by our scanner.
             </div>
 
             {/* Benefit text */}
@@ -82,7 +82,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
                 aria-hidden="true"
                 focusable="false"
               />
-              <span>No payment needed. Explore for free.</span>
+              <span>100% Free. Unlock access instantly.</span>
             </div>
           </div>
 
@@ -98,7 +98,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
                 aria-hidden="true"
                 focusable="false"
               />
-              <span>Continue with Google</span>
+              <span>Sign in with Google</span>
             </button>
           </div>
         </div>
@@ -120,8 +120,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   loadingRef,
   hasMore,
   latestGlobalLeakAt,
+  globalLeaks,
 }: {
   leaks: any[];
+  globalLeaks: any[];
   isLoading: boolean;
   selectedProvider: Provider;
   plan: "free" | "pro";
@@ -147,8 +149,11 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
     }
   }, [selectedProvider]);
 
+
   const handleMainTabChange = (value: string) => {
-    setActiveTab(value as "overview" | "feed");
+    const tab = value as "overview" | "feed";
+    setActiveTab(tab);
+    sessionStorage.setItem("radar_last_tab", tab);
   };
 
   return (
@@ -236,15 +241,17 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
               }
             >
               <OverviewDashboard
-                leaks={leaks}
-                isLoading={isLoading}
+                leaks={globalLeaks.length > 0 ? globalLeaks : leaks}
+                isLoading={isLoading && globalLeaks.length === 0}
                 onSignIn={
                   isUnauthenticated
-                    ? () =>
+                    ? () => {
+                        sessionStorage.setItem("radar_restore_flag", "true");
                         signIn("google", {
                           callbackUrl: window.location.href,
                           redirect: true,
-                        })
+                        });
+                      }
                     : undefined
                 }
                 plan={plan}
@@ -286,7 +293,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   </div>
                 }
               >
-                <div className="relative">
+                 <div className="relative">
                   <LeakFeed
                     leaks={leaks}
                     isLoading={isLoading}
@@ -294,11 +301,13 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                     plan={plan}
                     onSignIn={
                       isUnauthenticated
-                        ? () =>
+                        ? () => {
+                            sessionStorage.setItem("radar_restore_flag", "true");
                             signIn("google", {
                               callbackUrl: window.location.href,
                               redirect: true,
-                            })
+                            });
+                          }
                         : undefined
                     }
                     isOffline={!!error}

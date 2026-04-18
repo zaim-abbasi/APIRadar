@@ -1,12 +1,12 @@
-export const PROVIDER_NAMES = ['openai', 'anthropic', 'google', 'openrouter', 'xai', 'groq', 'cerebras'] as const;
+export const PROVIDER_NAMES = ['anthropic', 'cerebras', 'google', 'groq', 'openai', 'openrouter', 'xai'] as const;
 export const PROVIDER_LABELS = [
-  { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
+  { value: 'cerebras', label: 'Cerebras' },
   { value: 'google', label: 'Google' },
+  { value: 'groq', label: 'Groq' },
+  { value: 'openai', label: 'OpenAI' },
   { value: 'openrouter', label: 'OpenRouter' },
   { value: 'xai', label: 'xAI (Grok)' },
-  { value: 'groq', label: 'Groq' },
-  { value: 'cerebras', label: 'Cerebras' },
 ] as const;
 
 

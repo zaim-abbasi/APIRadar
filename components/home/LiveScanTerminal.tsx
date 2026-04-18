@@ -65,23 +65,23 @@ const REAL_DATA_SAMPLES = [
 ] as const;
 
 const PROVIDERS = [
-  "OPENAI",
   "ANTHROPIC",
+  "CEREBRAS",
   "GOOGLE",
   "GROQ",
-  "XAI",
-  "CEREBRAS",
+  "OPENAI",
   "OPENROUTER",
+  "XAI",
 ] as const;
 
 const providerColors: Record<string, string> = {
-  OPENAI: "text-emerald-500",
   ANTHROPIC: "text-amber-600",
-  GOOGLE: "text-blue-500",
-  OPENROUTER: "text-fuchsia-500",
-  GROQ: "text-orange-600",
-  XAI: "text-slate-400",
   CEREBRAS: "text-violet-500",
+  GOOGLE: "text-blue-500",
+  GROQ: "text-orange-600",
+  OPENAI: "text-emerald-500",
+  OPENROUTER: "text-fuchsia-500",
+  XAI: "text-slate-400",
 };
 
 type TerminalLog = {

@@ -106,6 +106,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose }: { isOpen: boolean; on
           <Button 
             className="w-full h-12 text-base font-semibold bg-coral text-primary-foreground hover:bg-coral/90"
             onClick={() => {
+              sessionStorage.setItem('radar_restore_flag', 'true');
               signIn('google');
               onClose();
             }}

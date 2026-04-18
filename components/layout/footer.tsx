@@ -91,6 +91,18 @@ const FooterComponent = () => {
           >
             About
           </Link>
+          <Link
+            href="/privacy"
+            className="hover:text-foreground transition-colors"
+          >
+            Privacy
+          </Link>
+          <Link
+            href="/terms"
+            className="hover:text-foreground transition-colors"
+          >
+            Terms
+          </Link>
           <div className="flex items-center gap-1">
             <span>Built by</span>
             <a

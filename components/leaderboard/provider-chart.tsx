@@ -14,13 +14,13 @@ interface ProviderChartProps {
 
 // Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'openai': '#10b981',     // OpenAI Emerald
   'anthropic': '#d97706',  // Anthropic Amber
-  'google': '#3b82f6',     // Google Blue
-  'openrouter': '#d946ef', // OpenRouter Fuchsia
-  'groq': '#ea580c',       // Groq Orange
-  'xai': '#64748b',        // xAI Slate
   'cerebras': '#7c3aed',   // Cerebras Violet
+  'google': '#3b82f6',     // Google Blue
+  'groq': '#ea580c',       // Groq Orange
+  'openai': '#10b981',     // OpenAI Emerald
+  'openrouter': '#d946ef', // OpenRouter Fuchsia
+  'xai': '#64748b',        // xAI Slate
 };
 
 // Function to map database provider names to display names

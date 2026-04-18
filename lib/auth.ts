@@ -13,23 +13,30 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user }) {
-      try {
-        const client = await clientPromise;
-        const db = client.db();
-        const now = new Date();
-        await db.collection("users").updateOne(
-          { email: user.email },
-          {
-            $set: { name: user.name, updatedAt: now },
-            $setOnInsert: { email: user.email, createdAt: now },
-          },
-          { upsert: true }
-        );
-      } catch (e) {
-        console.error("User upsert failed:", e);
-      }
+      // Background DB update
+      clientPromise.then(async (client) => {
+        try {
+          const db = client.db();
+          const now = new Date();
+          await db.collection("users").updateOne(
+            { email: user.email },
+            {
+              $set: { name: user.name, updatedAt: now },
+              $setOnInsert: { email: user.email, createdAt: now },
+            },
+            { upsert: true }
+          );
+        } catch (e) {
+          console.error("User upsert failed in background:", e);
+        }
+      }).catch(e => {
+        // Log but don't crash the sign-in flow
+        console.error("MongoDB Connection Error during signin:", e.message);
+      });
+      
       return true;
     },
+    // ... rest of callbacks
 
     async session({ session, token }) {
       if (session.user) {
@@ -53,9 +60,6 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-  },
-  pages: {
-    signIn: '/auth/signin',
   },
   session: {
     strategy: 'jwt',

@@ -23,6 +23,7 @@ export function UserMenu() {
   // Optimized sign-in handler with immediate redirect
   const handleSignIn = useCallback(async () => {
     try {
+      sessionStorage.setItem("radar_restore_flag", "true");
       await signIn('google', { 
         callbackUrl: window.location.href,
         redirect: true 

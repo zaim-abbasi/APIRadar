@@ -1,15 +1,23 @@
 import { MongoClient } from "mongodb";
 import { resolve } from "path";
 import { config as loadEnv } from "dotenv";
+import dns from "node:dns";
+
+// Fix for Node.js 18+ DNS resolution issues on some networks
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 if (!process.env.MONGODB_URI) {
   loadEnv({ path: resolve(process.cwd(), "backend", ".env") });
 }
 
 const options = {
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 30000, // 30s timeout for better DNS resilience
+  socketTimeoutMS: 60000,          // 60s socket timeout
+  connectTimeoutMS: 30000,         // 30s connection timeout
+  maxPoolSize: 10,                 // Optimized connection pooling
+  minPoolSize: 2,                  // Keep connections warm
   retryWrites: true,
   w: 'majority' as const,
 };

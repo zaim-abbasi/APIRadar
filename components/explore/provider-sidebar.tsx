@@ -15,13 +15,13 @@ interface ProviderSidebarProps {
 }
 
 const ProviderIconMap: Record<string, React.ComponentType<any>> = {
-  openai: Icons.OpenAI,
   anthropic: Icons.Anthropic,
+  cerebras: Icons.Cerebras,
   google: Icons.GoogleIcon,
+  groq: Icons.Groq,
+  openai: Icons.OpenAI,
   openrouter: Icons.OpenRouter,
   xai: Icons.XIcon,
-  groq: Icons.Groq,
-  cerebras: Icons.Cerebras,
 };
 
 export const ProviderSidebar = React.memo(
