@@ -83,8 +83,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
         {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
-        {/* Favicon: fallback to logo-png.png if favicon.ico is missing */}
         <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
+        <link rel="privacy-policy" href="/privacy" />
+        <link rel="terms-of-service" href="/terms" />
         {/* Open Graph & Twitter handled by Next.js metadata */}
       </head>
       <body className={`${inter.className} ${spaceGrotesk.variable}`} suppressHydrationWarning>

@@ -94,13 +94,13 @@ const FooterComponent = () => {
             href="/privacy"
             className="hover:text-foreground transition-colors"
           >
-            Privacy
+            Privacy Policy
           </Link>
           <Link
             href="/terms"
             className="hover:text-foreground transition-colors"
           >
-            Terms
+            Terms of Service
           </Link>
           <div className="flex items-center gap-1">
             <span>Built by</span>
