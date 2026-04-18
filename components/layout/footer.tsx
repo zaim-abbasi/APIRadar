@@ -58,26 +58,25 @@ const FooterComponent = () => {
     <footer
       role="contentinfo"
       aria-labelledby="footer-label"
-      className="hidden md:block border-t border-border/40 shadow-sm"
-      style={{ height: "50px" }}
+      className="border-t border-border/40 shadow-sm py-6 md:py-0 md:h-[50px] bg-background"
     >
-      <div className="container mx-auto px-4 h-full flex items-center relative">
+      <div className="container mx-auto px-4 h-full flex flex-col md:flex-row items-center gap-4 md:gap-0 relative">
         {/* Left: Logo & Name */}
-        <div className="flex items-center space-x-1.5 ">
+        <div className="flex items-center space-x-1.5 shrink-0">
           <FooterLogo />
         </div>
 
-        {/* Center: Copyright - Absolutely centered */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
+        {/* Center: Copyright - Absolutely centered on desktop, hidden or stacked on mobile */}
+        <div className="md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 flex">
           <span
             id="footer-label"
-            className="text-xs text-muted-foreground/80 text-center font-medium"
+            className="text-[10px] md:text-xs text-muted-foreground/60 text-center font-medium"
           >
-            © 2026 APIRadar. Real-time detection and tracking of API key leaks.
+            © 2026 APIRadar. Real-time API leak intelligence.
           </span>
         </div>
 
-        <div className="ml-auto flex items-center justify-end text-xs font-medium text-muted-foreground tracking-wide gap-4">
+        <div className="md:ml-auto flex items-center justify-center md:justify-end text-[10px] md:text-xs font-medium text-muted-foreground tracking-wide gap-3 sm:gap-4">
           <button
             onClick={() => setIsSponsorOpen(true)}
             className="flex items-center gap-1.5 hover:text-foreground transition-colors"
