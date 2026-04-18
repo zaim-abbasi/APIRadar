@@ -66,17 +66,18 @@ const nextConfig = {
       },
     ];
   },
-  // Add redirects for standardized legal URLs
+  // Add redirects — /privacy and /terms are canonical (registered in Google Console)
+  // Old long-form URLs redirect to the canonical short ones
   async redirects() {
     return [
       {
-        source: '/privacy',
-        destination: '/privacy-policy',
+        source: '/privacy-policy',
+        destination: '/privacy',
         permanent: true,
       },
       {
-        source: '/terms',
-        destination: '/terms-of-service',
+        source: '/terms-of-service',
+        destination: '/terms',
         permanent: true,
       },
     ];
