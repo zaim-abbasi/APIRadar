@@ -102,6 +102,7 @@ jobs:
             next.config.js
             tsconfig.json
             next-sitemap.config.js
+            ecosystem.config.js
           retention-days: 1
 
   deploy:
@@ -165,12 +166,17 @@ jobs:
             tar -xf deployment.tar
             rm -f deployment.tar
 
-            # Process Restarts (Instant)
-            pm2 list | grep -q "api-radar-backend" && pm2 reload api-radar-backend || \
-              (cd backend && pm2 start ecosystem.config.js --name api-radar-backend)
+            # Zero-Downtime Sequential Reload (Safe for 1GB RAM)
+            # We reload one by one to avoid a simultaneous memory spike
+            
+            # 1. Reload Backend
+            pm2 reload api-radar-backend --update-env || (cd backend && pm2 start ecosystem.config.js)
+            
+            # Brief pause to let backend settle
+            sleep 5
 
-            pm2 list | grep -q "api-radar-frontend" && pm2 restart api-radar-frontend || \
-              pm2 start npm --name api-radar-frontend -- start
+            # 2. Reload Frontend
+            pm2 reload api-radar-frontend --update-env || pm2 start ecosystem.config.js
 
             pm2 save --force
 
