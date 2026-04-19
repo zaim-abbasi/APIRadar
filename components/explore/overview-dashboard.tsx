@@ -120,7 +120,7 @@ export function OverviewDashboard({
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
               <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
-                Keys Secured
+                Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
                 {providerStats
@@ -155,7 +155,7 @@ export function OverviewDashboard({
                       l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
                     )}
                   >
-                    [{l.isAlert ? "ALERT" : "SYSTEM"}]
+                    [{l.isAlert ? "DETECTION" : "SYSTEM"}]
                   </span>{" "}
                   <span
                     className={cn(
@@ -167,7 +167,7 @@ export function OverviewDashboard({
                   >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  {l.isAlert ? "leak in" : "//"}{" "}
+                  {l.isAlert ? "exposure in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
                     {l.repo}
                   </span>{" "}
@@ -198,7 +198,7 @@ export function OverviewDashboard({
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
               <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
-                Keys Secured
+                Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
                 {providerStats
@@ -233,7 +233,7 @@ export function OverviewDashboard({
                       l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
                     )}
                   >
-                    [{l.isAlert ? "ALERT" : "SYSTEM"}]
+                    [{l.isAlert ? "DETECTION" : "SYSTEM"}]
                   </span>{" "}
                   <span
                     className={cn(
@@ -245,7 +245,7 @@ export function OverviewDashboard({
                   >
                     {l.provider.toUpperCase()}
                   </span>{" "}
-                  {l.isAlert ? "leak in" : "//"}{" "}
+                  {l.isAlert ? "exposure in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
                     {l.repo}
                   </span>{" "}
@@ -334,7 +334,7 @@ export function OverviewDashboard({
                                 <p
                                   className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
                                 >
-                                  {stat.provider}
+                                  {stat.provider.toUpperCase()}
                                 </p>
                                 <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
                                   {stat.count.toLocaleString()}

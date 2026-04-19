@@ -78,7 +78,7 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
           <span className="text-foreground font-bold tabular-nums inline-block min-w-[24px]">
             {totalLeaks.toLocaleString()}
           </span>{" "}
-          leaks detected
+          Exposures Identified
         </span>
       </div>
     </div>

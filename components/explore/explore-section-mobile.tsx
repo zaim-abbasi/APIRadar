@@ -65,7 +65,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
 
             {/* Description */}
             <div className="text-sm text-muted-foreground/90 leading-relaxed">
-              Sign in to view all API key leaks and access advanced features.
+              Sign in to view all credential exposures and access advanced features.
             </div>
 
             {/* Benefit text */}
@@ -126,7 +126,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       {/* Header */}
       <div className="flex flex-col items-center mb-4 mt-1 z-10 w-full">
         <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2 text-foreground tracking-tight z-10">
-          Explore Leaked API Keys
+          Explore Credential Exposures
         </h1>
         <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-md opacity-60" />
       </div>

@@ -66,13 +66,13 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
                 <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">
-                Sign in with Google to unlock all leaks for free
+                Sign in with Google to unlock all exposures for free
               </span>
             </div>
 
             {/* Description */}
             <div className="text-sm text-muted-foreground/90 leading-relaxed">
-              Unlock the full feed and access every active API leak discovered by our scanner.
+              Unlock the full feed and access every active credential exposure discovered by our scanner.
             </div>
 
             {/* Benefit text */}
@@ -174,15 +174,15 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: "Explore Leaked Keys",
+            name: "Explore Credential Exposures",
             description:
-              "Real-time feed of API key leaks discovered in public repositories. Track security incidents as they happen with detailed insights.",
+              "Real-time feed of credential exposures discovered in public repositories. Track security incidents as they happen with detailed insights.",
             url: "https://apiradar.live/explore",
             mainEntity: {
               "@type": "CollectionPage",
-              name: "API Key Leak Database",
+              name: "Credential Exposure Database",
               description:
-                "Comprehensive database of API key leaks from public repositories",
+                "Comprehensive database of credential exposures from public repositories",
               provider: {
                 "@type": "Organization",
                 name: "APIRadar",
@@ -220,7 +220,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />
-                      API Leaks
+                      Credential Exposures
                     </span>
                   </TabsTrigger>
                 </TabsList>

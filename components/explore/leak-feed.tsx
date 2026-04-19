@@ -141,7 +141,7 @@ const FeedEmptyState = React.memo(
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
-                The scanning engine reports zero active leaks for the current
+                The scanning engine reports zero active exposures for the current
                 filters. All monitored{" "}
                 {isAll
                   ? "provider repositories"
@@ -168,7 +168,7 @@ const WorkingKeysComingSoon = React.memo(
 
         <div className="space-y-2">
           <h3 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
-            Working Keys
+            Live Verification
           </h3>
           <div className="flex items-center justify-center gap-2">
 
@@ -179,7 +179,7 @@ const WorkingKeysComingSoon = React.memo(
         </div>
 
         <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
-          APIRadar will soon verify which leaked keys are still active and
+          APIRadar will soon verify which exposed keys are still active and
           exploitable. Get notified the moment this feature goes live.
         </p>
 
@@ -234,7 +234,7 @@ const FeedItem = React.memo(
         await navigator.clipboard.writeText(data.fullKey);
         
         setCopyState("success");
-        toast.success("Full secret key has been successfully copied to clipboard.");
+        toast.success("Credential details successfully copied to clipboard.");
         
         setTimeout(() => setCopyState("idle"), 2000);
       } catch (err) {
@@ -273,7 +273,7 @@ const FeedItem = React.memo(
                     : "bg-red-500/10 text-red-500 border-red-500/20"
                 )}>
                   <ShieldAlert className="h-3 w-3" />
-                  <span>{index < 6 ? "LATEST" : "EXPOSED"}</span>
+                  <span>{index < 6 ? "RECENT" : "IDENTIFIED"}</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium">
                   <Clock className="h-2.5 w-2.5" />
@@ -349,7 +349,7 @@ const FeedItem = React.memo(
                 : "bg-red-500/10 text-red-500 border-red-500/20"
             )}>
               <ShieldAlert className="h-3.5 w-3.5" />
-              <span>{index < 6 ? "Latest" : "Exposed"}</span>
+              <span>{index < 6 ? "Recent" : "Identified"}</span>
             </div>
             <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
             <span className="text-[13px] text-muted-foreground/70 whitespace-nowrap flex-shrink-0 tabular-nums font-medium inline-flex items-center gap-2 sm:w-[100px] justify-start">
@@ -411,7 +411,7 @@ const LeakFeedComponent = React.memo(
             >
               <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                 <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Latest Finds
+                Recent Detections
               </span>
             </button>
             <button
@@ -425,7 +425,7 @@ const LeakFeedComponent = React.memo(
             >
               <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5 grayscale opacity-70">
                 <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Working Keys
+                Live Verification
                 <span className="text-[7px] sm:text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-1 sm:px-1.5 py-0.5 ml-1 leading-none">
                   Soon
                 </span>
