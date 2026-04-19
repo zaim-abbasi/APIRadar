@@ -103,6 +103,14 @@ jobs:
             tsconfig.json
             next-sitemap.config.js
             ecosystem.config.js
+            app
+            components
+            lib
+            hooks
+            types
+            tailwind.config.ts
+            postcss.config.js
+            components.json
           retention-days: 1
 
   deploy:
@@ -125,7 +133,8 @@ jobs:
       - name: Prepare Deployment Archive
         run: |
           mkdir -p final-deploy/backend
-          cp -r backend-artifact/* final-deploy/backend/
+          # Fix: Copy contents correctly from nested artifact structure
+          cp -r backend-artifact/backend/* final-deploy/backend/
           cp -r frontend-artifact/* final-deploy/
           cd final-deploy
           tar -cf ../deployment.tar .
@@ -139,7 +148,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT || 22 }}
           source: deployment.tar
           target: /home/${{ secrets.SERVER_USER }}/API-Radar
-          timeout: 120s
+          timeout: 180s
 
       - name: Zero-Downtime Deploy
         uses: appleboy/ssh-action@master
@@ -158,54 +167,73 @@ jobs:
             # Backup current state
             mkdir -p "$BACKUP_DIR"
             if [ -d .next ]; then
-              tar -cf "$BACKUP_DIR/backup-$TIMESTAMP.tar" .next backend/dist 2>/dev/null || true
-              ls -t "$BACKUP_DIR"/backup-*.tar 2>/dev/null | tail -n +3 | xargs rm -f 2>/dev/null || true
+              tar -cf "$BACKUP_DIR/backup-$TIMESTAMP.tar" .next public backend/dist 2>/dev/null || true
+              ls -t "$BACKUP_DIR"/backup-*.tar 2>/dev/null | tail -n +5 | xargs rm -f 2>/dev/null || true
             fi
 
-            # Deploy new version (Zero Install)
+            # Clean up old build artifacts to prevent "ghost" files
+            rm -rf .next public/sitemap*.xml
+
+            # Deploy new version
             tar -xf deployment.tar
             rm -f deployment.tar
 
-            # Zero-Downtime Sequential Reload (Safe for 1GB RAM)
-            # We reload one by one to avoid a simultaneous memory spike
+            # Sequential Restart (Safer for 1GB RAM than Reload)
+            # We use restart to clear memory before starting the new process
             
-            # 1. Reload Backend
-            pm2 reload api-radar-backend --update-env || (cd backend && pm2 start ecosystem.config.js)
+            # 1. Restart Backend
+            pm2 restart api-radar-backend --update-env || (cd backend && pm2 start ecosystem.config.js)
             
-            # Brief pause to let backend settle
             sleep 5
 
-            # 2. Reload Frontend
-            pm2 reload api-radar-frontend --update-env || pm2 start ecosystem.config.js
+            # 2. Restart Frontend (Restored from working version)
+            pm2 restart api-radar-frontend --update-env || pm2 start ecosystem.config.js
 
             pm2 save --force
 
-  notify:
+  notify-success:
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: always()
+    if: success()
     steps:
-      - name: Check Status
-        id: status
-        run: |
-          if [ "${{ needs.deploy.result }}" == "success" ]; then
-            echo "state=success" >> $GITHUB_OUTPUT
-            echo "msg=Deployed successfully" >> $GITHUB_OUTPUT
-          else
-            echo "state=failure" >> $GITHUB_OUTPUT
-            echo "msg=Deployment failed" >> $GITHUB_OUTPUT
-          fi
-
-      - name: GitHub Status
+      - name: ✅ Notify
         uses: actions/github-script@v7
         with:
           script: |
             const { sha, repo } = context;
             await github.rest.repos.createCommitStatus({
               owner: repo.owner, repo: repo.repo, sha,
-              state: '${{ steps.status.outputs.state }}',
-              context: 'CI/CD Pipeline',
-              description: '${{ steps.status.outputs.msg }}'
+              state: 'success', context: 'CI/CD Pipeline',
+              description: 'Deployed successfully'
             });
+
+  rollback:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    steps:
+      - name: 🔙 Rollback
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          timeout: 300s
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/API-Radar
+            BACKUP_DIR="/home/${{ secrets.SERVER_USER }}/API-Radar-backup"
+            LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/backup-*.tar 2>/dev/null | head -n 1)
+            
+            if [ -n "$LATEST_BACKUP" ]; then
+              echo "Rolling back to $LATEST_BACKUP"
+              tar -xf "$LATEST_BACKUP"
+              pm2 restart api-radar-frontend
+              pm2 restart api-radar-backend
+              pm2 save --force
+            else
+              echo "No backup found for rollback"
+              exit 1
+            fi
 
 
