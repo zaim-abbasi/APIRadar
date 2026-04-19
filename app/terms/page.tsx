@@ -24,7 +24,7 @@ export default function TermsPage() {
         </div>
 
         {/* Content Layout */}
-        <div className="space-y-12 md:space-y-14 animate-fade-in-up animate-delay-150">
+        <div className="space-y-6 md:space-y-8 animate-fade-in-up animate-delay-150">
           
           {/* Section 1: Acceptance */}
           <section className="group">
@@ -56,8 +56,8 @@ export default function TermsPage() {
             </div>
             
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="relative p-5 rounded-lg border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 transition-colors">
-                <h3 className="text-foreground font-bold mb-2 uppercase tracking-widest text-[10px] sm:text-xs font-mono">
+              <div className="relative p-4 rounded-lg border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 transition-colors">
+                <h3 className="text-foreground font-bold mb-1.5 uppercase tracking-widest text-[10px] sm:text-xs font-mono">
                   Unauthorized Use
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">
@@ -65,8 +65,8 @@ export default function TermsPage() {
                 </p>
               </div>
               
-              <div className="relative p-5 rounded-lg border border-coral/20 bg-card/40 hover:bg-card/60 transition-colors">
-                <h3 className="text-foreground font-bold mb-2 uppercase tracking-widest text-[10px] sm:text-xs font-mono">
+              <div className="relative p-4 rounded-lg border border-coral/20 bg-card/40 hover:bg-card/60 transition-colors">
+                <h3 className="text-foreground font-bold mb-1.5 uppercase tracking-widest text-[10px] sm:text-xs font-mono">
                   Anti-Scraping Policy
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">
@@ -76,40 +76,58 @@ export default function TermsPage() {
             </div>
           </section>
 
-          {/* Section 3: Credits */}
+          {/* Section 3: Credits & Refund Policy */}
           <section className="bg-card/30 border border-border/50 rounded-lg overflow-hidden">
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-md bg-muted/50 text-foreground flex-shrink-0">
-                  <Lock className="h-5 w-5" />
+            <div className="p-5 md:p-6 space-y-6">
+              {/* Intelligence Credits */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-md bg-muted/50 text-foreground flex-shrink-0">
+                    <Lock className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Intelligence Credits</h2>
                 </div>
-                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Intelligence Credits</h2>
+                
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Pricing</div>
+                    <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Final Sale</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">All credit purchases are final and non-refundable.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Integrity</div>
+                    <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Data State</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">Credits are for forensic snapshots. No real-time guarantee.</p>
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-1 space-y-1.5">
+                    <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Enforcement</div>
+                    <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Discretionary</h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">Reversals are granted solely at management's discretion.</p>
+                  </div>
+                </div>
               </div>
-              
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Pricing</div>
-                  <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Final Sale</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">All credit purchases are final and non-refundable.</p>
+
+              <div className="h-px w-full bg-border/40" />
+
+              {/* Refund Policy Section */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-md bg-coral/10 text-coral flex-shrink-0">
+                    <Hammer className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Refund Policy</h2>
                 </div>
-                <div className="space-y-2">
-                  <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Integrity</div>
-                  <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Data State</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">Credits are for forensic snapshots. No real-time guarantee.</p>
-                </div>
-                <div className="sm:col-span-2 lg:col-span-1 space-y-2">
-                  <div className="text-[10px] sm:text-xs font-mono font-bold text-coral uppercase tracking-widest">Enforcement</div>
-                  <h4 className="font-bold text-foreground text-[13px] sm:text-base uppercase tracking-tight font-heading">Discretionary</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed font-medium">Reversals are granted solely at management's discretion.</p>
-                </div>
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-medium italic">
+                  Due to the digital nature of Intelligence Credits, all sales are final. Once credits are issued to an account, they are non-refundable. We provide sample data on the 'Explore' page to ensure users understand the product value before purchasing.
+                </p>
               </div>
             </div>
           </section>
 
           {/* Section 4 & 5: Availability and Waiver */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-[1fr_2fr]">
-            <section className="p-5 rounded-lg border border-border/50 bg-card/20 flex flex-col justify-center">
-              <h2 className="text-xs sm:text-sm font-bold text-foreground mb-3 flex items-center gap-2 font-heading uppercase tracking-widest border-b border-border/40 pb-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_2fr]">
+            <section className="p-4 rounded-lg border border-border/50 bg-card/20 flex flex-col justify-center">
+              <h2 className="text-xs sm:text-sm font-bold text-foreground mb-2.5 flex items-center gap-2 font-heading uppercase tracking-widest border-b border-border/40 pb-2">
                 <Info className="h-4 w-4 text-coral flex-shrink-0" />
                 Availability
               </h2>
@@ -118,12 +136,12 @@ export default function TermsPage() {
               </p>
             </section>
 
-            <section className="p-6 md:p-8 rounded-lg border border-coral/30 bg-coral/5 border-b-8 sm:border-b-0 sm:border-l-8 border-coral relative overflow-hidden group transition-all hover:bg-coral/[0.08]">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <ShieldAlert className="h-32 w-32" />
+            <section className="p-5 md:p-6 rounded-lg border border-coral/30 bg-coral/5 border-b-6 sm:border-b-0 sm:border-l-6 border-coral relative overflow-hidden group transition-all hover:bg-coral/[0.08]">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <ShieldAlert className="h-24 w-24" />
               </div>
-              <h2 className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.3em] text-coral mb-4 border-b border-coral/20 pb-2 w-fit">Liability Waiver</h2>
-              <p className="text-foreground font-bold mb-2 text-base tracking-tight leading-tight font-heading uppercase">
+              <h2 className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.3em] text-coral mb-3 border-b border-coral/20 pb-2 w-fit">Liability Waiver</h2>
+              <p className="text-foreground font-bold mb-1.5 text-base tracking-tight leading-tight font-heading uppercase">
                 Limitation of Liability
               </p>
               <p className="text-sm text-muted-foreground leading-relaxed italic relative z-10 font-medium">
@@ -132,26 +150,35 @@ export default function TermsPage() {
             </section>
           </div>
 
-          {/* Section 6: Law & Enquiries */}
-          <section className="text-center pt-6 border-t border-border/40 space-y-3 pb-4">
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Governing Law</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed font-medium italic underline underline-offset-4 decoration-coral/10">
-              Governed by the established laws of the jurisdiction of operation.
-            </p>
-            <div className="pt-2 flex flex-col items-center">
-              <div className="h-px w-10 bg-coral/30 mb-5" />
-              <a 
-                href="mailto:security@apiradar.live" 
-                className="group flex flex-col items-center gap-1"
-              >
-                <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Official Enquiries</span>
-                <div className="flex items-center gap-2 text-foreground font-bold hover:text-coral transition-colors">
-                  <Mail className="h-4 w-4 text-coral group-hover:scale-110 transition-transform flex-shrink-0" />
-                  security@apiradar.live
-                </div>
-              </a>
+          {/* Footer Grid: Law & Entity */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 border-t border-border/40 pt-5">
+            {/* Governing Law Card */}
+            <div className="p-4 rounded-lg border border-border/50 bg-card/20 flex flex-col items-center justify-center text-center">
+              <h2 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-widest text-muted-foreground mb-2">Governing Law</h2>
+              <p className="text-sm text-foreground font-medium leading-relaxed mb-3">
+                Governed by the laws of the jurisdiction of operation.
+              </p>
+              <div className="h-px w-8 bg-coral/30 mb-3" />
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
+                <a href="mailto:contact@apiradar.live" className="text-foreground font-bold hover:text-coral transition-colors flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-coral" />
+                  contact@apiradar.live
+                </a>
+              </div>
             </div>
-          </section>
+
+            {/* Legal Entity Card */}
+            <div className="p-4 rounded-lg border border-border/50 bg-card/20 flex flex-col items-center justify-center text-center">
+              <h2 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-widest text-muted-foreground mb-2">Legal Entity</h2>
+              <p className="text-sm sm:text-base text-foreground font-medium leading-relaxed mb-1">
+                APIRadar is a trading name of
+              </p>
+              <p className="text-base font-bold text-coral uppercase tracking-tight">
+                Zaim Khan Abbasi
+              </p>
+            </div>
+          </div>
 
         </div>
       </div>

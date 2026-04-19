@@ -14,13 +14,14 @@ dotenv.config({ path: path.join(__dirname, '../backend/.env') });
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) throw new Error("MONGODB_URI not found in backend/.env");
 
-let rawKey = process.env['ENCRYPTION_KEY'];
-if (!rawKey) throw new Error('ENCRYPTION_KEY is missing from process.env');
+let key = process.env['ENCRYPTION_KEY'];
+if (!key) throw new Error('ENCRYPTION_KEY is missing from process.env');
 
-if (!/^[0-9a-fA-F]{64}$/.test(rawKey)) {
-    throw new Error('ENCRYPTION_KEY must be a 64-character hex string in your .env');
+// If the key is not a 64-char hex string, hash it to make it compatible
+if (!/^[0-9a-fA-F]{64}$/.test(key)) {
+    key = crypto.createHash('sha256').update(key).digest('hex');
 }
-const encryptionKey = Buffer.from(rawKey, 'hex');
+const encryptionKey = Buffer.from(key, 'hex');
 
 function decrypt(encryptedData: string, key: Buffer): string {
     const parts = encryptedData.split(':');

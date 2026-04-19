@@ -25,7 +25,7 @@ export default function PrivacyPage() {
 
         {/* Content Layout */}
         <div className="flex flex-col lg:grid lg:grid-cols-[1fr_260px] gap-8 lg:gap-6 animate-fade-in-up animate-delay-150">
-          <div className="order-2 lg:order-1 space-y-8 md:space-y-10">
+          <div className="order-2 lg:order-1 space-y-6 md:space-y-8">
             {/* Protocol Section */}
             <section className="space-y-4">
               <div className="flex items-center gap-3">
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Data Minimization Protocol</h2>
               </div>
-              <div className="relative p-5 rounded-lg border border-coral/20 bg-coral/5 overflow-hidden">
+              <div className="relative p-4 rounded-lg border border-coral/20 bg-coral/5 overflow-hidden">
                 <p className="text-muted-foreground leading-relaxed text-sm sm:text-base relative z-10 font-medium italic">
                   APIRadar operates on a principle of Data Minimization. We do not collect or store sensitive personal information beyond what is strictly required for platform authentication and service delivery.
                 </p>
@@ -51,8 +51,8 @@ export default function PrivacyPage() {
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
-                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                <div className="p-3.5 rounded-lg border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
                     <span className="h-1.5 w-1.5 rounded-md bg-coral" />
                     Primary Identity
                   </h3>
@@ -61,8 +61,8 @@ export default function PrivacyPage() {
                   </p>
                 </div>
                 
-                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
-                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                <div className="p-3.5 rounded-lg border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
                     <span className="h-1.5 w-1.5 rounded-md bg-coral" />
                     Usage Data
                   </h3>
@@ -86,8 +86,8 @@ export default function PrivacyPage() {
                 <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Third-Party Processing</h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
-                  <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
+                <div className="p-3 rounded-lg border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
                     <span className="h-1 w-2 rounded-md bg-blue-500" />
                     Financials
                   </h3>
@@ -95,8 +95,8 @@ export default function PrivacyPage() {
                     Processed exclusively by Lemon Squeezy and Stripe.
                   </p>
                 </div>
-                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
-                  <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
+                <div className="p-3 rounded-lg border border-border/50 bg-card/30">
+                  <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
                     <span className="h-1 w-2 rounded-md bg-green-500" />
                     Authentication
                   </h3>
@@ -108,19 +108,19 @@ export default function PrivacyPage() {
             </section>
 
             {/* Disclosure Section */}
-            <section className="p-5 sm:p-6 rounded-lg border border-border/50 bg-card/20 text-center space-y-3">
+            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 text-center space-y-3">
               <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground underline underline-offset-4 decoration-coral/50 font-heading uppercase tracking-wide">Security Disclosure</h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
                 As a transparency-first platform, we host a formal <span className="text-foreground font-medium underline decoration-coral/30 italic">Vulnerability Disclosure Program (VDP)</span>. 
-                If you represent an organization, contact our security team.
+                If you represent an organization, contact our support team.
               </p>
               <div className="pt-1 flex justify-center">
                 <a 
-                  href="mailto:security@apiradar.live" 
+                  href="mailto:contact@apiradar.live" 
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-coral text-primary-foreground font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs hover:brightness-90 transition-all active:scale-95"
                 >
                   <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  Contact Security Team
+                  Contact Support Team
                 </a>
               </div>
             </section>
@@ -129,15 +129,15 @@ export default function PrivacyPage() {
           {/* Sidebar Info (Order 1 on mobile to show it after header) */}
           <aside className="order-1 lg:order-2 space-y-4">
             <div className="flex flex-col sm:flex-row lg:flex-col lg:sticky lg:top-24 gap-4">
-              <div className="flex-1 p-5 rounded-lg border border-border/50 bg-card/30 overflow-hidden relative">
+              <div className="flex-1 p-4 rounded-lg border border-border/50 bg-card/30 overflow-hidden relative">
                  <div className="absolute top-0 right-0 p-2 opacity-5">
-                    <Users className="h-12 w-12" />
+                    <Users className="h-10 w-10" />
                  </div>
-                <div className="flex items-center gap-2 mb-3 text-foreground font-bold text-[10px] sm:text-xs uppercase tracking-widest font-heading">
+                <div className="flex items-center gap-2 mb-2.5 text-foreground font-bold text-[10px] sm:text-xs uppercase tracking-widest font-heading">
                   <Users className="h-3.5 w-3.5 text-coral flex-shrink-0" />
                   User Rights
                 </div>
-                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed mb-4">
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed mb-3">
                   Request a full export or deletion of your account data at any time.
                 </p>
                 <div className="text-[10px] sm:text-[11px] font-mono font-bold text-coral uppercase tracking-[0.25em]">
@@ -152,6 +152,36 @@ export default function PrivacyPage() {
               </div>
             </div>
           </aside>
+        </div>
+
+        {/* Footer Grid: Law & Entity */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 border-t border-border/40 pt-5">
+          {/* Governing Law Card */}
+          <div className="p-4 rounded-lg border border-border/50 bg-card/20 flex flex-col items-center justify-center text-center">
+            <h2 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-widest text-muted-foreground mb-2">Governing Law</h2>
+            <p className="text-sm text-foreground font-medium leading-relaxed mb-3">
+              Governed by the laws of the jurisdiction of operation.
+            </p>
+            <div className="h-px w-8 bg-coral/30 mb-3" />
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
+              <a href="mailto:contact@apiradar.live" className="text-foreground font-bold hover:text-coral transition-colors flex items-center gap-2">
+                <Mail className="h-4 w-4 text-coral" />
+                contact@apiradar.live
+              </a>
+            </div>
+          </div>
+
+          {/* Legal Entity Card */}
+          <div className="p-4 rounded-lg border border-border/50 bg-card/20 flex flex-col items-center justify-center text-center">
+            <h2 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-widest text-muted-foreground mb-2">Legal Entity</h2>
+            <p className="text-sm sm:text-base text-foreground font-medium leading-relaxed mb-1">
+              APIRadar is a trading name of
+            </p>
+            <p className="text-base font-bold text-coral uppercase tracking-tight">
+              Zaim Khan Abbasi
+            </p>
+          </div>
         </div>
       </div>
     </div>
