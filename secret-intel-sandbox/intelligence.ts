@@ -73,7 +73,17 @@ export function ScoreIntelligence(str: string): { entropy: number, languageProb:
     if (/(.)\1{4,}/.test(str)) { // Repeats like xxxxx
         return { entropy: 0, languageProb: 0, score: 0, reason: "Fast-Path: Repeated characters" };
     }
-    const lazyPhrases = ['example', 'placeholder', 'dummy', 'insert', 'your', 'demo', 'template', 'changeme'];
+    const lazyPhrases = [
+        'placeholder', 'changeme', 'example', 'sample', 'demo',
+        'xxxx', 'yyyy', 'zzzz', 'fake', 'dummy', 'mock', 'fixme', 'todo',
+        'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here',
+        'insert_key', 'adapter', 'production', 'development', 'test',
+        'your-key', 'api-key', 'here', 'key', 'env',
+        'secret', 'local', 'foo', 'bar', 'baz', 'qux', 'asdf', 'qwerty',
+        'password', 'admin', 'hidden', 'private', 'public', 'mocking',
+        'dummykey', 'fakekey', 'insert', 'replace', 'token', 'auth', 'bearer',
+        '12345', 'apikey'
+    ];
     const lowerStr = str.toLowerCase();
     for (const lazy of lazyPhrases) {
         if (lowerStr.includes(lazy)) {
@@ -85,7 +95,7 @@ export function ScoreIntelligence(str: string): { entropy: number, languageProb:
     // Strip prefixes to only analyze the "secret" part
     let secretPart = str.replace(/^sk-[a-zA-Z0-9\-]+-/, '');
     secretPart = secretPart.replace(/^sk-/, '');
-    secretPart = secretPart.replace(/^AIza[a-zA-Z0-9_\-]+/, ''); // Basic Google strip
+    secretPart = secretPart.replace(/^AIza/, ''); // Basic Google strip
     
     const H = calculateEntropy(secretPart);
     

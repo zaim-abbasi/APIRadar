@@ -1,0 +1,9 @@
+{
+  "name": "secret-intel-sandbox",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "mongoose": "^9.4.1"
+  }
+}

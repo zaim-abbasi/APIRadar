@@ -24,8 +24,17 @@ async function run() {
   const words = await downloadCorpus();
   console.log(`Downloaded ${words.length} words.`);
 
-  // We add common placeholder keywords too, just to be safe.
-  const extraWords = ['placeholder', 'example', 'insert', 'here', 'key', 'template', 'your', 'demo', 'dummy'];
+  const extraWords = [
+    'placeholder', 'changeme', 'example', 'sample', 'demo',
+    'xxxx', 'yyyy', 'zzzz', 'fake', 'dummy', 'mock', 'fixme', 'todo',
+    'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here',
+    'insert_key', 'adapter', 'production', 'development', 'test',
+    'your-key', 'api-key', 'here', 'key', 'env',
+    'secret', 'local', 'foo', 'bar', 'baz', 'qux', 'asdf', 'qwerty',
+    'password', 'admin', 'hidden', 'private', 'public', 'mocking',
+    'dummykey', 'fakekey', 'insert', 'replace', 'token', 'auth', 'bearer',
+    '12345', 'apikey'
+  ];
   words.push(...extraWords);
 
   console.log('Building Markov trigram model...');

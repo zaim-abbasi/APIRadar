@@ -1,56 +1,64 @@
+import model from './model.json';
 
-const PLACEHOLDER_WORDS = [
-  'placeholder', 'changeme', 'example', 'sample', 'demo',
-  'xxxx', 'yyyy', 'zzzz', 'fake', 'dummy', 'mock', 'fixme', 'todo',
-  'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here', 'insert_key', 'adapter', 'production', 'development', 'test','your-key', 'api-key', 'adapter'
+const PLACEHOLDER_KEYWORDS = [
+    'placeholder', 'changeme', 'example', 'sample', 'demo',
+    'xxxx', 'yyyy', 'zzzz', 'fake', 'dummy', 'mock', 'fixme', 'todo',
+    'your_api', 'your_key', 'put_key', 'key_here', 'api_key_here',
+    'insert_key', 'adapter', 'production', 'development', 'test',
+    'your-key', 'api-key', 'here', 'key', 'env',
+    'secret', 'local', 'foo', 'bar', 'baz', 'qux', 'asdf', 'qwerty',
+    'password', 'admin', 'hidden', 'private', 'public', 'mocking',
+    'dummykey', 'fakekey', 'replace', 'token', 'auth', 'bearer', '12345', 'apikey'
 ];
 
-const MIN_KEY_LENGTH = 8;
-
-function isPlaceholderKey(key: string): boolean {
-  if (!key || key.length < MIN_KEY_LENGTH) return true;
-
-  const lowerKey = key.toLowerCase();
-  for (const word of PLACEHOLDER_WORDS) {
-    if (lowerKey.includes(word)) return true;
-  }
-
-  const len = key.length;
-  const counts = new Map<string, number>();
-  let maxRepeat = 1;
-  let currentRepeat = 1;
-  let prevChar = '';
-
-  for (let i = 0; i < len; i++) {
-    const char = key[i]!;
-    counts.set(char, (counts.get(char) || 0) + 1);
-    if (char === prevChar) {
-      currentRepeat++;
-      if (currentRepeat > maxRepeat) maxRepeat = currentRepeat;
-    } else {
-      currentRepeat = 1;
+function calculateEntropy(str: string): number {
+    const len = str.length;
+    if (len === 0) return 0;
+    const counts: Record<string, number> = {};
+    for (const char of str) counts[char] = (counts[char] || 0) + 1;
+    let entropy = 0;
+    for (const char in counts) {
+        const charCount = counts[char];
+        if (charCount !== undefined) {
+            const p = charCount / len;
+            entropy -= p * Math.log2(p);
+        }
     }
-    prevChar = char;
-  }
+    return entropy;
+}
 
-  if (maxRepeat >= 5) return true;
-
-  let maxCount = 0;
-  for (const count of counts.values()) {
-    if (count > maxCount) maxCount = count;
-  }
-  if (maxCount / len >= 0.9) return true;
-
-  let entropy = 0;
-  for (const count of counts.values()) {
-    const p = count / len;
-    entropy -= p * Math.log2(p);
-  }
-  if (entropy < Math.log2(Math.min(len, 36)) * 0.60) return true;
-
-  return false;
+function calculateLanguageProbability(str: string): number {
+    const normalized = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalized.length < 3) return 0;
+    const probs = (model as any).probabilities;
+    const w = `^${normalized}$`;
+    let logProb = 0;
+    for (let i = 0; i < w.length - 2; i++) {
+        const prefix = w.substring(i, i + 2);
+        const next = w[i + 2];
+        if (prefix && next) {
+            const p = (probs[prefix] && probs[prefix][next]) ? Math.max(probs[prefix][next], 1e-7) : 1e-7;
+            logProb += Math.log(p);
+        }
+    }
+    const avgLogProb = logProb / (w.length - 2);
+    const mapped = (avgLogProb - (-15)) / (-2 - (-15));
+    return Math.max(0, Math.min(1, mapped));
 }
 
 export function isValidKey(key: string): boolean {
-  return !isPlaceholderKey(key);
-}
+    if (!key || key.length < 8 || /(.)\1{4,}/.test(key)) return false;
+    const lowerKey = key.toLowerCase();
+    if (PLACEHOLDER_KEYWORDS.some(word => lowerKey.includes(word))) return false;
+
+    let secretPart = key.replace(/^sk-[a-zA-Z0-9\-]+-/, '').replace(/^sk-/, '').replace(/^AIza/, '');
+    
+    const H = calculateEntropy(secretPart);
+    if (H < 2.5) return false;
+
+    const L = calculateLanguageProbability(secretPart);
+    const normalizedH = Math.min(H / 5.0, 1.0);
+    const intelligenceScore = normalizedH * (1 - L);
+
+    return intelligenceScore > 0.5;
+}
