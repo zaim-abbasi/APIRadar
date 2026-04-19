@@ -82,7 +82,7 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
   if (value === null || value === undefined) {
     return (
       <span className="transition-all duration-600 ease-out">
-        <span className="inline-block w-16 h-6 skeleton rounded"></span>
+        <span className="inline-block w-16 h-6 skeleton rounded-md"></span>
       </span>
     );
   }
@@ -226,7 +226,7 @@ const StatCard = React.memo(({
   const IconComponent = useMemo(() => stat.icon, [stat.icon]);
   
   return (
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:-translate-y-0.5">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-2 p-2.5 sm:p-3">
         <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
           {stat.title}
@@ -248,7 +248,7 @@ const StatCard = React.memo(({
               year: 'numeric' 
             })}</span>
           ) : (
-            <span className="inline-block w-16 h-6 skeleton rounded"></span>
+            <span className="inline-block w-16 h-6 skeleton rounded-md"></span>
           )}
         </div>
       </CardContent>
@@ -332,7 +332,7 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
   return (
     <div
       id="stats-container"
-      className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-3"
+      className="rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-3"
     >
       <div className="flex items-center justify-between px-1 pb-2">
         <span className="text-xs font-semibold tracking-wide text-foreground/80">

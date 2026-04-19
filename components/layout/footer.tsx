@@ -56,7 +56,7 @@ const FooterComponent = () => {
     <footer
       role="contentinfo"
       aria-labelledby="footer-label"
-      className="border-t border-border/40 shadow-sm py-4 md:py-0 md:h-[50px] bg-background"
+      className="border-t border-border/40 py-4 md:py-0 md:h-[50px] bg-background"
     >
       <div className="container mx-auto px-4 h-full flex flex-col md:flex-row items-center justify-between gap-2.5 md:gap-0">
         {/* Row 1 (Mobile) / Left Section (Desktop) */}
@@ -94,14 +94,14 @@ const FooterComponent = () => {
           <div className="md:w-1/3 flex items-center justify-end text-[10px] md:text-xs font-medium text-muted-foreground tracking-wide md:gap-0">
             <div className="flex items-center gap-3 sm:gap-4">
               <Link
-                href="https://apiradar.live/privacy"
+                href="/privacy"
                 className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
               >
                 Privacy
               </Link>
               <span className="text-muted-foreground/20">•</span>
               <Link
-                href="https://apiradar.live/terms"
+                href="/terms"
                 className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
               >
                 Terms

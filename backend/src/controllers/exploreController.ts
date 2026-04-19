@@ -29,7 +29,8 @@ const leakItemSchema = {
     leakIntroducedAt: { type: 'string', format: 'date-time' },
     leakDetectedAt: { type: 'string', format: 'date-time' },
     repoCreatedAt: { type: 'string', format: 'date-time' },
-    isLocked: { type: 'boolean' }
+    isLocked: { type: 'boolean' },
+    originalUrl: { type: 'string' }
   }
 };
 
@@ -156,17 +157,26 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       const AES_KEY = getEncryptionKey();
       const secretMap = new Map(secrets.map(s => {
         let redacted = '**********';
+        let full = '**********';
         try {
-          const full = decrypt(s.encryptedKey, AES_KEY);
+          full = decrypt(s.encryptedKey, AES_KEY);
           redacted = `${full.substring(0, 6)}********************${full.substring(full.length - 6)}`;
         } catch { }
-        return [s._id.toString(), redacted];
+        return [s._id.toString(), { redacted, full }];
       }));
 
-      leaks = leaks.map(l => ({
-        ...l,
-        redactedKey: secretMap.get(l.secretId.toString()) || '**********'
-      }));
+      leaks = leaks.map((l, index) => {
+        const absoluteIndex = skip + index;
+        const secretData = secretMap.get(l.secretId.toString()) || { redacted: '**********', full: '**********' };
+        
+        const shouldRedact = isAuthenticated ? absoluteIndex < 6 : true;
+
+        return {
+          ...l,
+          redactedKey: secretData.redacted,
+          shouldRedact
+        };
+      });
 
     } catch (dbErr) {
       request.log.error({ msg: 'DB error', error: String(dbErr) });
@@ -178,11 +188,16 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
       let fileDisplay = '***';
       if (l.repoUrl) {
         const m = l.repoUrl.match(/github\.com\/(.+?)\/(.+?)(?:$|\/|\?|#)/);
-        if (m) repoDisplay = `${redactString(m[1])}/${redactString(m[2])}`;
+        if (m) {
+          repoDisplay = l.shouldRedact ? `${redactString(m[1])}/${redactString(m[2])}` : `${m[1]}/${m[2]}`;
+        } else {
+          repoDisplay = l.shouldRedact ? '***' : l.repoUrl;
+        }
       }
       if (l.filePath) {
-        const parts = l.filePath.split('/');
-        fileDisplay = parts.map((p: string) => redactString(p)).join('/');
+        fileDisplay = l.shouldRedact
+          ? l.filePath.split('/').map((p: string) => redactString(p)).join('/')
+          : l.filePath;
       }
       return {
         id: l._id,
@@ -193,7 +208,8 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         redactedKey: l.redactedKey,
         repoUrl: repoDisplay,
         filePath: fileDisplay,
-        repoCreatedAt: l.repoCreatedAt
+        repoCreatedAt: l.repoCreatedAt,
+        originalUrl: l.shouldRedact ? undefined : l.repoUrl
       };
     });
 
@@ -222,6 +238,17 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     }
 
     const { id } = request.params as { id: string };
+
+    const latestLeaks = await Leak.find()
+      .sort({ leakDetectedAt: -1 })
+      .limit(6)
+      .select('_id')
+      .lean();
+
+    if (latestLeaks.some(l => l._id.toString() === id)) {
+      request.log.warn({ msg: 'Restricted access to latest leak', userId: request.user.id, leakId: id });
+      return reply.status(403).send({ error: 'Full key access restricted for the latest leaks' });
+    }
 
     let leak = null;
     let fullKey = '';

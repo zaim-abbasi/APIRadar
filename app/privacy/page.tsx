@@ -51,9 +51,9 @@ export default function PrivacyPage() {
               </div>
               
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
                   <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
-                    <span className="h-1.5 w-1.5 rounded-full bg-coral" />
+                    <span className="h-1.5 w-1.5 rounded-md bg-coral" />
                     Primary Identity
                   </h3>
                   <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
@@ -61,9 +61,9 @@ export default function PrivacyPage() {
                   </p>
                 </div>
                 
-                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
                   <h3 className="text-foreground font-bold mb-1.5 flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-heading">
-                    <span className="h-1.5 w-1.5 rounded-full bg-coral" />
+                    <span className="h-1.5 w-1.5 rounded-md bg-coral" />
                     Usage Data
                   </h3>
                   <p className="text-[13px] sm:text-sm text-muted-foreground leading-relaxed">
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
                   </p>
                 </div>
 
-                <div className="sm:col-span-2 lg:col-span-1 p-3 rounded-md border border-destructive/20 bg-destructive/5 text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80">
+                <div className="sm:col-span-2 lg:col-span-1 p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-muted-foreground/80">
                   Note: We do not store profile imagery, residential addresses, or passwords.
                 </div>
               </div>
@@ -86,18 +86,18 @@ export default function PrivacyPage() {
                 <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading">Third-Party Processing</h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
                   <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
-                    <span className="h-1 w-2 rounded-full bg-blue-500" />
+                    <span className="h-1 w-2 rounded-md bg-blue-500" />
                     Financials
                   </h3>
                   <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">
                     Processed exclusively by Lemon Squeezy and Stripe.
                   </p>
                 </div>
-                <div className="p-4 rounded-md border border-border/50 bg-card/30">
+                <div className="p-4 rounded-lg border border-border/50 bg-card/30">
                   <h3 className="text-foreground font-bold mb-2 flex items-center gap-2 text-[9px] sm:text-[10px] uppercase tracking-widest font-heading">
-                    <span className="h-1 w-2 rounded-full bg-green-500" />
+                    <span className="h-1 w-2 rounded-md bg-green-500" />
                     Authentication
                   </h3>
                   <p className="text-[11px] sm:text-xs text-muted-foreground font-medium">
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
           {/* Sidebar Info (Order 1 on mobile to show it after header) */}
           <aside className="order-1 lg:order-2 space-y-4">
             <div className="flex flex-col sm:flex-row lg:flex-col lg:sticky lg:top-24 gap-4">
-              <div className="flex-1 p-5 rounded-md border border-border/50 bg-card/30 overflow-hidden relative">
+              <div className="flex-1 p-5 rounded-lg border border-border/50 bg-card/30 overflow-hidden relative">
                  <div className="absolute top-0 right-0 p-2 opacity-5">
                     <Users className="h-12 w-12" />
                  </div>
@@ -145,7 +145,7 @@ export default function PrivacyPage() {
                 </div>
               </div>
 
-              <div className="flex-1 lg:flex-none p-4 rounded-md border border-border/40 bg-card/10 border-dashed flex items-center lg:block">
+              <div className="flex-1 lg:flex-none p-4 rounded-lg border border-border/40 bg-card/10 border-dashed flex items-center lg:block">
                 <div className="text-[10px] sm:text-[11px] font-mono text-muted-foreground/60 uppercase tracking-widest leading-relaxed">
                   SOC-2 compliant intelligence gathering framework.
                 </div>

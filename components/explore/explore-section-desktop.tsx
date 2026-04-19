@@ -146,6 +146,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       setActiveTab("overview");
     } else {
       setActiveTab("feed");
+      sessionStorage.setItem("radar_last_provider", selectedProvider);
     }
   }, [selectedProvider]);
 
@@ -154,6 +155,13 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
     const tab = value as "overview" | "feed";
     setActiveTab(tab);
     sessionStorage.setItem("radar_last_tab", tab);
+    
+    if (tab === "feed" && selectedProvider === "all") {
+      const lastProvider = sessionStorage.getItem("radar_last_provider") || INTEL_PROVIDERS[0].value;
+      onProviderChange(lastProvider as Provider);
+    } else if (tab === "overview" && selectedProvider !== "all") {
+      onProviderChange("all");
+    }
   };
 
   return (
@@ -191,15 +199,15 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
         className="w-full space-y-6"
       >
         {/* Header Card Wrapper */}
-        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-3 sm:p-5 mb-6 animate-fade-in-up shadow-sm transition-shadow duration-200">
+        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-5 mb-6 animate-fade-in-up">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-4 w-full">
             {/* Left: Tabs Section */}
             <div className="flex-grow w-full lg:w-auto">
               <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1.5 h-9 lg:h-11 w-full">
-                <TabsList className="bg-transparent border-none p-0 h-full w-full flex items-center gap-1.5 transition-all shadow-none">
+                <TabsList className="bg-transparent border-none p-0 h-full w-full flex items-center gap-1.5 transition-all">
                   <TabsTrigger
                     value="overview"
-                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <LayoutGrid className="h-3.5 w-3.5" />
@@ -208,7 +216,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   </TabsTrigger>
                   <TabsTrigger
                     value="feed"
-                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />
@@ -276,7 +284,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </aside>
 
             {/* Mobile View: Inline Sidebar (or old filter style) */}
-            <div className="w-full lg:hidden bg-card/40 border border-border/50 rounded-md p-3">
+            <div className="w-full lg:hidden bg-card/40 border border-border/50 rounded-lg p-3">
               <ProviderSidebar
                 selectedProvider={selectedProvider}
                 onProviderChange={onProviderChange}
@@ -298,6 +306,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                  <div className="relative">
                   <LeakFeed
                     leaks={leaks}
+                    total={total}
                     isLoading={isLoading}
                     selectedProvider={selectedProvider}
                     plan={plan}

@@ -50,7 +50,7 @@ export const ProviderFilter = React.memo(
               {isSelected && (
                 <motion.div
                   layoutId="activeProvider"
-                  className="absolute inset-0 bg-background rounded-md shadow-sm border border-border/50"
+                  className="absolute inset-0 bg-background rounded-md border border-border/50"
                   initial={false}
                   transition={{
                     duration: 0,

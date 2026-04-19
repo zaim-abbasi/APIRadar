@@ -42,7 +42,7 @@ const CustomTooltip = React.memo(({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-md shadow-lg">
+      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-lg">
         <p className="font-medium capitalize">{label}</p>
         <p className="text-sm text-muted-foreground">
           <span className="font-medium">{data.count.toLocaleString()}</span> leaks
@@ -74,7 +74,7 @@ const ProviderListItem = React.memo(({
     >
       <div className="flex items-center gap-2 sm:gap-3">
         <div 
-          className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-sm"
+          className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-md"
           style={{ backgroundColor: providerColor }}
         />
         <div>
@@ -137,7 +137,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
   }, []);
 
   return (
-    <div className="rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3" aria-live="polite">
+    <div className="rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3" aria-live="polite">
       <div className="flex items-center justify-between px-1 pb-2">
         <span className="text-xs font-semibold tracking-wide text-foreground/80">
           Provider Breakdown
@@ -146,7 +146,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
       <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-4">
         {/* Chart */}
         <div className="lg:col-span-2 w-full">
-          <Card className="border-border/50 glass-card w-full shadow-sm" aria-label="Leaks by Provider">
+          <Card className="border-border/50 glass-card w-full" aria-label="Leaks by Provider">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
               <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Leaks by Provider</CardTitle>
               <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
@@ -185,7 +185,7 @@ const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartPr
 
         {/* Provider List */}
         <div className="w-full">
-          <Card className="border-border/50 glass-card h-fit w-full shadow-sm" aria-label="Top Providers">
+          <Card className="border-border/50 glass-card h-fit w-full" aria-label="Top Providers">
             <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
               <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Top Providers</CardTitle>
               <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">

@@ -77,7 +77,7 @@ export default function TermsPage() {
           </section>
 
           {/* Section 3: Credits */}
-          <section className="bg-card/30 border border-border/50 rounded-xl overflow-hidden shadow-sm">
+          <section className="bg-card/30 border border-border/50 rounded-lg overflow-hidden">
             <div className="p-6 md:p-8 space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-1.5 rounded-md bg-muted/50 text-foreground flex-shrink-0">

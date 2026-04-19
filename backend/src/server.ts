@@ -1,5 +1,6 @@
 import fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { config } from './config/environment';
 import { connectToMongoDB, disconnectFromMongoDB, getConnectionStatus } from './config/mongo';
 import { logger } from './utils/logger';
@@ -62,6 +63,12 @@ async function bootstrap() {
   await server.register(cors, {
     origin: config.CORS_ORIGINS,
     credentials: true,
+  });
+
+  await server.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    keyGenerator: (request: any) => request.user?.id || request.ip,
   });
 
   await registerRoutes(server);

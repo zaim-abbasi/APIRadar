@@ -170,15 +170,12 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
     >
       <div className="flex px-2 py-1.5 sm:px-4 sm:py-2 items-center justify-between border-b border-border/40 bg-card/80 mb-0">
         <div className="font-mono text-[10px] sm:text-xs tracking-widest uppercase truncate text-muted-foreground">
-          GLOBAL_SCAN // ACTIVE
+          REAL_TIME_THREAT_RADAR // MONITORING_GITHUB_PUBLIC_EXPOSURES
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <div
-            className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-coral animate-system-glow"
-            aria-hidden="true"
-          />
-          <div className="font-mono text-[10px] sm:text-xs tracking-widest text-coral">
-            SYSTEM: ONLINE
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+          <div className="font-mono text-[10px] sm:text-xs tracking-widest text-coral uppercase">
+            Live
           </div>
         </div>
       </div>

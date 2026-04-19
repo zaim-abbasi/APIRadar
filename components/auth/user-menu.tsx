@@ -60,8 +60,8 @@ export function UserMenu() {
   if (status === 'loading') {
     return (
       <div className="flex items-center gap-2 h-7 md:h-8 px-2 rounded-md border border-border/20 bg-card/30 animate-pulse">
-        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted/40" />
-        <div className="h-3 w-3 bg-muted/20 rounded-full" />
+        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-muted/40" />
+        <div className="h-3 w-3 bg-muted/20 rounded-md" />
       </div>
     );
   }
@@ -81,7 +81,7 @@ export function UserMenu() {
           aria-label="User account menu"
         >
           {/* User Avatar / Initials */}
-          <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-coral/10 text-coral overflow-hidden shrink-0 border border-coral/30 shadow-sm">
+          <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-coral/10 text-coral overflow-hidden shrink-0 border border-coral/30">
             {session?.user?.image ? (
               <img 
                 src={session.user.image} 
@@ -99,7 +99,7 @@ export function UserMenu() {
       <DropdownMenuContent 
         align="end" 
         sideOffset={8} 
-        className="w-56 overflow-hidden rounded-md border border-border/80 bg-background p-1 shadow-none"
+        className="w-56 overflow-hidden rounded-md border border-border/80 bg-background p-1"
       >
         <DropdownMenuLabel className="px-2 py-1.5 mb-0.5">
           <div className="flex flex-col space-y-0">
@@ -113,7 +113,7 @@ export function UserMenu() {
         <DropdownMenuItem 
           onClick={handleSignOut} 
           disabled={isSigningOut}
-          className="group flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive focus:text-destructive focus:bg-destructive/10 transition-all"
+          className="group flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive focus:text-destructive focus:bg-destructive/10 transition-all"
         >
           <LogOut className="h-3.5 w-3.5" />
           <span>{isSigningOut ? 'Signing out...' : 'Sign out'}</span>

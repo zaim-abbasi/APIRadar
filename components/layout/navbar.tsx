@@ -87,7 +87,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
                   isActive ? "text-coral" : "text-foreground hover:text-coral"
                 )}
               >
-                {isActive && <div className="h-1 w-4 bg-coral rounded-full flex-shrink-0" />}
+                {isActive && <div className="h-1 w-4 bg-coral rounded-md flex-shrink-0" />}
                 {item.label}
               </Link>
             </div>
@@ -98,19 +98,19 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
       <div className="mt-auto mb-6 border-t border-border/50 pt-6">
         {status === 'loading' ? (
           <div className="flex flex-col gap-4">
-             <div className="flex items-center gap-3 p-2.5 rounded-md border border-border/20 bg-card/40 animate-pulse">
-                <div className="h-9 w-9 rounded-full bg-muted/40" />
+             <div className="flex items-center gap-3 p-2.5 rounded-lg border border-border/20 bg-card/40 animate-pulse">
+                <div className="h-9 w-9 rounded-lg bg-muted/40" />
                 <div className="flex flex-col gap-1.5">
-                  <div className="h-3 w-24 bg-muted/30 rounded" />
-                  <div className="h-2 w-32 bg-muted/20 rounded" />
+                  <div className="h-3 w-24 bg-muted/30 rounded-md" />
+                  <div className="h-2 w-32 bg-muted/20 rounded-md" />
                 </div>
              </div>
           </div>
         ) : session ? (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between p-2.5 rounded-md border border-coral/20 bg-card/40">
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-coral/20 bg-card/40">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-coral/10 flex items-center justify-center text-xs font-bold text-coral border border-coral/30 overflow-hidden">
+                <div className="h-9 w-9 rounded-lg bg-coral/10 flex items-center justify-center text-xs font-bold text-coral border border-coral/30 overflow-hidden">
                   {session.user?.image ? (
                     <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
                   ) : (
@@ -198,7 +198,7 @@ const NavbarComponent = () => {
   };
 
   return (
-    <nav ref={navRef} className={cn("fixed top-0 left-0 right-0 z-50 border-b border-border/40 shadow-sm transition-all duration-200 w-full", isScrolled && "bg-background/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
+    <nav ref={navRef} className={cn("fixed top-0 left-0 right-0 z-50 border-b border-border/40 transition-all duration-200 w-full", isScrolled && "bg-background/95 backdrop-blur-md")} style={{ minHeight: '50px', height: '50px' }}>
       <div className="container mx-auto px-4">
         <div className="flex items-center w-full h-full" style={{ height: '50px', minHeight: '50px' }}>
           {/* Left: Logo */}

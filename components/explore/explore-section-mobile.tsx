@@ -128,10 +128,10 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2 text-foreground tracking-tight z-10">
           Explore Leaked API Keys
         </h1>
-        <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-full opacity-60" />
+        <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-md opacity-60" />
       </div>
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-md p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10 shadow-sm transition-shadow duration-200">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10">
         <div className="flex flex-col gap-3 sm:gap-4 w-full">
           <ProviderFilter
             selectedProvider={selectedProvider}

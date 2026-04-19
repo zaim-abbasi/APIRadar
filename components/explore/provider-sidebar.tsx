@@ -57,7 +57,7 @@ export const ProviderSidebar = React.memo(
                 className={cn(
                   "group relative flex items-center gap-2.5 sm:gap-3 px-2.5 py-1.5 sm:py-2.5 rounded-md transition-all duration-200 text-left",
                   isSelected
-                    ? "bg-coral/10 text-coral border border-coral/20 shadow-[0_0_15px_rgba(var(--coral-rgb),0.05)]"
+                    ? "bg-coral/10 text-coral border border-coral/20"
                     : "text-muted-foreground hover:bg-muted/40 hover:text-foreground border border-transparent"
                 )}
               >
@@ -65,14 +65,11 @@ export const ProviderSidebar = React.memo(
                   "w-3.5 h-3.5 sm:w-4 sm:h-4 flex items-center justify-center flex-shrink-0 transition-colors duration-200",
                   isSelected ? "text-coral" : "text-muted-foreground group-hover:text-foreground"
                 )}>
-                  {Icon ? <Icon className="w-full h-full" /> : <div className="w-2 h-2 rounded-full bg-current opacity-40" />}
+                  {Icon ? <Icon className="w-full h-full" /> : <div className="w-2 h-2 rounded-md bg-current opacity-40" />}
                 </div>
                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest truncate">
                   {provider.label}
                 </span>
-                {isSelected && (
-                  <div className="absolute right-2.5 w-1 h-1 rounded-full bg-coral animate-pulse" />
-                )}
               </button>
             );
           })}

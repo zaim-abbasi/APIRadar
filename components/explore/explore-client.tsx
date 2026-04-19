@@ -39,7 +39,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const [filterState, setFilterState] = useState<{
     selectedProvider: Provider;
   }>({
-    selectedProvider: "anthropic",
+    selectedProvider: "all",
   });
   const [loadingState, setLoadingState] = useState({
     isLoading: false,

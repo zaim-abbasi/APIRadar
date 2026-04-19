@@ -226,8 +226,8 @@ const HeroTicker = React.memo(() => {
   );
 
   return (
-    <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
-      <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
+    <div className="w-full bg-coral/5 border border-coral/20 rounded-lg p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
+      <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
         <ShieldAlert className="h-3.5 w-3.5 text-coral animate-pulse" />
         <span className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral translate-y-[0.5px]">
           Live Intel
@@ -309,7 +309,7 @@ const StatCounter = React.memo(() => {
 
   return (
     <div className="animate-fade-in-up flex-shrink-0">
-      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-coral/30 bg-coral/5 transition-colors duration-500">
+      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-coral/30 bg-coral/5 transition-colors duration-500">
         <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
         <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-coral">
           {total.toLocaleString()}

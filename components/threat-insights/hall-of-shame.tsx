@@ -22,7 +22,7 @@ function PosterSkeleton({ className }: { className?: string }) {
       )}
     >
       <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-md bg-muted/40" />
-      <div className="h-4 w-32 bg-muted/40 rounded" />
+      <div className="h-4 w-32 bg-muted/40 rounded-md" />
     </div>
   );
 }
@@ -51,7 +51,7 @@ function WantedPoster({ user, className }: { user: TopLeaker; className?: string
         />
         <div
           className={cn(
-            "absolute top-1 right-1 rounded-sm bg-destructive px-1.5 py-0.5 text-[10px] font-mono font-bold leading-none text-destructive-foreground",
+            "absolute top-1 right-1 rounded-md bg-destructive px-1.5 py-0.5 text-[10px] font-mono font-bold leading-none text-destructive-foreground",
             user.rank === 1 && "animate-pulse"
           )}
         >
@@ -120,7 +120,7 @@ export const HallOfShame = React.memo(function HallOfShame({ className }: { clas
   return (
     <section
       className={cn(
-        "rounded-md border border-border/50 bg-card/30 backdrop-blur-sm p-4 sm:p-5",
+        "rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-4 sm:p-5",
         className
       )}
       aria-label="High-Exposure Profiles"

@@ -8,6 +8,7 @@ export interface LeakedKey {
   leakIntroducedAt: string;
   repoCreatedAt?: string | null;
   isLocked?: boolean;
+  originalUrl?: string | null;
 }
 
 export interface ProviderStats {

@@ -203,7 +203,7 @@ export const CustomSelectContent = React.forwardRef<HTMLDivElement, {
       ref={ref}
       data-custom-select-portal
       className={cn(
-        'fixed z-[9999] min-w-[8rem] overflow-hidden rounded-md border border-border/60 bg-card text-popover-foreground shadow-sm',
+        'fixed z-[9999] min-w-[8rem] overflow-hidden rounded-md border border-border/60 bg-card text-popover-foreground',
         className
       )}
       style={{ 

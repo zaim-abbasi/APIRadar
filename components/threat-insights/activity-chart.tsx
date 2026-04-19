@@ -29,7 +29,7 @@ const CustomTooltip = React.memo(function CustomTooltip({
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value;
   return (
-    <div className="bg-card/95 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-md shadow-sm">
+    <div className="bg-card/95 backdrop-blur-sm border border-border/50 px-3 py-2 rounded-lg">
       <div className="text-xs font-medium text-foreground/90">{label}</div>
       <div className="text-xs text-muted-foreground">
         Exposures: <span className="font-semibold text-foreground">{typeof value === "number" ? value : 0}</span>

@@ -44,7 +44,7 @@ export function FeatureRequestDialog({
   }[variant];
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[380px] bg-card/60 backdrop-blur-sm border-border/50 p-0 gap-0 shadow-lg overflow-hidden">
+      <DialogContent className="sm:max-w-[380px] bg-card/60 backdrop-blur-sm border-border/50 p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-5 pb-5 text-center">
           <DialogTitle
             className={`text-base font-semibold tracking-tight text-center ${content.themeColor}`}

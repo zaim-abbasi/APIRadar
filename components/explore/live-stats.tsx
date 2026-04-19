@@ -145,11 +145,11 @@ export function FeatureRequestForm() {
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 shadow-sm active:scale-95">
+          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 active:scale-95">
             Suggest Feature
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[calc(100vw-32px)] sm:w-[420px] p-5 bg-card/98 backdrop-blur-xl border border-border/60 shadow-2xl" side="bottom" align="end" sideOffset={8}>
+        <PopoverContent className="w-[calc(100vw-32px)] sm:w-[420px] p-5 bg-card/98 backdrop-blur-xl border border-border/60" side="bottom" align="end" sideOffset={8}>
           <form
             onSubmit={handleSubmit}
             className="flex flex-col gap-5"

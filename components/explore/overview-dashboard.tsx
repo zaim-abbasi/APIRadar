@@ -90,10 +90,10 @@ export function OverviewDashboard({
   return (
     <div className="flex flex-col space-y-6 w-full animate-fade-in-up">
       {/* Live Ticker */}
-      <div className="w-full bg-coral/5 border border-coral/20 rounded-md p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-3 overflow-hidden relative h-[34px] sm:h-[44px] group">
+      <div className="w-full bg-coral/5 border border-coral/20 rounded-lg p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-3 overflow-hidden relative h-[34px] sm:h-[44px] group">
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,114,94,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,114,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
 
-        <div className="z-20 flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-full shrink-0 ml-1 backdrop-blur-md">
+        <div className="z-20 flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
           <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
           <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral">
             Live Intel
@@ -326,7 +326,7 @@ export function OverviewDashboard({
                         className="text-left h-full outline-none"
                       >
                         <Card
-                          className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-150 h-full flex flex-col justify-center relative ${stat.todayCount > 0 ? "shadow-[0_0_15px_rgba(255,114,94,0.03)]" : ""} cursor-pointer`}
+                          className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-150 h-full flex flex-col justify-center relative cursor-pointer`}
                         >
                           <CardContent className="p-3 sm:p-5 relative">
                             <div className="flex justify-between items-start mb-1 sm:mb-2">
@@ -404,7 +404,8 @@ export function OverviewDashboard({
                   <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
                   Recent Activity
                 </h3>
-                <Badge variant="secondary" className="text-[10px] uppercase">
+                <Badge variant="secondary" className="text-[10px] uppercase flex items-center gap-1.5 px-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                   Live
                 </Badge>
               </div>
@@ -425,9 +426,7 @@ export function OverviewDashboard({
                         key={idx}
                         className="px-3.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
                       >
-                        <div
-                          className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full flex-shrink-0 shadow-sm animate-pulse ${!leak.isLocked ? "bg-coral shadow-coral/50" : "bg-blue-500 shadow-blue-500/50"}`}
-                        />
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1 sm:gap-2">
                             <span
