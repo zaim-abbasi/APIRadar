@@ -133,9 +133,9 @@ jobs:
       - name: Prepare Deployment Archive
         run: |
           mkdir -p final-deploy/backend
-          # Fix: Copy contents correctly from nested artifact structure
-          cp -r backend-artifact/backend/* final-deploy/backend/
-          cp -r frontend-artifact/* final-deploy/
+          # Fix: Use '.' instead of '*' to ensure hidden files (like .next) are copied
+          cp -r backend-artifact/. final-deploy/backend/
+          cp -r frontend-artifact/. final-deploy/
           cd final-deploy
           tar -cf ../deployment.tar .
 
