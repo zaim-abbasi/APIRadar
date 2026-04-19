@@ -7,14 +7,15 @@ dotenv.config();
  * Ensures strict AES-256 compatibility dynamically generating 32 Buffer bytes
  */
 export function getEncryptionKey(): Buffer {
-  const rawKey = process.env['ENCRYPTION_KEY'];
-  if (!rawKey) throw new Error('ENCRYPTION_KEY is missing from process.env');
+  let key = process.env['ENCRYPTION_KEY'];
+  if (!key) throw new Error('ENCRYPTION_KEY is missing from process.env');
 
-  if (!/^[0-9a-fA-F]{64}$/.test(rawKey)) {
-    throw new Error('ENCRYPTION_KEY must be a 64-character hex string');
+  // If the key is not a 64-char hex, hash it to ensure it's a valid 256-bit key
+  if (!/^[0-9a-fA-F]{64}$/.test(key)) {
+    key = crypto.createHash('sha256').update(key).digest('hex');
   }
 
-  return Buffer.from(rawKey, 'hex');
+  return Buffer.from(key, 'hex');
 }
 
 export function encrypt(text: string, key: Buffer): string {
