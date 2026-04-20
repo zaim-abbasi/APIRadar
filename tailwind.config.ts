@@ -27,9 +27,6 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      ringColor: {
-        coral: 'hsl(var(--coral))',
-      },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
@@ -71,9 +68,6 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-
-        coral: 'hsl(var(--coral))',
-
       },
       keyframes: {
         'accordion-down': {

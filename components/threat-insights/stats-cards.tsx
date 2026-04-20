@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, Shield, AlertTriangle, Eye, Calendar, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThreatInsightsData } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface StatsCardsProps {
   data: ThreatInsightsData;
@@ -226,31 +227,37 @@ const StatCard = React.memo(({
   const IconComponent = useMemo(() => stat.icon, [stat.icon]);
   
   return (
-    <Card className="border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 ease-out sm:hover:border-border/80">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 sm:pb-2 p-2.5 sm:p-3">
-        <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">
-          {stat.title}
-        </CardTitle>
-        <IconComponent className={`${stat.color} h-7 w-7 sm:h-8 sm:w-8`} />
-      </CardHeader>
-      <CardContent className="p-3 pt-0">
-        <div className="text-xl sm:text-2xl font-bold tracking-tighter text-foreground font-mono tabular-nums">
-          {typeof stat.value === 'number' && stat.value !== null ? (
-            stat.isPercentage ? (
-              <span>{stat.value.toFixed(1)}%</span>
-            ) : (
-              <span>{stat.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-            )
-          ) : stat.isDate && stat.value ? (
-            <span>{new Date(stat.value).toLocaleDateString('en-US', { 
-              day: 'numeric', 
-              month: 'long', 
-              year: 'numeric' 
-            })}</span>
-          ) : (
-            <span className="inline-block w-16 h-6 skeleton rounded-md"></span>
-          )}
+    <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-200 h-full flex flex-col justify-center relative cursor-pointer">
+      <CardContent className="p-1.5 sm:p-2.5 relative">
+        <div className="flex justify-between items-start mb-0 sm:mb-0.5 text-left">
+          <div className="space-y-0 z-10">
+            <CardTitle className="text-[8px] sm:text-xs font-bold uppercase tracking-wide text-amber-500 leading-none border-none bg-transparent shadow-none p-0 mb-0.5">
+              {stat.title}
+            </CardTitle>
+            <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground font-mono tabular-nums leading-tight">
+              {typeof stat.value === 'number' && stat.value !== null ? (
+                stat.isPercentage ? (
+                  <span>{stat.value.toFixed(1)}%</span>
+                ) : (
+                  <span>{stat.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                )
+              ) : stat.isDate && stat.value ? (
+                <span>{new Date(stat.value).toLocaleDateString('en-US', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}</span>
+              ) : (
+                <span className="inline-block w-16 h-6 skeleton rounded-md"></span>
+              )}
+            </h3>
+          </div>
         </div>
+        
+        {/* Subtle background icon watermark */}
+        <IconComponent 
+          className={cn("absolute -bottom-2 -right-2 h-16 w-16 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none", stat.color)} 
+        />
       </CardContent>
     </Card>
   );
@@ -271,35 +278,11 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     return <StatsErrorFallback />;
   }
 
-  const [displayData, setDisplayData] = useState<ThreatInsightsData>(data);
-
-  useEffect(() => {
-    const fetchPersonalizedData = async () => {
-      try {
-        const response = await fetch(`/api/threat-insights`);
-        if (response.ok) {
-          const freshData = await response.json();
-          setDisplayData({
-             topProviders: data.topProviders,
-             totalReposScanned: Number(freshData.totalReposScanned) || 0,
-             totalExposuresFound: Number(freshData.totalLeaksFound) || 0,
-             weeklyGrowth: data.weeklyGrowth,
-             exposuresFoundToday: Number(freshData.leaksFoundToday) || 0,
-          });
-        }
-      } catch (error) {
-        console.error("Failed to fetch statistics:", error);
-      }
-    };
-
-    fetchPersonalizedData();
-  }, [data]);
-
   const {
     totalReposScanned,
     totalExposuresFound,
     exposuresFoundToday
-  } = displayData;
+  } = data;
 
   const safeTotalReposScanned = typeof totalReposScanned === 'number' && isFinite(totalReposScanned) ? totalReposScanned : 0;
   const safeTotalExposuresFound = typeof totalExposuresFound === 'number' && isFinite(totalExposuresFound) ? totalExposuresFound : 0;
@@ -309,41 +292,33 @@ export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsPro
     {
       title: 'Exposures Identified Today',
       value: safeExposuresFoundToday,
+      todayValue: safeExposuresFoundToday,
       icon: Eye,
-      color: 'text-coral',
-      bgColor: 'bg-coral/10'
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10'
     },
     {
       title: 'Total Exposures Identified',
       value: safeTotalExposuresFound,
+      todayValue: safeExposuresFoundToday,
       icon: AlertTriangle,
-      color: 'text-coral',
-      bgColor: 'bg-coral/10'
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10'
     },
     {
       title: 'Total Repos Analyzed',
       value: safeTotalReposScanned,
       icon: Search,
-      color: 'text-coral',
-      bgColor: 'bg-coral/10'
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10'
     }
   ], [safeTotalReposScanned, safeTotalExposuresFound, safeExposuresFoundToday]);
 
   return (
-    <div
-      id="stats-container"
-      className="rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-3"
-    >
-      <div className="flex items-center justify-between px-1 pb-2">
-        <span className="text-xs font-semibold tracking-wide text-foreground/80">
-          Threat Insight Statistics
-        </span>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-5">
-        {stats.map((stat, index) => (
-          <StatCard key={stat.title} stat={stat} index={index} />
-        ))}
-      </div>
+    <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">
+      {stats.map((stat, index) => (
+        <StatCard key={stat.title} stat={stat} index={index} />
+      ))}
     </div>
   );
 });

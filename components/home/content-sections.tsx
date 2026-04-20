@@ -22,20 +22,20 @@ const WhatYouCanDo = React.memo(() => {
       icon: FileSearch,
       title: "Analyze Credential Exposure Events",
       description: "Redacted previews and source links for deep investigation.",
-      iconColor: "text-coral",
+      iconColor: "text-amber-500",
     },
     {
       icon: TrendingUp,
       title: "Identify Vulnerability Vectors",
       description: "Filter and sort to spot where leaks happen most.",
-      iconColor: "text-coral",
+      iconColor: "text-amber-500",
     },
     {
       icon: GraduationCap,
       title: "Enterprise Security Awareness",
       description:
         "Train teams with real-world metadata to build defensive guardrails without exposing original source code.",
-      iconColor: "text-coral",
+      iconColor: "text-amber-500",
     },
   ];
 
@@ -96,9 +96,9 @@ const WhatYouSee = React.memo(() => {
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex items-center gap-3 p-3 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-coral/40 group"
+            className="flex items-center gap-3 p-3 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 transition-all duration-200 sm:hover:border-amber-500/40 group"
           >
-            <item.icon className="h-4 w-4 flex-shrink-0 text-coral" />
+            <item.icon className="h-4 w-4 flex-shrink-0 text-amber-500" />
             <p className="text-sm text-foreground/90 font-bold leading-none tracking-tight">
               {item.text}
             </p>
@@ -130,10 +130,10 @@ const WhyThisExists = React.memo(() => {
         <div className="space-y-3">
           {points.map((point, index) => (
             <div key={index} className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-coral mt-2" />
+              <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-500 mt-2" />
               <p className="text-sm text-foreground/90 leading-relaxed font-medium">
                 {point.title && (
-                  <span className="font-bold text-coral block mb-0.5">
+                  <span className="font-bold text-amber-500 block mb-0.5">
                     {point.title}
                   </span>
                 )}
@@ -205,7 +205,7 @@ const WhatsNext = React.memo(() => {
           <Link
             href="https://mail.google.com/mail/?view=cm&fs=1&to=contact@apiradar.live"
             target="_blank"
-            className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-coral text-primary-foreground border border-coral/80 sm:hover:brightness-90 transition-all font-bold text-sm"
+            className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-amber-500 text-primary-foreground border border-amber-500/80 sm:hover:brightness-90 transition-all font-bold text-sm"
           >
             <Shield className="h-4 w-4" />
             <span>Partner with Us or Enterprise Inquiry</span>

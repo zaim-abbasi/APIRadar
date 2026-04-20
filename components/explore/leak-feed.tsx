@@ -122,7 +122,7 @@ const FeedEmptyState = React.memo(
                 protocols have been initiated to restore the live intel stream.
               </p>
               <div className="pt-2">
-                <span className="text-[9px] font-bold font-mono tracking-widest text-coral/60 uppercase">
+                <span className="text-[9px] font-bold font-mono tracking-widest text-amber-500/60 uppercase">
                   AUTONOMOUS_RECOVERY: RETRYING_IN {nextRetry.toFixed(1)}s
                 </span>
               </div>
@@ -162,8 +162,8 @@ const WorkingKeysComingSoon = React.memo(
   ({ onSignIn }: { onSignIn?: () => void }) => (
     <div className="flex flex-col items-center justify-center h-full px-4 animate-fade-in-up">
       <div className="space-y-5 max-w-sm mx-auto text-center">
-        <div className="mx-auto w-12 h-12 rounded-lg bg-coral/10 border border-coral/20 flex items-center justify-center">
-          <Lock className="h-5 w-5 text-coral" />
+        <div className="mx-auto w-12 h-12 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+          <Lock className="h-5 w-5 text-amber-500" />
         </div>
 
         <div className="space-y-2">
@@ -246,16 +246,16 @@ const FeedItem = React.memo(
     return (
       <div 
         className={cn(
-          "block px-3.5 py-2 sm:px-5 sm:py-1.5 transition-colors duration-50 group/item animate-fade-in-up opacity-0 sm:hover:bg-white/[0.03]",
+          "block px-2 py-1 sm:px-5 sm:py-1.5 transition-colors duration-50 group/item animate-fade-in-up opacity-0 sm:hover:bg-white/[0.03]",
         )}
         style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
       >
         <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5 flex-1 min-w-0">
-            {/* Top Row (Mobile) / Left Content (Desktop) */}
-            <div className="flex items-center justify-between sm:justify-start gap-3 flex-shrink-0 sm:w-[240px] lg:w-[260px]">
+          <div className="flex flex-row items-center gap-3 sm:gap-5 flex-1 min-w-0">
+            {/* Main Content Row */}
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 flex-1 sm:flex-initial sm:w-[240px] lg:w-[260px] min-w-0">
               {/* Redacted key */}
-              <code className="text-[11px] sm:text-sm font-mono bg-muted/40 px-1 sm:px-2 py-0 rounded-md border border-border/40 text-foreground transition-colors duration-50 truncate min-w-0 tracking-tight">
+              <code className="text-[10px] sm:text-sm font-mono bg-muted/40 px-1.5 sm:px-2 py-0 rounded-md border border-border/40 text-foreground transition-colors duration-50 truncate min-w-0 tracking-tight">
                 <span className="sm:hidden">
                   {leak.redactedKey.length > 20 && leak.redactedKey.includes('*')
                     ? `${leak.redactedKey.slice(0, 6)}${"*".repeat(8)}${leak.redactedKey.slice(-6)}`
@@ -264,32 +264,51 @@ const FeedItem = React.memo(
                 <span className="hidden sm:inline">{leak.redactedKey}</span>
               </code>
 
-              {/* Mobile-only status tools */}
-              <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
+              {/* Mobile-only status tools + Copy Button */}
+              <div className="flex sm:hidden items-center justify-end gap-1.5 flex-shrink-0 min-w-[125px]">
+                <div className="w-5 flex items-center justify-center shrink-0">
+                  {isAuthenticated && index >= 6 && (
+                    <button
+                      onClick={handleCopyKey}
+                      disabled={copyState !== "idle"}
+                      className={cn(
+                        "flex items-center justify-center h-5 w-5 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200 active:scale-90",
+                        copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 active:scale-90"
+                      )}
+                    >
+                      {copyState === "copying" ? (
+                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                      ) : copyState === "success" ? (
+                        <Check className="h-2.5 w-2.5" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
                 <div className={cn(
-                  "flex items-center justify-center gap-1.5 px-1.5 py-0 rounded-md text-[9px] uppercase font-bold tracking-wider min-w-[65px] border",
+                  "flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[58px] shrink-0 border",
                   index < 6 
                     ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
                     : "bg-red-500/10 text-red-500 border-red-500/20"
                 )}>
-                  <ShieldAlert className="h-3 w-3" />
+                  <ShieldAlert className="h-2 w-2" />
                   <span>{index < 6 ? "RECENT" : "IDENTIFIED"}</span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium">
-                  <Clock className="h-2.5 w-2.5" />
+                <span className="text-[9px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium min-w-[32px] justify-end">
                   {formatTimeAgo(new Date(leak.leakDetectedAt)).replace(" ago", "")}
                 </span>
               </div>
             </div>
 
-            {/* Bottom Row (Mobile) / Middle Content (Desktop) */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-5 text-[11px] sm:text-sm text-muted-foreground/80 min-w-0 flex-1">
+            {/* Bottom Row (Hides on Mobile) / Middle Content (Desktop) */}
+            <div className="hidden sm:flex flex-row sm:items-center gap-1 sm:gap-5 text-[10px] sm:text-sm text-muted-foreground/80 min-w-0 flex-1">
               {/* Repository Column */}
-              <div className="flex items-center gap-2 sm:w-[160px] lg:w-[190px] flex-shrink-0">
-                <FolderGit2 className="h-3.5 w-3.5 flex-shrink-0 text-coral/80" />
+              <div className="flex items-center gap-1.5 sm:w-[160px] lg:w-[190px] flex-shrink-0">
+                <FolderGit2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-amber-500/80" />
                 <span 
                   className={cn(
-                    "text-coral/90 font-semibold truncate group-hover/item:text-coral transition-colors duration-50",
+                    "text-amber-500/90 font-semibold truncate group-hover/item:text-amber-500 transition-colors duration-50",
                     leak.originalUrl && "cursor-pointer group-hover/item:underline"
                   )}
                   onClick={(e) => {
@@ -311,9 +330,9 @@ const FeedItem = React.memo(
               </div>
 
               {/* Path Column (Aligned vertically) */}
-              <div className="flex items-center gap-2 truncate flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
                 <span className="text-border flex-shrink-0 font-light opacity-40 hidden sm:inline">/</span>
-                <FileCode2 className="h-3.5 w-3.5 flex-shrink-0 opacity-70" />
+                <FileCode2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 opacity-70" />
                 <span className="truncate text-foreground/80 font-medium">
                   {leak.filePath || "***"}
                 </span>
@@ -328,8 +347,8 @@ const FeedItem = React.memo(
                 onClick={handleCopyKey}
                 disabled={copyState !== "idle"}
                 className={cn(
-                  "hidden sm:flex items-center justify-center h-6 w-6 rounded-md border border-border/50 bg-background/50 text-muted-foreground transition-all duration-200 hover:text-coral hover:border-coral/40 active:scale-90",
-                  copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 hover:text-emerald-500 hover:border-emerald-500/30"
+                  "hidden sm:flex items-center justify-center h-6 w-6 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200 hover:ring-[0.75px] hover:ring-amber-500/40 active:scale-90",
+                  copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 hover:ring-0 active:scale-90"
                 )}
                 title="Copy Full Key"
               >
@@ -338,7 +357,7 @@ const FeedItem = React.memo(
                 ) : copyState === "success" ? (
                   <Check className="h-3 w-3" />
                 ) : (
-                  <Copy className="h-3 w-3" />
+                  <Copy className="h-3.5 w-3.5" />
                 )}
               </button>
             )}
@@ -399,11 +418,11 @@ const LeakFeedComponent = React.memo(
       <div className="w-full">
         {/* Sub-tabs: Latest Finds / Working Keys */}
         <div className="mb-2 sm:mb-5">
-          <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1 sm:gap-1.5 h-9 sm:h-11">
+          <div className="relative flex items-center p-1 bg-card/30 backdrop-blur-sm border border-border/50 rounded-lg gap-1 sm:gap-1.5 h-[32px] sm:h-11">
             <button
               onClick={() => setActiveTab("finds")}
               className={cn(
-                "relative flex items-center justify-center py-1.5 px-2 sm:py-2 sm:px-3 text-[13px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation font-medium h-full",
+                "relative flex items-center justify-center py-1 px-2 sm:py-2 sm:px-3 text-[11px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation font-medium h-full",
                 activeTab === "finds"
                   ? "text-foreground font-semibold bg-background border border-border/50"
                   : "text-muted-foreground sm:hover:text-foreground sm:hover:bg-muted/50"
@@ -411,22 +430,23 @@ const LeakFeedComponent = React.memo(
             >
               <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                 <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Recent Detections
+                <span className="hidden sm:inline">Recent</span> Detections
               </span>
             </button>
             <button
               disabled
               className={cn(
-                "relative flex items-center justify-center py-1.5 px-2 sm:py-2 sm:px-3 text-[13px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md font-medium h-full cursor-not-allowed opacity-80",
+                "relative flex items-center justify-center py-1 px-2 sm:py-2 sm:px-3 text-[11px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md font-medium h-full cursor-not-allowed opacity-80",
                 activeTab === "working"
                   ? "text-foreground font-semibold bg-background border border-border/50"
                   : "text-muted-foreground"
               )}
             >
-              <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5 grayscale opacity-70">
+              <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1 sm:gap-1.5 grayscale opacity-70">
                 <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                Live Verification
-                <span className="text-[7px] sm:text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-1 sm:px-1.5 py-0.5 ml-1 leading-none">
+                <span className="hidden sm:inline text-nowrap">Live Verification</span>
+                <span className="sm:hidden">Verification</span>
+                <span className="text-[7.5px] sm:text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded px-1 sm:px-1.5 py-0.5 ml-0.5 sm:ml-1 leading-none">
                   Soon
                 </span>
               </span>
@@ -443,7 +463,7 @@ const LeakFeedComponent = React.memo(
           <Card 
             className={cn(
               "border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden flex flex-col",
-              isUnauthenticated ? "h-fit" : "h-[380px] sm:h-[450px]"
+              isUnauthenticated ? "h-fit" : "h-[420px] sm:h-[450px]"
             )}
           >
             <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -472,19 +492,19 @@ const LeakFeedComponent = React.memo(
                 {showSignInPrompt && onSignIn && (
                   <div 
                     onClick={onSignIn}
-                    className="block px-3.5 py-2.5 sm:px-5 sm:py-2 sm:hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer group animate-fade-in-up border-t border-border/10"
+                    className="block px-2 py-2 sm:px-5 sm:py-2 sm:hover:bg-white/[0.03] transition-colors duration-150 cursor-pointer group animate-fade-in-up border-t border-border/10"
                   >
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4">
                       {/* Lock Icon */}
                       <div className="mt-1 sm:mt-0 flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/40 transition-colors group-hover:text-coral/60" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/40 transition-colors group-hover:text-amber-500/60" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                       </div>
                       
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
                         {/* Content Section */}
                         <div className="flex flex-col flex-1 min-w-0 justify-center">
-                          <p className="text-[11px] sm:text-[13px] text-foreground/80 font-medium leading-[1.5] sm:line-clamp-none">
-                            <span className="font-bold text-foreground/90">[LOCKED]</span> Sign in to unmask repositories, reveal file paths, and enable one-click copying for all {total.toLocaleString()} {providerDisplayName} secrets.
+                          <p className="text-[10px] sm:text-[13px] text-foreground/80 font-medium leading-[1.3] sm:line-clamp-none">
+                            <span className="font-bold text-foreground/90">[LOCKED]</span> Sign in to unmask repositories and reveal file paths for all {total.toLocaleString()} {providerDisplayName} secrets.
                           </p>
                         </div>
 
@@ -492,7 +512,7 @@ const LeakFeedComponent = React.memo(
                         <div className="flex-shrink-0 sm:ml-auto pt-1 sm:pt-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); onSignIn(); }}
-                            className="w-full sm:w-auto flex h-9 sm:h-10 items-center justify-center gap-2 px-4 sm:px-6 text-[10px] sm:text-[11px] font-black text-coral uppercase tracking-[0.2em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 active:scale-95 whitespace-nowrap"
+                            className="w-full sm:w-auto flex h-7 sm:h-10 items-center justify-center gap-2 px-3 sm:px-6 text-[9px] sm:text-[11px] font-black text-amber-500 uppercase tracking-[0.2em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 active:scale-95 whitespace-nowrap"
                           >
                             <span>Sign In for Access</span>
                           </button>

@@ -75,13 +75,13 @@ const PROVIDERS = [
 ] as const;
 
 const providerColors: Record<string, string> = {
-  ANTHROPIC: "text-amber-600",
-  CEREBRAS: "text-violet-500",
-  GOOGLE: "text-blue-500",
-  GROQ: "text-orange-600",
-  OPENAI: "text-emerald-500",
-  OPENROUTER: "text-fuchsia-500",
-  XAI: "text-slate-400",
+  ANTHROPIC: "text-amber-500",
+  CEREBRAS: "text-amber-500",
+  GOOGLE: "text-amber-500",
+  GROQ: "text-amber-500",
+  OPENAI: "text-amber-500",
+  OPENROUTER: "text-amber-500",
+  XAI: "text-amber-500",
 };
 
 type TerminalLog = {
@@ -172,9 +172,9 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
         <div className="font-mono text-[10px] sm:text-xs tracking-widest uppercase truncate text-muted-foreground">
           REAL_TIME_THREAT_RADAR // MONITORING_GITHUB_PUBLIC_EXPOSURES
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-          <div className="font-mono text-[10px] sm:text-xs tracking-widest text-coral uppercase">
+        <div className="flex items-center gap-1 sm:gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+          <div className="font-mono text-[10px] sm:text-xs tracking-widest text-amber-500 uppercase font-bold">
             Live
           </div>
         </div>
@@ -197,25 +197,25 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                 </span>
                 {log.isAlert ? (
                   <>
-                    <span className="font-bold flex-shrink-0 mr-1 text-coral">
+                    <span className="font-bold flex-shrink-0 mr-1 text-amber-500">
                       [DETECTION]
                     </span>
-                    <span className="flex-shrink-0 mr-1 text-coral">
+                    <span className="flex-shrink-0 mr-1 text-amber-500">
                       CRITICAL —
                     </span>
                     <span
                       className={cn(
                         "font-bold flex-shrink-0 mr-1",
-                        providerColors[log.provider] || "text-coral",
+                        providerColors[log.provider] || "text-amber-500",
                       )}
                     >
                       {log.provider}
                     </span>
-                    <span className="text-coral truncate">EXPOSURE EVENT</span>
+                    <span className="text-amber-500 truncate">EXPOSURE EVENT</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-muted-foreground flex-shrink-0 mr-1">
+                    <span className="text-muted-foreground flex-shrink-0 mr-1 hidden sm:inline">
                       SCANNING
                     </span>
                     <span
@@ -226,16 +226,16 @@ export const LiveScanTerminal = React.memo(function LiveScanTerminal() {
                     >
                       [{log.provider}]
                     </span>
-                    <span className="text-foreground font-bold truncate max-w-[80px] min-w-[40px] sm:max-w-none sm:min-w-0 mr-1">
+                    <span className="text-foreground font-bold truncate max-w-[100px] min-w-[40px] sm:max-w-none sm:min-w-0 mr-1">
                       {log.repo}
                     </span>
                     <span className="text-muted-foreground/60 hidden sm:inline mr-1">
                       CREATED BY
                     </span>
                     <span className="text-muted-foreground/60 text-[9px] sm:hidden mr-1">
-                      BY
+                      ·
                     </span>
-                    <span className="text-coral truncate flex-1 sm:flex-none">
+                    <span className="text-amber-500 truncate flex-1 sm:flex-none">
                       {log.owner}
                     </span>
                   </>

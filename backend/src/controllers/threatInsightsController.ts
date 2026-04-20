@@ -1,7 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Leak as Exposure } from '../models/Leak';
 import { ScannedRepo } from '../models/ScannedRepo';
-import { githubService } from '../services/github';
 
 const MS_PER_DAY = 86_400_000;
 
@@ -31,6 +30,12 @@ interface ThreatInsightsResponse {
   totalReposScanned: number;
   totalLeaksFound: number;
   leaksFoundToday: number;
+  topProviders: {
+    provider: string;
+    count: number;
+    percentage: number;
+    trend: 'up' | 'down' | 'stable';
+  }[];
 }
 
 export const threatInsightsDataSchema = {
@@ -40,7 +45,19 @@ export const threatInsightsDataSchema = {
       properties: {
         totalReposScanned: { type: 'number' },
         totalLeaksFound: { type: 'number' },
-        leaksFoundToday: { type: 'number' }
+        leaksFoundToday: { type: 'number' },
+        topProviders: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              provider: { type: 'string' },
+              count: { type: 'number' },
+              percentage: { type: 'number' },
+              trend: { type: 'string' }
+            }
+          }
+        }
       }
     }
   }
@@ -48,7 +65,7 @@ export const threatInsightsDataSchema = {
 
 export async function getThreatInsightsDataHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const data = await withCache<ThreatInsightsResponse>('threat-insights-global', CACHE_TTL.SHORT, async () => {
+    const data = await withCache<ThreatInsightsResponse>('threat-insights-summary', CACHE_TTL.SHORT, async () => {
       const [totalReposScanned, totalLeaksFound] = await Promise.all([
         ScannedRepo.countDocuments(),
         Exposure.countDocuments(),
@@ -59,7 +76,25 @@ export async function getThreatInsightsDataHandler(request: FastifyRequest, repl
         leakDetectedAt: { $gte: oneDayAgo }
       });
 
-      return { totalReposScanned, totalLeaksFound, leaksFoundToday };
+      const topProvidersRaw = await Exposure.aggregate([
+        { $group: { _id: '$provider', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 }
+      ]);
+
+      const topProviders = topProvidersRaw.map(p => ({
+        provider: p._id,
+        count: p.count,
+        percentage: totalLeaksFound > 0 ? (p.count / totalLeaksFound) * 100 : 0,
+        trend: 'stable' as const
+      }));
+
+      return { 
+        totalReposScanned, 
+        totalLeaksFound, 
+        leaksFoundToday, 
+        topProviders 
+      };
     }, request.log);
     return reply.send(data);
   } catch (error) {
@@ -87,13 +122,13 @@ export const activitySchema = {
 
 export async function getThreatInsightsActivityHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const data = await withCache<ActivityPoint[]>('threat-insights-activity', CACHE_TTL.SHORT, async () => {
+    const data = await withCache<ActivityPoint[]>('threat-insights-activity-v2', CACHE_TTL.SHORT, async () => {
       const now = new Date();
       const todayStartUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-      const sixDaysAgoStartUTC = new Date(todayStartUTC.getTime() - 6 * MS_PER_DAY);
+      const thirteenDaysAgoStartUTC = new Date(todayStartUTC.getTime() - 13 * MS_PER_DAY);
 
       const raw = await Exposure.aggregate([
-        { $match: { leakDetectedAt: { $gte: sixDaysAgoStartUTC } } },
+        { $match: { leakDetectedAt: { $gte: thirteenDaysAgoStartUTC } } },
         {
           $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$leakDetectedAt', timezone: 'UTC' } },
@@ -106,7 +141,7 @@ export async function getThreatInsightsActivityHandler(request: FastifyRequest, 
       const counts = new Map(raw.map((r: any) => [r._id, r.count]));
       const result: ActivityPoint[] = [];
 
-      for (let i = 6; i >= 0; i--) {
+      for (let i = 13; i >= 0; i--) {
         const t = new Date(todayStartUTC.getTime() - i * MS_PER_DAY);
         const dateKey = t.toISOString().split('T')[0];
         const dayName = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' }).format(t);
@@ -121,75 +156,62 @@ export async function getThreatInsightsActivityHandler(request: FastifyRequest, 
   }
 }
 
-type TopExposureUser = {
-  rank: number;
-  username: string;
-  avatar_url: string;
-  html_url: string;
-  total_leaks: number;
-  repos_count: number;
-};
-
-export const topExposuresSchema = {
+export const exposureHoursSchema = {
   response: {
     200: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          rank: { type: 'number' },
-          username: { type: 'string' },
-          avatar_url: { type: 'string' },
-          html_url: { type: 'string' },
-          total_leaks: { type: 'number' },
-          repos_count: { type: 'number' }
-        }
+      type: 'object',
+      properties: {
+        hours: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { hour: { type: 'number' }, count: { type: 'number' } }
+          }
+        },
+        peakWindow: {
+          type: 'object',
+          properties: { start: { type: 'number' }, end: { type: 'number' } }
+        },
+        totalSamples: { type: 'number' }
       }
     }
   }
 };
 
-const TOP_EXPOSURES_LIMIT = 10;
-
-export async function getTopExposuresHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getExposureHoursHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const data = await withCache<TopExposureUser[]>('top-exposures', CACHE_TTL.LONG, async () => {
+    const data = await withCache('exposure-hours', CACHE_TTL.LONG, async () => {
       const raw = await Exposure.aggregate([
-        { $addFields: { owner: { $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: ['$repoUrl', 'github.com/'] }, 1] }, '/'] }, 0] } } },
-        { $match: { owner: { $nin: [null, ''] }, secretId: { $exists: true } } },
-        { $group: { _id: { owner: '$owner', key: '$secretId' }, repoUrl: { $first: '$repoUrl' } } },
-        { $group: { _id: '$_id.owner', total_leaks: { $sum: 1 }, repos: { $addToSet: '$repoUrl' } } },
-        { $project: { _id: 0, username: '$_id', total_leaks: 1, repos_count: { $size: '$repos' } } },
-        { $sort: { total_leaks: -1 } },
-        { $limit: TOP_EXPOSURES_LIMIT }
+        { $group: { _id: { $hour: '$leakIntroducedAt' }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } }
       ]);
 
-      const profiles = await Promise.all(
-        raw.filter((r: any) => r.username).map(async (r: any) => {
-          const profile = await githubService.getUserProfile(r.username);
-          return { username: r.username, profile };
-        })
-      );
-      const profileMap = new Map(profiles.map(({ username, profile }) => [
-        username,
-        { login: profile?.login || username, avatar_url: profile?.avatar_url || '', html_url: profile?.html_url || `https://github.com/${username}` }
-      ]));
+      const countMap = new Map(raw.map((r: any) => [r._id, r.count]));
+      const hours = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        count: countMap.get(i) || 0
+      }));
 
-      return raw.map((row: any, idx: number) => {
-        const p = profileMap.get(row.username);
-        return {
-          rank: idx + 1,
-          username: p?.login || row.username,
-          avatar_url: p?.avatar_url || '',
-          html_url: p?.html_url || `https://github.com/${row.username}`,
-          total_leaks: row.total_leaks || 0,
-          repos_count: row.repos_count || 0
-        };
-      });
+      const totalSamples = hours.reduce((sum, h) => sum + h.count, 0);
+
+      let maxSum = 0;
+      let peakStart = 0;
+      for (let i = 0; i < 24; i++) {
+        let windowSum = 0;
+        for (let j = 0; j < 4; j++) {
+          windowSum += hours[(i + j) % 24]!.count;
+        }
+        if (windowSum > maxSum) {
+          maxSum = windowSum;
+          peakStart = i;
+        }
+      }
+
+      return { hours, peakWindow: { start: peakStart, end: (peakStart + 4) % 24 }, totalSamples };
     }, request.log);
     return reply.send(data);
   } catch (error) {
-    request.log.error({ msg: 'Top exposures fetch failed', error: String(error) });
-    return reply.status(500).send({ error: 'Failed to fetch top exposures' });
+    request.log.error({ msg: 'Exposure hours fetch failed', error: String(error) });
+    return reply.status(500).send({ error: 'Failed to fetch exposure hours' });
   }
 }

@@ -75,46 +75,84 @@ const PIPELINE_STEPS = [
 ] as const;
 
 const WorkflowPipeline = React.memo(() => (
-  <div className="flex items-center justify-center lg:justify-start overflow-x-auto no-scrollbar pb-1 sm:pb-0">
-    <div className="flex items-center gap-1.5 sm:gap-2 px-1 whitespace-nowrap">
+  <div className="w-full">
+    {/* Mobile 2x2 Grid Layout */}
+    <div className="grid grid-cols-2 gap-2 sm:hidden w-full max-w-[280px] mx-auto">
       {PIPELINE_STEPS.map((step, i) => (
-        <React.Fragment key={step.label}>
-          {i > 0 && (
-            <ArrowRight
-              className="h-3.5 w-3.5 text-muted-foreground/50"
-              aria-hidden="true"
-            />
+        <div
+          key={`mobile-${step.label}`}
+          className={cn(
+            "flex items-center gap-2 rounded-md border px-2.5 py-2 transition-all duration-300",
+            i === PIPELINE_STEPS.length - 1
+              ? "bg-amber-500 text-primary-foreground border-amber-500/80 ring-1 ring-amber-500/20"
+              : "bg-card/40 backdrop-blur-sm border-border/50",
           )}
-          <div
+        >
+          <step.icon
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border px-3 py-2",
+              "h-3.5 w-3.5",
               i === PIPELINE_STEPS.length - 1
-                ? "bg-coral text-primary-foreground border-coral/80 animate-pulse"
-                : "bg-card border-border",
+                ? "text-primary-foreground"
+                : "text-amber-500/70",
+            )}
+            aria-hidden="true"
+          />
+          <span
+            className={cn(
+              "text-[9px] font-bold tracking-[0.1em] uppercase",
+              i === PIPELINE_STEPS.length - 1
+                ? "text-primary-foreground"
+                : "text-muted-foreground",
             )}
           >
-            <step.icon
+            {step.label}
+          </span>
+        </div>
+      ))}
+    </div>
+
+    {/* Desktop Linear Layout */}
+    <div className="hidden sm:flex items-center justify-center lg:justify-start overflow-x-auto no-scrollbar w-full">
+      <div className="flex items-center gap-2 px-1 whitespace-nowrap">
+        {PIPELINE_STEPS.map((step, i) => (
+          <React.Fragment key={`desktop-${step.label}`}>
+            {i > 0 && (
+              <ArrowRight
+                className="h-3.5 w-3.5 text-muted-foreground/30 flex-shrink-0"
+                aria-hidden="true"
+              />
+            )}
+            <div
               className={cn(
-                "h-4 w-4",
+                "inline-flex items-center gap-2 rounded-md border px-3 py-2 transition-all duration-300 flex-shrink-0",
                 i === PIPELINE_STEPS.length - 1
-                  ? "text-primary-foreground"
-                  : "text-muted-foreground",
-              )}
-              aria-hidden="true"
-            />
-            <span
-              className={cn(
-                "text-xs font-bold tracking-widest",
-                i === PIPELINE_STEPS.length - 1
-                  ? "text-primary-foreground"
-                  : "text-muted-foreground",
+                  ? "bg-amber-500 text-primary-foreground border-amber-500/80 ring-1 ring-amber-500/20"
+                  : "bg-card/40 backdrop-blur-sm border-border/50",
               )}
             >
-              {step.label}
-            </span>
-          </div>
-        </React.Fragment>
-      ))}
+              <step.icon
+                className={cn(
+                  "h-4 w-4",
+                  i === PIPELINE_STEPS.length - 1
+                    ? "text-primary-foreground"
+                    : "text-amber-500/70",
+                )}
+                aria-hidden="true"
+              />
+              <span
+                className={cn(
+                  "text-[10px] font-bold tracking-[0.2em] uppercase",
+                  i === PIPELINE_STEPS.length - 1
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   </div>
 ));
@@ -172,8 +210,8 @@ const HeroTicker = React.memo(() => {
 
   const renderItems = (keyPrefix: string) => (
     <>
-      <span className="flex items-center gap-1.5 border-x border-coral/10 px-1.5 sm:px-2">
-        <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+      <span className="flex items-center gap-1.5 border-x border-amber-500/10 px-1.5 sm:px-2">
+        <span className="text-[8px] sm:text-[9px] text-amber-500/60 uppercase font-bold tracking-widest">
           System Status
         </span>
         <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
@@ -196,7 +234,7 @@ const HeroTicker = React.memo(() => {
             <span
               className={cn(
                 "font-bold",
-                e.isAlert ? "text-coral/80" : "text-muted-foreground/60",
+                e.isAlert ? "text-amber-500/80" : "text-muted-foreground/60",
               )}
             >
               [{e.isAlert ? "DETECTION" : "LIVE"}]
@@ -205,7 +243,7 @@ const HeroTicker = React.memo(() => {
               className={cn(
                 "font-bold",
                 e.isAlert
-                  ? providerColors[e.provider.toLowerCase()] || "text-coral"
+                  ? "text-amber-500"
                   : "text-muted-foreground/80",
               )}
             >
@@ -217,7 +255,7 @@ const HeroTicker = React.memo(() => {
               {e.timeAgo}
             </span>
           </span>
-          <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
+          <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
             //
           </span>
         </React.Fragment>
@@ -226,10 +264,10 @@ const HeroTicker = React.memo(() => {
   );
 
   return (
-    <div className="w-full bg-coral/5 border border-coral/20 rounded-lg p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
-      <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-coral/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
-        <ShieldAlert className="h-3.5 w-3.5 text-coral animate-pulse" />
-        <span className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-coral translate-y-[0.5px]">
+    <div className="w-full bg-amber-500/5 border border-amber-500/20 rounded-lg p-1 sm:p-1.5 flex items-center gap-2 sm:gap-3 overflow-hidden relative h-[32px] sm:h-[38px] group mt-4 sm:mt-6">
+      <div className="z-20 flex items-center gap-1.5 px-3 py-1 bg-background border border-amber-500/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
+        <ShieldAlert className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+        <span className="text-[10px] font-bold font-mono uppercase tracking-[0.2em] text-amber-500 translate-y-[0.5px]">
           Live Intel
         </span>
       </div>
@@ -309,9 +347,9 @@ const StatCounter = React.memo(() => {
 
   return (
     <div className="animate-fade-in-up flex-shrink-0">
-      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-coral/30 bg-coral/5 transition-colors duration-500">
-        <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
-        <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-coral">
+      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 transition-colors duration-500">
+        <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
+        <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-amber-500">
           {total.toLocaleString()}
         </span>
         <span className="text-[10px] sm:text-sm text-muted-foreground/80 font-medium whitespace-nowrap">
@@ -332,42 +370,46 @@ export const HeroSection = React.memo(() => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div>
-                <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 lg:pr-8">
-                  <StatCounter />
+                <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:pr-8">
+                  <div className="flex-1 min-w-0">
+                    <StatCounter />
+                  </div>
                   <div className="flex justify-end shrink-0">
                     <a
                       href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 sm:gap-2.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-coral/40 transition-colors group"
+                      className="inline-flex items-center gap-1.5 sm:gap-2.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-amber-500/40 transition-all group h-[32px] sm:h-[38px]"
                     >
-                      <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral shrink-0" />
-                      <span className="text-[10px] sm:text-base font-bold tracking-tight text-foreground/90 whitespace-nowrap">
-                        Featured On
-                      </span>
-                      <span className="hidden xs:inline text-[10px] sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
-                        Product Hunt
-                      </span>
-                      <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-coral transition-colors" />
+                      <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 shrink-0" />
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[10px] sm:text-base font-bold tracking-tight text-foreground/90 whitespace-nowrap">
+                          Featured On
+                        </span>
+                        <span className="text-[10px] sm:text-sm text-muted-foreground font-medium whitespace-nowrap hidden min-[400px]:inline">
+                          Product Hunt
+                        </span>
+                      </div>
+                      <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-amber-500 transition-colors" />
                     </a>
                   </div>
                 </div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-3 sm:mb-4">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-4 sm:mb-6">
                   <span className="text-foreground">Global </span>
-                  <span className="text-coral">API Exposure</span>
+                  <span className="text-amber-500">API Exposure</span>
                   <br className="hidden sm:block" />
                   <span className="text-foreground"> Intelligence</span>
                 </h1>
               </div>
 
-              <div className="space-y-2.5 sm:space-y-2.5">
-                <p className="text-[13px] sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
+              <div className="space-y-3 sm:space-y-4">
+                <p className="text-[14px] sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
                   Monitor public GitHub repositories to analyze exposure trends
                   to mitigate organizational security risks.
                 </p>
               </div>
 
-              <div className="hidden sm:block pt-2 sm:pt-4">
+              <div className="pt-2 sm:pt-6">
                 <WorkflowPipeline />
               </div>
             </div>
@@ -379,8 +421,8 @@ export const HeroSection = React.memo(() => {
                   href="/explore"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95",
+                    "bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-95 sm:hover:border-amber-500",
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">
@@ -397,13 +439,13 @@ export const HeroSection = React.memo(() => {
                   href="/threat-insights"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-semibold transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95",
-                    "bg-card/50 backdrop-blur-sm text-foreground border-border sm:hover:brightness-90 sm:hover:border-coral/70",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95",
+                    "bg-card/40 backdrop-blur-md text-foreground border-border/60 sm:hover:bg-card/60 sm:hover:border-amber-500/40",
                   )}
                 >
                   <span className="flex items-center justify-center w-full gap-2">
                     <Trophy
-                      className="h-4 w-4 text-coral"
+                      className="h-4 w-4 text-amber-500"
                       strokeWidth={2.6}
                       aria-hidden="true"
                       focusable="false"

@@ -1,29 +1,24 @@
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ProviderStats } from '@/types';
 
 interface ProviderChartProps {
   data: ProviderStats[];
-  totalLeaks?: number;
 }
 
-// Static provider colors object - using chart tokens
 const providerColors: Record<string, string> = {
-  'anthropic': '#d97706',  // Anthropic Amber
-  'cerebras': '#7c3aed',   // Cerebras Violet
-  'google': '#3b82f6',     // Google Blue
-  'groq': '#ea580c',       // Groq Orange
-  'openai': '#10b981',     // OpenAI Emerald
-  'openrouter': '#d946ef', // OpenRouter Fuchsia
-  'xai': '#64748b',        // xAI Slate
+  'anthropic': '#d97706',
+  'cerebras': '#7c3aed',
+  'google': '#3b82f6',
+  'groq': '#ea580c',
+  'openai': '#10b981',
+  'openrouter': '#d946ef',
+  'xai': '#64748b',
 };
 
-// Function to map database provider names to display names
 const getProviderDisplayName = (provider: string): string => {
   const displayNames: Record<string, string> = {
     'ai-key': 'AI Key',
@@ -37,15 +32,22 @@ const getProviderDisplayName = (provider: string): string => {
   return displayNames[provider] || provider;
 };
 
-// Memoized Custom Tooltip component
-const CustomTooltip = React.memo(({ active, payload, label }: any) => {
+const CustomTooltip = React.memo(({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-card/95 backdrop-blur-sm border border-border/50 p-3 rounded-lg">
-        <p className="font-medium capitalize">{label}</p>
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium">{data.count.toLocaleString()}</span> leaks
+      <div className="bg-card/95 backdrop-blur-md border border-border/50 p-2.5 rounded-lg shadow-xl ring-1 ring-black/5">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
+          {getProviderDisplayName(data.provider)}
+        </p>
+        <div className="flex items-baseline gap-1.5">
+          <p className="text-sm font-mono font-bold text-foreground">
+            {data.count.toLocaleString()}
+          </p>
+          <p className="text-[10px] text-muted-foreground uppercase font-medium">Exposures</p>
+        </div>
+        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+          {data.percentage.toFixed(1)}% of total volume
         </p>
       </div>
     );
@@ -55,159 +57,84 @@ const CustomTooltip = React.memo(({ active, payload, label }: any) => {
 
 CustomTooltip.displayName = 'CustomTooltip';
 
-// Memoized Provider List Item component
-const ProviderListItem = React.memo(({ 
-  provider, 
-  index 
-}: { 
-  provider: ProviderStats; 
-  index: number; 
-}) => {
-  const providerColor = useMemo(() => providerColors[provider.provider] || 'hsl(var(--muted-foreground))', [provider.provider]);
-  const formattedCount = useMemo(() => provider.count.toLocaleString(), [provider.count]);
-  const formattedPercentage = useMemo(() => provider.percentage.toFixed(1), [provider.percentage]);
-  const formattedName = useMemo(() => getProviderDisplayName(provider.provider), [provider.provider]);
-
-  return (
-    <div 
-      className="flex items-center justify-between p-2 sm:p-3 rounded-md bg-muted/20 border border-border/30 transition-colors duration-200 sm:hover:bg-muted/40"
-    >
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div 
-          className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-md"
-          style={{ backgroundColor: providerColor }}
-        />
-        <div>
-          <div className="font-medium capitalize text-xs sm:text-sm text-foreground">
-            {formattedName}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {formattedCount} leaks
-          </div>
-        </div>
-      </div>
-      <div className="text-xs font-medium text-muted-foreground">
-        {formattedPercentage}%
-      </div>
-    </div>
+export const ProviderChart = React.memo(({ data }: ProviderChartProps) => {
+  const safeData = useMemo(() => 
+    [...data].sort((a, b) => b.count - a.count).slice(0, 8), 
+    [data]
   );
-});
-
-ProviderListItem.displayName = 'ProviderListItem';
-
-const ProviderChartComponent = React.memo(({ data, totalLeaks }: ProviderChartProps) => {
-  // Defensive: fallback for missing/null/empty data
-  const safeData = Array.isArray(data) ? data : [];
-  const safeTotalLeaks = typeof totalLeaks === 'number' && isFinite(totalLeaks) ? totalLeaks : 0;
 
   if (!safeData.length) {
     return (
-      <div className="w-full text-center text-muted-foreground my-8" role="status">
-        No provider data available.
-      </div>
+      <Card className="border-border/40 bg-card/20 backdrop-blur-sm h-[320px] flex items-center justify-center">
+        <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">No provider data</p>
+      </Card>
     );
   }
 
-  const chartData = useMemo(() => safeData.map(item => ({
-    ...item,
-    fill: providerColors[item.provider] || 'hsl(var(--muted-foreground))'
-  })), [safeData]);
-
-  const topProviders = useMemo(() => safeData.slice(0, 5), [safeData]);
-
-  // Calculate y-axis domain with professional tick marks
-  const yAxisDomain = useMemo(() => {
-    if (safeData.length === 0) return [0, 1];
-    const minBar = Math.min(...safeData.map(item => item.count));
-    const maxBar = Math.max(...safeData.map(item => item.count));
-    if (minBar === maxBar) {
-      return [0, Math.ceil(maxBar * 1.05) || 1];
-    }
-    // Crop aggressively: min just below the smallest bar, max just above the largest
-    const minValue = Math.max(0, minBar - Math.ceil((maxBar - minBar) * 0.8));
-    const maxValue = Math.ceil(maxBar * 1.05);
-    return [minValue, maxValue];
-  }, [safeData]);
-
-  // Custom tick formatter for professional number display
-  const formatYAxisTick = useCallback((value: number) => {
-    if (value === 0) return '0';
-    if (value < 1000) return value.toString();
-    return value.toLocaleString();
-  }, []);
-
   return (
-    <div className="rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-2 sm:p-3" aria-live="polite">
-      <div className="flex items-center justify-between px-1 pb-2">
-        <span className="text-xs font-semibold tracking-wide text-foreground/80">
-          Provider Breakdown
-        </span>
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-4">
-        {/* Chart */}
-        <div className="lg:col-span-2 w-full">
-          <Card className="border-border/50 glass-card w-full" aria-label="Leaks by Provider">
-            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
-              <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Leaks by Provider</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
-                Distribution of leaked API keys across different providers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5">
-              <div className="h-40 sm:h-48 w-full min-w-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
-                    <XAxis 
-                      dataKey="provider" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      tickFormatter={(value) => getProviderDisplayName(value)}
-                    />
-                    <YAxis 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      domain={yAxisDomain}
-                      tickFormatter={formatYAxisTick}
-                      tickCount={6}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar 
-                      dataKey="count" 
-                      radius={[3, 3, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+    <Card className="border-border/40 bg-card/20 backdrop-blur-sm overflow-hidden h-full">
+      <CardHeader className="pb-1 sm:pb-3 px-2.5 sm:px-5 pt-2 sm:pt-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-amber-500 leading-none">
+              Exposure Volume by Provider
+            </CardTitle>
+          </div>
         </div>
-
-        {/* Provider List */}
-        <div className="w-full">
-          <Card className="border-border/50 glass-card h-fit w-full" aria-label="Top Providers">
-            <CardHeader className="pb-2 sm:pb-3 px-3 sm:px-5 pt-3 sm:pt-5">
-              <CardTitle className="text-xs sm:text-sm font-medium text-foreground/90 tracking-tight">Top Providers</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground/80 mt-0.5 sm:mt-1">
-                Most frequently leaked API providers
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0 px-3 sm:px-5 pb-3 sm:pb-5 space-y-1.5 sm:space-y-2">
-              {topProviders.length ? (
-                topProviders.map((provider, index) => (
-                  <ProviderListItem key={provider.provider} provider={provider} index={index} />
-                ))
-              ) : (
-                <div className="text-muted-foreground text-center">No providers to display.</div>
-              )}
-            </CardContent>
-          </Card>
+      </CardHeader>
+      <CardContent className="pt-0 px-2.5 sm:px-5 pb-2.5 sm:pb-5">
+        <div className="h-[130px] sm:h-[180px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={safeData}
+              layout="vertical"
+              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              barSize={16}
+            >
+              <CartesianGrid 
+                horizontal={false} 
+                vertical={true} 
+                strokeDasharray="3 3" 
+                stroke="hsl(var(--border))" 
+                opacity={0.15} 
+              />
+              <XAxis 
+                type="number"
+                hide
+              />
+              <YAxis
+                dataKey="provider"
+                type="category"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tickFormatter={(val) => getProviderDisplayName(val).substring(0, 10)}
+                width={65}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip 
+                content={<CustomTooltip />} 
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
+              />
+              <Bar 
+                dataKey="count" 
+                radius={[0, 4, 4, 0]}
+                animationDuration={1500}
+                animationEasing="ease-out"
+              >
+                {safeData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill="#f59e0b" // Amber-500
+                    fillOpacity={0.8}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 });
 
-ProviderChartComponent.displayName = 'ProviderChartComponent';
-
-export const ProviderChart = ProviderChartComponent;
+ProviderChart.displayName = 'ProviderChart';

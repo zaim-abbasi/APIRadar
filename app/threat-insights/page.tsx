@@ -108,22 +108,6 @@ async function fetchThreatInsightsData(): Promise<ThreatInsightsData> {
   }
 }
 
-// Clean component structure
-const ThreatInsightsHeader = React.memo(() => (
-  <div className="mb-6 text-center">
-  </div>
-));
-
-ThreatInsightsHeader.displayName = 'ThreatInsightsHeader';
-
-const StatsSection = React.memo(({ data }: { data: ThreatInsightsData }) => (
-  <div className="mb-8">
-    <StatsCards data={data} />
-  </div>
-));
-
-StatsSection.displayName = 'StatsSection';
-
 // Force dynamic rendering - insights data changes frequently
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Always fetch fresh data

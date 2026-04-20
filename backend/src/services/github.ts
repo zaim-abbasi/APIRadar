@@ -122,21 +122,6 @@ export class GitHubService {
       throw error;
     }
   }
-
-
-  async getUserProfile(username: string): Promise<{ login: string; avatar_url: string; html_url: string } | null> {
-    try {
-      const response = await this.makeRequest((client) => client.get(`/users/${username}`));
-      return {
-        login: response.data?.login || username,
-        avatar_url: response.data?.avatar_url || '',
-        html_url: response.data?.html_url || ''
-      };
-    } catch (error) {
-      logger.error(`[GITHUB] User profile fetch failed: ${username} - ${error instanceof Error ? error.message : String(error)}`);
-      return null;
-    }
-  }
 }
 
 export const githubService = new GitHubService();

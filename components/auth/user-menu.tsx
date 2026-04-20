@@ -49,7 +49,7 @@ export function UserMenu() {
     return (
       <Button
         onClick={handleSignIn}
-        className="h-7 md:h-8 px-4 sm:px-5 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[10px] sm:text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 active:scale-95 bg-coral text-primary-foreground border-coral/80 sm:hover:brightness-90 sm:hover:border-coral/70 uppercase tracking-[0.18em]"
+        className="h-9 px-5 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.18em]"
       >
         Sign in
       </Button>
@@ -59,13 +59,14 @@ export function UserMenu() {
   // Loading state (skeleton-like pill)
   if (status === 'loading') {
     return (
-      <div className="flex items-center gap-2 h-7 md:h-8 px-2 rounded-md border border-border/20 bg-card/30 animate-pulse">
-        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-muted/40" />
-        <div className="h-3 w-3 bg-muted/20 rounded-md" />
+      <div className="flex items-center gap-2 h-9 px-2.5 rounded-md border border-border/20 bg-card/30 animate-pulse">
+        <div className="w-6 h-6 rounded-lg bg-muted/40" />
+        <div className="h-3 w-4 bg-muted/20 rounded-md" />
       </div>
     );
   }
 
+  const firstName = session?.user?.name?.split(' ')[0] || 'User';
   const initials = session?.user?.name
     ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : session?.user?.email?.[0].toUpperCase() || 'U';
@@ -75,13 +76,13 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "group flex items-center gap-2 h-7 md:h-8 px-2 rounded-md border border-coral/10 bg-card/30 backdrop-blur-md hover:bg-card/50 transition-all duration-300 focus-visible:outline-none",
-            "hover:border-coral/40"
+            "group flex items-center h-8 pl-1.5 pr-2.5 rounded-lg border border-amber-500/20 bg-card/40 backdrop-blur-md hover:bg-card/50 transition-all duration-300 focus-visible:outline-none",
+            "hover:border-amber-500/40 gap-2"
           )}
           aria-label="User account menu"
         >
-          {/* User Avatar / Initials */}
-          <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-coral/10 text-coral overflow-hidden shrink-0 border border-coral/30">
+          {/* User Avatar - 20px size to ensure 6px (p-1.5) padding on all sides in a 32px (h-8) container */}
+          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 overflow-hidden shrink-0 border border-amber-500/30">
             {session?.user?.image ? (
               <img 
                 src={session.user.image} 
@@ -89,11 +90,15 @@ export function UserMenu() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[10px] sm:text-xs font-bold font-mono">{initials}</span>
+              <span className="text-[9px] font-bold font-mono">{initials}</span>
             )}
           </div>
+
+          <span className="text-sm font-medium text-foreground/90 group-hover:text-amber-500 transition-colors hidden sm:inline truncate max-w-[80px]">
+            {firstName}
+          </span>
           
-          <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-coral transition-colors duration-300" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/60 group-hover:text-amber-500 transition-colors duration-300" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 

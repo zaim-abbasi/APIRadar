@@ -55,8 +55,8 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-1 space-y-2.5 min-w-0">
             {/* Icon and Title */}
             <div className="flex flex-row items-center gap-2.5">
-              <div className="p-1.5 rounded-md bg-coral/10">
-                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
+              <div className="p-1.5 rounded-md bg-amber-500/10">
+                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">
                 Sign in to unlock full access
@@ -71,7 +71,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
             {/* Benefit text */}
             <div className="flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
               <Check
-                className="h-3.5 w-3.5 text-coral"
+                className="h-3.5 w-3.5 text-amber-500"
                 aria-hidden="true"
                 focusable="false"
               />
@@ -83,7 +83,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
               aria-label="Sign in with Google"
             >
               <Chrome
@@ -128,7 +128,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2 text-foreground tracking-tight z-10">
           Explore Credential Exposures
         </h1>
-        <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-coral to-foreground mx-auto mb-1 rounded-md opacity-60" />
+        <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-amber-500 to-foreground mx-auto mb-1 rounded-md opacity-60" />
       </div>
       {/* Filters */}
       <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10">
@@ -201,7 +201,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
           </span>
           <a
             href="mailto:zaim.k.abbasi@gmail.com"
-            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
+            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-amber-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
             aria-label="Email"
             tabIndex={0}
           >
@@ -211,7 +211,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             href="https://github.com/zaim-abbasi"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
+            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-amber-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
             aria-label="GitHub"
             tabIndex={0}
           >
@@ -221,7 +221,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             href="https://www.linkedin.com/in/zaim-abbasi/"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-coral transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
+            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-amber-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
             aria-label="LinkedIn"
             tabIndex={0}
           >

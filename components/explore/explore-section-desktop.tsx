@@ -62,8 +62,8 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-1 space-y-2.5 min-w-0">
             {/* Icon and Title */}
             <div className="flex flex-row items-center gap-2.5">
-              <div className="p-1.5 rounded-md bg-coral/10">
-                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-coral flex-shrink-0" />
+              <div className="p-1.5 rounded-md bg-amber-500/10">
+                <LogIn className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500 flex-shrink-0" />
               </div>
               <span className="text-base sm:text-lg font-semibold text-foreground">
                 Sign in with Google to unlock all exposures for free
@@ -78,7 +78,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
             {/* Benefit text */}
             <div className="flex items-center gap-1.5 text-xs text-foreground/80 font-medium">
               <Check
-                className="h-3.5 w-3.5 text-coral"
+                className="h-3.5 w-3.5 text-amber-500"
                 aria-hidden="true"
                 focusable="false"
               />
@@ -90,7 +90,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-coral border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out sm:hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out sm:hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
               aria-label="Sign in with Google"
             >
               <Chrome
@@ -165,7 +165,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
   };
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 pt-4 sm:pt-9 pb-6">
+    <div className="container mx-auto px-3 sm:px-4 pt-2 sm:pt-9 pb-6">
       {/* Structured Data for Explore Page */}
       <script
         type="application/ld+json"
@@ -196,10 +196,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
       <Tabs
         value={activeTab}
         onValueChange={handleMainTabChange}
-        className="w-full space-y-6"
+        className="w-full space-y-3 sm:space-y-6"
       >
         {/* Header Card Wrapper */}
-        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-3 sm:p-5 mb-6 animate-fade-in-up">
+        <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-2 sm:p-5 mb-2 sm:mb-6 animate-fade-in-up">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3 lg:gap-4 w-full">
             {/* Left: Tabs Section */}
             <div className="flex-grow w-full lg:w-auto">
@@ -211,7 +211,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <LayoutGrid className="h-3.5 w-3.5" />
-                      Global Overview
+                      <span className="hidden sm:inline">Global</span> Overview
                     </span>
                   </TabsTrigger>
                   <TabsTrigger
@@ -220,7 +220,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />
-                      Credential Exposures
+                      <span className="hidden sm:inline">Credential</span> Exposures
                     </span>
                   </TabsTrigger>
                 </TabsList>
@@ -228,11 +228,11 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             </div>
 
             {/* Right: Stats & Action Section */}
-            <div className="flex-shrink-0 flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-6 lg:gap-8 w-full sm:w-auto">
+            <div className="flex-shrink-0 flex items-center gap-2 sm:gap-6 lg:gap-8 w-full sm:w-auto">
               <div className="hidden sm:flex flex-row items-center justify-center sm:justify-start gap-4 sm:gap-6 text-sm text-muted-foreground whitespace-nowrap w-full sm:w-auto">
                 <LiveStats latestLeakAt={latestGlobalLeakAt || leaks[0]?.leakDetectedAt} />
               </div>
-              <div className="w-full sm:w-auto">
+              <div className="flex-1 sm:flex-initial">
                 <FeatureRequestForm />
               </div>
             </div>

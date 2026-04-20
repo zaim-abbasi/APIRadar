@@ -145,7 +145,7 @@ export function FeatureRequestForm() {
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-coral uppercase tracking-[0.18em] rounded-md bg-coral/5 hover:bg-coral/10 transition-all duration-300 border border-coral/20 hover:border-coral/40 active:scale-95">
+          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-amber-500 uppercase tracking-[0.18em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 active:scale-95">
             Suggest Feature
           </button>
         </PopoverTrigger>
@@ -156,7 +156,7 @@ export function FeatureRequestForm() {
           >
             <div className="space-y-2">
               <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-                <MessageSquarePlus className="w-5 h-5 text-coral" />
+                <MessageSquarePlus className="w-5 h-5 text-amber-500" />
                 Shape APIRadar
               </h4>
               <p className="text-sm text-muted-foreground leading-snug">
@@ -176,12 +176,12 @@ export function FeatureRequestForm() {
                     : "Sign in to suggest features"
                 }
                 rows={2}
-                className="h-24 w-full appearance-none rounded-md border border-coral/20 bg-background/40 px-3.5 py-3 text-sm text-foreground transition-all placeholder:text-muted-foreground/60 focus:border-coral/60 focus:outline-none focus:ring-0 focus:!ring-offset-0 resize-none leading-relaxed"
+                className="h-24 w-full appearance-none rounded-md border border-amber-500/20 bg-background/40 px-3.5 py-3 text-sm text-foreground transition-all placeholder:text-muted-foreground/60 focus:border-amber-500/60 focus:outline-none focus:ring-0 focus:!ring-offset-0 resize-none leading-relaxed"
               />
               <button
                 type="submit"
                 disabled={status === "loading" || (isAuthenticated && !text.trim())}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-coral/30 bg-coral/10 text-coral transition-all hover:bg-coral/20 active:scale-90 disabled:opacity-50"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all hover:bg-amber-500/20 active:scale-90 disabled:opacity-50"
                 title={!isAuthenticated ? "Sign in to send" : "Send request"}
               >
                 {!isAuthenticated ? (

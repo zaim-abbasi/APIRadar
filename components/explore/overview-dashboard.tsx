@@ -28,14 +28,15 @@ const safeFormatDate = (dateStr: string | Date | undefined) => {
 };
 
 // Color mapping for providers
+// Color mapping unified to brand amber
 const providerColors: Record<string, string> = {
-  openai: "text-emerald-500",
-  anthropic: "text-amber-600",
-  google: "text-blue-500",
-  openrouter: "text-fuchsia-500",
-  groq: "text-orange-600",
-  xai: "text-slate-500",
-  cerebras: "text-violet-600",
+  openai: "text-amber-500",
+  anthropic: "text-amber-500",
+  google: "text-amber-500",
+  openrouter: "text-amber-500",
+  groq: "text-amber-500",
+  xai: "text-amber-500",
+  cerebras: "text-amber-500",
 };
 
 export function OverviewDashboard({
@@ -88,14 +89,14 @@ export function OverviewDashboard({
   }, []);
 
   return (
-    <div className="flex flex-col space-y-6 w-full animate-fade-in-up">
+    <div className="flex flex-col space-y-3 sm:space-y-6 w-full animate-fade-in-up">
       {/* Live Ticker */}
-      <div className="w-full bg-coral/5 border border-coral/20 rounded-lg p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-3 overflow-hidden relative h-[34px] sm:h-[44px] group">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,114,94,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,114,94,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
+      <div className="w-full bg-amber-500/5 border border-amber-500/20 rounded-lg p-0.5 sm:p-1.5 flex items-center gap-1.5 sm:gap-3 overflow-hidden relative h-[30px] sm:h-[44px] group">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(245,158,11,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(245,158,11,0.05)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)] opacity-20 pointer-events-none"></div>
 
-        <div className="z-20 flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-coral/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
-          <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-coral animate-pulse" />
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-coral">
+        <div className="z-20 flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-background border border-amber-500/30 rounded-lg shrink-0 ml-1 backdrop-blur-md">
+          <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500 animate-pulse" />
+          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-amber-500">
             Live Intel
           </span>
         </div>
@@ -110,16 +111,16 @@ export function OverviewDashboard({
           }}
         >
           <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-coral/10">
-              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-amber-500/10">
+              <span className="text-[8px] sm:text-[9px] text-amber-500/60 uppercase font-bold tracking-widest">
                 System Status
               </span>
               <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
                 NOMINAL
               </span>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
-              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-amber-500/10 pr-1.5 sm:pr-2">
+              <span className="text-[8px] sm:text-[9px] text-amber-500/60 uppercase font-bold tracking-widest">
                 Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
@@ -152,7 +153,7 @@ export function OverviewDashboard({
                   <span
                     className={cn(
                       "font-bold",
-                      l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
+                      l.isAlert ? "text-amber-500/80" : "text-muted-foreground/60",
                     )}
                   >
                     [{l.isAlert ? "DETECTION" : "SYSTEM"}]
@@ -161,7 +162,7 @@ export function OverviewDashboard({
                     className={cn(
                       "font-bold",
                       l.isAlert
-                        ? providerColors[l.provider] || "text-coral"
+                        ? providerColors[l.provider] || "text-amber-500"
                         : "text-muted-foreground/80",
                     )}
                   >
@@ -176,7 +177,7 @@ export function OverviewDashboard({
                     {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
-                <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
+                <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
                   //
                 </span>
               </React.Fragment>
@@ -188,16 +189,16 @@ export function OverviewDashboard({
             className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono absolute left-0 top-0 h-full gap-2 sm:gap-3"
             style={{ "--marquee-start": "100%" } as React.CSSProperties}
           >
-            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-coral/10">
-              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-amber-500/10">
+              <span className="text-[8px] sm:text-[9px] text-amber-500/60 uppercase font-bold tracking-widest">
                 System Status
               </span>
               <span className="font-mono font-bold tracking-wider text-emerald-500 animate-pulse">
                 NOMINAL
               </span>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-coral/10 pr-1.5 sm:pr-2">
-              <span className="text-[8px] sm:text-[9px] text-coral/60 uppercase font-bold tracking-widest">
+            <div className="flex items-center gap-1.5 sm:gap-2 border-r border-amber-500/10 pr-1.5 sm:pr-2">
+              <span className="text-[8px] sm:text-[9px] text-amber-500/60 uppercase font-bold tracking-widest">
                 Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
@@ -230,7 +231,7 @@ export function OverviewDashboard({
                   <span
                     className={cn(
                       "font-bold",
-                      l.isAlert ? "text-coral/80" : "text-muted-foreground/60",
+                      l.isAlert ? "text-amber-500/80" : "text-muted-foreground/60",
                     )}
                   >
                     [{l.isAlert ? "DETECTION" : "SYSTEM"}]
@@ -239,7 +240,7 @@ export function OverviewDashboard({
                     className={cn(
                       "font-bold",
                       l.isAlert
-                        ? providerColors[l.provider] || "text-coral"
+                        ? providerColors[l.provider] || "text-amber-500"
                         : "text-muted-foreground/80",
                     )}
                   >
@@ -254,7 +255,7 @@ export function OverviewDashboard({
                     {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
                   </span>
                 </span>
-                <span className="inline-block px-2 sm:px-3 text-coral/30 flex-shrink-0 font-light">
+                <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
                   //
                 </span>
               </React.Fragment>
@@ -299,14 +300,14 @@ export function OverviewDashboard({
             </p>
 
             <div className="pt-2">
-              <span className="text-[9px] font-bold font-mono tracking-widest text-coral/60 uppercase">
+              <span className="text-[9px] font-bold font-mono tracking-widest text-amber-500/60 uppercase">
                 AUTONOMOUS_RECOVERY: RETRYING_IN {nextRetry.toFixed(1)}s
               </span>
             </div>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 sm:gap-4 lg:gap-6">
           {/* Center: Dynamic Provider Stats */}
           <div className="lg:col-span-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
@@ -318,7 +319,7 @@ export function OverviewDashboard({
               ) : (
                 providerStats
                   .map((stat, i) => {
-                    const color = providerColors[stat.provider] || "text-coral";
+                    const color = "text-amber-500";
                     return (
                       <button
                         key={i}
@@ -328,36 +329,33 @@ export function OverviewDashboard({
                         <Card
                           className={`border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden group hover:border-border transition-all duration-150 h-full flex flex-col justify-center relative cursor-pointer`}
                         >
-                          <CardContent className="p-3 sm:p-5 relative">
-                            <div className="flex justify-between items-start mb-1 sm:mb-2">
-                              <div className="space-y-0.5 sm:space-y-1 z-10">
+                          <CardContent className="p-1.5 sm:p-5 relative">
+                            <div className="flex justify-between items-start mb-0 sm:mb-2">
+                              <div className="space-y-0 sm:space-y-1 z-10">
                                 <p
-                                  className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider ${color}`}
+                                  className={`text-[8px] sm:text-xs font-bold uppercase tracking-wide text-amber-500`}
                                 >
                                   {stat.provider.toUpperCase()}
                                 </p>
-                                <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-tight">
                                   {stat.count.toLocaleString()}
                                 </h3>
                                 {stat.todayCount > 0 ? (
-                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-emerald-500">
+                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-amber-500">
                                     <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
                                     +{stat.todayCount} today
                                   </span>
                                 ) : (
-                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-muted-foreground/40">
-                                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-50" />{" "}
+                                  <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-amber-500/30">
+                                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-40" />{" "}
                                     +0 today
                                   </span>
                                 )}
                               </div>
-                              <Zap
-                                className={`h-4 w-4 sm:h-5 sm:w-5 ${color} z-10`}
-                              />
                             </div>
                             {/* Subtle background icon */}
                             <Zap
-                              className={`absolute -bottom-2 -right-2 h-16 w-16 ${color} opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
+                              className={`absolute -bottom-2 -right-2 h-16 w-16 text-amber-500 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity duration-500 pointer-events-none`}
                             />
                           </CardContent>
                         </Card>
@@ -370,14 +368,14 @@ export function OverviewDashboard({
                       onClick={() => onProviderChange?.("openai")} // Take to feed if clicked (default to openai to force tab switch)
                       className="text-left h-full outline-none"
                     >
-                      <Card className="border-coral/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-coral/60 transition-all duration-150 h-full flex flex-col justify-center cursor-pointer">
-                        <CardContent className="p-3 sm:p-5 relative">
-                          <div className="flex justify-between items-start mb-1 sm:mb-2">
-                            <div className="space-y-0.5 sm:space-y-1 z-10">
-                              <p className="text-[10px] sm:text-xs font-semibold text-coral uppercase tracking-wider">
+                      <Card className="border-amber-500/20 bg-card/40 backdrop-blur-sm overflow-hidden hover:border-amber-500/60 transition-all duration-150 h-full flex flex-col justify-center cursor-pointer">
+                        <CardContent className="p-1.5 sm:p-5 relative">
+                          <div className="flex justify-between items-start mb-0 sm:mb-2">
+                            <div className="space-y-0 sm:space-y-1 z-10">
+                              <p className="text-[8px] sm:text-xs font-bold text-amber-500 uppercase tracking-wide">
                                 Total Today
                               </p>
-                              <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                              <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-tight">
                                 {providerStats
                                   .reduce(
                                     (sum, stat) => sum + (stat.todayCount || 0),
@@ -386,7 +384,7 @@ export function OverviewDashboard({
                                   .toLocaleString()}
                               </h3>
                             </div>
-                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-coral z-10" />
+                            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 z-10" />
                           </div>
                         </CardContent>
                       </Card>
@@ -397,15 +395,15 @@ export function OverviewDashboard({
           </div>
 
           {/* Right: Vertical Recent Feed */}
-          <div className="lg:col-span-1 h-56 lg:h-0 lg:min-h-full">
+          <div className="lg:col-span-1 h-48 sm:h-56 lg:h-0 lg:min-h-full">
             <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col">
-              <div className="p-3 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
-                <h3 className="text-xs sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
-                  <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-coral" />
+              <div className="p-2 sm:p-4 border-b border-border/40 flex items-center justify-between sticky top-0 bg-card/60 backdrop-blur-xl z-20">
+                <h3 className="text-[10px] sm:text-sm font-bold uppercase tracking-wide flex items-center gap-1.5 sm:gap-2 text-amber-500">
+                  <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4" />
                   Recent Activity
                 </h3>
                 <Badge variant="secondary" className="text-[10px] uppercase flex items-center gap-1.5 px-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                   Live
                 </Badge>
               </div>
@@ -424,7 +422,7 @@ export function OverviewDashboard({
                     {leaks.slice(0, 20).map((leak, idx) => (
                       <div
                         key={idx}
-                        className="px-3.5 py-2 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
+                        className="px-2 py-1.5 sm:px-4 sm:py-2.5 hover:bg-white/5 transition-colors group flex items-center gap-2 sm:gap-3"
                       >
 
                         <div className="flex-1 min-w-0">

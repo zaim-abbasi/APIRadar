@@ -670,7 +670,7 @@ export class GitHubCodeLeakFarmService {
         try {
           return await githubService.searchCode(query, page, FARM_CONSTANTS.SEARCH.PER_PAGE);
         } catch (err: any) {
-          if (err.response?.status === 422) {
+          if (err.response?.status === 422 || err.response?.status === 404) {
             return { data: { items: [], total_count: 0 } };
           }
           throw err;
@@ -693,7 +693,7 @@ export class GitHubCodeLeakFarmService {
         if (error.response?.status === 403 || error.response?.status === 429) {
           logger.warn(`[FARM] Rate limit error (${error.response.status}) for query "${query}" (page ${page}): ${error.message}`);
           return { hadResults: false, itemCount: 0 };
-        } else if (error.response?.status === 422) {
+        } else if (error.response?.status === 422 || error.response?.status === 404) {
           const errorMessage = error.response.data?.message || '';
           if (page > 100 || errorMessage.includes('page') || errorMessage.includes('limit') || errorMessage.includes('422')) {
             logger.warn(`[FARM] No more results available for query "${query}" (page ${page}): Reached end of results`);
