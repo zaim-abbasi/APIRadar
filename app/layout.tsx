@@ -83,7 +83,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
         {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
-        <link rel="icon" href="/logo/logo-webp.webp" type="image/webp" sizes="446x446" />
+        <link rel="icon" href="/logo/transparent_logo.webp" type="image/webp" sizes="446x446" />
         <link rel="privacy-policy" href="/privacy" />
         <link rel="terms-of-service" href="/terms" />
         {/* Open Graph & Twitter handled by Next.js metadata */}
@@ -120,7 +120,7 @@ export default function RootLayout({
               "@type": "Organization",
               "name": "APIRadar",
               "url": "https://apiradar.live",
-              "logo": "https://apiradar.live/logo/logo-webp.webp",
+              "logo": "https://apiradar.live/logo/transparent_logo.webp",
               "sameAs": [
                 "https://github.com/zaim-abbasi",
                 "https://www.linkedin.com/in/zaim-abbasi/"
