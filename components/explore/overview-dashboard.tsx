@@ -407,7 +407,7 @@ export function OverviewDashboard({
                   Live
                 </Badge>
               </div>
-              <div className="p-0 overflow-y-auto overscroll-contain flex-1 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="p-0 overflow-y-auto overscroll-auto flex-1 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {isLoading ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     <Activity className="h-4 w-4 animate-spin mx-auto mb-2 opacity-50" />

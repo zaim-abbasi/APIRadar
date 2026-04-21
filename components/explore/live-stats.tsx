@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Send, LogIn, MessageSquarePlus } from "lucide-react";
+import { Send, LogIn, MessageSquarePlus, Activity, ShieldAlert } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { FeatureRequestDialog } from "@/components/feature-request-success-dialog";
 import {
@@ -56,11 +56,9 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
 
   return (
     <div className="flex items-center gap-2 sm:gap-3.5">
-      <div className="hidden sm:inline-flex items-center gap-2.5">
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className="inline-flex rounded-full h-1.5 w-1.5 bg-muted-foreground/60"></span>
-        </span>
-        <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500 animate-pulse-slow shrink-0" />
+        <span className="text-[11px] sm:text-[13px] text-muted-foreground font-medium whitespace-nowrap">
           Latest Detection:{" "}
           <span className="text-foreground font-bold tabular-nums inline-block min-w-[55px]">
             {formatTime(secondsAgo)}
@@ -68,13 +66,11 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
         </span>
       </div>
       
-      <span className="hidden sm:inline-block text-border font-light">|</span>
+      <span className="text-border font-light opacity-50">|</span>
       
-      <div className={`hidden sm:inline-flex items-center gap-2.5 transition-opacity duration-500 ${totalLeaks === 0 ? "opacity-0" : "opacity-100"}`}>
-        <span className="relative flex h-1.5 w-1.5 shrink-0">
-          <span className="inline-flex rounded-full h-1.5 w-1.5 bg-muted-foreground/60"></span>
-        </span>
-        <span className="text-[13px] text-muted-foreground font-medium whitespace-nowrap">
+      <div className={`flex items-center gap-1.5 sm:gap-2.5 transition-opacity duration-500 ${totalLeaks === 0 ? "opacity-0" : "opacity-100"}`}>
+        <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500 shrink-0" />
+        <span className="text-[11px] sm:text-[13px] text-muted-foreground font-medium whitespace-nowrap">
           <span className="text-foreground font-bold tabular-nums inline-block min-w-[24px]">
             {totalLeaks.toLocaleString()}
           </span>{" "}

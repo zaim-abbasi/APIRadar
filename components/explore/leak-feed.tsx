@@ -287,12 +287,12 @@ const FeedItem = React.memo(
                   )}
                 </div>
                 <div className={cn(
-                  "flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[58px] shrink-0 border",
+                  "flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[68px] shrink-0 border",
                   index < 6 
                     ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
                     : "bg-red-500/10 text-red-500 border-red-500/20"
                 )}>
-                  <ShieldAlert className="h-2 w-2" />
+                  <ShieldAlert className="h-3 w-3 shrink-0" />
                   <span>{index < 6 ? "RECENT" : "IDENTIFIED"}</span>
                 </div>
                 <span className="text-[9px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium min-w-[32px] justify-end">
@@ -367,7 +367,7 @@ const FeedItem = React.memo(
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
                 : "bg-red-500/10 text-red-500 border-red-500/20"
             )}>
-              <ShieldAlert className="h-3.5 w-3.5" />
+              <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
               <span>{index < 6 ? "Recent" : "Identified"}</span>
             </div>
             <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
@@ -466,7 +466,7 @@ const LeakFeedComponent = React.memo(
               isUnauthenticated ? "h-fit" : "h-[420px] sm:h-[450px]"
             )}
           >
-            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="flex-1 overflow-y-auto overscroll-auto custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {isLoading && validLeaks.length === 0 ? (
                 <FeedSkeleton />
               ) : (validLeaks.length === 0 || isOffline) ? (
