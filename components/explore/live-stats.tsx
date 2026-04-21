@@ -10,22 +10,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { fetchProviderStats } from "@/lib/api";
+import useSWR from "swr";
 
 export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const [totalLeaks, setTotalLeaks] = useState(0);
+  const fetcher = async () => {
+    const res = await fetchProviderStats();
+    return res.data || [];
+  };
 
-  useEffect(() => {
-    const fetchTotal = () => {
-      fetchProviderStats().then((res) => {
-        if (res.data) setTotalLeaks(res.data.reduce((acc, curr) => acc + curr.count, 0));
-      });
-    };
-    
-    fetchTotal();
-    const interval = setInterval(fetchTotal, 60000); // 1 min poll
-    return () => clearInterval(interval);
-  }, []);
+  const { data: providerStats = [] } = useSWR('/api/providerStats', fetcher, {
+    refreshInterval: 60000, // 1 min poll
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
+
+  const totalLeaks = providerStats.reduce((acc: number, curr: any) => acc + curr.count, 0);
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s ago`;
@@ -141,7 +141,7 @@ export function FeatureRequestForm() {
     <>
       <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
         <PopoverTrigger asChild>
-          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-amber-500 uppercase tracking-[0.18em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 active:scale-95">
+          <button className="group relative flex h-8 w-full sm:w-auto items-center justify-center px-3.5 text-[11px] font-bold text-amber-500 uppercase tracking-[0.18em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40">
             Suggest Feature
           </button>
         </PopoverTrigger>
@@ -177,7 +177,7 @@ export function FeatureRequestForm() {
               <button
                 type="submit"
                 disabled={status === "loading" || (isAuthenticated && !text.trim())}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all hover:bg-amber-500/20 active:scale-90 disabled:opacity-50"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-500 transition-all hover:bg-amber-500/20 disabled:opacity-50"
                 title={!isAuthenticated ? "Sign in to send" : "Send request"}
               >
                 {!isAuthenticated ? (

@@ -64,7 +64,7 @@ const providerColors: Record<string, string> = {
 const fetcher = (url: string) =>
   fetch(url, { cache: "no-store" }).then((r) => {
     if (!r.ok) throw new Error("Offline");
-    return r.json();
+    return r.json().then(data => data?.leaks || data?.data?.leaks || []);
   });
 
 const PIPELINE_STEPS = [
@@ -163,7 +163,7 @@ WorkflowPipeline.displayName = "WorkflowPipeline";
 const tickerEntries = TICKER_REPOS.map((repo, i) => {
   const [owner, name] = repo.split("/");
   const provider = PROVIDERS[i % PROVIDERS.length];
-  const mins = Math.floor(Math.random() * 58) + 1;
+  const mins = (i * 7) % 58 + 1;
   return {
     provider,
     repo: `${redact(owner || "unknown")}/${redact(name || "unknown")}`,
@@ -421,7 +421,7 @@ export const HeroSection = React.memo(() => {
                   href="/explore"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2",
                     "bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-95 sm:hover:border-amber-500",
                   )}
                 >
@@ -439,7 +439,7 @@ export const HeroSection = React.memo(() => {
                   href="/threat-insights"
                   prefetch={true}
                   className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95",
+                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2",
                     "bg-card/40 backdrop-blur-md text-foreground border-border/60 sm:hover:bg-card/60 sm:hover:border-amber-500/40",
                   )}
                 >

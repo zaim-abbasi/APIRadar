@@ -3,7 +3,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import useSWR from "swr";
 
 type ActivityPoint = { date: string; count: number };
 
@@ -36,51 +38,29 @@ const CustomTooltip = React.memo(function CustomTooltip({
 CustomTooltip.displayName = "CustomTooltip";
 
 export const ActivityChart = React.memo(function ActivityChart({ className }: { className?: string }) {
-  const [data, setData] = useState<ActivityPoint[]>(PLACEHOLDER_DATA);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `Request failed: ${res.status}`);
+    }
+    const json = await res.json();
+    if (!Array.isArray(json)) return PLACEHOLDER_DATA;
+    const normalized: ActivityPoint[] = json
+      .map((row: any) => ({
+        date: typeof row?.date === "string" ? row.date : "",
+        count: typeof row?.count === "number" ? row.count : 0,
+      }))
+      .filter((r) => r.date);
+    return normalized.length ? normalized : PLACEHOLDER_DATA;
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-    setError(null);
-    setIsLoading(true);
-    fetch(`/api/threat-insights/activity`)
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || `Request failed: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((json: unknown) => {
-        if (cancelled) return;
-        if (!Array.isArray(json)) {
-          setData(PLACEHOLDER_DATA);
-          setIsLoading(false);
-          return;
-        }
-        const normalized: ActivityPoint[] = json
-          .map((row: any) => ({
-            date: typeof row?.date === "string" ? row.date : "",
-            count: typeof row?.count === "number" ? row.count : 0,
-          }))
-          .filter((r) => r.date);
-        setData(normalized.length ? normalized : PLACEHOLDER_DATA);
-        setIsLoading(false);
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to load activity");
-        setData(PLACEHOLDER_DATA);
-        setIsLoading(false);
-      });
+  const { data: swrData, error, isLoading } = useSWR<ActivityPoint[]>('/api/threat-insights/activity', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
 
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const chartData = useMemo(() => data, [data]);
+  const chartData = useMemo(() => swrData || PLACEHOLDER_DATA, [swrData]);
 
   return (
     <Card className={cn("border-border/50 bg-card/30 backdrop-blur-sm w-full h-full", className)}>
@@ -97,8 +77,19 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
             </div>
           ) : null}
           {isLoading ? (
-            <div className="absolute right-0 top-0 text-xs text-muted-foreground/70">
-              Loading…
+            <div className="absolute inset-0 z-10">
+              <Skeleton className="w-full h-full bg-amber-500/5 rounded-md" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex gap-2">
+                  {[65, 45, 75, 55, 85, 40].map((h, i) => (
+                    <Skeleton 
+                      key={i} 
+                      className="w-1.5 bg-amber-500/10 rounded-full" 
+                      style={{ height: `${h}%` }} 
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           ) : null}
           <ResponsiveContainer width="100%" height="100%">
@@ -135,6 +126,7 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
                 stroke="#f59e0b" // Amber-500
                 strokeWidth={2}
                 fill="url(#activityFill)"
+                animationDuration={400}
               />
             </AreaChart>
           </ResponsiveContainer>

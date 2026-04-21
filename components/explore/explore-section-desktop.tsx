@@ -90,7 +90,7 @@ const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out sm:hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98]"
+              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out sm:hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-2.5 whitespace-nowrap w-full sm:w-auto"
               aria-label="Sign in with Google"
             >
               <Chrome
@@ -207,7 +207,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                 <TabsList className="bg-transparent border-none p-0 h-full w-full flex items-center gap-1.5 transition-all">
                   <TabsTrigger
                     value="overview"
-                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <LayoutGrid className="h-3.5 w-3.5" />
@@ -216,7 +216,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
                   </TabsTrigger>
                   <TabsTrigger
                     value="feed"
-                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
+                    className="relative flex items-center justify-center py-2 px-3 text-sm transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md touch-manipulation text-muted-foreground font-medium sm:hover:text-foreground sm:hover:bg-muted/50 data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:bg-background data-[state=active]:border data-[state=active]:border-border/50 data-[state=active]:rounded-md data-[state=active]:hover:bg-background data-[state=active]:hover:text-foreground h-full"
                   >
                     <span className="relative z-10 truncate px-1 flex items-center justify-center gap-1.5">
                       <Activity className="h-3.5 w-3.5" />
@@ -241,15 +241,11 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 
         <TabsContent value="overview" className="space-y-6 m-0 focus-visible:ring-0">
           <div className="animate-fade-in-up">
-            <Suspense
-              fallback={
-                <div className="min-h-[200px] flex items-center justify-center">
-                  <span className="text-muted-foreground text-sm">
-                    Loading overview…
-                  </span>
-                </div>
-              }
-            >
+              <Suspense
+                fallback={
+                  <div className="min-h-[200px]" />
+                }
+              >
               <OverviewDashboard
                 leaks={globalLeaks.length > 0 ? globalLeaks : leaks}
                 isLoading={isLoading && globalLeaks.length === 0}
@@ -296,11 +292,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             <div className="flex-1 min-w-0 w-full">
               <Suspense
                 fallback={
-                  <div className="min-h-[200px] flex items-center justify-center">
-                    <span className="text-muted-foreground text-sm">
-                      Loading results…
-                    </span>
-                  </div>
+                  <div className="min-h-[200px]" />
                 }
               >
                  <div className="relative">

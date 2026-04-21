@@ -3,10 +3,12 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ProviderStats } from '@/types';
 
 interface ProviderChartProps {
   data: ProviderStats[];
+  isLoading?: boolean;
 }
 
 const providerColors: Record<string, string> = {
@@ -57,15 +59,35 @@ const CustomTooltip = React.memo(({ active, payload }: any) => {
 
 CustomTooltip.displayName = 'CustomTooltip';
 
-export const ProviderChart = React.memo(({ data }: ProviderChartProps) => {
+export const ProviderChart = React.memo(({ data, isLoading }: ProviderChartProps) => {
   const safeData = useMemo(() => 
     [...data].sort((a, b) => b.count - a.count).slice(0, 8), 
     [data]
   );
 
+  if (isLoading) {
+    return (
+      <Card className="border-border/40 bg-card/20 backdrop-blur-sm overflow-hidden h-full">
+        <CardHeader className="pb-1 sm:pb-3 px-2.5 sm:px-5 pt-2 sm:pt-5">
+          <Skeleton className="h-3 w-32 bg-amber-500/10" />
+        </CardHeader>
+        <CardContent className="pt-0 px-2.5 sm:px-5 pb-2.5 sm:pb-5">
+          <div className="h-[130px] sm:h-[180px] w-full flex flex-col gap-3 pt-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-3 w-12 bg-muted/20" />
+                <Skeleton className="h-4 flex-1 bg-amber-500/5 rounded-sm" style={{ width: `${90 - i * 15}%`, maxWidth: '90%' }} />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!safeData.length) {
     return (
-      <Card className="border-border/40 bg-card/20 backdrop-blur-sm h-[320px] flex items-center justify-center">
+      <Card className="border-border/40 bg-card/20 backdrop-blur-sm h-[250px] flex items-center justify-center">
         <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">No provider data</p>
       </Card>
     );
@@ -118,7 +140,7 @@ export const ProviderChart = React.memo(({ data }: ProviderChartProps) => {
               <Bar 
                 dataKey="count" 
                 radius={[0, 4, 4, 0]}
-                animationDuration={1500}
+                animationDuration={400}
                 animationEasing="ease-out"
               >
                 {safeData.map((entry, index) => (

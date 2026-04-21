@@ -83,7 +83,7 @@ const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
           <div className="flex-shrink-0 sm:self-center">
             <button
               onClick={onSignIn}
-              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto active:scale-[0.98] min-h-[44px] sm:min-h-0"
+              className="text-sm font-medium text-primary-foreground bg-amber-500 border-none rounded-md flex items-center justify-center gap-2 transition-all duration-200 ease-in-out hover:brightness-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 sm:px-5 py-3 sm:py-2.5 whitespace-nowrap w-full sm:w-auto min-h-[44px] sm:min-h-0"
               aria-label="Sign in with Google"
             >
               <Chrome
@@ -155,13 +155,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
       <div className="w-full max-w-md mx-auto mb-6 z-10">
         <Suspense
           fallback={
-            <div
-              className="h-32 w-full flex items-center justify-center text-muted-foreground/50"
-              aria-busy="true"
-              aria-live="polite"
-            >
-              Loading…
-            </div>
+            <div className="min-h-[200px]" />
           }
         >
           {/* Wrap in relative container for fade effect */}

@@ -104,18 +104,35 @@ export async function GET(request: NextRequest) {
     
     const backendUrlWithParams = `${backendUrl}/api/leaks${url.search}`;
     
-    const response = await fetch(backendUrlWithParams, {
-      method: 'GET',
-      headers: authHeaders,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Backend error' }));
-      return NextResponse.json(errorData, { status: response.status });
+    try {
+      const response = await fetch(backendUrlWithParams, {
+        method: 'GET',
+        headers: authHeaders,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Backend error' }));
+        return NextResponse.json(errorData, { status: response.status });
+      }
+
+      const data = await response.json();
+      return NextResponse.json(data);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        return NextResponse.json(
+          { error: 'Request timeout: Backend did not respond within 10 seconds' },
+          { status: 504 }
+        );
+      }
+      throw fetchError;
     }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
     console.error('Error in leaks API route:', error);
     return NextResponse.json(
@@ -123,4 +140,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}

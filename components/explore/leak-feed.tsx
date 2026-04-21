@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LeakedKey, Provider } from "@/types";
 import { cn } from "@/lib/utils";
 import { INTEL_PROVIDERS } from "@/lib/constants";
@@ -53,24 +54,46 @@ const FeedSkeleton = React.memo(() => (
     {Array.from({ length: 6 }).map((_, i) => (
       <div
         key={`skel-${i}`}
-        className="px-4 py-3.5 sm:px-5 sm:py-4 animate-pulse"
+        className="px-4 py-3 sm:px-5 sm:py-3.5 animate-pulse group flex flex-col justify-center min-h-[64px]"
       >
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="h-2 w-2 rounded-lg bg-muted/60 mt-2 flex-shrink-0" />
-          <div className="flex-1 min-w-0 space-y-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-5 w-16 bg-muted/60 rounded-md" />
-                <div className="h-5 w-44 sm:w-64 bg-muted/60 rounded-md" />
-              </div>
-              <div className="h-4 w-20 bg-muted/60 rounded-md hidden sm:block" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 relative w-full h-full min-w-0">
+          
+          {/* Top Row (Mobile) / Left Side (Desktop) */}
+          <div className="flex items-center justify-between gap-3 sm:w-[220px] lg:w-[320px] flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
+              <Skeleton className="h-4 w-4 rounded-md bg-muted/40 flex-shrink-0" />
+              <div className="bg-amber-500/5 rounded px-2 w-[160px] h-5" />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3.5 w-3.5 bg-muted/60 rounded-md" />
-              <div className="h-3.5 w-28 bg-muted/60 rounded-md" />
-              <div className="h-3.5 w-20 bg-muted/60 rounded-md hidden sm:block" />
+            
+            {/* Mobile tools skeleton */}
+            <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
+              <Skeleton className="h-4 w-16 bg-muted/20" />
             </div>
           </div>
+
+          {/* Bottom Row / Middle Content (Desktop) */}
+          <div className="hidden sm:flex flex-row sm:items-center gap-1 sm:gap-5 min-w-0 flex-1">
+            {/* Repository */}
+            <div className="flex items-center gap-1.5 sm:w-[160px] lg:w-[190px] flex-shrink-0">
+              <Skeleton className="h-3.5 w-3.5 rounded-full bg-muted/30 flex-shrink-0" />
+              <Skeleton className="h-3.5 w-[110px] bg-amber-500/10 rounded" />
+            </div>
+            {/* Path */}
+            <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
+              <span className="text-border font-light opacity-20">/</span>
+              <Skeleton className="h-3.5 w-3.5 rounded bg-muted/30 flex-shrink-0" />
+              <Skeleton className="h-3.5 w-[140px] bg-muted/20 rounded" />
+            </div>
+          </div>
+
+          {/* Desktop-only status tools */}
+          <div className="hidden sm:flex items-center gap-4 flex-shrink-0 sm:ml-auto">
+             <Skeleton className="h-6 w-6 rounded-md bg-muted/20 shrink-0" />
+             <Skeleton className="h-[22px] w-[95px] rounded-md bg-muted/20 shrink-0" />
+             <span className="text-border flex-shrink-0 text-muted-foreground/20">·</span>
+             <Skeleton className="h-3.5 w-[80px] bg-muted/20 rounded shrink-0 mr-2" />
+          </div>
+
         </div>
       </div>
     ))}
@@ -186,7 +209,7 @@ const WorkingKeysComingSoon = React.memo(
         {onSignIn && (
           <button
             onClick={onSignIn}
-            className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground bg-background border border-border transition-all duration-200 ease-in-out sm:hover:bg-muted/50 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-md px-4 py-2.5 text-xs sm:text-sm font-medium text-foreground bg-background border border-border transition-all duration-200 ease-in-out sm:hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label="Sign in to get notified"
           >
             <Chrome className="h-4 w-4" />
@@ -272,8 +295,8 @@ const FeedItem = React.memo(
                       onClick={handleCopyKey}
                       disabled={copyState !== "idle"}
                       className={cn(
-                        "flex items-center justify-center h-5 w-5 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200 active:scale-90",
-                        copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 active:scale-90"
+                        "flex items-center justify-center h-5 w-5 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200",
+                        copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5"
                       )}
                     >
                       {copyState === "copying" ? (
@@ -347,8 +370,8 @@ const FeedItem = React.memo(
                 onClick={handleCopyKey}
                 disabled={copyState !== "idle"}
                 className={cn(
-                  "hidden sm:flex items-center justify-center h-6 w-6 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200 hover:ring-[0.75px] hover:ring-amber-500/40 active:scale-90",
-                  copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 hover:ring-0 active:scale-90"
+                  "hidden sm:flex items-center justify-center h-6 w-6 rounded-md border border-amber-500/30 bg-amber-500/5 text-amber-500 transition-all duration-200 hover:ring-[0.75px] hover:ring-amber-500/40",
+                  copyState === "success" && "text-emerald-500 border-emerald-500/30 bg-emerald-500/5 hover:ring-0"
                 )}
                 title="Copy Full Key"
               >
@@ -422,7 +445,7 @@ const LeakFeedComponent = React.memo(
             <button
               onClick={() => setActiveTab("finds")}
               className={cn(
-                "relative flex items-center justify-center py-1 px-2 sm:py-2 sm:px-3 text-[11px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md active:scale-95 touch-manipulation font-medium h-full",
+                "relative flex items-center justify-center py-1 px-2 sm:py-2 sm:px-3 text-[11px] sm:text-sm transition-all duration-200 z-10 flex-1 min-w-[fit-content] rounded-md touch-manipulation font-medium h-full",
                 activeTab === "finds"
                   ? "text-foreground font-semibold bg-background border border-border/50"
                   : "text-muted-foreground sm:hover:text-foreground sm:hover:bg-muted/50"
@@ -512,7 +535,7 @@ const LeakFeedComponent = React.memo(
                         <div className="flex-shrink-0 sm:ml-auto pt-1 sm:pt-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); onSignIn(); }}
-                            className="w-full sm:w-auto flex h-7 sm:h-10 items-center justify-center gap-2 px-3 sm:px-6 text-[9px] sm:text-[11px] font-black text-amber-500 uppercase tracking-[0.2em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 active:scale-95 whitespace-nowrap"
+                            className="w-full sm:w-auto flex h-7 sm:h-10 items-center justify-center gap-2 px-3 sm:px-6 text-[9px] sm:text-[11px] font-black text-amber-500 uppercase tracking-[0.2em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 whitespace-nowrap"
                           >
                             <span>Sign In for Access</span>
                           </button>

@@ -41,7 +41,7 @@ export const ProviderFilter = React.memo(
               key={provider.value}
               onClick={() => onProviderChange(provider.value as Provider)}
               className={cn(
-                "relative flex items-center justify-center py-2 px-3 text-sm font-medium transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md sm:rounded-none first:sm:rounded-l-md last:sm:rounded-r-md active:scale-95 touch-manipulation",
+                "relative flex items-center justify-center py-2 px-3 text-sm font-medium transition-all duration-200 z-10 flex-auto sm:flex-1 min-w-[fit-content] rounded-md sm:rounded-none first:sm:rounded-l-md last:sm:rounded-r-md touch-manipulation",
                 isSelected
                   ? "text-foreground font-semibold"
                   : "text-muted-foreground sm:hover:text-foreground sm:hover:bg-muted/50 sm:hover:rounded-md",

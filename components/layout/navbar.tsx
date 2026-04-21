@@ -83,7 +83,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
               href={item.href}
               onClick={onClose}
               className={cn(
-                "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter transition-all flex items-center gap-4 active:scale-[0.98]",
+                "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter transition-all flex items-center gap-4",
                 isActive ? "text-amber-500" : "text-foreground hover:text-amber-500"
               )}
             >
@@ -125,7 +125,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
           </div>
           <Button 
             variant="outline" 
-            className="w-full justify-start h-12 text-[12px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 active:scale-[0.98] transition-all"
+            className="w-full justify-start h-12 text-[12px] font-black uppercase tracking-[0.2em] border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all"
             onClick={async () => {
               await signOut({ callbackUrl: '/', redirect: true });
               onClose();
@@ -137,7 +137,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         </div>
       ) : (
         <Button 
-          className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[12px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 active:scale-95 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.2em]"
+          className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[12px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.2em]"
           onClick={() => {
             sessionStorage.setItem('radar_restore_flag', 'true');
             signIn('google');

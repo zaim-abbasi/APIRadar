@@ -12,7 +12,9 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import useSWR from "swr";
 
 type HourBucket = { hour: number; count: number };
 type ExposureHoursData = {
@@ -57,35 +59,16 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
 }: {
   className?: string;
 }) {
-  const [data, setData] = useState<ExposureHoursData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    return res.json() as Promise<ExposureHoursData>;
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-    setError(null);
-    setIsLoading(true);
-    fetch("/api/threat-insights/exposure-hours")
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-        return res.json();
-      })
-      .then((json: ExposureHoursData) => {
-        if (!cancelled) {
-          setData(json);
-          setIsLoading(false);
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Failed to load");
-          setIsLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, error, isLoading } = useSWR<ExposureHoursData>('/api/threat-insights/exposure-hours', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
 
   const chartData = useMemo(
     () =>
@@ -123,8 +106,17 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
             </div>
           ) : null}
           {isLoading ? (
-            <div className="absolute right-0 top-0 text-xs text-muted-foreground/70">
-              Loading…
+            <div className="absolute inset-0 z-10">
+              <Skeleton className="w-full h-full bg-amber-500/5 rounded-md" />
+              <div className="absolute inset-x-0 bottom-4 flex items-end justify-center gap-1 px-4 h-[100px]">
+                {[30, 45, 65, 85, 95, 75, 60, 50, 40, 35, 55, 70].map((h, i) => (
+                  <Skeleton 
+                    key={i} 
+                    className="flex-1 bg-amber-500/10 rounded-t-sm" 
+                    style={{ height: `${h}%` }} 
+                  />
+                ))}
+              </div>
             </div>
           ) : null}
           <ResponsiveContainer width="100%" height="100%">
@@ -157,7 +149,7 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
                 content={<CustomTooltip />}
                 cursor={{ fill: "hsl(var(--border) / 0.15)" }}
               />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]} animationDuration={1200}>
+              <Bar dataKey="count" radius={[3, 3, 0, 0]} animationDuration={400}>
                 {chartData.map((entry) => (
                   <Cell
                     key={`h-${entry.hour}`}
@@ -177,7 +169,11 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
             </BarChart>
           </ResponsiveContainer>
         </div>
-        {insightText && (
+        {isLoading ? (
+          <div className="flex justify-center mt-2">
+            <Skeleton className="h-3 w-48 bg-amber-500/5" />
+          </div>
+        ) : insightText && (
           <div className="text-center mt-2">
             <span className="text-[10px] sm:text-xs text-amber-500/80 font-semibold tracking-wide">
               {insightText}

@@ -42,7 +42,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     selectedProvider: "all",
   });
   const [loadingState, setLoadingState] = useState({
-    isLoading: false,
+    isLoading: typeof window !== "undefined" ? (firstPageCache.leaks.length === 0 || Date.now() - firstPageCache.timestamp >= CACHE_TTL) : true,
     isLoadingMore: false,
     error: null as string | null,
   });
@@ -264,10 +264,6 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     clearLeaksCache();
 
     const isDefault = filterState.selectedProvider === "all";
-    if (!isDefault) {
-      firstPageCache.leaks = [];
-      firstPageCache.timestamp = 0;
-    }
 
     const timeoutId = setTimeout(() => {
       fetchAndSetLeaksRef.current?.();

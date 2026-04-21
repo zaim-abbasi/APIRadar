@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus, Shield, AlertTriangle, Eye, Calendar, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from "@/components/ui/skeleton";
 import { ThreatInsightsData } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -217,6 +218,17 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
   );
 }
 
+const StatCardSkeleton = () => (
+  <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col justify-center">
+    <CardContent className="p-1.5 sm:p-2.5 relative">
+      <div className="space-y-2">
+        <Skeleton className="h-2 w-20 sm:h-3 sm:w-24 bg-amber-500/10" />
+        <Skeleton className="h-5 w-24 sm:h-8 sm:w-32 bg-muted/20" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const StatCard = React.memo(({ 
   stat, 
   index 
@@ -273,7 +285,17 @@ function StatsErrorFallback() {
   );
 }
 
-export const StatsCards = React.memo(function StatsCards({ data }: StatsCardsProps) {
+export const StatsCards = React.memo(function StatsCards({ data, isLoading }: StatsCardsProps & { isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (!data || typeof data !== 'object') {
     return <StatsErrorFallback />;
   }

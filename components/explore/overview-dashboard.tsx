@@ -14,10 +14,12 @@ import {
   FileCode2,
   FolderGit2,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LeakedKey } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { fetchProviderStats } from "@/lib/api";
+import useSWR from "swr";
 import { PROVIDERS, TICKER_REPOS } from "@/components/home/hero-section";
 
 const safeFormatDate = (dateStr: string | Date | undefined) => {
@@ -27,8 +29,6 @@ const safeFormatDate = (dateStr: string | Date | undefined) => {
   return formatDistanceToNow(d, { addSuffix: true });
 };
 
-// Color mapping for providers
-// Color mapping unified to brand amber
 const providerColors: Record<string, string> = {
   openai: "text-amber-500",
   anthropic: "text-amber-500",
@@ -38,6 +38,47 @@ const providerColors: Record<string, string> = {
   xai: "text-amber-500",
   cerebras: "text-amber-500",
 };
+
+const ProviderCardSkeleton = () => (
+  <Card className="border-border/50 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col justify-center">
+    <CardContent className="p-1.5 sm:p-5">
+      <div className="space-y-2 sm:space-y-3">
+        <Skeleton className="h-2 w-12 sm:h-3 sm:w-16 bg-amber-500/10" />
+        <Skeleton className="h-5 w-20 sm:h-8 sm:w-28 bg-muted/20" />
+        <Skeleton className="h-2 w-16 sm:h-3 sm:w-24 bg-amber-500/5" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const ActivityItemSkeleton = () => (
+  <div className="px-2 py-1.5 sm:px-4 sm:py-2.5 flex items-center gap-2 sm:gap-3">
+    <div className="flex-1 space-y-2">
+      <div className="flex justify-between items-center">
+        <Skeleton className="h-2.5 w-16 sm:h-3 sm:w-20 bg-muted/30" />
+        <Skeleton className="h-2 w-10 sm:h-2.5 sm:w-14 bg-muted/10" />
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Skeleton className="h-2 w-3 sm:h-2.5 sm:w-4 bg-muted/10" />
+        <Skeleton className="h-2 w-32 sm:h-2.5 sm:w-48 bg-muted/10" />
+      </div>
+    </div>
+  </div>
+);
+
+const TotalTodaySkeleton = () => (
+  <Card className="border-amber-500/10 bg-card/40 backdrop-blur-sm overflow-hidden h-full flex flex-col justify-center">
+    <CardContent className="p-1.5 sm:p-5 relative">
+      <div className="flex justify-between items-start">
+        <div className="space-y-2 sm:space-y-3">
+          <Skeleton className="h-2 w-12 sm:h-3 sm:w-16 bg-amber-500/10" />
+          <Skeleton className="h-5 w-20 sm:h-8 sm:w-28 bg-muted/20" />
+        </div>
+        <Skeleton className="h-4 w-4 sm:h-5 sm:w-5 bg-amber-500/10 rounded-sm" />
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export function OverviewDashboard({
   leaks,
@@ -54,10 +95,15 @@ export function OverviewDashboard({
   isOffline?: boolean;
   onProviderChange?: (provider: any) => void;
 }) {
-  const [providerStats, setProviderStats] = useState<
-    { provider: string; count: number; todayCount: number }[]
-  >([]);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const fetcher = async () => {
+    const res = await fetchProviderStats();
+    return res.data || [];
+  };
+
+  const { data: providerStats = [], isLoading: statsLoading } = useSWR('/api/providerStats', fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  });
 
   const [nextRetry, setNextRetry] = useState(30.0);
 
@@ -73,20 +119,6 @@ export function OverviewDashboard({
     }
     return () => clearInterval(timer);
   }, [isOffline]);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      setStatsLoading(true);
-      try {
-        const res = await fetchProviderStats();
-        if (res.data && res.data.length > 0) {
-          setProviderStats(res.data);
-        }
-      } catch (e) {}
-      setStatsLoading(false);
-    };
-    loadStats();
-  }, []);
 
   return (
     <div className="flex flex-col space-y-3 sm:space-y-6 w-full animate-fade-in-up">
@@ -124,9 +156,13 @@ export function OverviewDashboard({
                 Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
-                {providerStats
-                  .reduce((sum, s) => sum + s.count, 0)
-                  .toLocaleString()}
+                {statsLoading ? (
+                  <Skeleton className="h-3 w-12 bg-amber-500/20 inline-block mb-[-2px]" />
+                ) : (
+                  providerStats
+                    .reduce((sum, s) => sum + s.count, 0)
+                    .toLocaleString()
+                )}
               </span>
             </div>
 
@@ -143,7 +179,7 @@ export function OverviewDashboard({
                   return {
                     provider: PROVIDERS[i % PROVIDERS.length],
                     repo: name || "unknown",
-                    date: new Date(Date.now() - Math.random() * 3600000),
+                    date: new Date(Date.now() - (20 - i) * 180000),
                     isAlert: false,
                   };
                 })
@@ -174,7 +210,11 @@ export function OverviewDashboard({
                   </span>{" "}
                   ·{" "}
                   <span className="opacity-70 text-[9px] sm:text-[10px]">
-                    {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
+                    {l.isAlert ? (
+                      safeFormatDate(l.date)
+                    ) : (
+                      <Skeleton className="h-2 w-12 bg-muted/20 inline-block" />
+                    )}
                   </span>
                 </span>
                 <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
@@ -221,7 +261,7 @@ export function OverviewDashboard({
                   return {
                     provider: PROVIDERS[i % PROVIDERS.length],
                     repo: name || "unknown",
-                    date: new Date(Date.now() - Math.random() * 3600000),
+                    date: new Date(Date.now() - (20 - i) * 180000),
                     isAlert: false,
                   };
                 })
@@ -252,7 +292,11 @@ export function OverviewDashboard({
                   </span>{" "}
                   ·{" "}
                   <span className="opacity-70 text-[9px] sm:text-[10px]">
-                    {l.isAlert ? safeFormatDate(l.date) : "RETRYING..."}
+                    {l.isAlert ? (
+                      safeFormatDate(l.date)
+                    ) : (
+                      <Skeleton className="h-2 w-12 bg-muted/20 inline-block" />
+                    )}
                   </span>
                 </span>
                 <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
@@ -312,10 +356,12 @@ export function OverviewDashboard({
           <div className="lg:col-span-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {statsLoading ? (
-                <div className="col-span-full h-32 flex items-center justify-center text-muted-foreground text-sm">
-                  <Activity className="h-4 w-4 animate-spin mr-2" />
-                  Loading statistics...
-                </div>
+                <>
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <ProviderCardSkeleton key={i} />
+                  ))}
+                  <TotalTodaySkeleton />
+                </>
               ) : (
                 providerStats
                   .map((stat, i) => {
@@ -409,9 +455,10 @@ export function OverviewDashboard({
               </div>
               <div className="p-0 overflow-y-auto overscroll-auto flex-1 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {isLoading ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    <Activity className="h-4 w-4 animate-spin mx-auto mb-2 opacity-50" />
-                    Loading feed...
+                  <div className="flex flex-col divide-y divide-border/20">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <ActivityItemSkeleton key={i} />
+                    ))}
                   </div>
                 ) : leaks.length === 0 ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">

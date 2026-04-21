@@ -40,16 +40,8 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        // Just pass the user ID
         session.user.id = token.id as string;
-        session.backendToken = jwt.sign(
-          {
-            id: token.id,
-            email: token.email,
-          },
-          process.env.NEXTAUTH_SECRET as string,
-          { expiresIn: "30d" }
-        );
+        session.backendToken = token.backendToken as string;
       }
       return session;
     },
@@ -57,6 +49,16 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "google" && user?.email) {
         token.id = user.email;
         token.email = user.email;
+        
+        // Cryptographically sign the backend token ONCE at login, not on every session poll
+        token.backendToken = jwt.sign(
+          {
+            id: token.id,
+            email: token.email,
+          },
+          process.env.NEXTAUTH_SECRET as string,
+          { expiresIn: "30d" }
+        );
       }
       return token;
     },
