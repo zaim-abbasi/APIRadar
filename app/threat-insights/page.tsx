@@ -112,10 +112,29 @@ async function fetchThreatInsightsData(): Promise<ThreatInsightsData> {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Always fetch fresh data
 
-// Main page component
-export default async function ThreatInsightsPage() {
-  const insightsData = await fetchThreatInsightsData();
+// Loading wrapper for better UX
+function ThreatInsightsLoading() {
+  const emptyData: ThreatInsightsData = {
+    topProviders: [],
+    totalReposScanned: 0,
+    totalExposuresFound: 0,
+    weeklyGrowth: 0,
+    exposuresFoundToday: 0,
+  };
+  return <ThreatInsightsClient statsData={emptyData} />;
+}
 
-  const statsData: ThreatInsightsData = insightsData;
+// Separate component to handle the async data fetch
+async function ThreatInsightsContent() {
+  const statsData = await fetchThreatInsightsData();
   return <ThreatInsightsClient statsData={statsData} />;
+}
+
+// Main page component
+export default function ThreatInsightsPage() {
+  return (
+    <Suspense fallback={<ThreatInsightsLoading />}>
+      <ThreatInsightsContent />
+    </Suspense>
+  );
 }

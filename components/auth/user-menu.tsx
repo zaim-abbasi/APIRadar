@@ -76,23 +76,22 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "group flex items-center h-8 pl-1.5 pr-2.5 rounded-lg border border-amber-500/20 bg-card/40 backdrop-blur-md hover:bg-card/50 transition-all duration-300 focus-visible:outline-none",
+            "group flex items-center h-9 pl-[7px] pr-2.5 rounded-lg border border-amber-500/20 bg-card/40 backdrop-blur-md hover:bg-card/50 transition-all duration-300 focus-visible:outline-none",
             "hover:border-amber-500/40 gap-2"
           )}
           aria-label="User account menu"
         >
-          {/* User Avatar - 20px size to ensure 6px (p-1.5) padding on all sides in a 32px (h-8) container */}
-          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 overflow-hidden shrink-0 border border-amber-500/30">
-            {session?.user?.image ? (
-              <img 
-                src={session.user.image} 
-                alt={session.user.name || "User"} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
+          {session?.user?.image ? (
+            <img 
+              src={session.user.image} 
+              alt={session.user.name || "User"} 
+              className="w-5 h-5 rounded-md object-cover shrink-0"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 overflow-hidden shrink-0 border border-amber-500/30">
               <span className="text-[9px] font-bold font-mono">{initials}</span>
-            )}
-          </div>
+            </div>
+          )}
 
           <span className="text-sm font-medium text-foreground/90 group-hover:text-amber-500 transition-colors hidden sm:inline truncate max-w-[80px]">
             {firstName}

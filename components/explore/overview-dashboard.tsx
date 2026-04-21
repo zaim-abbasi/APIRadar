@@ -108,7 +108,7 @@ export function OverviewDashboard({
   const [nextRetry, setNextRetry] = useState(30.0);
 
   const isOffline =
-    isOfflineProp ?? (!statsLoading && providerStats.length === 0);
+    isOfflineProp ? (providerStats.length === 0) : (!statsLoading && providerStats.length === 0);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -119,6 +119,24 @@ export function OverviewDashboard({
     }
     return () => clearInterval(timer);
   }, [isOffline]);
+
+  const itemsToRender = leaks.length > 0
+    ? leaks.slice(0, 20).map((l) => ({
+        provider: l.provider,
+        repo: l.repoUrl || "***",
+        date: l.leakDetectedAt,
+        isAlert: true,
+      }))
+    : Array.from({ length: 20 }).map((_, i) => {
+        const repo = TICKER_REPOS[i % TICKER_REPOS.length];
+        const [owner, name] = repo.split("/");
+        return {
+          provider: PROVIDERS[i % PROVIDERS.length],
+          repo: name || "unknown",
+          date: new Date(Date.now() - (20 - i) * 180000),
+          isAlert: false,
+        };
+      });
 
   return (
     <div className="flex flex-col space-y-3 sm:space-y-6 w-full animate-fade-in-up">
@@ -140,7 +158,8 @@ export function OverviewDashboard({
               "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
             WebkitMaskImage:
               "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-          }}
+            "--marquee-duration": `${Math.max(15, itemsToRender.length * 2.25)}s`
+          } as React.CSSProperties}
         >
           <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
             <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 border-x border-amber-500/10">
@@ -156,7 +175,7 @@ export function OverviewDashboard({
                 Exposures Identified
               </span>
               <span className="text-foreground font-bold italic">
-                {statsLoading ? (
+                {(statsLoading && providerStats.length === 0) ? (
                   <Skeleton className="h-3 w-12 bg-amber-500/20 inline-block mb-[-2px]" />
                 ) : (
                   providerStats
@@ -166,24 +185,7 @@ export function OverviewDashboard({
               </span>
             </div>
 
-            {(leaks.length > 0
-              ? leaks.slice(0, 20).map((l) => ({
-                  provider: l.provider,
-                  repo: l.repoUrl || "***",
-                  date: l.leakDetectedAt,
-                  isAlert: true,
-                }))
-              : Array.from({ length: 20 }).map((_, i) => {
-                  const repo = TICKER_REPOS[i % TICKER_REPOS.length];
-                  const [owner, name] = repo.split("/");
-                  return {
-                    provider: PROVIDERS[i % PROVIDERS.length],
-                    repo: name || "unknown",
-                    date: new Date(Date.now() - (20 - i) * 180000),
-                    isAlert: false,
-                  };
-                })
-            ).map((l, i) => (
+            {itemsToRender.map((l, i) => (
               <React.Fragment key={`mq1-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
                   <span
@@ -248,24 +250,7 @@ export function OverviewDashboard({
               </span>
             </div>
 
-            {(leaks.length > 0
-              ? leaks.slice(0, 20).map((l) => ({
-                  provider: l.provider,
-                  repo: l.repoUrl || "***",
-                  date: l.leakDetectedAt,
-                  isAlert: true,
-                }))
-              : Array.from({ length: 20 }).map((_, i) => {
-                  const repo = TICKER_REPOS[i % TICKER_REPOS.length];
-                  const [owner, name] = repo.split("/");
-                  return {
-                    provider: PROVIDERS[i % PROVIDERS.length],
-                    repo: name || "unknown",
-                    date: new Date(Date.now() - (20 - i) * 180000),
-                    isAlert: false,
-                  };
-                })
-            ).map((l, i) => (
+            {itemsToRender.map((l, i) => (
               <React.Fragment key={`mq2-${i}`}>
                 <span className="inline-block hover:text-foreground transition-colors cursor-default">
                   <span
@@ -308,19 +293,7 @@ export function OverviewDashboard({
         </div>
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        @keyframes marquee {
-          0% { transform: translateX(var(--marquee-start, 0%)); }
-          100% { transform: translateX(calc(-100% + var(--marquee-start, 0%))); }
-        }
-        .animate-marquee {
-          animation: marquee 45s linear infinite;
-        }
-      `,
-        }}
-      />
+
 
       {/* Main Layout: Dynamic Provider Stat Grid & Recent Sidebar */}
       {isOffline ? (
@@ -355,7 +328,7 @@ export function OverviewDashboard({
           {/* Center: Dynamic Provider Stats */}
           <div className="lg:col-span-2">
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
-              {statsLoading ? (
+              {(statsLoading && providerStats.length === 0) ? (
                 <>
                   {Array.from({ length: 7 }).map((_, i) => (
                     <ProviderCardSkeleton key={i} />
@@ -454,13 +427,13 @@ export function OverviewDashboard({
                 </Badge>
               </div>
               <div className="p-0 overflow-y-auto overscroll-auto flex-1 custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {isLoading ? (
+                {(isLoading && leaks.length === 0) ? (
                   <div className="flex flex-col divide-y divide-border/20">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <ActivityItemSkeleton key={i} />
                     ))}
                   </div>
-                ) : leaks.length === 0 ? (
+                ) : (leaks.length === 0) ? (
                   <div className="p-4 text-center text-sm text-muted-foreground">
                     No recent activity detected.
                   </div>

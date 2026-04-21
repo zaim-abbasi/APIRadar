@@ -49,54 +49,76 @@ const formatTimeAgo = (date: Date): string => {
 };
 
 // --- Loading Skeleton ---
-const FeedSkeleton = React.memo(() => (
+const FeedSkeleton = React.memo(({ isUnauthenticated }: { isUnauthenticated?: boolean }) => (
   <div className="flex flex-col divide-y divide-border/20">
-    {Array.from({ length: 6 }).map((_, i) => (
+    {Array.from({ length: isUnauthenticated ? 8 : 12 }).map((_, i) => (
       <div
         key={`skel-${i}`}
-        className="px-4 py-3 sm:px-5 sm:py-3.5 animate-pulse group flex flex-col justify-center min-h-[64px]"
+        className="block px-2 py-1 sm:px-5 sm:py-1.5 animate-pulse opacity-50"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 relative w-full h-full min-w-0">
-          
-          {/* Top Row (Mobile) / Left Side (Desktop) */}
-          <div className="flex items-center justify-between gap-3 sm:w-[220px] lg:w-[320px] flex-shrink-0">
-            <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
-              <Skeleton className="h-4 w-4 rounded-md bg-muted/40 flex-shrink-0" />
-              <div className="bg-amber-500/5 rounded px-2 w-[160px] h-5" />
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-row items-center gap-3 sm:gap-5 flex-1 min-w-0">
+            {/* Main Content Row */}
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 flex-1 sm:flex-initial sm:w-[240px] lg:w-[260px] min-w-0">
+              {/* Redacted key skeleton */}
+              <Skeleton className="h-[16px] sm:h-[22px] w-[140px] sm:w-[210px] rounded-md bg-muted/40" />
+              
+              {/* Mobile-only status tools skeleton */}
+              <div className="flex sm:hidden items-center justify-end gap-1.5 flex-shrink-0 min-w-[125px]">
+                <div className="w-5 flex items-center justify-center shrink-0"></div>
+                <Skeleton className="h-[14px] w-[68px] rounded-md bg-muted/30 shrink-0" />
+                <Skeleton className="h-[10px] w-[32px] rounded bg-muted/20 shrink-0" />
+              </div>
             </div>
-            
-            {/* Mobile tools skeleton */}
-            <div className="flex sm:hidden items-center gap-2 flex-shrink-0">
-              <Skeleton className="h-4 w-16 bg-muted/20" />
-            </div>
-          </div>
 
-          {/* Bottom Row / Middle Content (Desktop) */}
-          <div className="hidden sm:flex flex-row sm:items-center gap-1 sm:gap-5 min-w-0 flex-1">
-            {/* Repository */}
-            <div className="flex items-center gap-1.5 sm:w-[160px] lg:w-[190px] flex-shrink-0">
-              <Skeleton className="h-3.5 w-3.5 rounded-full bg-muted/30 flex-shrink-0" />
-              <Skeleton className="h-3.5 w-[110px] bg-amber-500/10 rounded" />
-            </div>
-            {/* Path */}
-            <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
-              <span className="text-border font-light opacity-20">/</span>
-              <Skeleton className="h-3.5 w-3.5 rounded bg-muted/30 flex-shrink-0" />
-              <Skeleton className="h-3.5 w-[140px] bg-muted/20 rounded" />
+            {/* Bottom Row / Middle Content (Desktop) */}
+            <div className="hidden sm:flex flex-row sm:items-center gap-1 sm:gap-5 text-[10px] sm:text-sm text-muted-foreground/80 min-w-0 flex-1">
+              {/* Repository Column */}
+              <div className="flex items-center gap-1.5 sm:w-[160px] lg:w-[190px] flex-shrink-0">
+                <Skeleton className="h-3 sm:h-3.5 w-3 sm:w-3.5 rounded-full bg-muted/30 flex-shrink-0" />
+                <Skeleton className="h-[12px] sm:h-[14px] w-[110px] sm:w-[130px] rounded bg-muted/30" />
+              </div>
+
+              {/* Path Column */}
+              <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
+                <span className="text-border flex-shrink-0 font-light opacity-40 hidden sm:inline">/</span>
+                <Skeleton className="h-3 sm:h-3.5 w-3 sm:w-3.5 rounded bg-muted/30 flex-shrink-0" />
+                <Skeleton className="h-[12px] sm:h-[14px] w-[120px] sm:w-[160px] rounded bg-muted/20" />
+              </div>
             </div>
           </div>
 
           {/* Desktop-only status tools */}
           <div className="hidden sm:flex items-center gap-4 flex-shrink-0 sm:ml-auto">
-             <Skeleton className="h-6 w-6 rounded-md bg-muted/20 shrink-0" />
-             <Skeleton className="h-[22px] w-[95px] rounded-md bg-muted/20 shrink-0" />
-             <span className="text-border flex-shrink-0 text-muted-foreground/20">·</span>
-             <Skeleton className="h-3.5 w-[80px] bg-muted/20 rounded shrink-0 mr-2" />
+             <Skeleton className="h-[16px] sm:h-[16px] w-[95px] rounded-md bg-muted/30 shrink-0" />
+             <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
+             <div className="inline-flex items-center gap-2 sm:w-[100px] justify-start">
+               <Skeleton className="h-3.5 w-3.5 rounded-full bg-muted/30" />
+               <Skeleton className="h-[12px] w-[48px] bg-muted/20 rounded shrink-0" />
+             </div>
           </div>
-
         </div>
       </div>
     ))}
+
+    {/* Sign-in prompt skeleton */}
+    {isUnauthenticated && (
+      <div className="block px-2 py-2 sm:px-5 sm:py-2 border-t border-border/10 opacity-50 animate-pulse">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+          <div className="mt-1 sm:mt-0 flex-shrink-0">
+            <Skeleton className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-sm bg-muted/30" />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <div className="flex flex-col flex-1 min-w-0 justify-center">
+               <Skeleton className="h-[14px] sm:h-[17px] w-[80%] max-w-[400px] rounded bg-muted/20" />
+            </div>
+            <div className="flex-shrink-0 sm:ml-auto pt-1 sm:pt-0 w-full sm:w-auto">
+              <Skeleton className="h-7 sm:h-10 w-full sm:w-[160px] rounded-md bg-muted/30" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   </div>
 ));
 FeedSkeleton.displayName = "FeedSkeleton";
@@ -491,7 +513,7 @@ const LeakFeedComponent = React.memo(
           >
             <div className="flex-1 overflow-y-auto overscroll-auto custom-scrollbar min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {isLoading && validLeaks.length === 0 ? (
-                <FeedSkeleton />
+                <FeedSkeleton isUnauthenticated={isUnauthenticated} />
               ) : (validLeaks.length === 0 || isOffline) ? (
                 <FeedEmptyState
                   selectedProvider={selectedProvider}

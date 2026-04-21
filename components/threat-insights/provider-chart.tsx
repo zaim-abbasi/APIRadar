@@ -140,8 +140,7 @@ export const ProviderChart = React.memo(({ data, isLoading }: ProviderChartProps
               <Bar 
                 dataKey="count" 
                 radius={[0, 4, 4, 0]}
-                animationDuration={400}
-                animationEasing="ease-out"
+                isAnimationActive={false}
               >
                 {safeData.map((entry, index) => (
                   <Cell 

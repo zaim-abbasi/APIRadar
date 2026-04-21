@@ -1,7 +1,6 @@
 import fastify from 'fastify';
-import cors from '@fastify/cors';
-import rateLimit from '@fastify/rate-limit';
 import { config } from './config/environment';
+import { registerPlugins } from './config/plugins';
 import { connectToMongoDB, disconnectFromMongoDB, getConnectionStatus } from './config/mongo';
 import { logger } from './utils/logger';
 import { gitHubCodeLeakFarmService } from './services/GitHubCodeLeakFarmService';
@@ -55,21 +54,13 @@ async function gracefulShutdown(signal: string) {
 async function bootstrap() {
   const server = fastify({
     logger: false,
-    disableRequestLogging: true
+    disableRequestLogging: true,
+    trustProxy: true
   });
   activeServer = server;
 
   // 1. Register Plugins & Routes
-  await server.register(cors, {
-    origin: config.CORS_ORIGINS,
-    credentials: true,
-  });
-
-  await server.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-    keyGenerator: (request: any) => request.user?.id || request.ip,
-  });
+  await registerPlugins(server);
 
   await registerRoutes(server);
 

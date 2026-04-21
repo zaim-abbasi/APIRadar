@@ -76,7 +76,7 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
               Failed to load activity
             </div>
           ) : null}
-          {isLoading ? (
+          {(isLoading && chartData === PLACEHOLDER_DATA) ? (
             <div className="absolute inset-0 z-10">
               <Skeleton className="w-full h-full bg-amber-500/5 rounded-md" />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -126,7 +126,7 @@ export const ActivityChart = React.memo(function ActivityChart({ className }: { 
                 stroke="#f59e0b" // Amber-500
                 strokeWidth={2}
                 fill="url(#activityFill)"
-                animationDuration={400}
+                isAnimationActive={false}
               />
             </AreaChart>
           </ResponsiveContainer>

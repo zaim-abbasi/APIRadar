@@ -8,9 +8,9 @@ import { decrypt, getEncryptionKey } from '../utils/encryption';
 
 
 const querySchema = z.object({
-  provider: z.string().optional(),
-  limit: z.coerce.number().min(1).max(100).default(20),
-  page: z.coerce.number().min(1).default(1),
+  provider: z.string().max(50).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
 });
 
 const errorSchema = {
@@ -140,8 +140,11 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     let total = 0;
     let leaks: any[] = [];
+
     try {
-      total = await Leak.countDocuments(filter);
+      total = (provider && provider !== 'all') 
+        ? await Leak.countDocuments(filter)
+        : await Leak.estimatedDocumentCount();
       const skip = isAuthenticated ? (enforcedPage - 1) * enforcedLimit : 0;
       leaks = await Leak.find(filter)
         .select('secretId provider repoUrl filePath leakIntroducedAt leakDetectedAt repoCreatedAt')
@@ -151,7 +154,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         .lean();
 
       // OPTIMIZATION: O(1) Batch Decryption Map
-      const secretIds = [...new Set(leaks.map(l => l.secretId.toString()))];
+      const secretIds = [...new Set(leaks.map((l: any) => l.secretId.toString()))];
       const secrets = await Secret.find({ _id: { $in: secretIds } }).lean();
 
       const AES_KEY = getEncryptionKey();
@@ -165,7 +168,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         return [s._id.toString(), { redacted, full }];
       }));
 
-      leaks = leaks.map((l, index) => {
+      leaks = leaks.map((l: any, index: number) => {
         const absoluteIndex = skip + index;
         const secretData = secretMap.get(l.secretId.toString()) || { redacted: '**********', full: '**********' };
         

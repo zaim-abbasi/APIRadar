@@ -31,16 +31,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-const LeakFeed = React.lazy(() =>
-  import("@/components/explore/leak-feed").then((m) => ({
-    default: m.LeakFeed,
-  }))
-);
-const OverviewDashboard = React.lazy(() =>
-  import("@/components/explore/overview-dashboard").then((m) => ({
-    default: m.OverviewDashboard,
-  })),
-);
+import { LeakFeed } from "@/components/explore/leak-feed";
+import { OverviewDashboard } from "@/components/explore/overview-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PROVIDERS, INTEL_PROVIDERS } from "@/lib/constants";
@@ -157,7 +149,10 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
     sessionStorage.setItem("radar_last_tab", tab);
     
     if (tab === "feed" && selectedProvider === "all") {
-      const lastProvider = sessionStorage.getItem("radar_last_provider") || INTEL_PROVIDERS[0].value;
+      let lastProvider = sessionStorage.getItem("radar_last_provider");
+      if (!lastProvider || lastProvider === "all") {
+        lastProvider = INTEL_PROVIDERS[0].value;
+      }
       onProviderChange(lastProvider as Provider);
     } else if (tab === "overview" && selectedProvider !== "all") {
       onProviderChange("all");
@@ -290,33 +285,27 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
 
             {/* Right: Results */}
             <div className="flex-1 min-w-0 w-full">
-              <Suspense
-                fallback={
-                  <div className="min-h-[200px]" />
-                }
-              >
-                 <div className="relative">
-                  <LeakFeed
-                    leaks={leaks}
-                    total={total}
-                    isLoading={isLoading}
-                    selectedProvider={selectedProvider}
-                    plan={plan}
-                    onSignIn={
-                      isUnauthenticated
-                        ? () => {
-                            sessionStorage.setItem("radar_restore_flag", "true");
-                            signIn("google", {
-                              callbackUrl: window.location.href,
-                              redirect: true,
-                            });
-                          }
-                        : undefined
-                    }
-                    isOffline={!!error}
-                  />
-                </div>
-              </Suspense>
+              <div className="relative">
+                <LeakFeed
+                  leaks={leaks}
+                  total={total}
+                  isLoading={isLoading}
+                  selectedProvider={selectedProvider}
+                  plan={plan}
+                  onSignIn={
+                    isUnauthenticated
+                      ? () => {
+                          sessionStorage.setItem("radar_restore_flag", "true");
+                          signIn("google", {
+                            callbackUrl: window.location.href,
+                            redirect: true,
+                          });
+                        }
+                      : undefined
+                  }
+                  isOffline={!!error}
+                />
+              </div>
             </div>
           </div>
         </TabsContent>

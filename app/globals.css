@@ -357,7 +357,7 @@ button:focus:not(:focus-visible) {
 }
 
 .animate-marquee {
-  animation: marquee 45s linear infinite;
+  animation: marquee var(--marquee-duration, 45s) linear infinite;
 }
 
 /* BULLETPROOF SECURITY: Prevent CSS manipulation of locked content */

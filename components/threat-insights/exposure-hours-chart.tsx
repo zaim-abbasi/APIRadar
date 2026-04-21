@@ -105,7 +105,7 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
               Failed to load exposure hours
             </div>
           ) : null}
-          {isLoading ? (
+          {(isLoading && !data) ? (
             <div className="absolute inset-0 z-10">
               <Skeleton className="w-full h-full bg-amber-500/5 rounded-md" />
               <div className="absolute inset-x-0 bottom-4 flex items-end justify-center gap-1 px-4 h-[100px]">
@@ -149,7 +149,7 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
                 content={<CustomTooltip />}
                 cursor={{ fill: "hsl(var(--border) / 0.15)" }}
               />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]} animationDuration={400}>
+              <Bar dataKey="count" radius={[3, 3, 0, 0]} isAnimationActive={false}>
                 {chartData.map((entry) => (
                   <Cell
                     key={`h-${entry.hour}`}
@@ -169,7 +169,7 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
             </BarChart>
           </ResponsiveContainer>
         </div>
-        {isLoading ? (
+        {(isLoading && !data) ? (
           <div className="flex justify-center mt-2">
             <Skeleton className="h-3 w-48 bg-amber-500/5" />
           </div>

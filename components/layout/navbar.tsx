@@ -110,13 +110,13 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-amber-500/20 bg-card/40">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-sm font-bold text-amber-500 border border-amber-500/30 overflow-hidden">
-                {session.user?.image ? (
-                  <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
-                ) : (
+              {session.user?.image ? (
+                <img src={session.user.image} alt={session.user.name || "User"} className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-sm font-bold text-amber-500 border border-amber-500/30 overflow-hidden shrink-0">
                   <span className="font-mono text-base">{initials}</span>
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex flex-col gap-0.5">
                 <span className="text-base sm:text-lg font-bold text-foreground leading-tight tracking-tight">{session.user?.name}</span>
                 <span className="text-[11px] sm:text-xs text-muted-foreground leading-tight font-mono lowercase opacity-70">{session.user?.email}</span>

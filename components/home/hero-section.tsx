@@ -208,6 +208,17 @@ const HeroTicker = React.memo(() => {
     }
   }, [leaks]);
 
+  const itemsToRender = displayLeaks.length > 0
+    ? displayLeaks.slice(0, 20).map((l) => ({
+        provider: l.provider,
+        repo: l.repoUrl || "***",
+        timeAgo: formatDistanceToNow(new Date(l.leakDetectedAt), {
+          addSuffix: true,
+        }),
+        isAlert: true,
+      }))
+    : tickerEntries;
+
   const renderItems = (keyPrefix: string) => (
     <>
       <span className="flex items-center gap-1.5 border-x border-amber-500/10 px-1.5 sm:px-2">
@@ -218,17 +229,7 @@ const HeroTicker = React.memo(() => {
           NOMINAL
         </span>
       </span>
-      {(displayLeaks.length > 0
-        ? displayLeaks.slice(0, 20).map((l) => ({
-            provider: l.provider,
-            repo: l.repoUrl || "***",
-            timeAgo: formatDistanceToNow(new Date(l.leakDetectedAt), {
-              addSuffix: true,
-            }),
-            isAlert: true,
-          }))
-        : tickerEntries
-      ).map((e, i) => (
+      {itemsToRender.map((e, i) => (
         <React.Fragment key={`${keyPrefix}-${i}`}>
           <span className="inline-block sm:hover:text-foreground transition-colors cursor-default">
             <span
@@ -278,7 +279,8 @@ const HeroTicker = React.memo(() => {
             "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
           WebkitMaskImage:
             "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-        }}
+          "--marquee-duration": `${Math.max(15, itemsToRender.length * 2.25)}s`
+        } as React.CSSProperties}
       >
         <div className="animate-marquee sm:group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
           {renderItems("mq1")}

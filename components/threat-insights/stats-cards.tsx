@@ -21,65 +21,11 @@ interface AnimatedDateProps {
 }
 
 const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCounterProps) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-          if (value !== null && value !== undefined) {
-            animateValue(0, value);
-          }
-        }
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
-
-    const element = document.getElementById('stats-container');
-    if (element) {
-      observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-  }, [value, isVisible]);
-
-  useEffect(() => {
-    if (isVisible && hasAnimated && displayValue !== value && value !== null && value !== undefined) {
-      animateValue(displayValue, value);
-    }
-  }, [value, isVisible, hasAnimated, displayValue]);
-
-  const animateValue = (from: number, to: number) => {
-    const duration = 600;
-    const startTime = performance.now();
-    
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      const currentValue = Math.floor(from + (to - from) * easedProgress);
-      setDisplayValue(currentValue);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setHasAnimated(true);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  };
-
   const formattedValue = useMemo(() => {
-    if (isPercentage) {
-      return `${displayValue.toFixed(1)}%`;
-    }
-    return displayValue.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  }, [displayValue, isPercentage]);
+    if (value === null || value === undefined) return "";
+    if (isPercentage) return `${value.toFixed(1)}%`;
+    return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  }, [value, isPercentage]);
 
   if (value === null || value === undefined) {
     return (
@@ -99,76 +45,8 @@ const AnimatedCounter = React.memo(({ value, isPercentage = false }: AnimatedCou
 AnimatedCounter.displayName = 'AnimatedCounter';
 
 const AnimatedDate = React.memo(({ dateString }: AnimatedDateProps) => {
-  const [displayDate, setDisplayDate] = useState<string>(() => {
-    if (!dateString || isNaN(new Date(dateString).getTime())) return '';
-    return new Date(dateString).toISOString().slice(0, 10);
-  });
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-          if (dateString) {
-            animateDate(dateString);
-          }
-        }
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    );
-
-    const element = document.getElementById('stats-container');
-    if (element) {
-      observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateString, isVisible]);
-
-  useEffect(() => {
-    if (dateString && !displayDate) {
-      animateDate(dateString);
-    } else if (isVisible && hasAnimated && displayDate !== dateString && dateString) {
-      animateDate(dateString);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateString, isVisible, hasAnimated, displayDate]);
-
-  const animateDate = (targetDate: string) => {
-    const duration = 600;
-    const startTime = performance.now();
-    const startDate = new Date(displayDate || targetDate);
-    const endDate = new Date(targetDate);
-    
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-      
-      const currentTimeStamp = startDate.getTime() + (endDate.getTime() - startDate.getTime()) * easedProgress;
-      const currentDate = new Date(currentTimeStamp);
-      
-      const formattedDate = currentDate.toISOString().slice(0, 10);
-      
-      setDisplayDate(formattedDate);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setHasAnimated(true);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  };
-
-  if (!dateString || isNaN(new Date(dateString).getTime())) {
-    return null;
-  }
+  if (!dateString || isNaN(new Date(dateString).getTime())) return null;
+  const displayDate = new Date(dateString).toISOString().slice(0, 10);
 
   return (
     <span className="transition-all duration-600 ease-out">{displayDate}</span>
@@ -188,32 +66,9 @@ function AnimatedDateCounterInline({ dateString }: { dateString: string | null }
     'July', 'August', 'September', 'October', 'November', 'December'
   ][date.getUTCMonth()];
 
-  const [day, setDay] = useState(targetDay);
-  const [year, setYear] = useState(targetYear);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (day === targetDay && year === targetYear) {
-      let frame: number;
-      let start: number | null = null;
-      const animate = (timestamp: number) => {
-        if (!start) start = timestamp;
-        const progress = Math.min((timestamp - start) / 600, 1);
-        setDay(Math.round(1 + (targetDay - 1) * progress));
-        setYear(Math.round(2000 + (targetYear - 2000) * progress));
-        if (progress < 1) {
-          frame = requestAnimationFrame(animate);
-        }
-      };
-      frame = requestAnimationFrame(animate);
-      return () => cancelAnimationFrame(frame);
-    }
-  }, [targetDay, targetYear, day, year]);
-
   return (
     <span className="transition-all duration-600 ease-out font-mono tabular-nums tracking-tighter" suppressHydrationWarning>
-      {mounted ? `${day} ${month}, ${year}` : `${targetDay} ${month}, ${targetYear}`}
+      {`${targetDay} ${month}, ${targetYear}`}
     </span>
   );
 }
@@ -286,7 +141,9 @@ function StatsErrorFallback() {
 }
 
 export const StatsCards = React.memo(function StatsCards({ data, isLoading }: StatsCardsProps & { isLoading?: boolean }) {
-  if (isLoading) {
+  const hasNoData = !data || (data.totalReposScanned === 0 && data.totalExposuresFound === 0);
+  
+  if (isLoading && hasNoData) {
     return (
       <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">
         {Array.from({ length: 3 }).map((_, i) => (

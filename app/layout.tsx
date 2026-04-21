@@ -1,3 +1,4 @@
+import React from 'react';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
@@ -77,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="light" style={{ colorScheme: 'light' }} suppressHydrationWarning>
       <head>
         {/* Preconnect to external domains for faster loading */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
@@ -179,17 +180,13 @@ export default function RootLayout({
           })();
         `}</Script>
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            forcedTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
+          <ThemeProvider>
             <div className="min-h-screen flex flex-col" suppressHydrationWarning>
               <Navbar />
               <main className="flex-1 pt-[50px]">
-                {children}
+                <React.Suspense fallback={null}>
+                  {children}
+                </React.Suspense>
               </main>
               <Footer />
             </div>

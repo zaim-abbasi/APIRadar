@@ -24,11 +24,8 @@ const ExploreSectionDesktop = dynamic(
 
 const PAGE_SIZE = 15;
 const INFINITE_SCROLL_MARGIN = "0px 0px 600px 0px";
-const firstPageCache: { leaks: LeakedKey[]; timestamp: number } = {
-  leaks: [],
-  timestamp: 0,
-};
-const CACHE_TTL = 60 * 1000; // 1 minute
+const firstPageCache: Record<string, { leaks: LeakedKey[]; total: number; hasMore: boolean; timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes for stale-while-revalidate
 
 export const ExploreClient = React.memo(function ExploreClient(props: any) {
   const { data: session, status: sessionStatus } = useSession();
@@ -41,10 +38,19 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   }>({
     selectedProvider: "all",
   });
-  const [loadingState, setLoadingState] = useState({
-    isLoading: typeof window !== "undefined" ? (firstPageCache.leaks.length === 0 || Date.now() - firstPageCache.timestamp >= CACHE_TTL) : true,
-    isLoadingMore: false,
-    error: null as string | null,
+  const [loadingState, setLoadingState] = useState(() => {
+    const isClient = typeof window !== "undefined";
+    if (!isClient) return { isLoading: true, isLoadingMore: false, error: null };
+    
+    const provider = "all";
+    const cached = firstPageCache[provider];
+    const isCacheValid = cached && (Date.now() - cached.timestamp < CACHE_TTL);
+    
+    return {
+      isLoading: !isCacheValid,
+      isLoadingMore: false,
+      error: null as string | null,
+    };
   });
   const [paginationState, setPaginationState] = useState({
     page: 1,
@@ -58,23 +64,46 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   );
 
   // Initialize leaks from cache if available (client-only to prevent hydration mismatch)
-  const [leaks, setLeaks] = useState<LeakedKey[]>([]);
-  const [globalLeaks, setGlobalLeaks] = useState<LeakedKey[]>([]);
-  const [latestGlobalLeakAt, setLatestGlobalLeakAt] = useState<string | Date | undefined>(undefined);
+  const [leaks, setLeaks] = useState<LeakedKey[]>(() => {
+    const isClient = typeof window !== "undefined";
+    if (!isClient) return [];
+    
+    const provider = "all"; // Default initial provider
+    const cached = firstPageCache[provider];
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.leaks;
+    }
+    return [];
+  });
+
+  const [globalLeaks, setGlobalLeaks] = useState<LeakedKey[]>(() => {
+    const cachedAll = firstPageCache["all"];
+    if (cachedAll) return cachedAll.leaks.slice(0, 20);
+    return [];
+  });
+
+  const [latestGlobalLeakAt, setLatestGlobalLeakAt] = useState<string | Date | undefined>(() => {
+    const cachedAll = firstPageCache["all"];
+    if (cachedAll && cachedAll.leaks.length > 0) return cachedAll.leaks[0].leakDetectedAt;
+    return undefined;
+  });
 
   // Initial mount effect to load cache (sync only)
   useEffect(() => {
-    if (
-      isDefaultFilters &&
-      firstPageCache.leaks.length > 0 &&
-      typeof window !== "undefined"
-    ) {
-      const now = Date.now();
-      if (now - firstPageCache.timestamp < CACHE_TTL) {
-        setLeaks(firstPageCache.leaks);
+    if (typeof window !== "undefined") {
+      const provider = filterState.selectedProvider;
+      const cached = firstPageCache[provider];
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        setLeaks(cached.leaks);
+        setPaginationState((prev) => ({
+          ...prev,
+          total: cached.total,
+          hasMore: cached.hasMore,
+          page: 1
+        }));
       }
     }
-  }, [isDefaultFilters]);
+  }, []);
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -135,7 +164,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Root fix: Use ref to track latest filter state to prevent stale closures
   const filterStateRef = useRef(filterState);
   const paginationStateRef = useRef(paginationState);
-  const fetchAndSetLeaksRef = useRef<() => Promise<void>>();
+  const fetchAndSetLeaksRef = useRef<(forcePage?: number, forceProvider?: Provider) => Promise<void>>();
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -146,7 +175,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     paginationStateRef.current = paginationState;
   }, [paginationState]);
 
-  const fetchAndSetLeaks = useCallback(async () => {
+  const fetchAndSetLeaks = useCallback(async (forcePage?: number, forceProvider?: Provider) => {
     // Root fix: Cancel any in-flight request before starting a new one
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -157,12 +186,11 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     abortControllerRef.current = abortController;
 
     try {
-      // Root fix: Always use latest state from refs to prevent stale closures
-      const currentFilterState = filterStateRef.current;
-      const currentPaginationState = paginationStateRef.current;
+      const pageToFetch = forcePage ?? paginationStateRef.current.page;
+      const providerToFetch = forceProvider ?? filterStateRef.current.selectedProvider;
 
       // Root fix: Set loading state (leaks already cleared by filter change useEffect)
-      if (currentPaginationState.page === 1) {
+      if (pageToFetch === 1) {
         setLoadingState((prev) => ({
           ...prev,
           isLoading: true,
@@ -172,11 +200,10 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       } else {
         setLoadingState((prev) => ({ ...prev, isLoadingMore: true }));
       }
-      const backendProvider = currentFilterState.selectedProvider;
 
       const { data, error } = await fetchLeaks({
-        provider: backendProvider,
-        page: currentPaginationState.page,
+        provider: providerToFetch,
+        page: pageToFetch,
         limit: PAGE_SIZE,
         session,
         signal: abortController.signal,
@@ -190,19 +217,19 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         throw new Error(error);
       }
       if (data) {
-        // Root fix: Use functional updates and verify we're still on the same page/filter
-        const latestFilterState = filterStateRef.current;
-        const latestPaginationState = paginationStateRef.current;
-
         setLeaks((prev) => {
           // Only update if filters haven't changed during the request
-          if (latestPaginationState.page === 1) {
-            const isDefault = latestFilterState.selectedProvider === "all";
-            if (isDefault) {
-              firstPageCache.leaks = data.leaks;
-              firstPageCache.timestamp = Date.now();
+          if (pageToFetch === 1) {
+            // Update per-provider cache for every successful first-page fetch
+            firstPageCache[providerToFetch] = {
+              leaks: data.leaks,
+              total: data.total,
+              hasMore: data.hasMore,
+              timestamp: Date.now()
+            };
+
+            if (providerToFetch === "all") {
               setGlobalLeaks(data.leaks.slice(0, 20));
-              // Store global latest leak time for consistent LiveStats
               if (data.leaks.length > 0) {
                 setLatestGlobalLeakAt(data.leaks[0].leakDetectedAt);
               }
@@ -253,23 +280,32 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   useEffect(() => {
     if (!hasInitializedRef.current) return;
 
-    // setLeaks([]); // Removed to prevent layout shift (seamless transition)
-    setPaginationState((prev) => ({
-      ...prev,
-      page: 1,
-      hasMore: false,
-      // total: 0, // Keep total to prevent jump
-    }));
-    setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
-    clearLeaksCache();
+    const provider = filterState.selectedProvider;
+    const cached = firstPageCache[provider];
+    const isCacheValid = cached && (Date.now() - cached.timestamp < CACHE_TTL);
 
-    const isDefault = filterState.selectedProvider === "all";
+    if (isCacheValid) {
+      // Hot-swap from cache immediately
+      setLeaks(cached.leaks);
+      setPaginationState((prev) => ({
+        ...prev,
+        page: 1,
+        total: cached.total,
+        hasMore: cached.hasMore
+      }));
+      setLoadingState((prev) => ({ ...prev, isLoading: false, error: null }));
+    } else {
+      // No valid cache, show skeleton
+      setLeaks([]);
+      setPaginationState((prev) => ({
+        ...prev,
+        page: 1,
+        hasMore: false,
+      }));
+      setLoadingState((prev) => ({ ...prev, isLoading: true, error: null }));
+    }
 
-    const timeoutId = setTimeout(() => {
-      fetchAndSetLeaksRef.current?.();
-    }, 50);
-
-    return () => clearTimeout(timeoutId);
+    fetchAndSetLeaksRef.current?.(1, provider);
   }, [filterState.selectedProvider]);
 
   // Root fix: Fetch when page changes (for infinite scroll) - use ref to prevent stale state
@@ -326,8 +362,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
     if (authChanged) {
       prevAuthenticatedRef.current = isAuthenticated;
       // Clear cache when authentication changes
-      firstPageCache.leaks = [];
-      firstPageCache.timestamp = 0;
+      Object.keys(firstPageCache).forEach(key => delete firstPageCache[key]);
       // Reset to page 1
       setPaginationState((prev) => ({
         ...prev,
@@ -341,7 +376,9 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
   // Handlers
   const handleProviderChange = useCallback((provider: Provider) => {
     setFilterState((prev) => ({ ...prev, selectedProvider: provider }));
-    sessionStorage.setItem("radar_last_provider", provider);
+    if (provider !== "all") {
+      sessionStorage.setItem("radar_last_provider", provider);
+    }
   }, []);
 
   // Memoize shared props to prevent unnecessary re-renders of child components

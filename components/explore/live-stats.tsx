@@ -68,7 +68,7 @@ export function LiveStats({ latestLeakAt }: { latestLeakAt?: string | Date }) {
       
       <span className="text-border font-light opacity-50">|</span>
       
-      <div className={`flex items-center gap-1.5 sm:gap-2.5 transition-opacity duration-500 ${totalLeaks === 0 ? "opacity-0" : "opacity-100"}`}>
+      <div className={`flex items-center gap-1.5 sm:gap-2.5 transition-opacity duration-500 ${(providerStats.length === 0) ? "opacity-0" : "opacity-100"}`}>
         <ShieldAlert className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-500 shrink-0" />
         <span className="text-[11px] sm:text-[13px] text-muted-foreground font-medium whitespace-nowrap">
           <span className="text-foreground font-bold tabular-nums inline-block min-w-[24px]">
