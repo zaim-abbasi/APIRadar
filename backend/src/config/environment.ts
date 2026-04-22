@@ -14,14 +14,6 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string().min(1),
   CORS_ORIGINS: z.string().default('https://apiradar.live,https://www.apiradar.live,https://api.apiradar.live,http://localhost:3000')
     .transform(val => val.split(',').map(origin => origin.trim())),
-}).superRefine((data, ctx) => {
-  if (data.NODE_ENV === 'production' && data.GITHUB_TOKEN.length === 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "GITHUB_TOKEN is strictly required in production",
-      path: ["GITHUB_TOKEN"]
-    });
-  }
 });
 
 function validateEnv() {
