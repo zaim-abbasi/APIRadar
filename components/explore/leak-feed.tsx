@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
-  CircleCheck,
+//  CircleCheck,
   ShieldAlert,
   Clock,
   Sparkles,
@@ -11,11 +11,11 @@ import {
   FileCode2,
   Lock,
   Chrome,
-  Copy,
-  Check,
-  Loader2,
+//  Copy,
+//  Check,
+//  Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeakedKey, Provider } from "@/types";
@@ -158,7 +158,7 @@ const FeedEmptyState = React.memo(
                 <div className="flex items-center justify-center gap-2">
 
                   <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] text-red-500/80 font-mono">
-                    [SIGNAL_LOST] // UPLINK_SEVERED_CORE_STREAM
+                    [OFFLINE] // CONNECTION_TEMPORARILY_INTERRUPTED
                   </span>
                 </div>
               </div>
@@ -181,7 +181,7 @@ const FeedEmptyState = React.memo(
                 <div className="flex items-center justify-center gap-2">
 
                   <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-500/80 font-mono">
-                    [STATUS: NOMINAL] // NO_EXPOSURES_DETECTED_FOR_{providerLabel}
+                    [SYNCHRONIZED] // NO_ACTIVE_EXPOSURES_IDENTIFIED
                   </span>
                 </div>
               </div>
@@ -224,8 +224,8 @@ const WorkingKeysComingSoon = React.memo(
         </div>
 
         <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
-          APIRadar will soon verify which exposed keys are still active and
-          exploitable. Get notified the moment this feature goes live.
+          APIRadar will soon verify which exposed credentials remain active or 
+          require immediate rotation. Get notified the moment this feature goes live.
         </p>
 
         {onSignIn && (
@@ -257,8 +257,9 @@ const FeedItem = React.memo(
     onSignIn?: () => void;
     isAuthenticated: boolean;
   }) => {
-    const [copyState, setCopyState] = useState<"idle" | "copying" | "success">("idle");
+    // const [copyState, setCopyState] = useState<"idle" | "copying" | "success">("idle");
 
+    /*
     const handleCopyKey = async (e: React.MouseEvent) => {
       e.stopPropagation();
       if (copyState !== "idle") return;
@@ -287,6 +288,7 @@ const FeedItem = React.memo(
         toast.error("Failed to recover full secret key");
       }
     };
+    */
 
     return (
       <div 
@@ -312,6 +314,7 @@ const FeedItem = React.memo(
               {/* Mobile-only status tools + Copy Button */}
               <div className="flex sm:hidden items-center justify-end gap-1.5 flex-shrink-0 min-w-[125px]">
                 <div className="w-5 flex items-center justify-center shrink-0">
+                  {/* 
                   {isAuthenticated && index >= 6 && (
                     <button
                       onClick={handleCopyKey}
@@ -330,6 +333,7 @@ const FeedItem = React.memo(
                       )}
                     </button>
                   )}
+                  */}
                 </div>
                 <div className={cn(
                   "flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[68px] shrink-0 border",
@@ -387,6 +391,7 @@ const FeedItem = React.memo(
 
           {/* Desktop-only status tools */}
           <div className="hidden sm:flex items-center gap-4 flex-shrink-0 sm:ml-auto">
+            {/* 
             {isAuthenticated && index >= 6 && (
               <button
                 onClick={handleCopyKey}
@@ -406,6 +411,7 @@ const FeedItem = React.memo(
                 )}
               </button>
             )}
+            */}
             <div className={cn(
               "w-[95px] items-center justify-center gap-1.5 flex px-2 py-0 rounded-md text-[10px] uppercase font-bold tracking-widest flex-shrink-0 border",
               index < 6 
@@ -549,7 +555,7 @@ const LeakFeedComponent = React.memo(
                         {/* Content Section */}
                         <div className="flex flex-col flex-1 min-w-0 justify-center">
                           <p className="text-[10px] sm:text-[13px] text-foreground/80 font-medium leading-[1.3] sm:line-clamp-none">
-                            <span className="font-bold text-foreground/90">[LOCKED]</span> Sign in to unmask repositories and reveal file paths for all {total.toLocaleString()} {providerDisplayName} secrets.
+                            <span className="font-bold text-foreground/90">[SECURE ACCESS]</span> Sign in to view repository forensics, provider intelligence, and detailed exposure analysis for all {total.toLocaleString()} {providerDisplayName} detections.
                           </p>
                         </div>
 
