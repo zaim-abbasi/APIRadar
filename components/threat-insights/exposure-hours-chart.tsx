@@ -72,11 +72,11 @@ export const ExposureHoursChart = React.memo(function ExposureHoursChart({
 
   const chartData = useMemo(
     () =>
-      data?.hours.map((h) => ({
+      (data?.hours || []).map((h) => ({
         ...h,
         label: h.hour % 3 === 0 ? formatHourLabel(h.hour) : "",
         shortLabel: `${h.hour}`,
-      })) ?? [],
+      })),
     [data]
   );
 

@@ -128,11 +128,18 @@ jobs:
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
 
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
-              pm2 start npm --name api-radar-frontend -- start
+              pm2 start node_modules/next/dist/bin/next --name "api-radar-frontend" -- start
 
             pm2 save --force
-            sleep 2
-            pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online" || exit 1
+            echo "Waiting for services to stabilize..."
+            sleep 10
+            
+            # Improved health check: Must be online and have non-zero uptime
+            if ! (pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online"); then
+              echo "Deployment failed: One or more services are not online."
+              pm2 logs --lines 100 --nostream
+              exit 1
+            fi
 
   notify-success:
     runs-on: ubuntu-latest
@@ -197,9 +204,12 @@ jobs:
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
 
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 restart api-radar-frontend --update-env || \
-              pm2 start npm --name api-radar-frontend -- start
+              pm2 start node_modules/next/dist/bin/next --name "api-radar-frontend" -- start
 
             pm2 save --force
+            echo "Waiting for rollback to stabilize..."
+            sleep 5
+            pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online" || exit 1
 
       - name: 🔄 Notify Rollback
         if: steps.rollback.outcome == 'success'

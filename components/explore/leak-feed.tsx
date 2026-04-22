@@ -582,12 +582,12 @@ const LeakFeedComponent = React.memo(
     if (prevProps.leaks.length !== nextProps.leaks.length) return false;
 
     const prevIds = new Set(
-      prevProps.leaks
+      (prevProps.leaks || [])
         .map((l) => l?.id)
         .filter((id): id is string => Boolean(id))
     );
     const nextIds = new Set(
-      nextProps.leaks
+      (nextProps.leaks || [])
         .map((l) => l?.id)
         .filter((id): id is string => Boolean(id))
     );

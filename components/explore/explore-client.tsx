@@ -236,7 +236,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
             }
             return data.leaks;
           }
-          const existingIds = new Set(prev.map((l) => l.id));
+          const existingIds = new Set((prev || []).map((l) => l.id));
           const newLeaks = data.leaks.filter((l) => !existingIds.has(l.id));
           return [...prev, ...newLeaks];
         });
