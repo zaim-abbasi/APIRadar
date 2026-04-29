@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { Radar, Github } from "lucide-react";
+import { Radar } from "lucide-react";
 
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
@@ -92,8 +92,16 @@ const FooterComponent = () => {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
               >
-                <Github className="h-3 w-3" />
-                <span className="font-bold">Zaim Abbasi</span>
+                <span className="font-bold">Zaim</span>
+              </a>
+              <span className="opacity-60 font-medium">@</span>
+              <a
+                href="https://www.linkedin.com/company/apiradar/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
+              >
+                <span className="font-bold">APIRadar</span>
               </a>
             </div>
             
@@ -132,8 +140,16 @@ const FooterComponent = () => {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
               >
-                <Github className="h-3.5 w-3.5" />
-                <span className="font-bold text-amber-500">Zaim Abbasi</span>
+                <span className="font-bold text-amber-500">Zaim</span>
+              </a>
+              <span className="opacity-60 font-medium">@</span>
+              <a
+                href="https://www.linkedin.com/company/apiradar/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
+              >
+                <span className="font-bold text-amber-500">APIRadar</span>
               </a>
             </div>
           </div>
