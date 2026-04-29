@@ -10,13 +10,10 @@ permissions:
   statuses: write
   pull-requests: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -60,23 +57,6 @@ jobs:
             backend/ecosystem.config.js backend/tsconfig*.json \
             next.config.js tsconfig.json tailwind.config.ts postcss.config.js \
             components.json next-sitemap.config.js .next 2>/dev/null
-
-      - name: 📤 Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment
-          path: deployment.tar
-          retention-days: 1
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    timeout-minutes: 20
-    steps:
-      - name: 📥 Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deployment
 
       - name: 🚀 Transfer
         uses: appleboy/scp-action@master
@@ -134,7 +114,6 @@ jobs:
             echo "Waiting for services to stabilize..."
             sleep 10
             
-            # Improved health check: Must be online and have non-zero uptime
             if ! (pm2 list | grep -q "api-radar-backend.*online" && pm2 list | grep -q "api-radar-frontend.*online"); then
               echo "Deployment failed: One or more services are not online."
               pm2 logs --lines 100 --nostream
@@ -143,7 +122,7 @@ jobs:
 
   notify-success:
     runs-on: ubuntu-latest
-    needs: [build, deploy]
+    needs: build_and_deploy
     if: success()
     permissions:
       statuses: write
@@ -175,7 +154,7 @@ jobs:
 
   rollback:
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: build_and_deploy
     if: failure()
     permissions:
       statuses: write
