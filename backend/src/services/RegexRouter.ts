@@ -55,13 +55,13 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'discord_webhook',
     label: 'Discord Webhook',
     regex: /\b(?:ptb\.|canary\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/[0-9]{17,20}\/[a-zA-Z0-9_-]{68}\b/,
-    prefixes: ['discord.com/api/webhooks/', 'discordapp.com/api/webhooks/', 'canary.discord', 'ptb.discord']
+    prefixes: ['discord.com/api/webhooks/', 'discordapp.com/api/webhooks/']
   },
   {
     name: 'discord_token',
     label: 'Discord Bot Token',
     regex: /\b[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}\b/,
-    prefixes: [] 
+    prefixes: ['DISCORD_TOKEN', 'client.login(', 'bot.run('] 
   },
   {
     name: 'slack_token',
@@ -73,7 +73,7 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'telegram_bot',
     label: 'Telegram Bot Token',
     regex: /\b[0-9]{8,10}:[a-zA-Z0-9_-]{35,40}\b/,
-    prefixes: [] 
+    prefixes: ['TELEGRAM_BOT_TOKEN', 'api.telegram.org/bot', 'telegram.Bot('] 
   },
   {
     name: 'slack_webhook',

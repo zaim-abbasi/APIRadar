@@ -552,7 +552,12 @@ export class GitHubCodeLeakFarmService {
       let query: string | undefined;
       try {
         query = providerQueries[queryIndex];
-        if (!query) return false;
+        if (!query) {
+          logger.warn(`[FARM] No queries available for provider ${currentProvider}, skipping...`);
+          scanResumeState.currentProviderIndex = (validProviderIndex + 1) % providerNames.length;
+          await saveResumeState();
+          return false;
+        }
 
         if (queryPrioritizer.shouldSkipQuery(query)) {
           logger.warn(`[FARM] Bouncer: Skipping low-yield query "${query}"`);
