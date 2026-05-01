@@ -3,6 +3,8 @@
   "compilerOptions": {
     "sourceMap": false,
     "declarationMap": false,
-    "declaration": false
+    "declaration": false,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   }
-} 
+}

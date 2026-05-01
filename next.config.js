@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Standalone output — bundles only required files for deployment
+  // Eliminates the need for node_modules on the production server
+  output: 'standalone',
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
