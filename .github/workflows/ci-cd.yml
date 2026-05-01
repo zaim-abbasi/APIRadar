@@ -174,8 +174,9 @@ jobs:
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
 
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 delete api-radar-frontend 2>/dev/null || true
-            cd .next/standalone && pm2 start server.js --name "api-radar-frontend" --node-args="--max-old-space-size=512" -- -p 3000
-            cd /home/${{ secrets.SERVER_USER }}/API-Radar
+            cp .env.production .next/standalone/.env.production 2>/dev/null || true
+            cp .env.local .next/standalone/.env.local 2>/dev/null || true
+            pm2 start .next/standalone/server.js --name "api-radar-frontend" --cwd /home/${{ secrets.SERVER_USER }}/API-Radar --node-args="--max-old-space-size=512" -- -p 3000
 
             pm2 save --force
             sleep 10
@@ -248,8 +249,9 @@ jobs:
               (cd backend && pm2 start ecosystem.config.js --env production --name api-radar-backend)
 
             pm2 list | grep -q "api-radar-frontend.*online" && pm2 delete api-radar-frontend 2>/dev/null || true
-            cd .next/standalone && pm2 start server.js --name "api-radar-frontend" --node-args="--max-old-space-size=512" -- -p 3000
-            cd /home/${{ secrets.SERVER_USER }}/API-Radar
+            cp .env.production .next/standalone/.env.production 2>/dev/null || true
+            cp .env.local .next/standalone/.env.local 2>/dev/null || true
+            pm2 start .next/standalone/server.js --name "api-radar-frontend" --cwd /home/${{ secrets.SERVER_USER }}/API-Radar --node-args="--max-old-space-size=512" -- -p 3000
 
             pm2 save --force
             sleep 5
