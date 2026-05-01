@@ -55,7 +55,7 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'discord_webhook',
     label: 'Discord Webhook',
     regex: /\b(?:ptb\.|canary\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/[0-9]{17,20}\/[a-zA-Z0-9_-]{68}\b/,
-    prefixes: ['discord.com/api/webhooks/', 'discordapp.com/api/webhooks/']
+    prefixes: ['discord.com/api/webhooks/', 'discordapp.com/api/webhooks/', 'ptb.discord.com/api/webhooks/', 'canary.discord.com/api/webhooks/']
   },
   {
     name: 'discord_token',
