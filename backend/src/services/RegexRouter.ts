@@ -61,7 +61,7 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'discord_token',
     label: 'Discord Bot Token',
     regex: /\b[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}\b/,
-    prefixes: ['DISCORD_TOKEN', 'client.login(', 'bot.run('] 
+    prefixes: ['DISCORD_TOKEN', 'DISCORD_BOT_TOKEN', 'client.login('] 
   },
   {
     name: 'slack_token',
@@ -73,7 +73,7 @@ const PROVIDER_RULES: ProviderRule[] = [
     name: 'telegram_bot',
     label: 'Telegram Bot Token',
     regex: /\b[0-9]{8,10}:[a-zA-Z0-9_-]{35,40}\b/,
-    prefixes: ['TELEGRAM_BOT_TOKEN', 'api.telegram.org/bot', 'telegram.Bot('] 
+    prefixes: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_API_KEY', 'api.telegram.org/bot'] 
   },
   {
     name: 'slack_webhook',
