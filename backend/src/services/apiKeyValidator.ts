@@ -51,7 +51,19 @@ export function isValidKey(key: string): boolean {
     const lowerKey = key.toLowerCase();
     if (PLACEHOLDER_KEYWORDS.some(word => lowerKey.includes(word))) return false;
 
-    let secretPart = key.replace(/^sk-[a-zA-Z0-9\-]+-/, '').replace(/^sk-/, '').replace(/^AIza/, '');
+    let secretPart = key;
+
+    if (secretPart.includes('slack.com/') || secretPart.includes('discord.com/') || secretPart.includes('discordapp.com/')) {
+        const parts = secretPart.split('/');
+        secretPart = parts[parts.length - 1] || secretPart;
+    }
+
+    secretPart = secretPart
+        .replace(/^sk-[a-zA-Z0-9\-]+-/, '')
+        .replace(/^sk-/, '')
+        .replace(/^AIza/, '')
+        .replace(/^xox[pboase]-/, '')
+        .replace(/^[0-9]{8,10}:/, '');
     
     const H = calculateEntropy(secretPart);
     if (H < 2.5) return false;

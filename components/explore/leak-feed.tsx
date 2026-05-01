@@ -20,7 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeakedKey, Provider } from "@/types";
 import { cn } from "@/lib/utils";
-import { INTEL_PROVIDERS } from "@/lib/constants";
+import { INTEL_PROVIDERS, PROVIDER_LABELS } from "@/lib/constants";
 
 
 
@@ -133,7 +133,7 @@ const FeedEmptyState = React.memo(
     isOffline?: boolean;
   }) => {
     const isAll = selectedProvider === "all";
-    const providerLabel = isAll ? "SYSTEM" : selectedProvider.toUpperCase();
+    const providerLabel = isAll ? "SYSTEM" : (PROVIDER_LABELS.find(lbl => lbl.value === selectedProvider)?.label || selectedProvider).toUpperCase();
     const [nextRetry, setNextRetry] = React.useState(30.0);
 
     React.useEffect(() => {

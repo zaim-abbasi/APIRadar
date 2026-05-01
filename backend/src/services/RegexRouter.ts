@@ -50,6 +50,36 @@ const PROVIDER_RULES: ProviderRule[] = [
     label: 'Cerebras',
     regex: /\bcsk-[a-zA-Z0-9]{32,64}\b/,
     prefixes: ['csk-']
+  },
+  {
+    name: 'discord_webhook',
+    label: 'Discord Webhook',
+    regex: /\b(?:ptb\.|canary\.)?(?:discord|discordapp)\.com\/api(?:\/v\d+)?\/webhooks\/[0-9]{17,20}\/[a-zA-Z0-9_-]{68}\b/,
+    prefixes: ['discord.com/api/webhooks/', 'discordapp.com/api/webhooks/', 'canary.discord', 'ptb.discord']
+  },
+  {
+    name: 'discord_token',
+    label: 'Discord Bot Token',
+    regex: /\b[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}\b/,
+    prefixes: [] 
+  },
+  {
+    name: 'slack_token',
+    label: 'Slack Token',
+    regex: /\b(xox[pboase]-[a-zA-Z0-9]{10,13}-[a-zA-Z0-9]{10,13}-[a-zA-Z0-9]{24,34})\b/,
+    prefixes: ['xoxb-', 'xoxp-', 'xoxa-', 'xoxs-', 'xoxe-']
+  },
+  {
+    name: 'telegram_bot',
+    label: 'Telegram Bot Token',
+    regex: /\b[0-9]{8,10}:[a-zA-Z0-9_-]{35,40}\b/,
+    prefixes: [] 
+  },
+  {
+    name: 'slack_webhook',
+    label: 'Slack Webhook',
+    regex: /\bhooks\.slack\.com\/services\/T[a-zA-Z0-9_]{8,11}\/B[a-zA-Z0-9_]{8,11}\/[a-zA-Z0-9_]{24}\b/,
+    prefixes: ['hooks.slack.com/services/T']
   }
 ];
 

@@ -15,12 +15,13 @@ import {
   FolderGit2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LeakedKey } from "@/types";
+import { LeakedKey, Provider } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { fetchProviderStats } from "@/lib/api";
 import useSWR from "swr";
 import { PROVIDERS, TICKER_REPOS } from "@/components/home/hero-section";
+import { PROVIDER_NAMES, PROVIDER_LABELS } from "@/lib/constants";
 
 const safeFormatDate = (dateStr: string | Date | undefined) => {
   if (!dateStr) return "Unknown time";
@@ -80,6 +81,19 @@ const TotalTodaySkeleton = () => (
   </Card>
 );
 
+const DASHBOARD_GROUPS = [
+  { id: 'anthropic', label: 'Anthropic' },
+  { id: 'cerebras', label: 'Cerebras' },
+  { id: 'discord', label: 'Discord', prefix: 'discord_' },
+  { id: 'google', label: 'Google' },
+  { id: 'groq', label: 'Groq' },
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'openrouter', label: 'OpenRouter' },
+  { id: 'slack', label: 'Slack', prefix: 'slack_' },
+  { id: 'telegram_bot', label: 'Telegram Bot' },
+  { id: 'xai', label: 'xAI (Grok)' },
+];
+
 export function OverviewDashboard({
   leaks,
   isLoading,
@@ -129,10 +143,9 @@ export function OverviewDashboard({
       }))
     : Array.from({ length: 20 }).map((_, i) => {
         const repo = TICKER_REPOS[i % TICKER_REPOS.length];
-        const [owner, name] = repo.split("/");
         return {
-          provider: PROVIDERS[i % PROVIDERS.length],
-          repo: name || "unknown",
+          provider: PROVIDER_NAMES[i % PROVIDER_NAMES.length],
+          repo,
           date: new Date(Date.now() - (20 - i) * 180000),
           isAlert: false,
         };
@@ -204,7 +217,7 @@ export function OverviewDashboard({
                         : "text-muted-foreground/80",
                     )}
                   >
-                    {l.provider.toUpperCase()}
+                    {(PROVIDER_LABELS.find(lbl => lbl.value === l.provider)?.label || l.provider).toUpperCase()}
                   </span>{" "}
                   {l.isAlert ? "exposure in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
@@ -269,7 +282,7 @@ export function OverviewDashboard({
                         : "text-muted-foreground/80",
                     )}
                   >
-                    {l.provider.toUpperCase()}
+                    {(PROVIDER_LABELS.find(lbl => lbl.value === l.provider)?.label || l.provider).toUpperCase()}
                   </span>{" "}
                   {l.isAlert ? "exposure in" : "//"}{" "}
                   <span className="text-muted-foreground/90 italic">
@@ -330,19 +343,23 @@ export function OverviewDashboard({
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {(statsLoading && providerStats.length === 0) ? (
                 <>
-                  {Array.from({ length: 7 }).map((_, i) => (
+                  {Array.from({ length: DASHBOARD_GROUPS.length }).map((_, i) => (
                     <ProviderCardSkeleton key={i} />
                   ))}
                   <TotalTodaySkeleton />
                 </>
               ) : (
-                providerStats
-                  .map((stat, i) => {
-                    const color = "text-amber-500";
+                DASHBOARD_GROUPS
+                  .map((group, i) => {
+                    const matchingStats = providerStats.filter(s => group.prefix ? s.provider.startsWith(group.prefix) : s.provider === group.id);
+                    const count = matchingStats.reduce((sum, s) => sum + s.count, 0);
+                    const todayCount = matchingStats.reduce((sum, s) => sum + (s.todayCount || 0), 0);
+                    const clickId = group.prefix ? `${group.prefix}token` as Provider : group.id as Provider;
+
                     return (
                       <button
                         key={i}
-                        onClick={() => onProviderChange?.(stat.provider)}
+                        onClick={() => onProviderChange?.(clickId)}
                         className="text-left h-full outline-none"
                       >
                         <Card
@@ -352,17 +369,18 @@ export function OverviewDashboard({
                             <div className="flex justify-between items-start mb-0 sm:mb-2">
                               <div className="space-y-0 sm:space-y-1 z-10">
                                 <p
-                                  className={`text-[8px] sm:text-xs font-bold uppercase tracking-wide text-amber-500`}
+                                  className={`text-[8px] sm:text-[10px] font-bold uppercase tracking-wide text-amber-500 truncate`}
+                                  title={group.label}
                                 >
-                                  {stat.provider.toUpperCase()}
+                                  {group.label.toUpperCase()}
                                 </p>
                                 <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-tight">
-                                  {stat.count.toLocaleString()}
+                                  {count.toLocaleString()}
                                 </h3>
-                                {stat.todayCount > 0 ? (
+                                {todayCount > 0 ? (
                                   <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-amber-500">
                                     <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
-                                    +{stat.todayCount} today
+                                    +{todayCount} today
                                   </span>
                                 ) : (
                                   <span className="flex items-center gap-1 mt-0.5 sm:mt-1 font-semibold text-[10px] sm:text-xs text-amber-500/30">
@@ -450,7 +468,7 @@ export function OverviewDashboard({
                             <span
                               className={`text-[11px] sm:text-xs font-bold truncate ${providerColors[leak.provider] || "text-foreground"}`}
                             >
-                              {leak.provider.toUpperCase()}
+                              {(PROVIDER_LABELS.find(lbl => lbl.value === leak.provider)?.label || leak.provider).toUpperCase()}
                             </span>
                             <span className="text-[9px] sm:text-[10px] text-muted-foreground whitespace-nowrap">
                               {safeFormatDate(leak.leakDetectedAt)}

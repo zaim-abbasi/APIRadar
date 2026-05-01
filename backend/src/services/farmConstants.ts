@@ -51,18 +51,24 @@ export const FARM_CONSTANTS = {
   PATTERNS: {
     IGNORED_DIRS: ['.git', 'node_modules', 'vendor', 'dist', 'build'],
     HIGH_RISK_FILES: [
-
-      // --- EXISTING CONFIGS ---
+      // --- AI & SECRETS CONFIGS ---
       '.env', '.env.local', '.env.development', '.env.production', '.env.test', '.env.example',
       'config.json', 'config.yaml', 'config.yml', 'secrets.json', 'secrets.yaml', 'secrets.yml',
       'appsettings.json', 'application.yml', 'application.yaml', 'database.yml',
       'secret.json', 'secret.yaml', 'secret.yml', 'credentials.json', 'credentials.yaml', 'credentials.yml',
+      'vercel.json', 'netlify.toml', 'wrangler.toml', '.streamlit/secrets.toml',
+
+      // --- CI/CD & PIPELINES ---
       'docker-compose.yml', 'docker-compose.yaml', 'Dockerfile',
       '.gitlab-ci.yml', 'Jenkinsfile', '.circleci/config.yml',
-      'deployment.yml', 'deployment.yaml', 'k8s.yml', 'k8s.yaml',
+      'main.yml', 'deploy.yml', 'deployment.yml', 'deployment.yaml', 'k8s.yml', 'k8s.yaml',
       'main.tf', 'variables.tf', 'terraform.tfvars',
-      'config.js', 'config.ts', 'next.config.js', 'next.config.ts', 'vite.config.js', 'vite.config.ts',
-      'nuxt.config.js', 'nuxt.config.ts', 'settings.py', 'config.py', 'wp-config.php'
+
+      // --- EXFILTRATION & BOT TARGETS ---
+      'config.js', 'config.ts', 'next.config.js', 'vite.config.js', 'nuxt.config.js',
+      'settings.py', 'config.py', 'wp-config.php',
+      'bot.py', 'bot.js', 'bot.ts', 'main.py', 'index.js', 'discord.js', 'discord.py',
+      'telegram.py', 'slack.js', 'webhook.js', 'webhook.php', 'server.js', 'app.py'
     ]
   }
 };

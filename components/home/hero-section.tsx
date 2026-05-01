@@ -14,41 +14,35 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
-import { cn, redact } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { LiveScanTerminal } from "@/components/home/LiveScanTerminal";
 import useSWR from "swr";
 
-export const PROVIDERS = [
-  "OPENAI",
-  "ANTHROPIC",
-  "GOOGLE",
-  "GROQ",
-  "XAI",
-  "CEREBRAS",
-  "OPENROUTER",
-] as const;
+import { PROVIDER_NAMES, PROVIDER_LABELS } from "@/lib/constants";
+
+export const PROVIDERS = PROVIDER_NAMES;
 
 export const TICKER_REPOS = [
-  "uddugteam/oracle-flare",
-  "ErnieAtLYD/retrospect-ai",
-  "ConardLi/easy-learn-ai",
-  "elQ3ndie/EtherStaking",
-  "idootop/open-xiaoai",
-  "TRocket-Labs/vectorlint",
-  "codeme-ne/die-produktivitaets-werkstatt",
-  "Tortilok/cyberimmune-systems_tpp",
-  "yannart/docker-compose-demo",
-  "manikcloud/manik-flask-chatgpt",
-  "Divyanshu9822/ml-ops-holiday-package-prediction",
-  "relkli/opentelemetry-demo",
-  "Vizzuality/heco-invest",
-  "wangwwwwjy/chatgpt-on-wechat-2",
-  "sumitrevolt/flash-loan-arbitrage-system",
-  "InsightReactions/TinyLlama",
-  "chromewillow/ai-credential-manager",
-  "gounthar/jdk8-removal",
-  "Siluvai1997/k8s-cicd-infrastructure",
-  "borjaOrtizLlamas/TFM_DEVOPS_MASTER_AWS",
+  "udd***am/ora*******re",
+  "Ern*****YD/ret********ai",
+  "Con***Li/eas********ai",
+  "elQ***ie/Eth*******ng",
+  "ido**op/ope******ai",
+  "TRo*******bs/vec*****nt",
+  "cod****ne/die************************tt",
+  "Tor***ok/cyb******************pp",
+  "yan**rt/doc**************mo",
+  "man*****ud/man**************pt",
+  "Div********22/ml-****************************on",
+  "rel*li/ope*************mo",
+  "Viz*****ty/hec******st",
+  "wan*****jy/cha**************-2",
+  "sum******lt/fla**********************em",
+  "Ins***********ns/Tin****ma",
+  "chr*******ow/ai-****************er",
+  "gou***ar/jdk*******al",
+  "Sil******97/k8s******************re",
+  "bor***********as/TFM****************WS",
 ] as const;
 
 const providerColors: Record<string, string> = {
@@ -161,12 +155,11 @@ WorkflowPipeline.displayName = "WorkflowPipeline";
 
 
 const tickerEntries = TICKER_REPOS.map((repo, i) => {
-  const [owner, name] = repo.split("/");
   const provider = PROVIDERS[i % PROVIDERS.length];
   const mins = (i * 7) % 58 + 1;
   return {
     provider,
-    repo: `${redact(owner || "unknown")}/${redact(name || "unknown")}`,
+    repo,
     timeAgo: `${mins}m ago`,
     isAlert: false,
     isMock: true,
@@ -248,7 +241,7 @@ const HeroTicker = React.memo(() => {
                   : "text-muted-foreground/80",
               )}
             >
-              {e.provider.toUpperCase()}
+              {(PROVIDER_LABELS.find(lbl => lbl.value === e.provider)?.label || e.provider).toUpperCase()}
             </span>{" "}
             {e.isAlert ? "exposure in" : "//"}{" "}
             <span className="text-muted-foreground/90 italic">{e.repo}</span> ·{" "}

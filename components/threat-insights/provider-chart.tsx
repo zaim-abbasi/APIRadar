@@ -14,10 +14,15 @@ interface ProviderChartProps {
 const providerColors: Record<string, string> = {
   'anthropic': '#d97706',
   'cerebras': '#7c3aed',
+  'discord_token': '#5865F2',
+  'discord_webhook': '#5865F2',
   'google': '#3b82f6',
   'groq': '#ea580c',
   'openai': '#10b981',
   'openrouter': '#d946ef',
+  'slack_token': '#E01E5A',
+  'slack_webhook': '#E01E5A',
+  'telegram_bot': '#24A1DE',
   'xai': '#64748b',
 };
 
@@ -28,6 +33,11 @@ const getProviderDisplayName = (provider: string): string => {
     'stripe': 'Stripe',
     'github': 'GitHub',
     'discord': 'Discord',
+    'discord_token': 'Discord Token',
+    'discord_webhook': 'Discord Webhook',
+    'slack_token': 'Slack Token',
+    'slack_webhook': 'Slack Webhook',
+    'telegram_bot': 'Telegram Bot',
     'twilio': 'Twilio',
     'sendgrid': 'SendGrid'
   };
