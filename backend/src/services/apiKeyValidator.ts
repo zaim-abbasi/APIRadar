@@ -48,14 +48,17 @@ function calculateLanguageProbability(str: string): number {
 
 export function isValidKey(key: string): boolean {
     if (!key || key.length < 8 || /(.)\1{4,}/.test(key)) return false;
-    const lowerKey = key.toLowerCase();
-    if (PLACEHOLDER_KEYWORDS.some(word => lowerKey.includes(word))) return false;
 
     let secretPart = key;
 
-    if (secretPart.includes('slack.com/') || secretPart.includes('discord.com/') || secretPart.includes('discordapp.com/')) {
+    if (secretPart.includes('slack.com/') || secretPart.includes('discord.com/') || secretPart.includes('discordapp.com/') || secretPart.includes('telegram.org/')) {
         const parts = secretPart.split('/');
         secretPart = parts[parts.length - 1] || secretPart;
+    }
+
+    if (/^[a-zA-Z0-9_-]{24,28}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}$/.test(key)) {
+        const segments = key.split('.');
+        secretPart = segments[segments.length - 1] || secretPart;
     }
 
     secretPart = secretPart
@@ -64,7 +67,10 @@ export function isValidKey(key: string): boolean {
         .replace(/^AIza/, '')
         .replace(/^xox[pboase]-/, '')
         .replace(/^[0-9]{8,10}:/, '');
-    
+
+    const lowerSecret = secretPart.toLowerCase();
+    if (PLACEHOLDER_KEYWORDS.some(word => lowerSecret.includes(word))) return false;
+
     const H = calculateEntropy(secretPart);
     if (H < 2.5) return false;
 
@@ -73,4 +79,4 @@ export function isValidKey(key: string): boolean {
     const intelligenceScore = normalizedH * (1 - L);
 
     return intelligenceScore > 0.5;
-}
+}

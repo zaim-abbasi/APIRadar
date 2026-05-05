@@ -72,7 +72,7 @@ const PROVIDER_RULES: ProviderRule[] = [
   {
     name: 'telegram_bot',
     label: 'Telegram Bot Token',
-    regex: /\b[0-9]{8,10}:[a-zA-Z0-9_-]{35,40}\b/,
+    regex: /(?<![a-zA-Z])[0-9]{8,10}:[a-zA-Z0-9_-]{35,40}\b/,
     prefixes: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_API_KEY', 'api.telegram.org/bot'] 
   },
   {
@@ -139,60 +139,41 @@ export class RegexRouter {
     const results: { key: string; provider: string }[] = [];
     const foundKeys = new Set<string>();
 
-    // Memory-efficient trigger-based scanning
     let match: RegExpExecArray | null;
-    this.triggerRegex.lastIndex = 0; // Reset global regex for fresh scan
+    this.triggerRegex.lastIndex = 0;
 
     while ((match = this.triggerRegex.exec(content)) !== null) {
       const startIndex = match.index;
+      const triggerText = match[0];
 
-      // Ensure the match starts at a true word boundary in the original text
       if (startIndex > 0) {
         const prevChar = content[startIndex - 1];
         if (prevChar && /[a-zA-Z0-9_]/.test(prevChar)) continue;
       }
 
-      // Extract a reasonable chunk forward to find the full token
-      const potentialChunk = content.slice(startIndex, startIndex + 150);
-
-      // Extract the specific token starting from the trigger
-      const tokenMatch = potentialChunk.match(/^[a-zA-Z0-9_\-+=]{20,}/);
-      const token = tokenMatch?.[0];
-      if (!token) continue;
-
-      if (foundKeys.has(token)) {
-        // Skip ahead to end of this known key
-        this.triggerRegex.lastIndex = startIndex + token.length;
-        continue;
-      }
+      const chunk = content.slice(startIndex, startIndex + 300);
+      const candidateRules = this.prefixMap.get(triggerText);
+      if (!candidateRules) continue;
 
       let matched = false;
-      // Sort prefixes by length descending for precision (e.g., sk-ant- before sk-)
-      const sortedPrefixes = Array.from(this.prefixMap.keys()).sort((a, b) => b.length - a.length);
-
-      for (const prefix of sortedPrefixes) {
-        if (token.startsWith(prefix)) {
-          const rules = this.prefixMap.get(prefix);
-          if (rules) {
-            for (const rule of rules) {
-              if (rule.regex.test(token) && isValidKey(token)) {
-                results.push({ key: token, provider: rule.name });
-                foundKeys.add(token);
-                matched = true;
-                break;
-              }
-            }
+      for (const rule of candidateRules) {
+        const regexMatch = rule.regex.exec(chunk);
+        if (regexMatch) {
+          const extractedKey = regexMatch[0];
+          if (!foundKeys.has(extractedKey) && isValidKey(extractedKey)) {
+            results.push({ key: extractedKey, provider: rule.name });
+            foundKeys.add(extractedKey);
+            matched = true;
+            this.triggerRegex.lastIndex = startIndex + regexMatch.index + extractedKey.length;
+            break;
           }
         }
-        if (matched) break;
       }
 
-      // If we found a valid key, skip the trigger pointer to its end to avoid redundant sub-matches
-      if (matched) {
-        this.triggerRegex.lastIndex = startIndex + token.length;
+      if (!matched) {
+        this.triggerRegex.lastIndex = startIndex + triggerText.length;
       }
     }
-
 
     return results;
   }
