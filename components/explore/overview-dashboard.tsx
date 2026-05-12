@@ -466,7 +466,7 @@ export function OverviewDashboard({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1 sm:gap-2">
                             <span
-                              className={`text-[11px] sm:text-xs font-bold truncate ${providerColors[leak.provider] || "text-foreground"}`}
+                              className={`text-[11px] sm:text-xs font-bold truncate text-amber-500`}
                             >
                               {(PROVIDER_LABELS.find(lbl => lbl.value === leak.provider)?.label || leak.provider).toUpperCase()}
                             </span>
