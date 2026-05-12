@@ -159,7 +159,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
       const AES_KEY = getEncryptionKey();
       const secretMap = new Map(secrets.map(s => {
-        let redacted = '********************';
+        let redacted = '**********';
         let full = '**********';
         try {
           full = decrypt(s.encryptedKey, AES_KEY);
@@ -168,10 +168,11 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         return [s._id.toString(), { redacted, full }];
       }));
 
-      leaks = leaks.map((l: any) => {
+      leaks = leaks.map((l: any, index: number) => {
+        const absoluteIndex = skip + index;
         const secretData = secretMap.get(l.secretId.toString()) || { redacted: '**********', full: '**********' };
         
-        const shouldRedact = true;
+        const shouldRedact = isAuthenticated ? absoluteIndex < 6 : true;
 
         return {
           ...l,
@@ -233,7 +234,6 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
   }
 }
 
-/*
 export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
     if (!request.user?.isAuthenticated) {
@@ -281,7 +281,6 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     return reply.status(500).send({ error: 'Failed to fetch full key' });
   }
 }
-*/
 
 export async function getProviderStatsHandler(request: AuthenticatedRequest, reply: FastifyReply) {
   try {
