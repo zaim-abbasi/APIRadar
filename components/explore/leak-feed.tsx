@@ -341,7 +341,7 @@ const FeedItem = React.memo(
                   <span>{index < 6 ? "RECENT" : "IDENTIFIED"}</span>
                 </div>
                 <span className="text-[9px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium min-w-[32px] justify-end">
-                  {formatTimeAgo(new Date(leak.leakDetectedAt)).replace(" ago", "")}
+                  {formatTimeAgo(new Date(leak.leakIntroducedAt)).replace(" ago", "")}
                 </span>
               </div>
             </div>
@@ -418,7 +418,7 @@ const FeedItem = React.memo(
             <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
             <span className="text-[13px] text-muted-foreground/70 whitespace-nowrap flex-shrink-0 tabular-nums font-medium inline-flex items-center gap-2 sm:w-[100px] justify-start">
               <Clock className="h-3.5 w-3.5 opacity-60" />
-              {formatTimeAgo(new Date(leak.leakDetectedAt))}
+              {formatTimeAgo(new Date(leak.leakIntroducedAt))}
             </span>
           </div>
         </div>

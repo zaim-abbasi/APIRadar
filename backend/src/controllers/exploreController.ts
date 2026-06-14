@@ -136,7 +136,7 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
 
     const filter = buildQueryFilter(provider);
 
-    const sort = { leakDetectedAt: -1 as const };
+    const sort = { leakIntroducedAt: -1 as const };
 
     let total = 0;
     let leaks: any[] = [];
@@ -243,7 +243,7 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
     const { id } = request.params as { id: string };
 
     const latestLeaks = await Leak.find()
-      .sort({ leakDetectedAt: -1 })
+      .sort({ leakIntroducedAt: -1 })
       .limit(6)
       .select('_id')
       .lean();
