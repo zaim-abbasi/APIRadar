@@ -149,8 +149,17 @@
   will-change: transform;
 }
 
-/* Snappy transitions for all interactive elements */
-* {
+/* Snappy transitions for interactive elements only (scoped to avoid global compositor overhead) */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea,
+[tabindex]:not([tabindex="-1"]),
+.transition-colors,
+.transition-all,
+.transition-opacity {
   transition-property:
     color, background-color, border-color, text-decoration-color, fill, stroke,
     opacity, transform, filter, backdrop-filter;

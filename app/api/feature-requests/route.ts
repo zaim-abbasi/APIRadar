@@ -7,37 +7,14 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-
-    let session = await getServerSession(authOptions);
-
-    if (!session) {
-      const sessionToken = cookieStore.get('next-auth.session-token')?.value ||
-        cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-      if (sessionToken) {
-        try {
-          const token = await getToken({
-            req: request as any,
-            secret: process.env.NEXTAUTH_SECRET,
-          });
-
-          if (token && token.email) {
-            session = {
-              user: {
-                email: token.email as string,
-                id: (token.id || token.sub || token.email) as string,
-              },
-            } as any;
-          }
-        } catch (e) {
-          console.warn('Failed to decode session token:', e);
-        }
-      }
-    }
+    // Decrypt the session token directly in one pass (extremely fast & secure)
+    const token = await getToken({
+      req: request as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     // If we're fully unauthenticated, deny the request here before hitting backend
-    if (!session?.user) {
+    if (!token?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -45,22 +22,16 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'application/json',
     };
 
-    let backendToken: string | undefined = session?.backendToken;
-    if (!backendToken) {
-      const token = await getToken({
-        req: request as any,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
-      if (token && process.env.NEXTAUTH_SECRET) {
-        backendToken = jwt.sign(
-          {
-            id: token.id || token.sub,
-            email: token.email,
-          },
-          process.env.NEXTAUTH_SECRET,
-          { expiresIn: '30d' }
-        );
-      }
+    let backendToken: string | undefined = token?.backendToken as string | undefined;
+    if (!backendToken && process.env.NEXTAUTH_SECRET) {
+      backendToken = jwt.sign(
+        {
+          id: token.id || token.sub,
+          email: token.email,
+        },
+        process.env.NEXTAUTH_SECRET,
+        { expiresIn: '30d' }
+      );
     }
     if (backendToken) {
       authHeaders['Authorization'] = `Bearer ${backendToken}`;

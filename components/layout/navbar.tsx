@@ -54,6 +54,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -101,8 +102,8 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
            <div className="flex items-center gap-3 p-3 rounded-lg border border-border/20 bg-card/40 animate-pulse">
               <div className="h-10 w-10 rounded-lg bg-muted/40" />
               <div className="flex flex-col gap-2">
-                <div className="h-4 w-32 bg-muted/30 rounded-md" />
-                <div className="h-3 w-40 bg-muted/20 rounded-md" />
+                 <div className="h-4 w-32 bg-muted/30 rounded-md" />
+                 <div className="h-3 w-40 bg-muted/20 rounded-md" />
               </div>
            </div>
         </div>
@@ -137,14 +138,22 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         </div>
       ) : (
         <Button 
-          className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[12px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.2em]"
-          onClick={() => {
-            sessionStorage.setItem('radar_restore_flag', 'true');
-            signIn('google');
-            onClose();
+          className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[12px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.2em] disabled:opacity-70 disabled:cursor-not-allowed"
+          disabled={isLoggingIn}
+          onClick={async () => {
+            if (isLoggingIn) return;
+            setIsLoggingIn(true);
+            try {
+              sessionStorage.setItem('radar_restore_flag', 'true');
+              await signIn('google');
+              onClose();
+            } catch (err) {
+              console.error(err);
+              setIsLoggingIn(false);
+            }
           }}
         >
-          Sign in
+          {isLoggingIn ? "Connecting..." : "Sign in"}
         </Button>
       )}
     </div>

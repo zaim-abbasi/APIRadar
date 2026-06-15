@@ -78,11 +78,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="light" style={{ colorScheme: 'light' }} suppressHydrationWarning>
+    <html lang="en" className="light" style={{ colorScheme: 'light' }} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Preconnect to external domains for faster loading */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
+        <link rel="preconnect" href="https://accounts.google.com" crossOrigin="anonymous" />
         {/* SEO Meta Tags and Canonical handled by Next.js metadata */}
         <link rel="icon" href="/logo/transparent_logo.webp" type="image/webp" sizes="446x446" />
         <link rel="privacy-policy" href="/privacy" />
@@ -149,36 +150,6 @@ export default function RootLayout({
           }}
         />
 
-        <Script
-          id="pre-hydration-attr-cleanup"
-          strategy="beforeInteractive"
-        >{`
-          (function () {
-            try {
-              var attrs = ['bis_skin_checked', 'data-lastpass-icon-root', 'data-1p-ignore'];
-              function removeAttrs() {
-                for (var i = 0; i < attrs.length; i++) {
-                  var attr = attrs[i];
-                  var nodes = document.querySelectorAll('[' + attr + ']');
-                  for (var j = 0; j < nodes.length; j++) {
-                    nodes[j].removeAttribute(attr);
-                  }
-                }
-              }
-              removeAttrs();
-              var observer = new MutationObserver(removeAttrs);
-              observer.observe(document.documentElement, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: attrs
-              });
-              window.addEventListener('beforeunload', function () {
-                observer.disconnect();
-              });
-            } catch (e) {}
-          })();
-        `}</Script>
         <AuthProvider>
           <ThemeProvider>
             <div className="min-h-screen flex flex-col" suppressHydrationWarning>

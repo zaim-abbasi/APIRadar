@@ -7,51 +7,23 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    let session = await getServerSession(authOptions);
-
-    if (!session) {
-      const sessionToken = cookieStore.get('next-auth.session-token')?.value ||
-        cookieStore.get('__Secure-next-auth.session-token')?.value;
-
-      if (sessionToken) {
-        try {
-          const token = await getToken({
-            req: request as any,
-            secret: process.env.NEXTAUTH_SECRET,
-          });
-
-          if (token && token.email) {
-            session = {
-              user: {
-                email: token.email as string,
-                id: (token.id || token.sub || token.email) as string,
-              },
-            } as any;
-          }
-        } catch (e) {
-          console.warn('Failed to decode session token in live stats:', e);
-        }
-      }
-    }
+    // Decrypt the session token directly in one pass (extremely fast & secure)
+    const token = await getToken({
+      req: request as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    let backendToken: any = (session as any)?.backendToken;
-    if (!backendToken) {
-      const token = await getToken({
-        req: request as any,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
-      if (token && process.env.NEXTAUTH_SECRET) {
-        backendToken = jwt.sign(
-          { id: token.id || token.sub, email: token.email },
-          process.env.NEXTAUTH_SECRET,
-          { expiresIn: '30d' }
-        );
-      }
+    let backendToken: string | undefined = token?.backendToken as string | undefined;
+    if (!backendToken && token && process.env.NEXTAUTH_SECRET) {
+      backendToken = jwt.sign(
+        { id: token.id || token.sub, email: token.email },
+        process.env.NEXTAUTH_SECRET,
+        { expiresIn: '30d' }
+      );
     }
 
     if (backendToken) {

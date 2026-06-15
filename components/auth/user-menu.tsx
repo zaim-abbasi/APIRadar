@@ -18,9 +18,12 @@ import { cn } from '@/lib/utils';
 export function UserMenu() {
   const { data: session, status } = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Optimized sign-in handler with immediate redirect
   const handleSignIn = useCallback(async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
     try {
       sessionStorage.setItem("radar_restore_flag", "true");
       await signIn('google', { 
@@ -29,8 +32,9 @@ export function UserMenu() {
       });
     } catch (error) {
       console.error('Sign in error:', error);
+      setIsLoggingIn(false);
     }
-  }, []);
+  }, [isLoggingIn]);
 
   // Optimized sign-out handler
   const handleSignOut = useCallback(async () => {
@@ -49,9 +53,10 @@ export function UserMenu() {
     return (
       <Button
         onClick={handleSignIn}
-        className="h-9 px-5 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.18em]"
+        disabled={isLoggingIn}
+        className="h-9 px-5 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[11px] font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.18em] disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        Sign in
+        {isLoggingIn ? "Connecting..." : "Sign in"}
       </Button>
     );
   }

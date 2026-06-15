@@ -172,9 +172,9 @@ const HeroTicker = React.memo(() => {
     error,
     isLoading,
   } = useSWR<any[]>("/api/leaks", fetcher, {
-    refreshInterval: 15000,
-    dedupingInterval: 5000,
-    revalidateOnFocus: true,
+    refreshInterval: 60000,
+    dedupingInterval: 55000,
+    revalidateOnFocus: false,
     revalidateIfStale: false,
     shouldRetryOnError: false,
   });
