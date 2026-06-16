@@ -77,34 +77,19 @@ const FooterComponent = () => {
             >
               Terms
             </Link>
+            <a
+              href="mailto:contact@apiradar.live"
+              className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
+            >
+              Contact
+            </a>
           </div>
         </div>
 
         {/* Row 2 (Mobile) / Center & Right Sections (Desktop) */}
         <div className="flex items-center justify-between w-full md:contents gap-4">
-          {/* Mobile Row 2: Built By (Left) and Copyright (Right) */}
-          <div className="md:w-1/3 flex items-center justify-between md:justify-center w-full">
-            <div className="md:hidden flex items-center gap-1 shrink-0 text-[10px] font-medium text-muted-foreground tracking-wide">
-              <span className="opacity-60">Built by</span>
-              <a
-                href="https://github.com/zaim-abbasi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
-              >
-                <span className="font-bold">Zaim</span>
-              </a>
-              <span className="opacity-60 font-medium">@</span>
-              <a
-                href="https://www.linkedin.com/company/apiradar/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
-              >
-                <span className="font-bold">APIRadar</span>
-              </a>
-            </div>
-            
+          {/* Mobile Row 2: Copyright */}
+          <div className="md:w-1/3 flex items-center justify-center w-full">
             <span
               id="footer-label"
               className="text-[9px] md:text-xs text-muted-foreground/50 font-medium whitespace-nowrap"
@@ -130,26 +115,12 @@ const FooterComponent = () => {
               >
                 Terms
               </Link>
-            </div>
-            
-            <div className="flex items-center gap-1 shrink-0 ml-6">
-              <span className="opacity-60 font-medium">Built by</span>
+              <span className="text-muted-foreground/20">•</span>
               <a
-                href="https://github.com/zaim-abbasi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
+                href="mailto:contact@apiradar.live"
+                className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
               >
-                <span className="font-bold text-amber-500">Zaim</span>
-              </a>
-              <span className="opacity-60 font-medium">@</span>
-              <a
-                href="https://www.linkedin.com/company/apiradar/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 font-semibold text-amber-500 transition-colors duration-200 hover:underline underline-offset-4"
-              >
-                <span className="font-bold text-amber-500">APIRadar</span>
+                Contact
               </a>
             </div>
           </div>
