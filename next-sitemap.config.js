@@ -1,5 +1,5 @@
 module.exports = {
-  siteUrl: 'https://apiradar.live',
+  siteUrl: 'https://apiradar.bot.nu',
   generateRobotsTxt: true,
   robotsTxtOptions: {
     policies: [{ userAgent: '*', allow: '/' }],

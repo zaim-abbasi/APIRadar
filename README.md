@@ -139,14 +139,14 @@ GITHUB_RATE_LIMIT_DELAY=1000
 
 ### Backlinks Strategy
 - Submit APIRadar to developer directories (Product Hunt, Dev.to, Indie Hackers, etc.)
-- Write guest posts or tutorials on tech blogs and link back to https://apiradar.live
+- Write guest posts or tutorials on tech blogs and link back to https://apiradar.bot.nu
 - Share on social media (Twitter, LinkedIn, Reddit, Hacker News)
 - Engage in relevant forums (Stack Overflow, GitHub Discussions) and include your link in your profile or signature
 - Ask partners, friends, or satisfied users to link to your site
 
 ### Monitoring & Analytics
-- Set up Google Search Console for https://apiradar.live
-- Submit your sitemap: https://apiradar.live/sitemap.xml
+- Set up Google Search Console for https://apiradar.bot.nu
+- Submit your sitemap: https://apiradar.bot.nu/sitemap.xml
 - Set up Google Analytics for traffic monitoring
 - Regularly check Google Search Console for crawl errors and performance
 - Use Google PageSpeed Insights to monitor and optimize site speed

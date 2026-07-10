@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://apiradar.live
+Host: https://apiradar.bot.nu
 
 # Sitemaps
-Sitemap: https://apiradar.live/sitemap.xml
+Sitemap: https://apiradar.bot.nu/sitemap.xml

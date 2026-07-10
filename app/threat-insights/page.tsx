@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Threat Insights - APIRadar',
     description: 'Global statistics and industry trends on API key exposure events.',
-    url: 'https://apiradar.live/threat-insights',
+    url: 'https://apiradar.bot.nu/threat-insights',
   },
   twitter: {
     title: 'Threat Insights - APIRadar',

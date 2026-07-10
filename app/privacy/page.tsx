@@ -92,7 +92,7 @@ export default function PrivacyPage() {
               </p>
               <div className="pt-1 flex justify-center">
                 <a 
-                  href="mailto:contact@apiradar.live" 
+                  href="mailto:contact@apiradar.bot.nu" 
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-500 text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:brightness-90 transition-all"
                 >
                   <Mail className="h-3.5 w-3.5" />
@@ -112,8 +112,8 @@ export default function PrivacyPage() {
               </p>
               <div className="flex flex-col gap-0.5 border-t border-border/40 pt-2">
                 <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
-                <a href="mailto:contact@apiradar.live" className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5">
-                  contact@apiradar.live
+                <a href="mailto:contact@apiradar.bot.nu" className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5">
+                  contact@apiradar.bot.nu
                 </a>
               </div>
             </section>

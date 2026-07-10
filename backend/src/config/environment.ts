@@ -12,7 +12,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().pipe(z.number().min(1)).default(100),
   RATE_LIMIT_WINDOW: z.coerce.number().pipe(z.number().min(1000)).default(900000),
   NEXTAUTH_SECRET: z.string().min(1),
-  CORS_ORIGINS: z.string().default('https://apiradar.live,https://www.apiradar.live,https://api.apiradar.live,http://localhost:3000')
+  CORS_ORIGINS: z.string().default('https://apiradar.bot.nu,https://www.apiradar.bot.nu,https://api.apiradar.bot.nu,http://apiradar.bot.nu,http://api.apiradar.bot.nu,http://localhost:3000')
     .transform(val => val.split(',').map(origin => origin.trim())),
 });
 

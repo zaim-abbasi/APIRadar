@@ -28,7 +28,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://apiradar.live'),
+  metadataBase: new URL('https://apiradar.bot.nu'),
   title: 'APIRadar',
   description: 'Live tracking of exposed API keys from millions of GitHub repositories. Analyze exposure trends to mitigate organizational security risks with unmatched detail and speed.',
   keywords: 'API keys, security, GitHub, exposures, monitoring, detection, OpenAI, Google Cloud, Gemini, API exposure detector',
@@ -47,10 +47,10 @@ export const metadata: Metadata = {
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
     type: 'website',
     locale: 'en_US',
-    url: 'https://apiradar.live',
+    url: 'https://apiradar.bot.nu',
     images: [
       {
-        url: 'https://apiradar.live/og-image.png',
+        url: 'https://apiradar.bot.nu/og-image.png',
         width: 1200,
         height: 630,
         alt: 'APIRadar Open Graph Image',
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'APIRadar - Real-time API Key Leak Detection',
     description: 'Live tracking of exposed API keys from millions of GitHub repositories.',
-    images: ['https://apiradar.live/og-image.png'],
+    images: ['https://apiradar.bot.nu/og-image.png'],
     site: '@apiradar',
   },
 };
@@ -100,14 +100,14 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "APIRadar",
-              "url": "https://apiradar.live",
+              "url": "https://apiradar.bot.nu",
               "sameAs": [
                 "https://github.com/zaim-abbasi",
                 "https://www.linkedin.com/in/zaim-abbasi/"
               ],
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://apiradar.live/search?q={search_term_string}",
+                "target": "https://apiradar.bot.nu/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })
@@ -121,8 +121,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "APIRadar",
-              "url": "https://apiradar.live",
-              "logo": "https://apiradar.live/logo/transparent_logo.webp",
+              "url": "https://apiradar.bot.nu",
+              "logo": "https://apiradar.bot.nu/logo/transparent_logo.webp",
               "sameAs": [
                 "https://github.com/zaim-abbasi",
                 "https://www.linkedin.com/in/zaim-abbasi/"

@@ -40,7 +40,7 @@ The system uses 6 randomized templates to keep messages natural and varied:
 All messages:
 - Mention the specific provider (OpenAI, Anthropic, etc.)
 - Include the file path if available
-- Include the APIRadar website link (https://apiradar.live)
+- Include the APIRadar website link (https://apiradar.bot.nu)
 - Provide contact email (zaim.k.abbasi@gmail.com) for questions
 - Include the `api-radar-alert` label
 - Use friendly, helpful tone without being spammy

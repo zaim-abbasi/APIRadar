@@ -78,7 +78,7 @@ const FooterComponent = () => {
               Terms
             </Link>
             <a
-              href="mailto:contact@apiradar.live"
+              href="mailto:contact@apiradar.bot.nu"
               className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
             >
               Contact
@@ -117,7 +117,7 @@ const FooterComponent = () => {
               </Link>
               <span className="text-muted-foreground/20">•</span>
               <a
-                href="mailto:contact@apiradar.live"
+                href="mailto:contact@apiradar.bot.nu"
                 className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
               >
                 Contact

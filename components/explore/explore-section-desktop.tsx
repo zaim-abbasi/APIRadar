@@ -172,7 +172,7 @@ const ExploreSectionDesktop = React.memo(function ExploreSectionDesktop({
             name: "Explore Credential Exposures",
             description:
               "Real-time feed of credential exposures discovered in public repositories. Track security incidents as they happen with detailed insights.",
-            url: "https://apiradar.live/explore",
+            url: "https://apiradar.bot.nu/explore",
             mainEntity: {
               "@type": "CollectionPage",
               name: "Credential Exposure Database",

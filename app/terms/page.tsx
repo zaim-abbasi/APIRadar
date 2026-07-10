@@ -129,8 +129,8 @@ export default function TermsPage() {
               </p>
               <div className="flex flex-col gap-0.5 border-t border-border/40 pt-2">
                 <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
-                <a href="mailto:contact@apiradar.live" className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5">
-                  contact@apiradar.live
+                <a href="mailto:contact@apiradar.bot.nu" className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5">
+                  contact@apiradar.bot.nu
                 </a>
               </div>
             </section>

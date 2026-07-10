@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "Explore Leaked Keys - APIRadar",
     description:
       "Real-time feed of API key leaks discovered in public repositories.",
-    url: "https://apiradar.live/explore",
+    url: "https://apiradar.bot.nu/explore",
   },
   twitter: {
     title: "Explore Leaked Keys - APIRadar",
