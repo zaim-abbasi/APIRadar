@@ -45,6 +45,8 @@ jobs:
         env:
           NODE_ENV: production
           MONGODB_URI: mongodb://localhost:27017/build-placeholder
+          NEXT_PUBLIC_BACKEND_URL: https://api.apiradar.bot.nu
+          NEXTAUTH_URL: https://apiradar.bot.nu
 
       - name: Package standalone build
         run: |

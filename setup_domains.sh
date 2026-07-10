@@ -1,20 +1,20 @@
 #!/bin/bash
-# APIRadar Migration and Redeployment Script
-# Usage: chmod +x deploy.sh && ./deploy.sh
+# APIRadar Domain & SSL Setup Script
+# Usage: nano setup_domains.sh (paste content), chmod +x setup_domains.sh, ./setup_domains.sh
 
 set -e
 
 echo "=== 1. Updating Nginx Configuration ==="
 NGINX_CONF="/etc/nginx/sites-available/apiradar"
 
-# Backup old config if it exists
+# Backup old config
 if [ -f "$NGINX_CONF" ]; then
     echo "Backing up existing Nginx config to ${NGINX_CONF}.bak"
     sudo cp "$NGINX_CONF" "${NGINX_CONF}.bak"
 fi
 
 # Write new configuration
-echo "Writing new Nginx configuration for apiradar.bot.nu and api.apiradar.bot.nu..."
+echo "Writing Nginx configuration for apiradar.bot.nu and api.apiradar.bot.nu..."
 sudo bash -c "cat > $NGINX_CONF" << 'EOF'
 server {
     listen 80;
@@ -58,32 +58,26 @@ if [ ! -f "/etc/nginx/sites-enabled/apiradar" ]; then
 fi
 
 # Test and reload Nginx
-echo "Testing Nginx configuration..."
+echo "Testing and reloading Nginx..."
 sudo nginx -t
-echo "Reloading Nginx..."
 sudo systemctl reload nginx
 
-echo "=== 2. Obtaining SSL Certificates with Certbot ==="
+echo "=== 2. Updating .env.production ==="
+ENV_FILE="/home/ubuntu/API-Radar/.env.production"
+if [ -f "$ENV_FILE" ]; then
+    echo "Updating .env.production domains..."
+    sed -i 's|NEXTAUTH_URL=.*|NEXTAUTH_URL=https://apiradar.bot.nu|g' "$ENV_FILE"
+    sed -i 's|NEXT_PUBLIC_BACKEND_URL=.*|NEXT_PUBLIC_BACKEND_URL=https://api.apiradar.bot.nu|g' "$ENV_FILE"
+    echo ".env.production updated successfully."
+else
+    echo "Warning: .env.production file not found at $ENV_FILE. Please update it manually."
+fi
+
+echo "=== 3. Obtaining SSL Certificates with Certbot ==="
 echo "Generating Let's Encrypt certificates..."
-# Request certificates for both domains and auto-configure redirect
 sudo certbot --nginx -d apiradar.bot.nu -d api.apiradar.bot.nu --non-interactive --agree-tos --redirect -m zaim.k.abbasi@gmail.com || {
     echo "Warning: Certbot SSL configuration failed. Please ensure DNS records have fully propagated and try running certbot manually."
 }
 
-echo "=== 3. Pulling Code, Rebuilding & Restarting ==="
-echo "Pulling latest code changes..."
-git pull origin main || echo "Git pull warning: please make sure to pull latest changes manually."
-
-echo "Rebuilding frontend Next.js application..."
-npm run build
-
-echo "Rebuilding backend Node.js application..."
-cd backend
-npm run build
-cd ..
-
-echo "Restarting PM2 processes..."
-pm2 restart all || pm2 reload all
-
-echo "=== Migration Complete! ==="
-echo "Please visit https://apiradar.bot.nu to verify."
+echo "=== Domain and SSL Setup Complete! ==="
+echo "Now push your local changes to trigger the GitHub Actions deployment pipeline."
