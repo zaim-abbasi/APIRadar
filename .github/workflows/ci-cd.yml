@@ -214,7 +214,7 @@ jobs:
             if (prs.data.length > 0) {
               await github.rest.issues.createComment({
                 owner: repo.owner, repo: repo.repo, issue_number: prs.data[0].number,
-                body: `## Deployment Successful\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\n**Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
+                body: `## Deployment Successful\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\n**Live:** https://apiradar.bot.nu | https://api.apiradar.bot.nu\n\n[Workflow](${url})`
               });
             }
 
@@ -278,7 +278,7 @@ jobs:
             if (prs.data.length > 0) {
               await github.rest.issues.createComment({
                 owner: repo.owner, repo: repo.repo, issue_number: prs.data[0].number,
-                body: `## Rollback Completed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\nPrevious version restored.\n\n**Live:** https://apiradar.live | https://api.apiradar.live\n\n[Workflow](${url})`
+                body: `## Rollback Completed\n\n**Commit:** \`${sha.substring(0, 7)}\` | **Branch:** \`${branch}\` | **Author:** @${actor}\n**Time:** ${new Date().toISOString()}\n\nPrevious version restored.\n\n**Live:** https://apiradar.bot.nu | https://api.apiradar.bot.nu\n\n[Workflow](${url})`
               });
             }
 
