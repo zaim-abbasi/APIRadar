@@ -3,6 +3,7 @@ module.exports = {
     {
       name: 'api-radar-backend',
       script: 'dist/server.js',
+      cwd: '/home/ubuntu/api-radar/apiradar-code/backend', 
       instances: 1,
       autorestart: true,
       watch: false,
