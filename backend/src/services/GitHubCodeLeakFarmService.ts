@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 import { githubService } from './github';
 import { ILeak } from '../models/Leak';
 import { ScannedRepo } from '../models/ScannedRepo';
-import { rateLimitOptimizer } from './rateLimitOptimizer';
+import { gitHubAppAuthService } from './GitHubAppAuthService';
 import axios from 'axios';
 import { ConfigurationService } from './ConfigurationService';
 import { regexRouter, PROVIDER_QUERIES } from './RegexRouter';
@@ -21,12 +21,7 @@ import { ingestionService, RawLeakFinding } from './IngestionService';
 const DOC_PATTERNS = [/^readme(\.md|\.txt)?$/i, /^license(\.md|\.txt)?$/i, /^contributing(\.md|\.txt)?$/i, /^changelog(\.md|\.txt)?$/i, /^notice(\.md|\.txt)?$/i];
 
 async function waitForRateLimitIfNeeded(): Promise<void> {
-  const waitTime = rateLimitOptimizer.getResetWaitTime();
-  if (waitTime > 0) {
-    logger.warn(`[GITHUB] Rate limit reached. Waiting ${Math.ceil(waitTime / 1000)}s...`);
-    await new Promise(resolve => setTimeout(resolve, waitTime));
-    rateLimitOptimizer.rotate();
-  }
+  await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
 const RESILIENCE = {
@@ -244,12 +239,6 @@ async function clearScanState(): Promise<void> {
   }
 }
 async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
-  const waitTime = rateLimitOptimizer.getResetWaitTime();
-  if (waitTime > 0) {
-    logger.warn(`[GITHUB] All tokens exhausted. Sleeping for ${Math.ceil(waitTime / 1000)}s...`);
-    await new Promise(r => setTimeout(r, waitTime));
-    rateLimitOptimizer.rotate(); // Try to rotate to a fresh token after waking up
-  }
   try {
     return await githubApiCircuitBreaker.execute(async () => {
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -259,12 +248,8 @@ async function retry<T>(fn: () => Promise<T>, context?: string): Promise<T> {
     });
   } catch (err: any) {
     const status = err.response?.status;
-    const headers = err.response?.headers;
     if (status === 401 || status === 403) {
-      const token = rateLimitOptimizer.getCurrentToken();
-      if (token) await rateLimitOptimizer.reportError(token, status, headers);
       if (githubApiCircuitBreaker.failureCount > 0) githubApiCircuitBreaker.reset();
-      rateLimitOptimizer.rotate();
       if (status === 403) await handleRateLimitError(err);
       throw err;
     }
@@ -293,7 +278,6 @@ async function handleRateLimitError(err: any): Promise<void> {
   if (status === 429) {
     logger.warn('[GITHUB] 429 Rate Limit Exceeded. Waiting 30s...');
     await new Promise(res => setTimeout(res, 30000));
-    rateLimitOptimizer.rotate();
     return;
   }
 
@@ -303,14 +287,8 @@ async function handleRateLimitError(err: any): Promise<void> {
       await new Promise(res => setTimeout(res, 60000));
       return;
     }
-
-    // Standard 403 rate limit
-    const waitTime = rateLimitOptimizer.getResetWaitTime();
-    if (waitTime > 0) {
-      logger.warn(`[GITHUB] Rate limit reached. Waiting ${Math.ceil(waitTime / 1000)}s...`);
-      await new Promise(res => setTimeout(res, waitTime));
-      rateLimitOptimizer.rotate();
-    }
+    logger.warn('[GITHUB] Standard 403 rate limit. Waiting 10s...');
+    await new Promise(res => setTimeout(res, 10000));
   }
 }
 async function batchUpsertLeaks(leaks: Partial<ILeak>[]) {
@@ -347,8 +325,7 @@ export class GitHubCodeLeakFarmService {
     logger.init('[FARM] Starting GitHub code leak farm service...');
     this.immediateConfigCheck();
     try {
-      await rateLimitOptimizer.initialize();
-      await rateLimitOptimizer.refreshAllTokenStatuses();
+      await gitHubAppAuthService.getValidToken();
     } catch (error) {
       logger.warn(`[FARM] Failed to initialize tokens on startup: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -397,15 +374,11 @@ export class GitHubCodeLeakFarmService {
   private async scanLoopInternal(): Promise<void> {
     let lastStatusLog = Date.now();
     let lastConfigCheck = Date.now();
-    let lastTokenRefresh = Date.now();
-    let lastTokenStateLog = Date.now();
     let lastIdleLog = Date.now();
     let lastWeeklyMaintenance = Date.now();
     const STATUS_LOG_INTERVAL = FARM_CONSTANTS.SCAN.IDLE_LOG_INTERVAL; // Repurposed for status log
     const IDLE_LOG_INTERVAL = FARM_CONSTANTS.SCAN.IDLE_LOG_INTERVAL;
     const CONFIG_CHECK_INTERVAL = FARM_CONSTANTS.SCAN.CONFIG_CHECK_INTERVAL;
-    const TOKEN_REFRESH_INTERVAL = FARM_CONSTANTS.SCAN.TOKEN_REFRESH_INTERVAL;
-    const TOKEN_STATE_LOG_INTERVAL = FARM_CONSTANTS.SCAN.TOKEN_STATE_LOG_INTERVAL;
     let firstCycle = true;
     let scanCompleted = false;
     while (this.running) {
@@ -413,24 +386,6 @@ export class GitHubCodeLeakFarmService {
         logger.init('[MAINTENANCE] Resetting Blacklist to discover new leaks in old paths...');
         queryPrioritizer.unblacklistAll();
         lastWeeklyMaintenance = Date.now();
-      }
-      if (Date.now() - lastTokenRefresh > TOKEN_REFRESH_INTERVAL) {
-        lastTokenRefresh = Date.now();
-        try {
-          await rateLimitOptimizer.refreshAllTokenStatuses();
-        } catch (error) {
-          logger.warn(`[FARM] Failed to refresh token statuses: ${error instanceof Error ? error.message : String(error)}`);
-        }
-      }
-      if (Date.now() - lastTokenStateLog > TOKEN_STATE_LOG_INTERVAL) {
-        lastTokenStateLog = Date.now();
-        const status = rateLimitOptimizer.getStatus();
-        const tokenStates = status.tokens.map(t =>
-          t.codeSearchRemaining !== null && t.codeSearchLimit !== null
-            ? `Token ${t.index + 1}: ${t.codeSearchRemaining}/${t.codeSearchLimit}`
-            : `Token ${t.index + 1}: unknown`
-        ).join(', ');
-        logger.warn(`[RATE-LIMIT] Token states (current: ${status.currentToken + 1}): ${tokenStates}`);
       }
       if (Date.now() - lastConfigCheck > CONFIG_CHECK_INTERVAL) {
         lastConfigCheck = Date.now();
@@ -669,7 +624,6 @@ export class GitHubCodeLeakFarmService {
   private async processOnePageForQuery(query: string, page: number): Promise<{ hadResults: boolean; itemCount: number }> {
     try {
       await waitForRateLimitIfNeeded();
-      await rateLimitOptimizer.waitWithThrottling();
       if (!this.running) return { hadResults: false, itemCount: 0 };
       const response = await retry(async () => {
         try {
@@ -744,7 +698,6 @@ export class GitHubCodeLeakFarmService {
 
   private async processSingleItem(item: GitHubSearchItem, query: string): Promise<{ processed: boolean; skipped: boolean }> {
     await waitForRateLimitIfNeeded();
-    await rateLimitOptimizer.waitWithThrottling();
     if (!this.running) return { processed: false, skipped: false };
 
     const repoName = item.repository.full_name;
@@ -757,7 +710,6 @@ export class GitHubCodeLeakFarmService {
     let commitHash = '';
     try {
       await waitForRateLimitIfNeeded();
-      await rateLimitOptimizer.waitWithThrottling();
       commitHash = await retry(async () => {
         try { return await githubService.getFileLatestCommitHash(repoName, filePath); }
         catch (err: any) { if (err.response?.status === 422) return ''; throw err; }
@@ -774,13 +726,11 @@ export class GitHubCodeLeakFarmService {
     scannedCache.set(cacheKey, true);
 
     await waitForRateLimitIfNeeded();
-    await rateLimitOptimizer.waitWithThrottling();
     logger.scan(repoName, filePath);
 
     let content;
     try {
       await waitForRateLimitIfNeeded();
-      await rateLimitOptimizer.waitWithThrottling();
       content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'), 'FILE-CONTENT');
     } catch { return { processed: false, skipped: true }; }
 
@@ -807,21 +757,15 @@ export class GitHubCodeLeakFarmService {
     const leakCount = leaks.length;
     let repoCreatedAt: Date;
     try {
-      await rateLimitOptimizer.waitWithThrottling();
+      await waitForRateLimitIfNeeded();
       repoCreatedAt = await retry(() => this.getRepoCreationDate(repoName), 'REPO-METADATA');
     } catch (error) {
       logger.error('[FARM] Failed to get repo creation date: ' + (error instanceof Error ? error.message : String(error)));
       return;
     }
     for (const { key, provider } of leaks) {
-      if (provider === 'github-token') {
-        rateLimitOptimizer.onboardToken(key).catch(e =>
-          logger.warn(`[TOKEN] Onboard error: ${e instanceof Error ? e.message : String(e)}`)
-        );
-        continue;
-      }
       try {
-        await rateLimitOptimizer.waitWithThrottling();
+        await waitForRateLimitIfNeeded();
         const leakIntroducedAt = await retry(() => this.getLeakIntroductionDate(repoName, filePath), 'LEAK-DATE');
         const leakData: RawLeakFinding = {
           redactedKey: redactKey(key),

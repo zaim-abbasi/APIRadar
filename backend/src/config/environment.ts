@@ -9,6 +9,9 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1).refine(uri => uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://')),
   GITHUB_TOKEN: z.string().optional()
     .transform(val => val ? val.split(',').map(t => t.trim()) : []),
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY_PATH: z.string().optional(),
   RATE_LIMIT_MAX: z.coerce.number().pipe(z.number().min(1)).default(100),
   RATE_LIMIT_WINDOW: z.coerce.number().pipe(z.number().min(1000)).default(900000),
   NEXTAUTH_SECRET: z.string().min(1),
@@ -29,4 +32,3 @@ function validateEnv() {
 }
 
 export const config = Object.freeze(validateEnv());
-export const GITHUB_TOKEN_POOL = config.GITHUB_TOKEN;

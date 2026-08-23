@@ -1,77 +1,23 @@
 import axios, { AxiosInstance } from 'axios';
 import { logger } from '../utils/logger';
-import { rateLimitOptimizer } from './rateLimitOptimizer';
+import { gitHubAppAuthService } from './GitHubAppAuthService';
 
 export class GitHubService {
-  private readonly clientMap: Map<string, AxiosInstance> = new Map();
-
-  constructor() {
-    // Clients will be created lazily to support DB-loaded tokens
-  }
-
-  private createClient(token: string): AxiosInstance {
-    const client = axios.create({
+  private async getClient(): Promise<AxiosInstance> {
+    const headers = await gitHubAppAuthService.getAuthHeader();
+    return axios.create({
       baseURL: 'https://api.github.com',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
+        ...headers,
         'User-Agent': 'API-Radar-Scanner/1.0',
       },
       timeout: 30000,
     });
-
-    client.interceptors.response.use(
-      (response: any) => {
-        const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-        rateLimitOptimizer.updateStateFromResponse(tokenIndex, response.headers);
-        return response;
-      },
-      async (error: any) => {
-        if (error.response?.headers) {
-          const tokenIndex = rateLimitOptimizer.getCurrentTokenIndex();
-          rateLimitOptimizer.updateStateFromResponse(tokenIndex, error.response.headers);
-        }
-        throw error;
-      }
-    );
-
-    return client;
   }
 
   private async makeRequest<T>(requestFn: (client: AxiosInstance) => Promise<T>): Promise<T> {
-    const maxAttempts = 3;
-    let lastError: any;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const token = rateLimitOptimizer.getCurrentToken();
-      if (!token) {
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      }
-
-      let client = this.clientMap.get(token);
-      if (!client) {
-        client = this.createClient(token);
-        this.clientMap.set(token, client);
-      }
-
-      try {
-        return await requestFn(client);
-      } catch (error: any) {
-        lastError = error;
-        const status = error.response?.status;
-
-        if (status === 401 || status === 403 || status === 429) {
-          rateLimitOptimizer.rotate();
-          logger.warn(`[GITHUB] Token rotation triggered by ${status}`);
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    throw lastError || new Error('All tokens exhausted or request failed');
+    const client = await this.getClient();
+    return await requestFn(client);
   }
 
   async getRepoCreatedAt(repoName: string): Promise<string> {

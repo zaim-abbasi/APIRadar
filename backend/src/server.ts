@@ -73,8 +73,8 @@ async function bootstrap() {
     return reply.send({ status: 'ok', mongo: 'connected' });
   });
 
-  // 3. Validation: GitHub Token
-  logger.init(`Initialized with ${config.GITHUB_TOKEN.length} static and dynamic pool enabled`);
+  // 3. Validation: GitHub App Engine
+  logger.init('Initialized with GitHub App Authentication engine');
 
   // 4. Connect to Database (Critical Dependency)
   try {

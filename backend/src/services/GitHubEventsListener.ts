@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
-import { rateLimitOptimizer } from './rateLimitOptimizer';
+import { gitHubAppAuthService } from './GitHubAppAuthService';
 import { regexRouter } from './RegexRouter';
 import { isValidKey } from './apiKeyValidator';
 import { ConcurrencyManager } from '../utils/concurrencyManager';
@@ -75,16 +75,10 @@ class CoreBudgetGuard {
 
   async waitIfNeeded(): Promise<void> {
     if (!this.paused) return;
-    const tokenAtPause = rateLimitOptimizer.getCurrentTokenIndex();
     const wait = this.resetTime - Date.now();
     if (wait > 0 && wait < 3700000) {
       logger.events(`Sleeping ${Math.ceil(wait / 1000)}s for core reset...`);
       await new Promise(r => setTimeout(r, Math.min(wait + 1000, 30000)));
-      if (rateLimitOptimizer.getCurrentTokenIndex() !== tokenAtPause) {
-        this.paused = false;
-        logger.events('Token rotated during pause — fresh core budget available.');
-        return;
-      }
     } else {
       await new Promise(r => setTimeout(r, 60000));
     }
@@ -129,8 +123,12 @@ export class GitHubEventsListener {
   }
 
   private async pollOnce(): Promise<void> {
-    const token = rateLimitOptimizer.getCurrentToken();
-    if (!token) return;
+    let token = '';
+    try {
+      token = await gitHubAppAuthService.getValidToken();
+    } catch {
+      return;
+    }
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${token}`,
@@ -190,8 +188,12 @@ export class GitHubEventsListener {
 
   private async processCommit(repo: string, commitUrl: string, sha: string): Promise<void> {
     try {
-      const token = rateLimitOptimizer.getCurrentToken();
-      if (!token) return;
+      let token = '';
+      try {
+        token = await gitHubAppAuthService.getValidToken();
+      } catch {
+        return;
+      }
 
       const diffRes = await axios.get(commitUrl, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3.diff' },
@@ -222,7 +224,6 @@ export class GitHubEventsListener {
 
         for (const { key, provider } of matches) {
           if (!isValidKey(key)) continue;
-          if (provider === 'github-token') { rateLimitOptimizer.onboardToken(key).catch(() => { }); continue; }
           leaks.push({
             redactedKey: redactKey(key), fullKey: key, provider, repoUrl,
             filePath: section.filePath, leakIntroducedAt: new Date(), repoCreatedAt: new Date(),
