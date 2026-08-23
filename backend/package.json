@@ -13,8 +13,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write src/**/*.ts",
-    "verify-token": "ts-node scripts/verifyToken.ts"
+    "format": "prettier --write src/**/*.ts"
   },
   "keywords": [
     "api",

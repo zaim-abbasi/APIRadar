@@ -50,3 +50,6 @@ next-env.d.ts
 
 #data
 /backend/data
+/backend/backups
+/backend/keys
+keys/
