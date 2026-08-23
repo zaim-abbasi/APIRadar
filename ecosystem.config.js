@@ -2,8 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'api-radar-frontend',
-      script: 'node_modules/next/dist/bin/next',
-      args: 'start',
+      script: '.next/standalone/server.js',
       exec_mode: 'fork',
       instances: 1,
       autorestart: true,
