@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut, Radar } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
+import { ApiRadarLogo } from '@/components/ui/api-radar-logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { UserMenu } from '@/components/auth/user-menu';
@@ -213,8 +214,8 @@ const NavbarComponent = () => {
           <div className="flex items-center w-full h-full" style={{ height: '50px', minHeight: '50px' }}>
             {/* Left: Logo */}
             <div className="flex items-center flex-1 lg:flex-none lg:w-1/3 justify-start">
-              <Link href="/" className="flex items-center gap-1" onClick={handleNavClick}>
-                <Radar className="h-6 w-6 sm:h-7 sm:w-7 text-amber-500" strokeWidth={1.5} aria-hidden="true" focusable="false" />
+              <Link href="/" className="flex items-center gap-1.5" onClick={handleNavClick}>
+                <ApiRadarLogo className="h-[28px] w-[28px] sm:h-[32px] sm:w-[32px] text-amber-500" aria-hidden="true" focusable="false" />
                 <span className="text-xl sm:text-2xl font-semibold tracking-tighter font-heading whitespace-nowrap leading-none">
                   <span className="text-amber-500">API</span>
                   <span className="text-foreground">Radar</span>

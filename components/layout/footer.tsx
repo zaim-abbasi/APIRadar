@@ -2,14 +2,13 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import { Radar } from "lucide-react";
+import { ApiRadarLogo } from "@/components/ui/api-radar-logo";
 
 // Memoized Logo component
 const FooterLogo = React.memo(() => (
-  <Link href="/" className="flex items-center gap-1">
-    <Radar
-      className="h-5 w-5 md:h-6 md:w-6 text-amber-500"
-      strokeWidth={1.5}
+  <Link href="/" className="flex items-center gap-1.5">
+    <ApiRadarLogo
+      className="h-6 w-6 md:h-7 md:w-7 text-amber-500"
       aria-hidden="true"
       focusable="false"
     />
