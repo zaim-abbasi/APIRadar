@@ -203,7 +203,7 @@ const WhatsNext = React.memo(() => {
 
         <div className="flex flex-col gap-3 pt-2">
           <Link
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=contact@apiradar.bot.nu"
+            href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Enterprise%20Inquiry"
             target="_blank"
             className="flex items-center justify-center gap-2 h-11 sm:h-12 px-4 rounded-md bg-amber-500 text-primary-foreground border border-amber-500/80 sm:hover:brightness-90 transition-all font-bold text-sm"
           >

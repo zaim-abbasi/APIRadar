@@ -168,11 +168,10 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         return [s._id.toString(), { redacted, full }];
       }));
 
-      leaks = leaks.map((l: any, index: number) => {
-        const absoluteIndex = skip + index;
+      leaks = leaks.map((l: any) => {
         const secretData = secretMap.get(l.secretId.toString()) || { redacted: '**********', full: '**********' };
         
-        const shouldRedact = isAuthenticated ? absoluteIndex < 6 : true;
+        const shouldRedact = !isAuthenticated;
 
         return {
           ...l,
@@ -242,35 +241,23 @@ export async function getLeakFullKeyHandler(request: AuthenticatedRequest, reply
 
     const { id } = request.params as { id: string };
 
-    const latestLeaks = await Leak.find()
-      .sort({ leakIntroducedAt: -1 })
-      .limit(6)
-      .select('_id')
-      .lean();
-
-    if (latestLeaks.some(l => l._id.toString() === id)) {
-      request.log.warn({ msg: 'Restricted access to latest leak', userId: request.user.id, leakId: id });
-      return reply.status(403).send({ error: 'Full key access restricted for the latest leaks' });
-    }
-
-    let leak = null;
     let fullKey = '';
     try {
-      leak = await Leak.findById(id).select('secretId').lean();
+      const leak = await Leak.findById(id)
+        .select('secretId')
+        .populate<{ secretId: { encryptedKey?: string } }>('secretId', 'encryptedKey')
+        .lean();
 
-      if (leak && leak.secretId) {
-        const secret = await Secret.findById(leak.secretId).lean();
-        if (secret && secret.encryptedKey) {
-          const AES_KEY = getEncryptionKey();
-          fullKey = decrypt(secret.encryptedKey, AES_KEY);
-        }
+      if (leak?.secretId?.encryptedKey) {
+        const AES_KEY = getEncryptionKey();
+        fullKey = decrypt(leak.secretId.encryptedKey, AES_KEY);
       }
     } catch (dbErr) {
       request.log.error({ msg: 'DB error', error: String(dbErr) });
       return reply.status(503).send({ error: 'Database unavailable' });
     }
 
-    if (!leak || !fullKey) {
+    if (!fullKey) {
       return reply.status(404).send({ error: 'Leak or Secret not found' });
     }
 

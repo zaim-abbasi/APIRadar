@@ -14,6 +14,7 @@ import {
   Copy,
   Check,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -244,6 +245,8 @@ const WorkingKeysComingSoon = React.memo(
 );
 WorkingKeysComingSoon.displayName = "WorkingKeysComingSoon";
 
+const fullKeyCache = new Map<string, string>();
+
 // --- Single Feed Item ---
 const FeedItem = React.memo(
   ({
@@ -263,6 +266,14 @@ const FeedItem = React.memo(
       e.stopPropagation();
       if (copyState !== "idle") return;
 
+      if (fullKeyCache.has(leak.id)) {
+        await navigator.clipboard.writeText(fullKeyCache.get(leak.id)!);
+        setCopyState("success");
+        toast.success("Credential details successfully copied to clipboard.");
+        setTimeout(() => setCopyState("idle"), 2000);
+        return;
+      }
+
       setCopyState("copying");
       try {
         const res = await fetch(`/api/leaks/${leak.id}/fullkey`);
@@ -276,6 +287,7 @@ const FeedItem = React.memo(
         if (!res.ok) throw new Error("Unauthorized or restricted");
         
         const data = await res.json();
+        fullKeyCache.set(leak.id, data.fullKey);
         await navigator.clipboard.writeText(data.fullKey);
         
         setCopyState("success");
@@ -312,7 +324,7 @@ const FeedItem = React.memo(
               {/* Mobile-only status tools + Copy Button */}
               <div className="flex sm:hidden items-center justify-end gap-1.5 flex-shrink-0 min-w-[125px]">
                 <div className="w-5 flex items-center justify-center shrink-0">
-                  {isAuthenticated && index >= 6 && (
+                  {isAuthenticated && (
                     <button
                       onClick={handleCopyKey}
                       disabled={copyState !== "idle"}
@@ -331,14 +343,9 @@ const FeedItem = React.memo(
                     </button>
                   )}
                 </div>
-                <div className={cn(
-                  "flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[68px] shrink-0 border",
-                  index < 6 
-                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                )}>
+                <div className="flex items-center justify-center gap-1 px-1 py-0 rounded-md text-[8px] uppercase font-bold tracking-wider w-[68px] shrink-0 border bg-red-500/10 text-red-500 border-red-500/20">
                   <ShieldAlert className="h-3 w-3 shrink-0" />
-                  <span>{index < 6 ? "RECENT" : "IDENTIFIED"}</span>
+                  <span>IDENTIFIED</span>
                 </div>
                 <span className="text-[9px] text-muted-foreground/60 tabular-nums flex items-center gap-1 font-medium min-w-[32px] justify-end">
                   {formatTimeAgo(new Date(leak.leakIntroducedAt)).replace(" ago", "")}
@@ -387,7 +394,7 @@ const FeedItem = React.memo(
 
           {/* Desktop-only status tools */}
           <div className="hidden sm:flex items-center gap-4 flex-shrink-0 sm:ml-auto">
-            {isAuthenticated && index >= 6 && (
+            {isAuthenticated && (
               <button
                 onClick={handleCopyKey}
                 disabled={copyState !== "idle"}
@@ -406,14 +413,9 @@ const FeedItem = React.memo(
                 )}
               </button>
             )}
-            <div className={cn(
-              "w-[95px] items-center justify-center gap-1.5 flex px-2 py-0 rounded-md text-[10px] uppercase font-bold tracking-widest flex-shrink-0 border",
-              index < 6 
-                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                : "bg-red-500/10 text-red-500 border-red-500/20"
-            )}>
+            <div className="w-[95px] items-center justify-center gap-1.5 flex px-2 py-0 rounded-md text-[10px] uppercase font-bold tracking-widest flex-shrink-0 border bg-red-500/10 text-red-500 border-red-500/20">
               <ShieldAlert className="h-3.5 w-3.5 shrink-0" />
-              <span>{index < 6 ? "Recent" : "Identified"}</span>
+              <span>Identified</span>
             </div>
             <span className="text-border flex-shrink-0 text-muted-foreground/30">·</span>
             <span className="text-[13px] text-muted-foreground/70 whitespace-nowrap flex-shrink-0 tabular-nums font-medium inline-flex items-center gap-2 sm:w-[100px] justify-start">
@@ -549,7 +551,7 @@ const LeakFeedComponent = React.memo(
                         {/* Content Section */}
                         <div className="flex flex-col flex-1 min-w-0 justify-center">
                           <p className="text-[10px] sm:text-[13px] text-foreground/80 font-medium leading-[1.3] sm:line-clamp-none">
-                            <span className="font-bold text-foreground/90">[LOCKED]</span> Sign in to unmask repositories and reveal file paths for all {total.toLocaleString()} {providerDisplayName} secrets.
+                            <span className="font-bold text-foreground/90">[LOCKED]</span> Sign in with Google to copy API keys, view repositories, file paths, and more for all {total.toLocaleString()} {providerDisplayName} secrets.
                           </p>
                         </div>
 
@@ -559,10 +561,39 @@ const LeakFeedComponent = React.memo(
                             onClick={(e) => { e.stopPropagation(); onSignIn(); }}
                             className="w-full sm:w-auto flex h-7 sm:h-10 items-center justify-center gap-2 px-3 sm:px-6 text-[9px] sm:text-[11px] font-black text-amber-500 uppercase tracking-[0.2em] rounded-md bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20 hover:border-amber-500/40 whitespace-nowrap"
                           >
-                            <span>Sign In for Access</span>
+                            <span>Sign In with Google</span>
                           </button>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Contact CTA banner for authenticated users at end of feed */}
+                {!isUnauthenticated && (
+                  <div className="block px-3 py-3 sm:px-5 sm:py-3.5 bg-amber-500/[0.03] border-t border-amber-500/20">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                      <div className="flex items-start sm:items-center gap-2.5 min-w-0">
+                        <div className="p-1.5 rounded-md bg-amber-500/10 text-amber-500 shrink-0 mt-0.5 sm:mt-0">
+                          <Mail className="h-4 w-4" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[11px] sm:text-xs font-semibold text-foreground/90 leading-tight">
+                            Need full database access or custom secret monitoring?
+                          </span>
+                          <span className="text-[10px] sm:text-[11px] text-muted-foreground/70 leading-tight mt-0.5">
+                            Contact us for enterprise access, custom API integrations & bulk dumps.
+                          </span>
+                        </div>
+                      </div>
+                      <a
+                        href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Enterprise%20Access"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex h-7 sm:h-8 items-center justify-center gap-1.5 px-3 sm:px-4 text-[10px] sm:text-[11px] font-bold text-amber-500 rounded-md bg-amber-500/10 hover:bg-amber-500/20 transition-all duration-200 border border-amber-500/30 whitespace-nowrap shrink-0"
+                      >
+                        <span>Contact zaim.k.abbasi@gmail.com</span>
+                      </a>
                     </div>
                   </div>
                 )}

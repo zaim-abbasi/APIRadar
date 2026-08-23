@@ -129,8 +129,13 @@ export default function TermsPage() {
               </p>
               <div className="flex flex-col gap-0.5 border-t border-border/40 pt-2">
                 <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
-                <a href="mailto:contact@apiradar.bot.nu" className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5">
-                  contact@apiradar.bot.nu
+                <a 
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Terms%20Enquiry" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5"
+                >
+                  zaim.k.abbasi@gmail.com
                 </a>
               </div>
             </section>

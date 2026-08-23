@@ -77,8 +77,12 @@ async function generateBranding() {
   console.log("✓ Copied transparent_logo.webp to public/logo/");
 
   // CATEGORY 2: SOCIAL MEDIA & BRANDING ASSETS
-  // 1. LinkedIn Profile Picture (Flat Obsidian Dark Background)
+  // 1. LinkedIn Profile Picture (Flat Obsidian Dark Background, Icon reduced by ~15% to 1740x1740)
   const profilePath = path.join(socialDir, 'linkedin_profile.png');
+  const profileIconBuffer = await sharp(Buffer.from(rawSvg))
+    .resize(1740, 1740)
+    .toBuffer();
+
   await sharp({
     create: {
       width: 2048,
@@ -87,10 +91,10 @@ async function generateBranding() {
       background: { r: 34, g: 34, b: 34, alpha: 1 } // #222222
     }
   })
-    .composite([{ input: Buffer.from(rawSvg), gravity: 'center' }])
+    .composite([{ input: profileIconBuffer, gravity: 'center' }])
     .png()
     .toFile(profilePath);
-  console.log("✓ Generated social/linkedin_profile.png");
+  console.log("✓ Generated social/linkedin_profile.png (icon scaled to 85%)");
 
   // 2. LinkedIn Banner (Flat, solid #222222, 4000x1000)
   const bannerWidth = 4000;
