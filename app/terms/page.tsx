@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import { Scale, ShieldAlert, Info, Mail } from "lucide-react";
+import { Scale, ShieldAlert, Info, Gavel, FileText, UserCheck, Sparkles, Shield } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Terms of Service | APIRadar",
@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  const lastUpdated = "June 15, 2026";
+  const lastUpdated = "September 7, 2026";
 
   return (
     <div className="min-h-screen bg-background py-6 sm:py-10 md:py-14 font-inter">
-      <div className="container mx-auto px-3 sm:px-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-6 max-w-6xl">
         {/* Header Section */}
         <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-8 animate-fade-in-up border-b border-border/40 pb-4 sm:pb-5 text-left">
           <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight lg:leading-[1.1] font-heading text-balance">
@@ -23,121 +23,114 @@ export default function TermsPage() {
           </p>
         </div>
 
-        {/* Content Layout in a grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 animate-fade-in-up animate-delay-150">
+        {/* 3x3 Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-fade-in-up animate-delay-150 items-stretch">
           
-          {/* Left Column */}
-          <div className="space-y-4 sm:space-y-5">
-            {/* Section 1: Agreement */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
+          {/* Column 1 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Section 1: Research Terms */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
               <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
                 <Scale className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Agreement</h2>
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Research Terms</h2>
               </div>
-              <p className="text-muted-foreground leading-relaxed text-sm italic">
-                By accessing APIRadar, you enter into a legally binding agreement to utilize the platform exclusively for Ethical Research, Educational Purposes, and Defensive Auditing.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                By accessing APIRadar, you agree to utilize all indexed metadata strictly for authorized security research, educational auditing, and defensive risk mitigation.
               </p>
             </section>
 
-            {/* Section 2: Prohibitions */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 space-y-3 sm:space-y-4">
-              <div className="flex items-center gap-2.5 sm:gap-3 border-b border-border/40 pb-2">
-                <ShieldAlert className="h-4 sm:h-5 w-4 sm:w-5 text-destructive flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Prohibitions</h2>
+            {/* Section 2: Availability */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <Info className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">AS-IS Tool Notice</h2>
               </div>
-              
-              <div className="space-y-3">
-                <div className="p-3 rounded-md border border-destructive/20 bg-destructive/5">
-                  <h3 className="text-foreground font-bold mb-1 uppercase tracking-widest text-[11px] sm:text-xs font-mono">
-                    Unauthorized & Malicious Use
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Any malicious activity, illegal access, exploitation, or scanning of targets without prior written authorization is grounds for an immediate ban. You assume sole legal liability for your actions.
-                  </p>
-                </div>
-                
-                <div className="p-3 rounded-md border border-destructive/20 bg-destructive/5">
-                  <h3 className="text-foreground font-bold mb-1 uppercase tracking-widest text-[11px] sm:text-xs font-mono">
-                    No Key Resale or Sublicensing
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    You are strictly prohibited from reselling, sublicensing, sharing, renting, or transferring API keys, credentials, or intelligence data feeds to any third party.
-                  </p>
-                </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                APIRadar is provided strictly "AS-IS" and "AS-AVAILABLE" without warranties of accuracy, completeness, or uptime. We reserve the right to restrict access or terminate services without notice.
+              </p>
+            </section>
 
-                <div className="p-3 rounded-md border border-amber-500/20 bg-card/40">
-                  <h3 className="text-foreground font-bold mb-1 uppercase tracking-widest text-[11px] sm:text-xs font-mono">
-                    Anti-Scraping Policy
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Automated retrieval via bots will be met with immediate technical blocking and legal escalation.
-                  </p>
-                </div>
+            {/* Section 3: No Fiduciary Relationship */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <UserCheck className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">No Fiduciary Duty</h2>
               </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Use of APIRadar does not create a security consulting, advisory, managed SOC, or fiduciary relationship. APIRadar is not a paid security monitoring provider.
+              </p>
             </section>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-4 sm:space-y-5">
-            {/* Section 3: Liability & Indemnification */}
-            <section className="p-4 sm:p-5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/[0.08] transition-all duration-200 space-y-3">
-              <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Column 2 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Section 4: Prohibitions */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 border-b border-destructive/20 pb-2 mb-2 sm:mb-3">
+                <ShieldAlert className="h-4 sm:h-5 w-4 sm:w-5 text-destructive flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Strict Prohibitions</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Executing, testing, exploiting, or consuming exposed API credentials without explicit authorization is strictly illegal. Automated scraping or dataset reselling results in immediate IP bans.
+              </p>
+            </section>
+
+            {/* Section 5: DMCA & Safe Harbor Takedowns */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <FileText className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">DMCA Safe Harbor</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                APIRadar acts as a passive indexer of public GitHub metadata in good faith. Organizations seeking metadata removal may submit takedown requests subject to authorization verification.
+              </p>
+            </section>
+
+            {/* Section 6: Irrevocable Feedback License */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <Sparkles className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Feedback License</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Any feature requests, bug reports, code contributions, or suggestions submitted by users become the exclusive intellectual property of APIRadar without royalty or compensation claims.
+              </p>
+            </section>
+          </div>
+
+          {/* Column 3 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Section 7: Zero Liability */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/[0.08] transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 border-b border-amber-500/20 pb-2 mb-2 sm:mb-3">
+                <Shield className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Zero Liability</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                The authors, maintainers, and developers of APIRadar assume zero liability for any direct, indirect, punitive, or consequential damages, security breaches, or API billing charges.
+              </p>
+            </section>
+
+            {/* Section 8: Indemnification */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/[0.08] transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 border-b border-amber-500/20 pb-2 mb-2 sm:mb-3">
                 <ShieldAlert className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Liability & Indemnity</h2>
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Indemnification</h2>
               </div>
-              
-              <div className="space-y-2.5 text-sm">
-                <div>
-                  <h3 className="text-foreground font-bold text-xs uppercase font-mono opacity-80 mb-0.5">
-                    Limitation of Liability
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed italic">
-                    APIRadar and its operators assume zero liability for any direct, indirect, or consequential damages. You assume 100% of the risk associated with public exposure intelligence data.
-                  </p>
-                </div>
-
-                <div className="border-t border-amber-500/20 pt-2">
-                  <h3 className="text-foreground font-bold text-xs uppercase font-mono opacity-80 mb-0.5">
-                    Hold Harmless & Indemnity
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed italic">
-                    You agree to defend, indemnify, and hold harmless APIRadar and its developers from any claims, lawsuits, losses, or legal fees resulting from your use, misuse, sharing of API keys, or breach of these terms.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Section 4: Availability */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
-              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
-                <Info className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Availability</h2>
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed italic">
-                APIRadar is provided "as-is" and "as-available." We reserve the right to modify, restrict, or terminate service at any time without notice.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                You agree to defend, indemnify, and hold harmless APIRadar and its creators against any third-party claims, lawsuits, legal fees, or liabilities resulting from your use of this software or data.
               </p>
             </section>
 
-            {/* Section 5: Governing Law */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
+            {/* Section 9: Severability & Governing Law */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
               <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
-                <Mail className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Governing Law</h2>
+                <Gavel className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Severability & Law</h2>
               </div>
-              <p className="text-sm text-foreground leading-relaxed mb-2">
-                Governed by the laws of the jurisdiction of operation.
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Governed by the jurisdiction of operation. If any provision is held invalid by a court, all remaining disclaimers remain 100% legally active.
               </p>
-              <div className="flex flex-col gap-0.5 border-t border-border/40 pt-2">
-                <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
-                <a 
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Terms%20Enquiry" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5"
-                >
-                  zaim.k.abbasi@gmail.com
-                </a>
-              </div>
             </section>
           </div>
 

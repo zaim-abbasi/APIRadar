@@ -20,21 +20,20 @@ const WhatYouCanDo = React.memo(() => {
   const items = [
     {
       icon: FileSearch,
-      title: "Analyze Credential Exposure Events",
-      description: "Redacted previews and source links for deep investigation.",
+      title: "Real-Time Leak Telemetry",
+      description: "Instantly detect exposed OpenAI, Anthropic, Google & Cloud keys with zero-latency streaming detection.",
       iconColor: "text-amber-500",
     },
     {
       icon: TrendingUp,
-      title: "Identify Vulnerability Vectors",
-      description: "Filter and sort to spot where leaks happen most.",
+      title: "Vulnerability & Trend Analytics",
+      description: "Track systemic leak patterns, high-risk provider spikes, and repository exposure heatmaps.",
       iconColor: "text-amber-500",
     },
     {
       icon: GraduationCap,
-      title: "Enterprise Security Awareness",
-      description:
-        "Train teams with real-world metadata to build defensive guardrails without exposing original source code.",
+      title: "Defensive Risk Guardrails",
+      description: "Equip security engineering teams with real-world exposure benchmarks to prevent secret spillage in production.",
       iconColor: "text-amber-500",
     },
   ];
@@ -43,7 +42,7 @@ const WhatYouCanDo = React.memo(() => {
     <div className="flex flex-col h-full">
       <h2
         id="about"
-        className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight"
+        className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 scroll-mt-20 leading-tight font-heading"
       >
         Platform Capabilities
       </h2>
@@ -51,7 +50,7 @@ const WhatYouCanDo = React.memo(() => {
         {items.map((item, index) => (
           <div
             key={index}
-            className="p-3 sm:px-4 sm:py-2.5 rounded-lg border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-border/80 sm:hover:bg-card/80 group"
+            className="p-3 sm:px-4 sm:py-3 rounded-lg border bg-card/50 backdrop-blur-sm border-border transition-all duration-200 ease-out sm:hover:border-amber-500/30 sm:hover:bg-card/80 group"
           >
             <div className="flex items-start gap-3.5">
               <item.icon
@@ -80,17 +79,17 @@ WhatYouCanDo.displayName = "WhatYouCanDo";
 
 const WhatYouSee = React.memo(() => {
   const items = [
-    { icon: Cpu, text: "Provider" },
-    { icon: Vault, text: "Redacted Key" },
-    { icon: FolderGit2, text: "Repository" },
-    { icon: Clock, text: "Timestamp" },
-    { icon: Network, text: "Repository Reference" },
+    { icon: Cpu, text: "AI / Cloud Service Provider" },
+    { icon: Vault, text: "Redacted Key Fingerprint" },
+    { icon: FolderGit2, text: "Target Repository Metadata" },
+    { icon: Clock, text: "Detection Timestamp (ISO)" },
+    { icon: Network, text: "Direct Commit Verification Link" },
   ];
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-        Forensic Data Points
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight font-heading">
+        Forensic Intelligence Points
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 flex-1">
         {items.map((item, index) => (
@@ -113,18 +112,18 @@ WhatYouSee.displayName = "WhatYouSee";
 
 const WhyThisExists = React.memo(() => {
   const points = [
-    { text: "Credential exposure occurs in public repos daily." },
-    { text: "Exposure poses immediate risk. Visibility enables defense." },
+    { text: "Thousands of API keys are accidentally committed to public repositories every single hour." },
+    { text: "Exposed keys lead to unauthorized compute abuse, data exfiltration, and massive cloud bills." },
     {
-      title: "No Code Retention:",
-      text: "Public metadata only. We never clone or store your code.",
+      title: "Zero Code Retention Guarantee:",
+      text: "APIRadar operates purely on public metadata. We never clone, download, or store your private codebase.",
     },
   ];
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-        The Security Framework
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight font-heading">
+        Security Architecture
       </h2>
       <div className="space-y-4 flex-1">
         <div className="space-y-3">
@@ -152,13 +151,13 @@ WhyThisExists.displayName = "WhyThisExists";
 const WhatsNext = React.memo(() => {
   const items = [
     {
-      label: "More Providers",
+      label: "Custom Secret Signatures",
       status: "PLANNED",
       dotColor: "bg-amber-500/80",
       active: true,
     },
     {
-      label: "Private Monitoring",
+      label: "Enterprise Organization Auditing",
       status: "COMING SOON",
       dotColor: "bg-emerald-500/80",
       active: true,
@@ -167,8 +166,8 @@ const WhatsNext = React.memo(() => {
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight">
-        Strategic Roadmap
+      <h2 className="text-base sm:text-2xl lg:text-3xl font-semibold text-foreground mb-3 sm:mb-4 leading-tight font-heading">
+        Enterprise Vision
       </h2>
       <div className="flex-1 space-y-3">
         <div className="grid grid-cols-2 gap-2">
@@ -189,7 +188,7 @@ const WhatsNext = React.memo(() => {
                     className={cn(
                       "text-[9px] font-black tracking-widest",
                       item.active
-                        ? "text-foreground/90"
+                        ? "text-amber-500"
                         : "text-muted-foreground/40",
                     )}
                   >
@@ -212,7 +211,7 @@ const WhatsNext = React.memo(() => {
           </Link>
           <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
             <Users className="h-3 w-3" />
-            <span>Built for researchers, by researchers.</span>
+            <span>Built by security researchers for modern dev teams.</span>
           </div>
         </div>
       </div>

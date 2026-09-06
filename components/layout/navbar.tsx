@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, User, LogIn } from 'lucide-react';
 import { ApiRadarLogo } from '@/components/ui/api-radar-logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -70,10 +70,6 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
 
   if (!isOpen) return null;
 
-  const initials = session?.user?.name
-    ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : session?.user?.email?.[0].toUpperCase() || 'U';
-
   return (
     <div className="fixed inset-0 top-[50px] z-50 bg-background/98 backdrop-blur-2xl flex flex-col px-6 py-8 overflow-hidden lg:hidden animate-in fade-in slide-in-from-top-5 duration-200">
       <div className="flex flex-col gap-6 lg:gap-8 mt-4">
@@ -97,7 +93,8 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
       })}
     </div>
 
-    <div className="mt-auto mb-8 border-t border-border/50 pt-8">
+    <div className="mt-auto mb-8 border-t border-border/50 pt-6">
+
       {status === 'loading' ? (
         <div className="flex flex-col gap-4">
            <div className="flex items-center gap-3 p-3 rounded-lg border border-border/20 bg-card/40 animate-pulse">
@@ -112,13 +109,9 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-amber-500/20 bg-card/40">
             <div className="flex items-center gap-4">
-              {session.user?.image ? (
-                <img src={session.user.image} alt={session.user.name || "User"} className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shrink-0" />
-              ) : (
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-sm font-bold text-amber-500 border border-amber-500/30 overflow-hidden shrink-0">
-                  <span className="font-mono text-base">{initials}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 shrink-0">
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
+              </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-base sm:text-lg font-bold text-foreground leading-tight tracking-tight">{session.user?.name}</span>
                 <span className="text-[11px] sm:text-xs text-muted-foreground leading-tight font-mono lowercase opacity-70">{session.user?.email}</span>
@@ -139,7 +132,7 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
         </div>
       ) : (
         <Button 
-          className="w-full h-12 inline-flex items-center justify-center whitespace-nowrap rounded-md group text-[12px] font-black transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-[0.2em] disabled:opacity-70 disabled:cursor-not-allowed"
+          className="w-full h-11 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg group text-xs font-bold transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 bg-amber-500 text-primary-foreground border-amber-500/80 sm:hover:brightness-90 sm:hover:border-amber-500/70 uppercase tracking-wider disabled:opacity-70 disabled:cursor-not-allowed"
           disabled={isLoggingIn}
           onClick={async () => {
             if (isLoggingIn) return;
@@ -154,7 +147,8 @@ const MobileMenuOverlay = React.memo(({ isOpen, onClose, isAboutInView }: { isOp
             }
           }}
         >
-          {isLoggingIn ? "Connecting..." : "Sign in"}
+          <LogIn className="h-4 w-4 text-primary-foreground" />
+          <span>{isLoggingIn ? "Connecting..." : "Sign In"}</span>
         </Button>
       )}
     </div>
@@ -230,7 +224,7 @@ const NavbarComponent = () => {
               </div>
             </div>
 
-            {/* Right: Theme Toggle, User Menu, Mobile Menu */}
+            {/* Right: User Menu, Mobile Menu */}
             <div className="flex items-center space-x-2 flex-1 lg:flex-none lg:w-1/3 justify-end min-w-0">
               {/* User Menu (profile icon always visible) */}
               <div className="hidden lg:block min-w-0 flex-shrink-0"><UserMenu /></div>

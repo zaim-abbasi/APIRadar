@@ -194,16 +194,6 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
             APIRadar
           </span>
           <a
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2.5 sm:p-1.5 rounded-md bg-muted/40 hover:bg-muted/60 text-muted-foreground/80 hover:text-amber-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-1 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 flex items-center justify-center"
-            aria-label="Email"
-            tabIndex={0}
-          >
-            <Mail className="h-5 w-5 transition-transform duration-200 hover:scale-110" />
-          </a>
-          <a
             href="https://github.com/zaim-abbasi"
             target="_blank"
             rel="noopener noreferrer"

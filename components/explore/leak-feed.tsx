@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import {
   CircleCheck,
@@ -586,14 +587,12 @@ const LeakFeedComponent = React.memo(
                           </span>
                         </div>
                       </div>
-                      <a
-                        href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Enterprise%20Access"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        href="/#about"
                         className="flex h-7 sm:h-8 items-center justify-center gap-1.5 px-3 sm:px-4 text-[10px] sm:text-[11px] font-bold text-amber-500 rounded-md bg-amber-500/10 hover:bg-amber-500/20 transition-all duration-200 border border-amber-500/30 whitespace-nowrap shrink-0"
                       >
-                        <span>Contact zaim.k.abbasi@gmail.com</span>
-                      </a>
+                        <span>Enterprise Inquiries</span>
+                      </Link>
                     </div>
                   </div>
                 )}

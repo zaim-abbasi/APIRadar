@@ -1,6 +1,6 @@
 import React from "react";
 import { Metadata } from "next";
-import { Database, Fingerprint, ExternalLink, Mail } from "lucide-react";
+import { Database, Fingerprint, ExternalLink, Gavel, ShieldAlert, Lock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | APIRadar",
@@ -8,11 +8,11 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  const lastUpdated = "June 15, 2026";
+  const lastUpdated = "September 7, 2026";
 
   return (
     <div className="min-h-screen bg-background py-6 sm:py-10 md:py-14 font-inter">
-      <div className="container mx-auto px-3 sm:px-6 max-w-4xl">
+      <div className="container mx-auto px-3 sm:px-6 max-w-6xl">
         {/* Header Section */}
         <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-8 animate-fade-in-up border-b border-border/40 pb-4 sm:pb-5 text-left">
           <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight lg:leading-[1.1] font-heading text-balance">
@@ -23,106 +23,99 @@ export default function PrivacyPage() {
           </p>
         </div>
 
-        {/* Content Layout in a grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 animate-fade-in-up animate-delay-150">
+        {/* 3-Column Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 animate-fade-in-up animate-delay-150 items-stretch">
           
-          {/* Left Column */}
-          <div className="space-y-4 sm:space-y-5">
+          {/* Column 1 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
             {/* Section 1: Data Minimization */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
               <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
                 <Fingerprint className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
                 <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Data Minimization</h2>
               </div>
-              <p className="text-muted-foreground leading-relaxed text-sm italic">
-                APIRadar operates on a principle of Data Minimization. We do not collect or store sensitive personal information beyond what is strictly required for platform authentication and service delivery.
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                APIRadar operates on strict Data Minimization. We do not harvest, track, or collect personal browsing data. User data is limited strictly to Google OAuth authentication tokens required for active session management.
               </p>
             </section>
 
-            {/* Section 2: Information Collection */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 space-y-3 sm:space-y-4">
+            {/* Section 2: Zero Commercialization */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <Lock className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Zero Commercialization</h2>
+              </div>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                We do not sell, rent, license, or trade user data or session records to third parties, advertisers, or data brokers.
+              </p>
+            </section>
+          </div>
+
+          {/* Column 2 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Section 3: Information Collection */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2.5 sm:gap-3 border-b border-border/40 pb-2">
                 <Database className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Information Collection</h2>
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Stored Metadata</h2>
               </div>
               
               <div className="space-y-3">
                 <div className="p-3 rounded-md border border-border/50 bg-card/30">
                   <h3 className="text-foreground font-bold mb-1 flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-widest font-heading opacity-80">
                     <span className="h-1.5 w-1.5 rounded-md bg-amber-500" />
-                    Primary Identity
+                    Identity Tokens
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Full Name and Email Address retrieved via Google OAuth.
+                    Full Name and Email Address provided by Google OAuth.
                   </p>
                 </div>
 
-                <div className="p-2.5 sm:p-3 rounded-md border border-destructive/20 bg-destructive/5 text-[11px] sm:text-xs font-mono uppercase tracking-widest text-muted-foreground/80">
-                  Note: We do not store profile imagery, residential addresses, or passwords.
+                <div className="p-2.5 sm:p-3 rounded-md border border-amber-500/20 bg-amber-500/5 text-[11px] sm:text-xs font-mono uppercase tracking-widest text-muted-foreground/80">
+                  We do not store passwords, profile pictures, credit cards, or residential addresses.
                 </div>
               </div>
             </section>
 
-            {/* Section 3: Third-Party Processing */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
+            {/* Section 4: Governing Law */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
+              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
+                <Gavel className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Governing Law</h2>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Governed by the laws of the jurisdiction of operation. Users access this service at their own legal risk.
+              </p>
+            </section>
+          </div>
+
+          {/* Column 3 */}
+          <div className="flex flex-col gap-4 sm:gap-5">
+            {/* Section 5: Third-Party Authentication */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start">
               <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
                 <ExternalLink className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
                 <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Third-Party Processing</h2>
               </div>
               <div className="p-3 rounded-md border border-border/50 bg-card/30">
-                <h3 className="text-foreground font-bold mb-1 flex items-center gap-2 text-[11px] sm:text-xs uppercase tracking-widest font-heading opacity-80">
-                  <span className="h-1 w-2 rounded-md bg-green-500/50" />
+                <h3 className="text-foreground font-bold mb-1 text-[11px] sm:text-xs uppercase tracking-widest font-heading opacity-80">
                   Authentication
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Managed securely via Google Identity Services.
+                  Authentication is handled directly via Google Identity Services. We assume no liability for third-party service interruptions or OAuth API policy updates.
                 </p>
               </div>
             </section>
-          </div>
 
-          {/* Right Column */}
-          <div className="space-y-4 sm:space-y-5">
-            {/* Section 5: Security Disclosure */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 text-center space-y-3">
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground underline underline-offset-4 decoration-amber-500/50 font-heading uppercase tracking-wide">Security Disclosure</h2>
+            {/* Section 6: Public Data Disclaimer */}
+            <section className="flex-1 p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200 flex flex-col justify-start space-y-2">
+              <div className="flex items-center gap-2 sm:gap-2.5 mb-1">
+                <ShieldAlert className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Public Data Indexing</h2>
+              </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                As a transparency-first platform, we host a formal <span className="text-foreground font-medium underline decoration-amber-500/30 italic">Vulnerability Disclosure Program (VDP)</span>. 
-                If you represent an organization, contact our support team.
+                All exposure metadata displayed on APIRadar is indexed from publicly accessible GitHub repositories. APIRadar does not create, leak, or host private user credentials.
               </p>
-              <div className="pt-1 flex justify-center">
-                <a 
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Privacy%20Enquiry" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-amber-500 text-primary-foreground font-bold uppercase tracking-[0.2em] text-xs sm:text-sm hover:brightness-90 transition-all"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  Contact Support
-                </a>
-              </div>
-            </section>
-
-            {/* Section 6: Governing Law */}
-            <section className="p-4 sm:p-5 rounded-lg border border-border/50 bg-card/20 hover:bg-card/30 transition-all duration-200">
-              <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
-                <Mail className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 flex-shrink-0" />
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">Governing Law</h2>
-              </div>
-              <p className="text-sm text-foreground font-medium leading-relaxed mb-2">
-                Governed by the laws of the jurisdiction of operation.
-              </p>
-              <div className="flex flex-col gap-0.5 border-t border-border/40 pt-2">
-                <span className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest">Enquiries</span>
-                <a 
-                  href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com&su=API%20Radar%20Privacy%20Enquiry" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-foreground font-bold hover:text-amber-500 transition-colors flex items-center gap-1.5"
-                >
-                  zaim.k.abbasi@gmail.com
-                </a>
-              </div>
             </section>
           </div>
 

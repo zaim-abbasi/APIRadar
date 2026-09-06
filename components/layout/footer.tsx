@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
+import { Github } from "lucide-react";
 import { ApiRadarLogo } from "@/components/ui/api-radar-logo";
 
 // Memoized Logo component
@@ -64,6 +65,15 @@ const FooterComponent = () => {
           
           {/* Mobile Legal Links */}
           <div className="md:hidden flex items-center gap-3 text-[10px] font-medium text-muted-foreground tracking-wide">
+            <a
+              href="https://github.com/zaim-abbasi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-amber-500 transition-colors underline underline-offset-4 decoration-border/40 inline-flex items-center gap-1 font-semibold text-amber-500"
+            >
+              <Github className="h-3 w-3 flex-shrink-0" />
+              <span>@zaim-abbasi</span>
+            </a>
             <Link
               href="/privacy"
               className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
@@ -76,14 +86,6 @@ const FooterComponent = () => {
             >
               Terms
             </Link>
-            <a
-              href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
-            >
-              Contact
-            </a>
           </div>
         </div>
 
@@ -103,6 +105,16 @@ const FooterComponent = () => {
           {/* Legal Links & Credit (Desktop Only alignment) */}
           <div className="hidden md:flex md:w-1/3 items-center justify-end text-[10px] md:text-xs font-medium text-muted-foreground tracking-wide gap-0">
             <div className="flex items-center gap-3 sm:gap-4">
+              <a
+                href="https://github.com/zaim-abbasi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-amber-500 transition-colors underline underline-offset-4 decoration-border/40 inline-flex items-center gap-1 font-semibold text-amber-500/90 hover:text-amber-500"
+              >
+                <Github className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>@zaim-abbasi</span>
+              </a>
+              <span className="text-muted-foreground/20">•</span>
               <Link
                 href="/privacy"
                 className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
@@ -116,15 +128,6 @@ const FooterComponent = () => {
               >
                 Terms
               </Link>
-              <span className="text-muted-foreground/20">•</span>
-              <a
-                href="https://mail.google.com/mail/?view=cm&fs=1&to=zaim.k.abbasi@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors underline underline-offset-4 decoration-border/40"
-              >
-                Contact
-              </a>
             </div>
           </div>
         </div>

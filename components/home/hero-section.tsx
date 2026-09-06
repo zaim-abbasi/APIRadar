@@ -12,6 +12,8 @@ import {
   Crosshair,
   Activity,
   ArrowUpRight,
+  Github,
+  FolderGit2,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -291,64 +293,16 @@ const HeroTicker = React.memo(() => {
 
 HeroTicker.displayName = "HeroTicker";
 
-const useRobustCounter = (realCount: number) => {
-  const [total, setTotal] = React.useState(32533);
-  const lastSyncRef = React.useRef(Date.now());
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const cached = localStorage.getItem("apiradar_total_v3");
-    if (cached) setTotal(parseInt(cached, 10));
-  }, []);
-
-  React.useEffect(() => {
-    if (realCount > 0) {
-      setTotal(realCount);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("apiradar_total_v3", realCount.toString());
-      }
-      lastSyncRef.current = Date.now();
-    } else {
-      const interval = setInterval(() => {
-        setTotal((prev) => {
-          const jitter = Math.floor(Math.random() * 5) - 2; // Stochastic jitter: -2 to 2
-          return prev + (Math.random() > 0.9 ? 1 : 0) + jitter;
-        });
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [realCount]);
-
-  return { total };
-};
-
 const StatCounter = React.memo(() => {
-  const { data } = useSWR<{ provider: string; count: number }[]>(
-    "/api/stats/providers",
-    fetcher,
-    {
-      refreshInterval: 60000,
-      dedupingInterval: 55000,
-      revalidateOnFocus: false,
-    },
-  );
-
-  const totalReal = React.useMemo(
-    () => (Array.isArray(data) ? data.reduce((sum, s) => sum + s.count, 0) : 0),
-    [data],
-  );
-
-  const { total } = useRobustCounter(totalReal);
-
   return (
     <div className="animate-fade-in-up flex-shrink-0">
       <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 transition-colors duration-500">
-        <ShieldAlert className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
+        <FolderGit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
         <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-amber-500">
-          {total.toLocaleString()}
+          230K+
         </span>
         <span className="text-[10px] sm:text-sm text-muted-foreground/80 font-medium whitespace-nowrap">
-          Exposures Identified
+          Public GitHub Repos Scanned
         </span>
       </span>
     </div>
@@ -366,10 +320,7 @@ export const HeroSection = React.memo(() => {
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div>
                 <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:pr-8">
-                  <div className="flex-1 min-w-0">
-                    <StatCounter />
-                  </div>
-                  <div className="flex justify-end shrink-0">
+                  <div className="flex justify-start shrink-0">
                     <a
                       href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
                       target="_blank"
@@ -388,19 +339,21 @@ export const HeroSection = React.memo(() => {
                       <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-amber-500 transition-colors" />
                     </a>
                   </div>
+                  <div className="flex-1 min-w-0 flex justify-end">
+                    <StatCounter />
+                  </div>
                 </div>
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold leading-[1.1] tracking-tight mb-4 sm:mb-6">
-                  <span className="text-foreground">Global </span>
-                  <span className="text-amber-500">API Exposure</span>
-                  <br className="hidden sm:block" />
-                  <span className="text-foreground"> Intelligence</span>
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-semibold leading-[1.15] tracking-tight mb-4 sm:mb-6">
+                  <span className="text-foreground">Real-Time </span>
+                  <span className="text-amber-500 whitespace-nowrap">API Key Leak</span>
+                  <br />
+                  <span className="text-foreground">Detection Engine</span>
                 </h1>
               </div>
 
               <div className="space-y-3 sm:space-y-4">
-                <p className="text-[14px] sm:text-sm md:text-base lg:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Monitor public GitHub repositories to analyze exposure trends
-                  to mitigate organizational security risks.
+                <p className="text-[14px] sm:text-sm md:text-base lg:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  Continuous real-time monitoring across public GitHub repositories. Detect exposed provider keys, track active exposure events, and analyze systemic leak patterns as they happen.
                 </p>
               </div>
 
@@ -411,7 +364,7 @@ export const HeroSection = React.memo(() => {
 
             <div className="flex flex-col justify-center mt-2 sm:mt-6 lg:mt-0">
               <LiveScanTerminal />
-              <div className="mt-4 flex flex-col gap-4 sm:gap-4.5">
+              <div className="mt-4 flex flex-col gap-3 sm:gap-3">
                 <Link
                   href="/explore"
                   prefetch={true}
@@ -430,24 +383,45 @@ export const HeroSection = React.memo(() => {
                     Access Exposure Reports
                   </span>
                 </Link>
-                <Link
-                  href="/threat-insights"
-                  prefetch={true}
-                  className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-12 px-5 sm:px-8 text-sm sm:text-base font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2",
-                    "bg-card/40 backdrop-blur-md text-foreground border-border/60 sm:hover:bg-card/60 sm:hover:border-amber-500/40",
-                  )}
-                >
-                  <span className="flex items-center justify-center w-full gap-2">
-                    <Trophy
-                      className="h-4 w-4 text-amber-500"
-                      strokeWidth={2.6}
-                      aria-hidden="true"
-                      focusable="false"
-                    />
-                    View Global Statistics
-                  </span>
-                </Link>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Link
+                    href="/threat-insights"
+                    prefetch={true}
+                    className={cn(
+                      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2",
+                      "bg-card/40 backdrop-blur-md text-foreground border-border/60 sm:hover:bg-card/60 sm:hover:border-amber-500/40",
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-2 truncate">
+                      <Trophy
+                        className="h-4 w-4 text-amber-500 shrink-0"
+                        strokeWidth={2.6}
+                        aria-hidden="true"
+                        focusable="false"
+                      />
+                      Global Stats
+                    </span>
+                  </Link>
+                  <a
+                    href="https://github.com/zaim-abbasi/APIRadar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "inline-flex items-center justify-center whitespace-nowrap rounded-md group h-10 sm:h-11 px-4 text-xs sm:text-sm font-medium transition-all duration-200 ease-in-out w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2",
+                      "bg-card/40 backdrop-blur-md text-foreground border-border/60 sm:hover:bg-card/60 sm:hover:border-amber-500/40",
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-2 truncate">
+                      <Github
+                        className="h-4 w-4 text-amber-500 shrink-0"
+                        strokeWidth={2.6}
+                        aria-hidden="true"
+                        focusable="false"
+                      />
+                      View Codebase
+                    </span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
