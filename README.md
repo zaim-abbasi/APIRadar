@@ -105,8 +105,8 @@ GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVA
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/zaim-abbasi/API-Radar.git
-   cd API-Radar
+   git clone https://github.com/zaim-abbasi/APIRadar.git
+   cd APIRadar
    ```
 
 2. **Install dependencies**:
