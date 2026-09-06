@@ -1,154 +1,182 @@
-# 🛡️ APIRadar
+# <img src="public/logo/transparent_logo.webp" alt="APIRadar Logo" width="40" valign="middle" /> APIRadar
 
-> **Find and track leaked API keys on GitHub.**
->
-> Real-time scanning, advanced detection, and a modern dashboard for security teams and developers.
+Scans public GitHub repos in real time for leaked API keys using regex pattern matching and entropy filters. APIRadar monitors code search queries and live commit diffs, encrypts confirmed secrets with AES-256-GCM, and displays redacted findings on a Next.js dashboard.
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Fastify](https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white)](https://www.fastify.io/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+*Note: APIRadar has migrated from `apiradar.live` to [`apiradar.bot.nu`](https://apiradar.bot.nu).*
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Fastify](https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white)](https://www.fastify.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 ---
 
-## 📚 Contents
+## Table of Contents
 
-- [About](#about)
-- [Features](#features)
-- [Screenshots](#️-screenshots)
-- [Architecture](#architecture)
-- [Setup](#setup)
-- [Security](#security)
+- [System Architecture](#system-architecture)
+- [How Secret Detection Works](#how-secret-detection-works)
+- [Supported Providers](#supported-providers)
+- [Getting Started](#getting-started)
+- [Adding a New Provider](#adding-a-new-provider)
+- [Security & Data Encryption](#security--data-encryption)
 - [Contributing](#contributing)
+- [Disclaimer](#disclaimer)
+- [License](#license)
 
 ---
 
-## 📝 About
+## System Architecture
 
-APIRadar is a large, multi-component system. It scans GitHub for secrets, detects leaks, and tracks everything in a database. The frontend lets you explore leaks, see stats, and learn about security. The backend is built for speed, reliability, and scale.
-
----
-
-## ✨ Features
-
-- Parallel code search queries (multi-token, rate-limited)
-- Regex and entropy-based secret detection (OpenAI, Google, Anthropic, OpenRouter, and more)
-- Deduplication and scan tracking
-- Redacted keys by default; secure full-key endpoint
-- Full audit logging
-- Modern frontend: real-time explorer, Threat Insights dashboard
-- Built with Fastify, MongoDB, TypeScript, Next.js, Tailwind CSS
+![APIRadar System Architecture](public/screenshots/architecture-diagram.png)
 
 ---
 
-## 🖼️ Screenshots
+## How Secret Detection Works
 
-### Home Page
+APIRadar filters candidate strings through a 6-stage validation pipeline: **RegEx trigger matching**, **prefix/suffix sanitization**, **placeholder keyword filtering**, **[Shannon Entropy](https://en.wikipedia.org/wiki/Entropy_(information_theory)) calculation ($H \ge 2.5$)**, and **[trigram Markov model](https://en.wikipedia.org/wiki/Markov_chain) scoring**.
 
-![Home Page](public/screenshots/HomePage.png)
-
----
-
-### Explore Page
-
-![Explore Page](public/screenshots/ExplorePage.png)
+The trigram Markov model (`model.json`) was custom-trained on the [Google 10,000 English Corpus](https://github.com/first20hours/google-10000-english) to calculate letter transition probabilities and eliminate natural language false positives.
 
 ---
 
-## 🏗️ Architecture
+## Supported Providers
 
-```mermaid
-flowchart TD
-  A["GitHub Code Search (REST API)"] --> B["Code Leak Farm Service"]
-  B --> C["Regex & Entropy Detection"]
-  C --> D{"Secret Found?"}
-  D -- "Yes" --> E["Deduplication (leaks) & Track Repo (scannedrepos)"]
-  E -- "Not Duplicate" --> F["Store Leak (leaks, redacted & full key)"]
-  E -- "Duplicate" --> G["Log Scan Attempt"]
-  F --> H["Redacted Key API"]
-  F --> I["Full Key API (secure)"]
-  H --> J["Frontend: Explore, Leaderboard"]
-  I --> K["Frontend: Copy Key Button"]
-  G --> L["Comprehensive Logging"]
-  F --> L
-  B --> L
-  C --> L
-```
+APIRadar monitors leaked secrets across **OpenAI**, **Anthropic**, **Google Gemini**, **OpenRouter**, **xAI (Grok)**, **Groq**, **Cerebras**, **Slack Tokens & Webhooks**, **Discord Tokens & Webhooks**, and **Telegram Bot Tokens**.
+
+![APIRadar Supported Providers Dashboard](public/screenshots/providers.png)
 
 ---
 
-## 🚀 Setup
+## Getting Started
 
-**Prerequisites:**
+### Prerequisites
 
-- Node.js 18+
-- MongoDB
-- GitHub Personal Access Token (with code search scope)
+- **[Node.js](https://nodejs.org/)**: v18.0.0 or higher
+- **[MongoDB](https://www.mongodb.com/)**: v6.0 or higher
+- **GitHub App**: App ID & RSA Private Key. See [GitHub Docs: Registering a GitHub App](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) to create one.
 
-**Install & Run:**
+---
 
-```bash
-# Clone and install
-git clone https://github.com/yourusername/api-radar.git
-cd api-radar
-npm install
+### Environment Setup
 
-# Start frontend
-npm run dev
+Create `.env` files in the root and `backend/` directories:
 
-# Start backend
-cd backend
-npm install
-npm run dev
-```
-
-**.env Example:**
+#### Root `.env`
 
 ```env
-NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
+```
+
+#### Backend `backend/.env`
+
+```env
 PORT=3001
-MONGODB_URI=mongodb://localhost:27017/api-radar
-GITHUB_TOKEN=your_github_personal_access_token
-GITHUB_TOKENS=token1,token2,token3
-MAX_REPOS_PER_SCAN=10
-RATE_LIMIT_MAX=100
-RATE_LIMIT_WINDOW=900000
-GITHUB_RATE_LIMIT_DELAY=1000
+NODE_ENV=development
+
+MONGODB_URI=mongodb://localhost:27017/apiradar
+
+NEXTAUTH_SECRET=your_nextauth_secret_here
+ENCRYPTION_KEY=your_32_character_encryption_key
+
+RATE_LIMIT_MAX=300
+RATE_LIMIT_WINDOW=60000
+CORS_ORIGINS=http://localhost:3000
+
+GITHUB_APP_ID=your_github_app_id
+GITHUB_APP_CLIENT_ID=your_github_app_client_id
+GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n"
+# GITHUB_APP_PRIVATE_KEY_PATH=keys/github-app.private-key.pem
 ```
 
 ---
 
-## 🔒 Security
+### Installation & Running
 
-- Only redacted keys are shown in the UI and API by default
-- Full keys are available only through a secure endpoint (`/api/leaks/:id/fullkey`)
-- No secrets are logged or exposed in public APIs
-- Every scan and leak is logged for audit
+1. **Clone the repository**:
+
+   ```bash
+   git clone https://github.com/zaim-abbasi/API-Radar.git
+   cd API-Radar
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   npm install
+   cd backend && npm install && cd ..
+   ```
+
+3. **Start development server (Frontend + Backend)**:
+   ```bash
+   npm run dev:all
+   ```
+
+   - Frontend UI: `http://localhost:3000`
+   - Backend API: `http://localhost:3001`
+
+---
+
+## Adding a New Provider
+
+To add a provider, update three files:
+
+1. **Add matching rule** in [backend/src/services/RegexRouter.ts](file:///d:/Projects/Summers/APIRadar/backend/src/services/RegexRouter.ts):
+```typescript
+{
+  name: 'cohere',
+  label: 'Cohere',
+  regex: /\b(cohere_[a-zA-Z0-9]{32,64})\b/,
+  prefixes: ['cohere_']
+}
+```
+
+2. **Strip static prefixes** in [backend/src/services/apiKeyValidator.ts](file:///d:/Projects/Summers/APIRadar/backend/src/services/apiKeyValidator.ts):
+```typescript
+secretPart = secretPart.replace(/^cohere_/, '');
+```
+
+3. **Register UI constants** in [lib/constants.ts](file:///d:/Projects/Summers/APIRadar/lib/constants.ts):
+```typescript
+export const PROVIDER_NAMES = ['cohere', ...] as const;
+export const PROVIDER_LABELS = [{ value: 'cohere', label: 'Cohere' }, ...] as const;
+```
+
+Run `cd backend && npm run build && npm run test` to verify your changes.
 
 ---
 
-## 🤝 Contributing
+## Security & Data Encryption
 
-- PRs, issues, and feature requests are welcome
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for details
-- All code must pass linting, tests, and review
+- **[AES-256-GCM](https://nodejs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv_options)**: Full keys are encrypted at rest using AES-256-GCM with a unique IV and auth tag (`iv:authTag:ciphertext`).
+- **Decoupled schema**:
+  - `Secret` collection stores the SHA-256 `keyHash` and `encryptedKey`.
+  - `Leak` collection stores public repository metadata and references `secretId`.
+---
 
-## SEO Backlinks & Monitoring Checklist
+## Contributing
 
-### Backlinks Strategy
-- Submit APIRadar to developer directories (Product Hunt, Dev.to, Indie Hackers, etc.)
-- Write guest posts or tutorials on tech blogs and link back to https://apiradar.bot.nu
-- Share on social media (Twitter, LinkedIn, Reddit, Hacker News)
-- Engage in relevant forums (Stack Overflow, GitHub Discussions) and include your link in your profile or signature
-- Ask partners, friends, or satisfied users to link to your site
+To contribute a new provider, bug fix, or feature:
 
-### Monitoring & Analytics
-- Set up Google Search Console for https://apiradar.bot.nu
-- Submit your sitemap: https://apiradar.bot.nu/sitemap.xml
-- Set up Google Analytics for traffic monitoring
-- Regularly check Google Search Console for crawl errors and performance
-- Use Google PageSpeed Insights to monitor and optimize site speed
+1. Fork the repo and create a feature branch (`git checkout -b feature/my-changes`).
+2. Format (`npm run format`) and lint (`npm run lint`).
+3. Confirm the backend builds (`cd backend && npm run build`).
+4. Submit a Pull Request.
 
 ---
+
+## Disclaimer
+
+This software is intended solely for security research, defensive monitoring, and educational purposes. The authors and maintainers assume no responsibility or liability for how this software is deployed or used, nor for any damages, security incidents, unauthorized access, API billing charges, or data breaches resulting from its operation.
+
+Users are solely responsible for ensuring compliance with applicable laws, third-party terms of service (including GitHub API policies), and security regulations when hosting or executing APIRadar.
+
+---
+
+## License
+
+Distributed under the MIT License. See [LICENSE](file:///d:/Projects/Summers/APIRadar/LICENSE) for details.
