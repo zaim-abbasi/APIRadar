@@ -1,15 +1,28 @@
-# <img src="public/logo/transparent_logo.webp" alt="APIRadar Logo" width="40" valign="middle" /> APIRadar
+<h1 align="center">
+  <img src="logos/icons/transparent_logo.webp" alt="APIRadar Logo" width="75" valign="middle" style="vertical-align: middle; margin-right: 12px; background: transparent; border: none;" /> APIRadar — Real-Time Leaked API Key Scanner
+</h1>
 
-Scans public GitHub repos in real time for leaked API keys using regex pattern matching and entropy filters. APIRadar monitors code search queries and live commit diffs, encrypts confirmed secrets with AES-256-GCM, and displays redacted findings on a Next.js dashboard.
+<p align="center">
+  Scans public GitHub repos in real time for leaked API keys using regex pattern matching and entropy filters. APIRadar monitors code search queries and live commit diffs, encrypts confirmed secrets with AES-256-GCM, and displays redacted findings on a Next.js dashboard.
+</p>
 
-_Note: APIRadar has migrated from `apiradar.live` to [`apiradar.bot.nu`](https://apiradar.bot.nu)._
+<p align="center">
+  <a href="https://apiradar.bot.nu/"><img src="https://img.shields.io/badge/Live_Demo-apiradar.bot.nu-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Demo" /></a>
+  <a href="https://www.producthunt.com/products/api-radar/launches/api-radar-2"><img src="https://img.shields.io/badge/Product_Hunt-Featured-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT" /></a>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Fastify](https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white)](https://www.fastify.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+<p align="center">
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" /></a>
+  <a href="https://www.fastify.io/"><img src="https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white" alt="Fastify" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://www.mongodb.com/"><img src="https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
+</p>
+
+<p align="center">
+  <i>Note: APIRadar has migrated from <code>apiradar.live</code> to <a href="https://apiradar.bot.nu/">apiradar.bot.nu</a>.</i>
+</p>
 
 ---
 
@@ -19,7 +32,6 @@ _Note: APIRadar has migrated from `apiradar.live` to [`apiradar.bot.nu`](https:/
 - [Supported Providers](#supported-providers)
 - [Getting Started](#getting-started)
 - [Adding a New Provider](#adding-a-new-provider)
-- [Security & Data Encryption](#security--data-encryption)
 - [Contributing](#contributing)
 - [Disclaimer](#disclaimer)
 - [License](#license)
@@ -144,15 +156,6 @@ export const PROVIDER_LABELS = [{ value: 'cohere', label: 'Cohere' }, ...] as co
 ```
 
 Run `cd backend && npm run build && npm run test` to verify your changes.
-
----
-
-## Security & Data Encryption
-
-- **[AES-256-GCM](https://nodejs.org/api/crypto.html#crypto_crypto_createcipheriv_algorithm_key_iv_options)**: Full keys are encrypted at rest using AES-256-GCM with a unique IV and auth tag (`iv:authTag:ciphertext`).
-- **Decoupled schema**:
-  - `Secret` collection stores the SHA-256 `keyHash` and `encryptedKey`.
-  - `Leak` collection stores public repository metadata and references `secretId`.
 
 ---
 
