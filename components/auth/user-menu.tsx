@@ -73,7 +73,7 @@ export function UserMenu() {
     );
   }
 
-  const firstName = session?.user?.name?.split(' ')[0] || 'User';
+  const fullName = session?.user?.name || 'User';
 
   return (
     <DropdownMenu modal={false}>
@@ -85,12 +85,8 @@ export function UserMenu() {
           )}
           aria-label="User account menu"
         >
-          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/30 shrink-0">
-            <User className="w-3.5 h-3.5 text-amber-500" />
-          </div>
-
-          <span className="text-sm font-medium text-foreground/90 group-hover:text-amber-500 transition-colors hidden sm:inline truncate max-w-[80px]">
-            {firstName}
+          <span className="text-sm font-medium text-foreground/90 group-hover:text-amber-500 transition-colors hidden sm:inline truncate">
+            {fullName}
           </span>
           
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-amber-500 transition-colors duration-300" />

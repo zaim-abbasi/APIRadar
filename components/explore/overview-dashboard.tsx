@@ -171,7 +171,7 @@ export function OverviewDashboard({
               "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
             WebkitMaskImage:
               "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-            "--marquee-duration": `${Math.max(15, itemsToRender.length * 2.25)}s`
+            "--marquee-duration": `${Math.max(45, itemsToRender.length * 5.5)}s`
           } as React.CSSProperties}
         >
           <div className="animate-marquee group-hover:[animation-play-state:paused] whitespace-nowrap flex items-center text-[10px] sm:text-xs text-muted-foreground font-mono h-full gap-2 sm:gap-3">
