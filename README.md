@@ -2,7 +2,7 @@
 
 Scans public GitHub repos in real time for leaked API keys using regex pattern matching and entropy filters. APIRadar monitors code search queries and live commit diffs, encrypts confirmed secrets with AES-256-GCM, and displays redacted findings on a Next.js dashboard.
 
-*Note: APIRadar has migrated from `apiradar.live` to [`apiradar.bot.nu`](https://apiradar.bot.nu).*
+_Note: APIRadar has migrated from `apiradar.live` to [`apiradar.bot.nu`](https://apiradar.bot.nu)._
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -15,7 +15,6 @@ Scans public GitHub repos in real time for leaked API keys using regex pattern m
 
 ## Table of Contents
 
-- [System Architecture](#system-architecture)
 - [How Secret Detection Works](#how-secret-detection-works)
 - [Supported Providers](#supported-providers)
 - [Getting Started](#getting-started)
@@ -27,15 +26,9 @@ Scans public GitHub repos in real time for leaked API keys using regex pattern m
 
 ---
 
-## System Architecture
-
-![APIRadar System Architecture](public/screenshots/architecture-diagram.png)
-
----
-
 ## How Secret Detection Works
 
-APIRadar filters candidate strings through a 6-stage validation pipeline: **RegEx trigger matching**, **prefix/suffix sanitization**, **placeholder keyword filtering**, **[Shannon Entropy](https://en.wikipedia.org/wiki/Entropy_(information_theory)) calculation ($H \ge 2.5$)**, and **[trigram Markov model](https://en.wikipedia.org/wiki/Markov_chain) scoring**.
+APIRadar filters candidate strings through a 6-stage validation pipeline: **RegEx trigger matching**, **prefix/suffix sanitization**, **placeholder keyword filtering**, **[Shannon Entropy](<https://en.wikipedia.org/wiki/Entropy_(information_theory)>) calculation ($H \ge 2.5$)**, and **[trigram Markov model](https://en.wikipedia.org/wiki/Markov_chain) scoring**.
 
 The trigram Markov model (`model.json`) was custom-trained on the [Google 10,000 English Corpus](https://github.com/first20hours/google-10000-english) to calculate letter transition probabilities and eliminate natural language false positives.
 
@@ -43,7 +36,7 @@ The trigram Markov model (`model.json`) was custom-trained on the [Google 10,000
 
 ## Supported Providers
 
-APIRadar monitors leaked secrets across **OpenAI**, **Anthropic**, **Google Gemini**, **OpenRouter**, **xAI (Grok)**, **Groq**, **Cerebras**, **Slack Tokens & Webhooks**, **Discord Tokens & Webhooks**, and **Telegram Bot Tokens**.
+APIRadar monitors leaked secrets across **OpenAI**, **Anthropic**, **Google Gemini**, **OpenRouter**, **xAI (Grok)**, **Groq**, **Cerebras**, **Slack Tokens & Webhooks**, **Discord Tokens & Webhooks**, and **Telegram Bot Tokens** _(stats as of September 6, 2026)_.
 
 ![APIRadar Supported Providers Dashboard](public/screenshots/providers.png)
 
@@ -112,6 +105,7 @@ GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVA
    ```
 
 3. **Start development server (Frontend + Backend)**:
+
    ```bash
    npm run dev:all
    ```
@@ -126,6 +120,7 @@ GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVA
 To add a provider, update three files:
 
 1. **Add matching rule** in [backend/src/services/RegexRouter.ts](file:///d:/Projects/Summers/APIRadar/backend/src/services/RegexRouter.ts):
+
 ```typescript
 {
   name: 'cohere',
@@ -136,11 +131,13 @@ To add a provider, update three files:
 ```
 
 2. **Strip static prefixes** in [backend/src/services/apiKeyValidator.ts](file:///d:/Projects/Summers/APIRadar/backend/src/services/apiKeyValidator.ts):
+
 ```typescript
-secretPart = secretPart.replace(/^cohere_/, '');
+secretPart = secretPart.replace(/^cohere_/, "");
 ```
 
 3. **Register UI constants** in [lib/constants.ts](file:///d:/Projects/Summers/APIRadar/lib/constants.ts):
+
 ```typescript
 export const PROVIDER_NAMES = ['cohere', ...] as const;
 export const PROVIDER_LABELS = [{ value: 'cohere', label: 'Cohere' }, ...] as const;
@@ -156,6 +153,7 @@ Run `cd backend && npm run build && npm run test` to verify your changes.
 - **Decoupled schema**:
   - `Secret` collection stores the SHA-256 `keyHash` and `encryptedKey`.
   - `Leak` collection stores public repository metadata and references `secretId`.
+
 ---
 
 ## Contributing
