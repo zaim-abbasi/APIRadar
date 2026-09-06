@@ -44,9 +44,11 @@ next-env.d.ts
 # docs
 /docs
 
-#rules
+#rules & agent customizations
 .agent
-.cursor
+.agent/
+.agents
+.agents/
 
 #data
 /backend/data
