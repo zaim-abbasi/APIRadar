@@ -3,25 +3,25 @@
 </h1>
 
 <p align="center">
-  Scans public GitHub repos in real time for leaked API keys using regex pattern matching and entropy filters. APIRadar monitors code search queries and live commit diffs, encrypts confirmed secrets with AES-256-GCM, and displays redacted findings on a Next.js dashboard.
+  Scans public GitHub repositories in real time for leaked API keys using regex pattern matching and entropy filters, displaying redacted findings on a Next.js dashboard.
 </p>
 
 <p align="center">
-  <a href="https://apiradar.bot.nu/"><img src="https://img.shields.io/badge/Live_Demo-apiradar.bot.nu-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Demo" /></a>
-  <a href="https://www.producthunt.com/products/api-radar/launches/api-radar-2"><img src="https://img.shields.io/badge/Product_Hunt-Featured-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT" /></a>
+  <a href="https://apiradar.bot.nu/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Live_Demo-apiradar.bot.nu-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Demo" /></a>
+  <a href="https://www.producthunt.com/products/api-radar/launches/api-radar-2" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Product_Hunt-Featured-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT" /></a>
 </p>
 
 <p align="center">
-  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" /></a>
-  <a href="https://www.fastify.io/"><img src="https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white" alt="Fastify" /></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-  <a href="https://www.mongodb.com/"><img src="https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
-  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
+  <a href="https://nextjs.org/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" /></a>
+  <a href="https://www.fastify.io/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Fastify-4.29-000000?style=for-the-badge&logo=fastify&logoColor=white" alt="Fastify" /></a>
+  <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+  <a href="https://www.mongodb.com/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/MongoDB-8.0-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
+  <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Tailwind_CSS-3.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
 </p>
 
 <p align="center">
-  <i>Note: APIRadar has migrated from <code>apiradar.live</code> to <a href="https://apiradar.bot.nu/">apiradar.bot.nu</a>.</i>
+  <i>Note: APIRadar has migrated from <code>apiradar.live</code> to <a href="https://apiradar.bot.nu/" target="_blank" rel="noopener noreferrer">apiradar.bot.nu</a>.</i>
 </p>
 
 ---
