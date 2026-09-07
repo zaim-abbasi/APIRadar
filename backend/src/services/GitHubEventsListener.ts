@@ -13,8 +13,8 @@ import { ingestionService, RawLeakFinding } from './IngestionService';
 
 const EVENTS_URL = 'https://api.github.com/events';
 const POLL_INTERVAL = 60000;
-const MAX_QUEUE = 1000;
-const CONCURRENCY = 10;
+const MAX_QUEUE = 3000;
+const CONCURRENCY = 25;
 const COMMIT_TIMEOUT = 15000;
 const CORE_FLOOR = 500;
 const CORE_RESUME = 1000;
@@ -25,6 +25,20 @@ const SCANNABLE_EXT = new Set([
   'js', 'ts', 'jsx', 'tsx', 'py', 'rb', 'go', 'java', 'php', 'rs', 'cs', 'kt', 'scala',
   'swift', 'sh', 'bash', 'zsh', 'tf', 'hcl',
 ]);
+
+const BOT_LOGIN_PATTERNS = [
+  /\[bot\]$/i,
+  /^dependabot/i,
+  /^renovate/i,
+  /^github-actions/i,
+  /^greenkeeper/i,
+  /^snyk-bot/i,
+];
+
+function isBotActor(login?: string): boolean {
+  if (!login) return false;
+  return BOT_LOGIN_PATTERNS.some(pattern => pattern.test(login));
+}
 
 function redactKey(key: string): string {
   if (key.length <= 12) return key;
@@ -48,6 +62,7 @@ function parseDiffSections(diff: string): Array<{ filePath: string; content: str
 interface GitHubEvent {
   id: string;
   type: string;
+  actor?: { login: string };
   repo: { name: string };
   payload: { head?: string; before?: string; ref?: string; size?: number };
 }
@@ -157,6 +172,7 @@ export class GitHubEventsListener {
     let enqueued = 0;
     for (const event of pushEvents) {
       if (!event.payload.head) continue;
+      if (isBotActor(event.actor?.login)) continue;
       if (this.lastEventId && BigInt(event.id) <= BigInt(this.lastEventId)) continue;
 
       const sha = event.payload.head;

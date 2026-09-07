@@ -707,20 +707,9 @@ export class GitHubCodeLeakFarmService {
       return { processed: false, skipped: true };
     }
 
-    let commitHash = '';
-    try {
-      await waitForRateLimitIfNeeded();
-      commitHash = await retry(async () => {
-        try { return await githubService.getFileLatestCommitHash(repoName, filePath); }
-        catch (err: any) { if (err.response?.status === 422) return ''; throw err; }
-      }, 'COMMIT-HASH');
-    } catch { return { processed: false, skipped: true }; }
-
-    if (!commitHash) return { processed: false, skipped: true };
-
-    const cacheKey = `file:${item.repository.html_url}:${commitHash}`;
+    const cacheKey = `file:${repoName}:${filePath}`;
     if (scannedCache.has(cacheKey)) {
-      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned (${commitHash.substring(0, 8)}...)`);
+      logger.warn(`[FARM] SKIP: ${repoName}/${filePath} - Already scanned recently`);
       return { processed: false, skipped: true };
     }
     scannedCache.set(cacheKey, true);
@@ -728,7 +717,7 @@ export class GitHubCodeLeakFarmService {
     await waitForRateLimitIfNeeded();
     logger.scan(repoName, filePath);
 
-    let content;
+    let content: string | null = null;
     try {
       await waitForRateLimitIfNeeded();
       content = await retry(() => fetchRawFileContent(repoName, filePath, 'HEAD'), 'FILE-CONTENT');
@@ -737,7 +726,7 @@ export class GitHubCodeLeakFarmService {
     if (!content) return { processed: false, skipped: true };
 
     try {
-      await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, commitHash);
+      await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, 'HEAD');
       return { processed: true, skipped: false };
     } catch (error) {
       logger.error(`[FARM] Failed to process leaks for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);

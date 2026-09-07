@@ -89,10 +89,14 @@ function buildSearchQueries(): Record<string, string[]> {
     const allQueries: string[] = [];
     const searchTerms = rule.prefixes;
     for (const term of searchTerms) {
-      const termQueries = FARM_CONSTANTS.PATTERNS.HIGH_RISK_FILES.map(
+      // Prioritize TIER1 core files first
+      const tier1Queries = (FARM_CONSTANTS.PATTERNS.TIER1_CORE_FILES || []).map(
         file => `filename:${file} ${term}`
       );
-      allQueries.push(...termQueries);
+      const tier2Queries = (FARM_CONSTANTS.PATTERNS.TIER2_DEEP_FILES || []).map(
+        file => `filename:${file} ${term}`
+      );
+      allQueries.push(...tier1Queries, ...tier2Queries);
     }
     queries[rule.name] = allQueries.filter(q => q.trim());
   }
