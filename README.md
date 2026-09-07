@@ -24,6 +24,10 @@
   <i>Note: APIRadar has migrated from <code>apiradar.live</code> to <a href="https://apiradar.bot.nu/" target="_blank" rel="noopener noreferrer">apiradar.bot.nu</a>.</i>
 </p>
 
+<p align="center">
+  <img src="public/screenshots/homepage.png" alt="APIRadar Real-Time Threat Radar Homepage" width="100%" />
+</p>
+
 ---
 
 ## Table of Contents
