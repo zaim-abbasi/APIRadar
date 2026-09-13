@@ -94,6 +94,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
         }));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const loadingRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -362,6 +363,7 @@ export const ExploreClient = React.memo(function ExploreClient(props: any) {
       // Trigger refetch (no timeout needed as we aren't racing anymore)
       fetchAndSetLeaksRef.current?.();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionStatus, isAuthenticated]);
 
   // Handlers
