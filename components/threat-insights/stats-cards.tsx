@@ -169,7 +169,7 @@ export const StatsCards = React.memo(function StatsCards({ data, isLoading }: St
       title: 'Total Repositories Evaluated',
       value: safeTotalReposScanned,
       todayValue: safeExposuresFoundToday,
-      icon: Code,
+      icon: Search,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10'
     }
