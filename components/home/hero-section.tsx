@@ -295,14 +295,14 @@ HeroTicker.displayName = "HeroTicker";
 
 const StatCounter = React.memo(() => {
   return (
-    <div className="animate-fade-in-up flex-shrink-0">
-      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 transition-colors duration-500">
-        <FolderGit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
+    <div className="animate-fade-in-up shrink-0">
+      <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 rounded-lg border border-amber-500/30 bg-amber-500/5 transition-colors duration-500 h-[32px] sm:h-[38px]">
+        <FolderGit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 shrink-0" />
         <span className="text-xs sm:text-base font-mono tabular-nums font-bold tracking-tight text-amber-500">
           230K+
         </span>
-        <span className="text-[10px] sm:text-sm text-muted-foreground/80 font-medium whitespace-nowrap">
-          Public GitHub Repos Scanned
+        <span className="text-[10px] sm:text-sm text-muted-foreground/80 font-medium whitespace-nowrap hidden min-[360px]:inline">
+          Public Repos Scanned
         </span>
       </span>
     </div>
@@ -319,27 +319,27 @@ export const HeroSection = React.memo(() => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 w-full items-center">
             <div className="flex flex-col justify-center space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-9 text-center lg:text-left">
               <div>
-                <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:pr-8">
+                <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:pr-8 min-w-0">
                   <div className="flex justify-start shrink-0">
                     <a
                       href="https://www.producthunt.com/products/api-radar?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-api-radar-2"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 sm:gap-2.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-amber-500/40 transition-all group h-[32px] sm:h-[38px]"
+                      className="inline-flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 rounded-lg border border-border/50 bg-card/20 backdrop-blur-sm sm:hover:border-amber-500/40 transition-all group h-[32px] sm:h-[38px] shrink-0"
                     >
                       <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 shrink-0" />
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-[10px] sm:text-base font-bold tracking-tight text-foreground/90 whitespace-nowrap">
                           Featured On
                         </span>
-                        <span className="text-[10px] sm:text-sm text-muted-foreground font-medium whitespace-nowrap hidden min-[400px]:inline">
+                        <span className="text-[10px] sm:text-sm text-muted-foreground font-medium whitespace-nowrap hidden min-[440px]:inline">
                           Product Hunt
                         </span>
                       </div>
-                      <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-amber-500 transition-colors" />
+                      <ArrowUpRight className="ml-0.5 sm:ml-1 h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground/40 sm:group-hover:text-amber-500 transition-colors shrink-0" />
                     </a>
                   </div>
-                  <div className="flex-1 min-w-0 flex justify-end">
+                  <div className="flex justify-end shrink-0">
                     <StatCounter />
                   </div>
                 </div>
