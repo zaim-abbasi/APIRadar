@@ -44,7 +44,7 @@ const ExploreHeader = React.memo(() => null);
 // Memoize ActionCard to prevent unnecessary re-renders
 const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (
   <div
-    className="group animate-fade-in-up opacity-0"
+    className="group animate-fade-in-up"
     style={{ animationDelay: `150ms` }}
   >
     <Card className="border-border/50 bg-card/60 backdrop-blur-sm">

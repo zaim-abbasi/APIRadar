@@ -304,7 +304,7 @@ const FeedItem = React.memo(
     return (
       <div 
         className={cn(
-          "block px-2 py-1 sm:px-5 sm:py-1.5 transition-colors duration-50 group/item animate-fade-in-up opacity-0 sm:hover:bg-white/[0.03]",
+          "block px-2 py-1 sm:px-5 sm:py-1.5 transition-colors duration-50 group/item animate-fade-in-up sm:hover:bg-white/[0.03]",
         )}
         style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
       >

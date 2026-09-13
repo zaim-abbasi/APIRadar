@@ -7,20 +7,11 @@ import React, {
   useRef,
   Suspense,
 } from "react";
-import dynamic from "next/dynamic";
+import ExploreSectionDesktop from "@/components/explore/explore-section-desktop";
 import { useSession } from "next-auth/react";
 import { usePlanCheck } from "@/hooks/use-plan-check";
 import { fetchLeaks, clearLeaksCache } from "@/lib/api";
 import { LeakedKey, Provider } from "@/types";
-
-// Optimize dynamic imports with loading states and proper chunking
-const ExploreSectionDesktop = dynamic(
-  () => import("@/components/explore/explore-section-desktop"),
-  {
-    ssr: false,
-    loading: () => <div className="min-h-[400px]" />,
-  },
-);
 
 const PAGE_SIZE = 15;
 const INFINITE_SCROLL_MARGIN = "0px 0px 600px 0px";

@@ -45,7 +45,7 @@ const LeakFeed = dynamic(
 // Memoized Action Card component
 const ActionCard = memo(({ onSignIn }: { onSignIn: () => void }) => (
   <div
-    className="group animate-fade-in-up opacity-0"
+    className="group animate-fade-in-up"
     style={{ animationDelay: `150ms` }}
   >
     <Card className="border-border/50 bg-card/60 backdrop-blur-sm">
@@ -131,7 +131,7 @@ const ExploreSectionMobile = memo(function ExploreSectionMobile(props: any) {
         <div className="w-10 sm:w-12 h-0.5 bg-gradient-to-r from-amber-500 to-foreground mx-auto mb-1 rounded-md opacity-60" />
       </div>
       {/* Filters */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up opacity-0 animate-delay-10">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-lg p-2 sm:p-5 mb-3 w-full max-w-md mx-auto animate-fade-in-up animate-delay-10">
         <div className="flex flex-col gap-3 sm:gap-4 w-full">
           <ProviderFilter
             selectedProvider={selectedProvider}
