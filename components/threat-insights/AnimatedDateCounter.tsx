@@ -13,10 +13,8 @@ export interface AnimatedDateCounterProps {
 
 // Memoize component to prevent unnecessary re-renders
 export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = React.memo(({ dateString }) => {
-  // Early return optimization
-  if (!dateString || isNaN(new Date(dateString).getTime())) return null;
-
-  const targetDate = new Date(dateString);
+  const isValid = dateString ? !isNaN(new Date(dateString).getTime()) : false;
+  const targetDate = isValid ? new Date(dateString!) : new Date();
   const targetDay = targetDate.getUTCDate();
   const targetMonth = targetDate.getUTCMonth();
   const targetYear = targetDate.getUTCFullYear();
@@ -26,6 +24,7 @@ export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = React.mem
   const [year, setYear] = useState(2000);
 
   useEffect(() => {
+    if (!isValid) return;
     let frame: number;
     let start: number | null = null;
     const animate = (timestamp: number) => {
@@ -42,7 +41,9 @@ export const AnimatedDateCounter: React.FC<AnimatedDateCounterProps> = React.mem
     return () => {
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [dateString, targetDay, targetMonth, targetYear]);
+  }, [dateString, isValid, targetDay, targetMonth, targetYear]);
+
+  if (!isValid) return null;
 
   return (
     <span className="transition-all duration-600 ease-out">

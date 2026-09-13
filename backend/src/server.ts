@@ -11,7 +11,7 @@ import { registerRoutes } from './routes';
 import { fatalErrorRecoveryManager } from './utils/fatalErrorRecovery';
 
 // 1. Top-level Error Handling (Fail Fast & log)
-process.on('unhandledRejection', (reason, _promise) => {
+process.on('unhandledRejection', (reason) => {
   logger.error(`[FATAL] Unhandled Rejection: ${reason instanceof Error ? reason.stack : String(reason)}`);
 });
 

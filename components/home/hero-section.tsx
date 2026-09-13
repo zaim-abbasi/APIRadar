@@ -252,7 +252,7 @@ const HeroTicker = React.memo(() => {
             </span>
           </span>
           <span className="inline-block px-2 sm:px-3 text-amber-500/30 flex-shrink-0 font-light">
-            //
+            {"//"}
           </span>
         </React.Fragment>
       ))}

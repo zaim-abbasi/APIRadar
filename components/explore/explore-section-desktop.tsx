@@ -40,6 +40,7 @@ import { Provider } from "@/types";
 import { LayoutGrid, Activity, ListFilter } from "lucide-react";
 
 const ExploreHeader = React.memo(() => null);
+ExploreHeader.displayName = 'ExploreHeader';
 
 // Memoize ActionCard to prevent unnecessary re-renders
 const ActionCard = React.memo(({ onSignIn }: { onSignIn: () => void }) => (

@@ -726,7 +726,7 @@ export class GitHubCodeLeakFarmService {
     if (!content) return { processed: false, skipped: true };
 
     try {
-      await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query, 'HEAD');
+      await this.detectAndSaveLeaks(content, repoName, item.repository.html_url, filePath, query);
       return { processed: true, skipped: false };
     } catch (error) {
       logger.error(`[FARM] Failed to process leaks for ${repoName}/${filePath}: ${error instanceof Error ? error.message : String(error)}`);
@@ -738,8 +738,7 @@ export class GitHubCodeLeakFarmService {
     repoName: string,
     repoUrl: string,
     filePath: string,
-    query: string,
-    _commitHash: string
+    query: string
   ): Promise<void> {
     const leaks = extractApiKeys(content);
     const foundLeaks: Partial<ILeak>[] = [];

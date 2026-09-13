@@ -62,7 +62,7 @@ export function isValidKey(key: string): boolean {
     }
 
     secretPart = secretPart
-        .replace(/^sk-[a-zA-Z0-9\-]+-/, '')
+        .replace(/^sk-[a-zA-Z0-9-]+-/, '')
         .replace(/^sk-/, '')
         .replace(/^AIza/, '')
         .replace(/^xox[pboase]-/, '')

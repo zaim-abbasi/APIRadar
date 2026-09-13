@@ -51,7 +51,7 @@ function getClientPromise(): Promise<MongoClient> {
   }
 }
 
-export default new Promise<MongoClient>((resolve, reject) => {
+const clientInitPromise = new Promise<MongoClient>((resolve, reject) => {
   Promise.resolve().then(() => {
     try {
       resolve(getClientPromise());
@@ -59,4 +59,6 @@ export default new Promise<MongoClient>((resolve, reject) => {
       reject(error);
     }
   });
-}); 
+});
+
+export default clientInitPromise; 

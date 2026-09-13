@@ -142,30 +142,11 @@ function StatsErrorFallback() {
 
 export const StatsCards = React.memo(function StatsCards({ data, isLoading }: StatsCardsProps & { isLoading?: boolean }) {
   const hasNoData = !data || (data.totalReposScanned === 0 && data.totalExposuresFound === 0);
-  
-  if (isLoading && hasNoData) {
-    return (
-      <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <StatCardSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
+  const isValidData = Boolean(data && typeof data === 'object');
 
-  if (!data || typeof data !== 'object') {
-    return <StatsErrorFallback />;
-  }
-
-  const {
-    totalReposScanned,
-    totalExposuresFound,
-    exposuresFoundToday
-  } = data;
-
-  const safeTotalReposScanned = typeof totalReposScanned === 'number' && isFinite(totalReposScanned) ? totalReposScanned : 0;
-  const safeTotalExposuresFound = typeof totalExposuresFound === 'number' && isFinite(totalExposuresFound) ? totalExposuresFound : 0;
-  const safeExposuresFoundToday = typeof exposuresFoundToday === 'number' && isFinite(exposuresFoundToday) ? exposuresFoundToday : 0;
+  const safeTotalReposScanned = isValidData && typeof data?.totalReposScanned === 'number' && isFinite(data.totalReposScanned) ? data.totalReposScanned : 0;
+  const safeTotalExposuresFound = isValidData && typeof data?.totalExposuresFound === 'number' && isFinite(data.totalExposuresFound) ? data.totalExposuresFound : 0;
+  const safeExposuresFoundToday = isValidData && typeof data?.exposuresFoundToday === 'number' && isFinite(data.exposuresFoundToday) ? data.exposuresFoundToday : 0;
 
   const stats = useMemo(() => [
     {
@@ -185,13 +166,28 @@ export const StatsCards = React.memo(function StatsCards({ data, isLoading }: St
       bgColor: 'bg-amber-500/10'
     },
     {
-      title: 'Total Repos Analyzed',
+      title: 'Total Repositories Evaluated',
       value: safeTotalReposScanned,
-      icon: Search,
+      todayValue: safeExposuresFoundToday,
+      icon: Code,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10'
     }
-  ], [safeTotalReposScanned, safeTotalExposuresFound, safeExposuresFoundToday]);
+  ], [safeExposuresFoundToday, safeTotalExposuresFound, safeTotalReposScanned]);
+
+  if (isLoading && hasNoData) {
+    return (
+      <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!isValidData) {
+    return <StatsErrorFallback />;
+  }
 
   return (
     <div id="stats-container" className="grid grid-cols-3 lg:grid-cols-1 gap-2.5 h-full">

@@ -19,9 +19,9 @@ export class RateLimitOptimizer {
     }
   }
 
-  async onboardToken(_token: string): Promise<void> {}
+  async onboardToken(): Promise<void> {}
 
-  async reportError(_token: string, _status: number, _headers?: any): Promise<void> {}
+  async reportError(): Promise<void> {}
 
   getCurrentToken(): string | null {
     return null;
@@ -74,12 +74,14 @@ export class RateLimitOptimizer {
     };
   }
 
-  updateStateFromResponse(_index: number, _headers: any): void {}
+  updateStateFromResponse(): void {}
 
   async refreshAllTokenStatuses(): Promise<void> {
     try {
       await gitHubAppAuthService.getValidToken();
-    } catch {}
+    } catch {
+      // ignore refresh error
+    }
   }
 }
 

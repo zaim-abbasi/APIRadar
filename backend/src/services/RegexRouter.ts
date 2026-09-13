@@ -24,13 +24,13 @@ const PROVIDER_RULES: ProviderRule[] = [
   {
     name: 'openrouter',
     label: 'OpenRouter',
-    regex: /\bsk-or-(?:v1-)?[a-zA-Z0-9\-]{20,}\b/,
+    regex: /\bsk-or-(?:v1-)?[a-zA-Z0-9-]{20,}\b/,
     prefixes: ['sk-or-']
   },
   {
     name: 'openai',
     label: 'OpenAI',
-    regex: /\b(sk-(?:proj-|svcacct-)?[A-Za-z0-9\-]{20,}|sk-[A-Za-z0-9]{48})\b/,
+    regex: /\b(sk-(?:proj-|svcacct-)?[A-Za-z0-9-]{20,}|sk-[A-Za-z0-9]{48})\b/,
     prefixes: ['sk-']
   },
   {

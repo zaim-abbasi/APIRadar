@@ -43,7 +43,9 @@ export class GitHubAppAuthService {
           logger.init(`[GITHUB-APP] Loaded private key from ${keyPath}`);
           return;
         }
-      } catch {}
+      } catch {
+        // ignore file read error
+      }
     }
   }
 

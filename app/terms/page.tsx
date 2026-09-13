@@ -46,7 +46,7 @@ export default function TermsPage() {
                 <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground font-heading uppercase tracking-wide">AS-IS Tool Notice</h2>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                APIRadar is provided strictly "AS-IS" and "AS-AVAILABLE" without warranties of accuracy, completeness, or uptime. We reserve the right to restrict access or terminate services without notice.
+                APIRadar is provided strictly &quot;AS-IS&quot; and &quot;AS-AVAILABLE&quot; without warranties of accuracy, completeness, or uptime. We reserve the right to restrict access or terminate services without notice.
               </p>
             </section>
 

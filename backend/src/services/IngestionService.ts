@@ -38,7 +38,9 @@ export class IngestionService {
           throw new Error(`Failed to secure Secret mapping for: ${leak.redactedKey}`);
         }
 
-        const { fullKey: _, redactedKey: __, ...safeLeakData } = leak;
+        const safeLeakData = { ...leak };
+        delete safeLeakData.fullKey;
+        delete safeLeakData.redactedKey;
 
         await Leak.updateOne(
           { repoUrl: leak.repoUrl, secretId: secretDoc._id, filePath: leak.filePath },

@@ -29,6 +29,7 @@ class TitanLogger {
 
   private log(tag: string, msg: string, consoleOut = true) {
     const txt = /^\[.+?\]/.test(msg) ? msg : `[${tag}] ${msg}`;
+    // eslint-disable-next-line no-control-regex
     this.buf.push(`[${new Date().toISOString()}] ${txt.replace(/\x1b\[[0-9;]*m/g, '')}`);
     if (consoleOut) console.log((COLORS[tag] ?? chalk.white)(txt));
   }

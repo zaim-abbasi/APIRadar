@@ -7,9 +7,10 @@
     "dev:all": "concurrently \"npm run dev\" \"cd backend && npm run dev\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint \"app/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"hooks/**/*.{ts,tsx}\"",
     "postbuild": "next-sitemap",
-    "verify-token": "npm run verify-token --prefix backend --"
+    "verify-token": "npm run verify-token --prefix backend --",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -81,6 +82,7 @@
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7"
   }
 }

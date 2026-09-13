@@ -164,7 +164,9 @@ export async function getLeaksHandler(request: AuthenticatedRequest, reply: Fast
         try {
           full = decrypt(s.encryptedKey, AES_KEY);
           redacted = `${full.substring(0, 6)}********************${full.substring(full.length - 6)}`;
-        } catch { }
+        } catch {
+          // ignore decryption errors
+        }
         return [s._id.toString(), { redacted, full }];
       }));
 
