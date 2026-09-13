@@ -2,46 +2,35 @@
 
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProviderStats } from '@/types';
+import { PROVIDER_LABELS } from '@/lib/constants';
 
 interface ProviderChartProps {
   data: ProviderStats[];
   isLoading?: boolean;
 }
 
-const providerColors: Record<string, string> = {
-  'anthropic': '#d97706',
-  'cerebras': '#7c3aed',
-  'discord_token': '#5865F2',
-  'discord_webhook': '#5865F2',
-  'google': '#3b82f6',
-  'groq': '#ea580c',
-  'openai': '#10b981',
-  'openrouter': '#d946ef',
-  'slack_token': '#E01E5A',
-  'slack_webhook': '#E01E5A',
-  'telegram_bot': '#24A1DE',
-  'xai': '#64748b',
-};
-
 const getProviderDisplayName = (provider: string): string => {
-  const displayNames: Record<string, string> = {
-    'ai-key': 'AI Key',
-    'cohere': 'Cohere',
-    'stripe': 'Stripe',
-    'github': 'GitHub',
-    'discord': 'Discord',
-    'discord_token': 'Discord Token',
-    'discord_webhook': 'Discord Webhook',
-    'slack_token': 'Slack Token',
-    'slack_webhook': 'Slack Webhook',
-    'telegram_bot': 'Telegram Bot',
-    'twilio': 'Twilio',
-    'sendgrid': 'SendGrid'
-  };
-  return displayNames[provider] || provider;
+  if (!provider) return '';
+  const normalized = provider.toLowerCase();
+
+  if (normalized.startsWith('discord')) return 'Discord';
+  if (normalized.startsWith('slack')) return 'Slack';
+  if (normalized.startsWith('telegram')) return 'Telegram';
+  if (normalized === 'xai') return 'xAI';
+  if (normalized === 'openrouter') return 'OpenRouter';
+  if (normalized === 'openai') return 'OpenAI';
+  if (normalized === 'anthropic') return 'Anthropic';
+  if (normalized === 'google') return 'Google';
+  if (normalized === 'groq') return 'Groq';
+  if (normalized === 'cerebras') return 'Cerebras';
+  if (normalized === 'cohere') return 'Cohere';
+  if (normalized === 'stripe') return 'Stripe';
+  if (normalized === 'github') return 'GitHub';
+
+  return provider.charAt(0).toUpperCase() + provider.slice(1);
 };
 
 const CustomTooltip = React.memo(({ active, payload }: any) => {
@@ -82,7 +71,7 @@ export const ProviderChart = React.memo(({ data, isLoading }: ProviderChartProps
           <Skeleton className="h-3 w-32 bg-amber-500/10" />
         </CardHeader>
         <CardContent className="pt-0 px-2.5 sm:px-5 pb-2.5 sm:pb-5">
-          <div className="h-[130px] sm:h-[180px] w-full flex flex-col gap-3 pt-2">
+          <div className="h-[180px] sm:h-[220px] w-full flex flex-col gap-3 pt-2">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-2">
                 <Skeleton className="h-3 w-12 bg-muted/20" />
@@ -115,13 +104,13 @@ export const ProviderChart = React.memo(({ data, isLoading }: ProviderChartProps
         </div>
       </CardHeader>
       <CardContent className="pt-0 px-2.5 sm:px-5 pb-2.5 sm:pb-5">
-        <div className="h-[130px] sm:h-[180px] w-full">
+        <div className="h-[180px] sm:h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={safeData}
               layout="vertical"
-              margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-              barSize={16}
+              margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+              barSize={14}
             >
               <CartesianGrid 
                 horizontal={false} 
@@ -137,9 +126,10 @@ export const ProviderChart = React.memo(({ data, isLoading }: ProviderChartProps
               <YAxis
                 dataKey="provider"
                 type="category"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                tickFormatter={(val) => getProviderDisplayName(val).substring(0, 10)}
-                width={65}
+                interval={0}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                tickFormatter={(val) => getProviderDisplayName(val)}
+                width={80}
                 axisLine={false}
                 tickLine={false}
               />
