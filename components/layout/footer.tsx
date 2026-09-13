@@ -66,7 +66,7 @@ const FooterComponent = () => {
           {/* Mobile Legal Links */}
           <div className="md:hidden flex items-center gap-3 text-[10px] font-medium text-muted-foreground tracking-wide">
             <a
-              href="https://github.com/zaim-abbasi"
+              href="https://github.com/zaim-abbasi/APIRadar"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-amber-500 transition-colors underline underline-offset-4 decoration-border/40 inline-flex items-center gap-1 font-semibold text-amber-500"
@@ -106,7 +106,7 @@ const FooterComponent = () => {
           <div className="hidden md:flex md:w-1/3 items-center justify-end text-[10px] md:text-xs font-medium text-muted-foreground tracking-wide gap-0">
             <div className="flex items-center gap-3 sm:gap-4">
               <a
-                href="https://github.com/zaim-abbasi"
+                href="https://github.com/zaim-abbasi/APIRadar"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-amber-500 transition-colors underline underline-offset-4 decoration-border/40 inline-flex items-center gap-1 font-semibold text-amber-500/90 hover:text-amber-500"

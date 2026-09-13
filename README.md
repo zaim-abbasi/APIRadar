@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://apiradar.bot.nu/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Live_Demo-apiradar.bot.nu-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Demo" /></a>
+  <a href="https://github.com/zaim-abbasi/APIRadar/stargazers" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/github/stars/zaim-abbasi/APIRadar?style=for-the-badge&logo=github&color=10B981" alt="GitHub Stars" /></a>
   <a href="https://www.producthunt.com/products/api-radar/launches/api-radar-2" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Product_Hunt-Featured-DA552F?style=for-the-badge&logo=product-hunt&logoColor=white" alt="Product Hunt" /></a>
   <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License: MIT" /></a>
 </p>
@@ -18,6 +19,7 @@
   <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
   <a href="https://www.mongodb.com/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
   <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
+  <a href="https://twitter.com/intent/tweet?text=APIRadar%20%E2%80%94%20Real-time%20leaked%20API%20key%20scanner%20for%20public%20GitHub%20repos.&url=https://github.com/zaim-abbasi/APIRadar&hashtags=opensource,security,nextjs,typescript" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/badge/Share-Tweet_Project-1DA1F2?style=for-the-badge&logo=x&logoColor=white" alt="Tweet Project" /></a>
 </p>
 
 <p align="center">
@@ -177,12 +179,15 @@ Run `cd backend && npm run build && npm run test` to verify your changes.
 
 ## Contributing
 
-To contribute a new provider, bug fix, or feature:
+Contributions are welcome! Whether you are adding new API provider regex patterns, improving detection algorithms, or submitting UI enhancements:
 
-1. Fork the repo and create a feature branch (`git checkout -b feature/my-changes`).
-2. Format (`npm run format`) and lint (`npm run lint`).
-3. Confirm the backend builds (`cd backend && npm run build`).
-4. Submit a [Pull Request](https://github.com/zaim-abbasi/APIRadar/pulls).
+1. Browse open issues or look for tags like [`good first issue`](https://github.com/zaim-abbasi/APIRadar/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) and [`help wanted`](https://github.com/zaim-abbasi/APIRadar/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+2. Fork the repo and create a feature branch (`git checkout -b feature/my-changes`).
+3. Format (`npm run format`) and lint (`npm run lint`).
+4. Confirm the backend builds (`cd backend && npm run build`).
+5. Submit a [Pull Request](https://github.com/zaim-abbasi/APIRadar/pulls).
+
+If you find APIRadar useful, consider starring the repository to help other security researchers and developers discover it.
 
 ---
 
